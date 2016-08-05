@@ -289,7 +289,7 @@ void Snapshot::update_state_GPU(bool mode){//true for decide
 	dim3 dimGrid2((size+15)/16,(size+15)/16);
 	dim3 dimBlock2(16,16);
 	cudaMemset(dev_sensor_value,0.0,size*sizeof(float));
-	calculate_sensor_value<<<(size+255)/256,256>>>(dev_worker,dev_sensor_value,size);
+	calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,size);
 	//update_weights_kernel<<<dimGrid2,dimBlock2,size*sizeof(int)>>>(dev_weights,dev_observe,size);
 	update_weights_kernels<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,size/2,worker::t);
 	//update_weight
