@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <time.h>
+#include "worker.h"
 using namespace std;
 
 class Snapshot{
@@ -24,9 +25,11 @@ public:
 	vector<bool> getLoad();
 	vector<vector<bool> > getDir();
 	vector<bool> halucinate(vector<int> action_list);
+	void initWorkerMemory(double *weights);
 
 protected:
 	int size;
+	int workerSize;
 	double threshold;
 	std::map<pair<int,int>,int> context;
 	vector<string> sensors_names,evals_names;
@@ -34,7 +37,7 @@ protected:
 	string name;
 	std::map<string,int> name_to_num;
 
-private:
+protected:
 	//those values are CPU and GPU counterpart variables. usually in GPU variable start with dev_(device)
 	bool *Gdir,*dev_dir;//dir is DIR in python
 	double *Gweights,*dev_weights,*Gthresholds,*dev_thresholds;//weight and threshold in python
@@ -49,6 +52,8 @@ private:
 	// need to add temp_dir for matrix multiplication
 	int *tmp_dir;
 	int *out_signal, *out_load;
+	worker *Gworker,*dev_worker;
+	float *dev_sensor_value;
 };
 
 #endif
