@@ -9,6 +9,7 @@ Say if I have Agent.cpp and Snapshot.cpp and kernel.cu
 
 g++ -fPIC -std=c++11 -c Agent.cpp -o Agent.o//get the agent obj
 g++ -fPIC -std=c++11 -c Snapshot.cpp -o Snapshot.o//get the Snapshot obj
+g++ -fPIC -std=c++11 -c worker.cpp -o worker.o//get the worker obj
 swig -c++ -python -o UMA_NEW_wrap.cpp UMA_NEW.i//swig auto generate the UMA_NEW_wrap.cpp based on UMA_NEW.i, the UMA_NEW.i is like a interface protocal, I will maintain it.
 gcc -fPIC -c UMA_NEW_wrap.cpp -o UMA_NEW_wrap.o -I/usr/include/python2.7//use python and gcc c compiler to mix compile
 nvcc -shared -Xcompiler -fPIC kernel.cu Agent.o Snapshot.o UMA_NEW_wrap.o -o _UMA_NEW.so//use nvcc to compile cuda file and link all obj together
