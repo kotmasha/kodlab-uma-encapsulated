@@ -4,9 +4,10 @@ Snapshot::Snapshot(){
 	Gdir=NULL;
 }
 
-Snapshot::Snapshot(int type){
+Snapshot::Snapshot(int type,double q){
 	Gdir=NULL;
 	this->type=type;
+	this->q=q;
 }
 
 Snapshot::Snapshot(double threshold,int type){

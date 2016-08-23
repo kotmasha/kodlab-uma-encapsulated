@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 from numpy.random import randint as rand
 import UMA_NEW
-acc=UMA_NEW.Agent(0)
+acc=UMA_NEW.Agent(2,0.9)
 
 
 N_CORES=8

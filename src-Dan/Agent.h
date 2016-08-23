@@ -7,7 +7,7 @@
 class Agent:public Snapshot{
 public:
 	Agent();
-	Agent(int type);
+	Agent(int type,double q);
 	Agent(double threshold,int type);
 	~Agent();
 	void decide(string mode,vector<int> param1,string param2);

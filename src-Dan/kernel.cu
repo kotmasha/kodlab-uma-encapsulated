@@ -487,6 +487,7 @@ void Snapshot::initWorkerMemory(double *weights){
 		Gworker[i]._ij=&weights[ind(2*y+1,2*x,size)];
 		Gworker[i].i_j=&weights[ind(2*y,2*x+1,size)];
 		Gworker[i]._i_j=&weights[ind(2*y+1,2*x+1,size)];
+		Gworker[i].q=q;
 		x++;
 		if(x==size/2){
 			y++;

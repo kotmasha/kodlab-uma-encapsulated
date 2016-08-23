@@ -11,7 +11,7 @@ using namespace std;
 class Snapshot{
 public:
 	Snapshot();
-	Snapshot(int type);
+	Snapshot(int type,double q);
 	Snapshot(double threshold,int type);
 	virtual ~Snapshot();
 
@@ -39,6 +39,7 @@ protected:
 	string name;
 	std::map<string,int> name_to_num;
 	int type;
+	double q;
 
 protected:
 	//those values are CPU and GPU counterpart variables. usually in GPU variable start with dev_(device)

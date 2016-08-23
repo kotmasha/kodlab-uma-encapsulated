@@ -4,7 +4,8 @@ Agent::Agent():Snapshot(){}
 
 Agent::Agent(double threshold,int type):Snapshot(threshold,type){}
 
-Agent::Agent(int type):Snapshot(type){}
+Agent::Agent(int type,double q):Snapshot(type,q){
+}
 
 Agent::~Agent(){}
 
