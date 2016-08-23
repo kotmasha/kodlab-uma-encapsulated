@@ -13,8 +13,8 @@ def start_experiment(stdscr):
 
     ### introduce "structure constants"
     DRY_RUN_CYCLES=1
-    X_BOUND=20 #length of the interval environment
-    Y_BOUND=16
+    X_BOUND=10 #length of the interval environment
+    Y_BOUND=10
     THRESHOLD=1./((X_BOUND+1)*(Y_BOUND+1.)) #learning threshold for Sniffy
 
     ### open a new experiment
@@ -161,7 +161,7 @@ def start_experiment(stdscr):
     #Function detail is in interface.txt
     tmp=[sen._NAME for sen in SNIFFY._SENSORS]
     acc.initData(SNIFFY._NAME,SNIFFY._SIZE,THRESHOLD,SNIFFY._CONTEXT.keys(),SNIFFY._CONTEXT.values(),tmp,SNIFFY._EVALS,SNIFFY._GENERALIZED_ACTIONS)
-    #------------------------THIS IS THE DATA INIT--------------------------------------#
+	#------------------------THIS IS THE DATA INIT--------------------------------------#
     
 
     # SETTING UP DRY RUN

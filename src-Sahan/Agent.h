@@ -7,7 +7,8 @@
 class Agent:public Snapshot{
 public:
 	Agent();
-	Agent(double threshold);
+	Agent(int type);
+	Agent(double threshold,int type);
 	~Agent();
 	void decide(string mode,vector<int> param1,string param2);
 	vector<string> translate(vector<int> index_list);
@@ -20,6 +21,9 @@ public:
 private:
 	vector<string> decision;
 	string message;
+
+public:
+	enum agent_type{EMPIRICAL,DISTRIBUTED,DISCOUNTED};
 };
 
 #endif

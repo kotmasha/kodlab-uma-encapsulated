@@ -5,34 +5,9 @@
 
 #include "Snapshot.h"
 #include "Agent.h"
+#include "worker.h"
 
-//CUDA introduction
-/*
-in CUDA:
-__host__ means the function happens on CPU
-__device__ means the function happens on Device(GPU)
-__host__ __device__ means the function can be used both on CPU and GPU(the compi on both CPU and GPU)
-__global__ means it is an global function. global function is where parallel happens.
-	Many threads runs the same code in global function, the way to distinguish different thread is by block and thread
-	blockIdx means block ID, threadIdx means thread ID. In CUDA, many threads form a block, many blocks form a grid, you can find the detail in the ppt I sent you
-	blockDim is the dimension of block. block and thread can be in multiply dimension(see in ppt)
-	to call a global function, you need to specify block number and thread num within each block like:
-		fun<<<blockNum,threadNum>>>(para1,para2...), blockNum and threadNum can be in multiply dimension
-	when you are accessing the data, make sure they do not go beyond boundary(that is why I have lots of "size" variable to check in almost every global function)
-	in global function you can use __device__ function or __host__ __device__ function as long as EVERY VARIABLE IS ON GPU. This is a very strict rule, you cannot access CPU memory on GPU, neither can you access GPU memory on CPU.
-cudaMalloc(&variable_address,size*sizeof(data_type)):
-	The function is used to malloc space for variable on GPU
-cudaMemcpy(&copy_to_address,&copy_from_address,size*sizeof(data_type),tag):
-	The function is copy data from one place to another.
-	tag has: cudaMemcpyHostToDevice,cudaMemcpyDeviceToHost,cudaMemcpyDeviceToDevice,cudaMemcpyHostToHost
-cudaMemset(&variable_address,value,size*sizeof(data_type)):
-	The function is like memset in C++, give the same value to an address of data
-cudaFree(&variable_address):
-	The function is used to free a variable, like delete in C++
-
-I believe those functions above is enough for the project, if you have any question just email me
-*/
-
+int worker::t=0;
 //helper function
 /*
 */
@@ -85,13 +60,6 @@ __global__ void bool2int_kernel(int *i,bool *b,int size){
 	if(index<size){
 		if(b[index]) i[index]=1;
 		else i[index]=0;
-	}
-}
-
-__global__ void stream_compaction_kernel(int *scan,bool *observe,int *result,int size){
-	int index=blockDim.x*blockIdx.x+threadIdx.x;
-	if(index<size&&observe[index]){
-		result[scan[index]]=index;
 	}
 }
 
@@ -159,49 +127,78 @@ __device__ void orient_square_GPU(bool *dir,double *weights,double *thresholds,i
 	}//i
 }
 
-__global__ void update_weights_kernel(double *weights,bool *observe,int size){
-	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
-	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
-	//extern __shared__ int shared[];
-	//shared[indexX]=-1;
-	//shared[indexY]=-1;
-	//__syncthreads();
-	if(indexX<size&&indexY<size){
-		/*if(shared[indexX]==-1){
-			shared[indexX]=observe[indexX];
-		}
-		if(shared[indexY]==-1){
-			shared[indexY]=observe[indexY];
-		}
-		int x=shared[indexX];
-		int y=shared[indexY];*/
-		weights[ind(indexY,indexX,size)]+=observe[indexX]*observe[indexY];
-		//weights[ind(indexY,indexX,size)]+=x*y;
+__global__ void update_weights_kernel_empirical(worker *workers,bool *observe,int size){
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+
+		*(workers[index].ij)+=observe[2*y]*observe[2*x];
+		*(workers[index]._ij)+=observe[2*y+1]*observe[2*x];
+		*(workers[index].i_j)+=observe[2*y]*observe[2*x+1];
+		*(workers[index]._i_j)+=observe[2*y+1]*observe[2*x+1];
 	}
 }
 
-__global__ void update_weights_kernels(double *weights,int *result,int s,int size){
-	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
-	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
-	if(indexX<s&&indexY<s){
-		int x=result[indexX];
-		int y=result[indexY];
-		weights[ind(y,x,size)]+=1;
+__global__ void update_weights_kernel_discounted(worker *workers,bool *observe,int size){
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+		double q=workers[index].q;
+		*(workers[index].ij)=*(workers[index].ij)*q+(1-q)*observe[2*y]*observe[2*x];
+		*(workers[index]._ij)=*(workers[index]._ij)*q+(1-q)*observe[2*y+1]*observe[2*x];
+		*(workers[index].i_j)=*(workers[index].i_j)*q+(1-q)*observe[2*y]*observe[2*x+1];
+		*(workers[index]._i_j)=*(workers[index]._i_j)*q+(1-q)*observe[2*y+1]*observe[2*x+1];
+	}
+}
+
+__global__ void calculate_sensor_value(worker *workers,float *sensor_value,int size){//gather all sensor value,workerSize
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+		atomicAdd(sensor_value+2*y,*(workers[index].ij)+*(workers[index].i_j));
+		atomicAdd(sensor_value+2*y+1,*(workers[index]._ij)+*(workers[index]._i_j));
+		atomicAdd(sensor_value+2*x,*(workers[index].ij)+*(workers[index]._ij));
+		atomicAdd(sensor_value+2*x+1,*(workers[index].i_j)+*(workers[index]._i_j));
+	}
+}
+
+__global__ void update_weights_kernel_distributed(worker *workers,float *sensor_value,bool *observe,int size,int sensorSize,int t){//workerSize
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+		double tij=(*(workers[index].ij)*t+observe[2*y]*observe[2*x])/(t+1);
+		double t_ij=(*(workers[index]._ij)*t+observe[2*y+1]*observe[2*x])/(t+1);
+		double ti_j=(*(workers[index].i_j)*t+observe[2*y]*observe[2*x+1])/(t+1);
+		double t_i_j=(*(workers[index]._i_j)*t+observe[2*y+1]*observe[2*x+1])/(t+1);
+		double sij=-*(workers[index].ij)+(sensor_value[2*y]+sensor_value[2*x])/2;
+		double s_ij=-*(workers[index]._ij)+(sensor_value[2*y+1]+sensor_value[2*x])/2;
+		double si_j=-*(workers[index].i_j)+(sensor_value[2*y]+sensor_value[2*x+1])/2;
+		double s_i_j=-*(workers[index]._i_j)+(sensor_value[2*y+1]+sensor_value[2*x+1])/2;
+
+		*(workers[index].ij)=(tij+sij)/(2*sensorSize-3);
+		*(workers[index]._ij)=(t_ij+s_ij)/(2*sensorSize-3);
+		*(workers[index].i_j)=(ti_j+si_j)/(2*sensorSize-3);
+		*(workers[index]._i_j)=(t_i_j+s_i_j)/(2*sensorSize-3);
+
+		//*(workers[index].ij)=tij;
+		//*(workers[index]._ij)=t_ij;
+		//*(workers[index].i_j)=ti_j;
+		//*(workers[index]._i_j)=t_i_j;
 	}
 }
 
 __global__ void orient_all_kernel(bool *dir,double *weights,double *thresholds,int size){
 	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
 	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
-	//the commented code is the optimization for the triangle problem we discussed. I think the speed is fast for now so I just use the original one
-	/*if(indexX<size){//possible optimazation
-		if(indexY>indexX) orient_square_GPU(dir,weights,thresholds,2*(size/2-1-indexX),2*(size/2-1-indexY),size);
-		else if(indexY<indexX) orient_square_GPU(dir,weights,thresholds,2*indexX,2*indexY,size);
-	}*/
 	if(indexX<size/2&&indexY<indexX){
 		orient_square_GPU(dir,weights,thresholds,indexX*2,indexY*2,size);
 	}
 }
+
 
 // this is a standard implementation of matrix and vector multiplication 
 __global__ void multiply_kernel(int *x, int *dir, int *y,int size){//dfs
@@ -306,26 +303,23 @@ void Snapshot::setSignal(vector<bool> observe){//this is where data comes in in 
 	cudaMemcpy(dev_observe,Gobserve,size*sizeof(bool),cudaMemcpyHostToDevice);
 }
 
+void Snapshot::update_weights(){
+	if(type==Agent::EMPIRICAL){
+		update_weights_kernel_empirical<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	}
+	else if(type==Agent::DISTRIBUTED){
+		cudaMemset(dev_sensor_value,0.0,size*sizeof(float));
+		calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,workerSize);
+		update_weights_kernel_distributed<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,size/2,worker::t);
+	}
+	else if(type==Agent::DISCOUNTED){
+		update_weights_kernel_discounted<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	}
+	worker::add_time();
+}
+
 void Snapshot::update_state_GPU(bool mode){//true for decide
-	bool2int_kernel<<<(size+255)/256,256>>>(dev_scan,dev_observe,size);
-	thrust::exclusive_scan(thrust::device,dev_scan, dev_scan+size, dev_scan); // in-place scan
-	int s=0;
-	bool ss=0;
-	
-	cudaMemcpy(&s,dev_scan+size-1,sizeof(int),cudaMemcpyDeviceToHost);
-	cudaMemcpy(&ss,dev_observe+size-1,sizeof(bool),cudaMemcpyDeviceToHost);
-	s+=ss;
-
-	stream_compaction_kernel<<<(size+255)/256,256>>>(dev_scan,dev_observe,tmp_weight,size);
-
-	dim3 dimGrid((s+15)/16,(s+15)/16);
-	dim3 dimBlock(16,16);
-	//cout<<s<<","<<size<<endl;
-	update_weights_kernels<<<dimGrid,dimBlock>>>(dev_weights,tmp_weight,s,size);
-	//cout<<s<<","<<size<<endl;
-	/*dim3 dimGrid2((size+15)/16,(size+15)/16);
-	dim3 dimBlock2(16,16);
-	update_weights_kernel<<<dimGrid2,dimBlock2,size*sizeof(int)>>>(dev_weights,dev_observe,size);*/
+	update_weights();
 	//update_weight
 	
 	if(mode){
@@ -379,7 +373,9 @@ void Snapshot::freeData(){//free data in case of memory leak
 
 	delete[] Gmask;
 	delete[] Gcurrent;
+	delete[] Gworker;
 
+	cudaFree(dev_worker);
 	cudaFree(dev_dir);
 	cudaFree(dev_thresholds);
 	cudaFree(dev_weights);
@@ -400,6 +396,8 @@ void Snapshot::freeData(){//free data in case of memory leak
 
 	cudaFree(dev_mask);
 	cudaFree(dev_current);
+
+	cudaFree(dev_sensor_value);
 }
 
 void Snapshot::initData(string name,int size,double threshold,vector<vector<int> > context_key,vector<int> context_value,
@@ -407,6 +405,7 @@ void Snapshot::initData(string name,int size,double threshold,vector<vector<int>
 	//data init
 	this->name=name;
 	this->size=size;
+	this->workerSize=size/2*(size/2-1)/2;
 	this->threshold=threshold;
 	this->sensors_names=sensors_names;
 	this->evals_names=evals_names;
@@ -429,6 +428,7 @@ void Snapshot::initData(string name,int size,double threshold,vector<vector<int>
 
 	Gmask=new bool[size];
 	Gcurrent=new bool[size];
+	Gworker=new worker[workerSize];
 	
 	cudaMalloc(&dev_dir,size*size*sizeof(bool));
 	cudaMalloc(&dev_thresholds,size*size*sizeof(double));
@@ -437,6 +437,11 @@ void Snapshot::initData(string name,int size,double threshold,vector<vector<int>
 	cudaMalloc(&dev_dfs,sizeof(bool));
 	cudaMalloc(&dev_signal,size*sizeof(bool));
 	cudaMalloc(&dev_load,size*sizeof(bool));
+	cudaMalloc(&dev_sensor_value,size*sizeof(float));
+
+	initWorkerMemory(dev_weights);
+	cudaMalloc(&dev_worker,workerSize*sizeof(worker));
+	cudaMemcpy(dev_worker,Gworker,workerSize*sizeof(worker),cudaMemcpyHostToDevice);
 
 	// cudaMalloc tmp_dir
 	cudaMalloc(&tmp_dir, size*size*sizeof(int));
@@ -457,7 +462,6 @@ void Snapshot::initData(string name,int size,double threshold,vector<vector<int>
 			Gthresholds[i*size+j]=threshold;
 			Gweights[i*size+j]=0.0;
 			Gdir[i*size+j]=false;
-			
 			// new implementation
 			if(i == j)
 				Gdir[i*size+j] = true;
@@ -473,6 +477,22 @@ void Snapshot::initData(string name,int size,double threshold,vector<vector<int>
 		context[pair<int,int>(context_key[i][0],context_key[i][1])]=context_value[i];
 	}
 	cout<<"succeed"<<endl;
+}
+
+void Snapshot::initWorkerMemory(double *weights){
+	int y=0,x=y+1;
+	for(int i=0;i<workerSize;++i){
+		Gworker[i]=worker("","",y,x);//name input required
+		Gworker[i].ij=&weights[ind(2*y,2*x,size)];
+		Gworker[i]._ij=&weights[ind(2*y+1,2*x,size)];
+		Gworker[i].i_j=&weights[ind(2*y,2*x+1,size)];
+		Gworker[i]._i_j=&weights[ind(2*y+1,2*x+1,size)];
+		x++;
+		if(x==size/2){
+			y++;
+			x=y+1;
+		}
+	}
 }
 
 //those three functions down there are get functions for the variable in C++

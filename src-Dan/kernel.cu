@@ -127,11 +127,29 @@ __device__ void orient_square_GPU(bool *dir,double *weights,double *thresholds,i
 	}//i
 }
 
-__global__ void update_weights_kernel(double *weights,bool *observe,int size){
-	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
-	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
-	if(indexX<size&&indexY<size){
-		weights[ind(indexY,indexX,size)]+=observe[indexX]*observe[indexY];
+__global__ void update_weights_kernel_empirical(worker *workers,bool *observe,int size){
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+
+		*(workers[index].ij)+=observe[2*y]*observe[2*x];
+		*(workers[index]._ij)+=observe[2*y+1]*observe[2*x];
+		*(workers[index].i_j)+=observe[2*y]*observe[2*x+1];
+		*(workers[index]._i_j)+=observe[2*y+1]*observe[2*x+1];
+	}
+}
+
+__global__ void update_weights_kernel_discounted(worker *workers,bool *observe,int size){
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		int y=workers[index].sensor_id1;
+		int x=workers[index].sensor_id2;
+		double q=workers[index].q;
+		*(workers[index].ij)=*(workers[index].ij)*q+(1-q)*observe[2*y]*observe[2*x];
+		*(workers[index]._ij)=*(workers[index]._ij)*q+(1-q)*observe[2*y+1]*observe[2*x];
+		*(workers[index].i_j)=*(workers[index].i_j)*q+(1-q)*observe[2*y]*observe[2*x+1];
+		*(workers[index]._i_j)=*(workers[index]._i_j)*q+(1-q)*observe[2*y+1]*observe[2*x+1];
 	}
 }
 
@@ -147,7 +165,7 @@ __global__ void calculate_sensor_value(worker *workers,float *sensor_value,int s
 	}
 }
 
-__global__ void update_weights_kernels(worker *workers,float *sensor_value,bool *observe,int size,int sensorSize,int t){//workerSize
+__global__ void update_weights_kernel_distributed(worker *workers,float *sensor_value,bool *observe,int size,int sensorSize,int t){//workerSize
 	int index=blockDim.x*blockIdx.x+threadIdx.x;
 	if(index<size){
 		int y=workers[index].sensor_id1;
@@ -161,15 +179,15 @@ __global__ void update_weights_kernels(worker *workers,float *sensor_value,bool 
 		double si_j=-*(workers[index].i_j)+(sensor_value[2*y]+sensor_value[2*x+1])/2;
 		double s_i_j=-*(workers[index]._i_j)+(sensor_value[2*y+1]+sensor_value[2*x+1])/2;
 
-		//*(workers[index].ij)=(tij+sij)/(2*sensorSize-3);
-		//*(workers[index]._ij)=(t_ij+s_ij)/(2*sensorSize-3);
-		//*(workers[index].i_j)=(ti_j+si_j)/(2*sensorSize-3);
-		//*(workers[index]._i_j)=(t_i_j+s_i_j)/(2*sensorSize-3);
+		*(workers[index].ij)=(tij+sij)/(2*sensorSize-3);
+		*(workers[index]._ij)=(t_ij+s_ij)/(2*sensorSize-3);
+		*(workers[index].i_j)=(ti_j+si_j)/(2*sensorSize-3);
+		*(workers[index]._i_j)=(t_i_j+s_i_j)/(2*sensorSize-3);
 
-		*(workers[index].ij)=tij;
-		*(workers[index]._ij)=t_ij;
-		*(workers[index].i_j)=ti_j;
-		*(workers[index]._i_j)=t_i_j;
+		//*(workers[index].ij)=tij;
+		//*(workers[index]._ij)=t_ij;
+		//*(workers[index].i_j)=ti_j;
+		//*(workers[index]._i_j)=t_i_j;
 	}
 }
 
@@ -285,15 +303,24 @@ void Snapshot::setSignal(vector<bool> observe){//this is where data comes in in 
 	cudaMemcpy(dev_observe,Gobserve,size*sizeof(bool),cudaMemcpyHostToDevice);
 }
 
-void Snapshot::update_state_GPU(bool mode){//true for decide
-	dim3 dimGrid2((size+15)/16,(size+15)/16);
-	dim3 dimBlock2(16,16);
-	cudaMemset(dev_sensor_value,0.0,size*sizeof(float));
-	calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,size);
-	//update_weights_kernel<<<dimGrid2,dimBlock2,size*sizeof(int)>>>(dev_weights,dev_observe,size);
-	update_weights_kernels<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,size/2,worker::t);
-	//update_weight
+void Snapshot::update_weights(){
+	if(type==Agent::EMPIRICAL){
+		update_weights_kernel_empirical<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	}
+	else if(type==Agent::DISTRIBUTED){
+		cudaMemset(dev_sensor_value,0.0,size*sizeof(float));
+		calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,workerSize);
+		update_weights_kernel_distributed<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,size/2,worker::t);
+	}
+	else if(type==Agent::DISCOUNTED){
+		update_weights_kernel_discounted<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	}
 	worker::add_time();
+}
+
+void Snapshot::update_state_GPU(bool mode){//true for decide
+	update_weights();
+	//update_weight
 	
 	if(mode){
 		dim3 dimGrid1((size/2+15)/16,(size/2+15)/16);

@@ -4,9 +4,15 @@ Snapshot::Snapshot(){
 	Gdir=NULL;
 }
 
-Snapshot::Snapshot(double threshold){
+Snapshot::Snapshot(int type){
+	Gdir=NULL;
+	this->type=type;
+}
+
+Snapshot::Snapshot(double threshold,int type){
 	Gdir=NULL;
 	this->threshold=threshold;
+	this->type=type;
 }
 
 vector<bool> Snapshot::initMask(vector<int> actions_list){

@@ -5,16 +5,19 @@
 #include <iostream>
 #include <map>
 #include <time.h>
+#include "worker.h"
 using namespace std;
 
 class Snapshot{
 public:
 	Snapshot();
-	Snapshot(double threshold);
+	Snapshot(int type);
+	Snapshot(double threshold,int type);
 	virtual ~Snapshot();
 
 	void initData(string name,int size,double threshold,vector<vector<int> > context_key,vector<int> context_value,vector<string> sensors_names,vector<string> evals_names,vector<vector<int> > generalized_actions);
 	void freeData();
+	void update_weights();
 	void update_state_GPU(bool mode);
 	void propagate_GPU();
 	void halucinate_GPU(vector<int> actions_list);
@@ -24,17 +27,20 @@ public:
 	vector<bool> getLoad();
 	vector<vector<bool> > getDir();
 	vector<bool> halucinate(vector<int> action_list);
+	void initWorkerMemory(double *weights);
 
 protected:
 	int size;
+	int workerSize;
 	double threshold;
 	std::map<pair<int,int>,int> context;
 	vector<string> sensors_names,evals_names;
 	vector<vector<int> > generalized_actions;
 	string name;
 	std::map<string,int> name_to_num;
+	int type;
 
-private:
+protected:
 	//those values are CPU and GPU counterpart variables. usually in GPU variable start with dev_(device)
 	bool *Gdir,*dev_dir;//dir is DIR in python
 	double *Gweights,*dev_weights,*Gthresholds,*dev_thresholds;//weight and threshold in python
@@ -49,6 +55,8 @@ private:
 	// need to add temp_dir for matrix multiplication
 	int *tmp_dir;
 	int *out_signal, *out_load;
+	worker *Gworker,*dev_worker;
+	float *dev_sensor_value;
 };
 
 #endif

@@ -2,7 +2,9 @@
 
 Agent::Agent():Snapshot(){}
 
-Agent::Agent(double threshold):Snapshot(threshold){}
+Agent::Agent(double threshold,int type):Snapshot(threshold,type){}
+
+Agent::Agent(int type):Snapshot(type){}
 
 Agent::~Agent(){}
 
@@ -27,7 +29,30 @@ void Agent::decide(string mode,vector<int> param1,string param2){//the decide fu
 		}
 	}
 	else if(mode=="decide"){
-		if(checkParam(param2)){
+		if(param2=="ordered"){
+			vector<vector<bool> > responses;
+			for(int i=0;i<generalized_actions.size();++i){
+				responses.push_back(halucinate(generalized_actions[i]));
+			}
+			vector<int> best_responses;
+			for(int i=0;i<evals_names.size();++i){
+				for(int j=0;j<responses.size();++j){
+					if(responses[j][name_to_num[evals_names[i]]]){
+						best_responses.push_back(j);
+					}
+				}
+				if(!best_responses.empty()){
+					decision=translate(generalized_actions[best_responses[randInt(best_responses.size())]]);
+					message=evals_names[i]+", ";
+					for(int i=0;i<decision.size();++i) message+=(decision[i]+" ");	
+				}
+			}
+			if(best_responses.empty()){
+				decision=translate(generalized_actions[randInt(generalized_actions.size())]);
+				message="random";
+			}
+		}
+		else if(checkParam(param2)){
 			vector<vector<bool> > responses;
 			for(int i=0;i<generalized_actions.size();++i){
 				responses.push_back(halucinate(generalized_actions[i]));

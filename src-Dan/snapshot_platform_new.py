@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 from numpy.random import randint as rand
 import UMA_NEW
-acc=UMA_NEW.Agent()
+acc=UMA_NEW.Agent(0)
 
 
 N_CORES=8
@@ -216,7 +216,7 @@ class Experiment(object):
             for ind,meas in enumerate(self._CONTROL):
                   last_state[meas._NAME]=meas.set(action_signal[ind])
                   #print meas._NAME,meas.val()
-                  
+
             for meas in self._MEASURABLES:
                   last_state[meas._NAME]=meas.set(meas._DEFN(last_state))
                   #print meas._NAME,meas.val()

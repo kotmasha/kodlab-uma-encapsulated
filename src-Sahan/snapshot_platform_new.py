@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 from numpy.random import randint as rand
 import UMA_NEW
-acc=UMA_NEW.Agent()
+acc=UMA_NEW.Agent(0)
 
 
 N_CORES=8
@@ -216,7 +216,7 @@ class Experiment(object):
             for ind,meas in enumerate(self._CONTROL):
                   last_state[meas._NAME]=meas.set(action_signal[ind])
                   #print meas._NAME,meas.val()
-                  
+
             for meas in self._MEASURABLES:
                   last_state[meas._NAME]=meas.set(meas._DEFN(last_state))
                   #print meas._NAME,meas.val()
@@ -544,25 +544,7 @@ class Agent(Snapshot):
                   else:
                         raise('Illegal input for execution by '+str(self._NAME)+' --- Aborting!\n\n')
             elif mode=='decide':
-
-                  if param == 'ordered':
-                        responses=map(self.halucinate,self._GENERALIZED_ACTIONS)
-                        best_responses = []
-
-                        for ev in self._EVALS:
-                              for ind in xrange(len(responses)):
-                                    if responses[ind].value(self._NAME_TO_NUM[ev]):
-                                          best_responses.append(ind)
-                                    
-                              if best_responses != []:
-                                    decision=translate(self._GENERALIZED_ACTIONS[best_responses[rand(len(best_responses))]])
-                                    message=ev+', '+str(decision)
-                        
-                        if best_responses == []:
-                              decision=translate(self._GENERALIZED_ACTIONS[rand(len(self._GENERALIZED_ACTIONS))])
-                              message= 'random'
-
-                  elif param in self._EVALS:
+                  if param in self._EVALS:
                         responses=map(self.halucinate,self._GENERALIZED_ACTIONS)
 			#responses=[]
 			#for actionlist in self._GENERALIZED_ACTIONS:
@@ -585,7 +567,6 @@ class Agent(Snapshot):
                               message=param+', random'
                   else:
                         raise('Invalid decision criterion '+str(param)+' --- Aborting!\n\n')
-
             else:
                   raise('Invalid operation mode for agent '+str(self._NAME)+' --- Aborting!\n\n')
 

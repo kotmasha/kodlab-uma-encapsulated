@@ -2,7 +2,9 @@
 
 Agent::Agent():Snapshot(){}
 
-Agent::Agent(double threshold):Snapshot(threshold){}
+Agent::Agent(double threshold,int type):Snapshot(threshold,type){}
+
+Agent::Agent(int type):Snapshot(type){}
 
 Agent::~Agent(){}
 
@@ -27,7 +29,7 @@ void Agent::decide(string mode,vector<int> param1,string param2){//the decide fu
 		}
 	}
 	else if(mode=="decide"){
-		if(param2=="order"){
+		if(param2=="ordered"){
 			vector<vector<bool> > responses;
 			for(int i=0;i<generalized_actions.size();++i){
 				responses.push_back(halucinate(generalized_actions[i]));
@@ -35,7 +37,7 @@ void Agent::decide(string mode,vector<int> param1,string param2){//the decide fu
 			vector<int> best_responses;
 			for(int i=0;i<evals_names.size();++i){
 				for(int j=0;j<responses.size();++j){
-					if(responses[i][name_to_num[evals_names[i]]]){
+					if(responses[j][name_to_num[evals_names[i]]]){
 						best_responses.push_back(j);
 					}
 				}

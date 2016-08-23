@@ -11,11 +11,13 @@ using namespace std;
 class Snapshot{
 public:
 	Snapshot();
-	Snapshot(double threshold);
+	Snapshot(int type);
+	Snapshot(double threshold,int type);
 	virtual ~Snapshot();
 
 	void initData(string name,int size,double threshold,vector<vector<int> > context_key,vector<int> context_value,vector<string> sensors_names,vector<string> evals_names,vector<vector<int> > generalized_actions);
 	void freeData();
+	void update_weights();
 	void update_state_GPU(bool mode);
 	void propagate_GPU();
 	void halucinate_GPU(vector<int> actions_list);
@@ -36,6 +38,7 @@ protected:
 	vector<vector<int> > generalized_actions;
 	string name;
 	std::map<string,int> name_to_num;
+	int type;
 
 protected:
 	//those values are CPU and GPU counterpart variables. usually in GPU variable start with dev_(device)
