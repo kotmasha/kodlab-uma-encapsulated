@@ -3,10 +3,8 @@
 from multiprocessing import Pool
 #import cPickle as nedosol
 import numpy as np
+from wrapper import *
 from numpy.random import randint as rand
-import UMA_NEW
-acc=UMA_NEW.Agent(0)
-
 
 N_CORES=8
 
@@ -170,11 +168,23 @@ class Experiment(object):
             return intro+state_data
 
       ### initialize an agent
-      def add_agent(self,name,threshold):
-            new_agent=Agent(name,self,threshold)
-            self._AGENTS.append(new_agent)
-            return new_agent
+      def add_agent_empirical(self,name,threshold):
+          new_agent=Agent(name,self,threshold)
+          new_agent.brain=wrapper(new_agent,'EMPIRICAL',threshold)
+          self._AGENTS.append(new_agent)
+          return new_agent
 
+      def add_agent_distributed(self,name,threshold):
+          new_agent=Agent(name,self,threshold)
+          new_agent.brain=wrapper(new_agent,'DISTRIBUTED',threshold)
+          self._AGENTS.append(new_agent)
+          return new_agent
+
+      def add_agent_discounted(self,name,threshold,q):
+          new_agent=Agent(name,self,threshold)
+          new_agent.brain=wrapper(new_agent,'DISCOUNTED',threshold,q)
+          self._AGENTS.append(new_agent)
+          return new_agent
 
       ### initialize a measurable -- measurables are observable quantities 
       ### of the experiment, init is a $self._DEPTH+1$-dimensional vector of
@@ -256,34 +266,24 @@ class Experiment(object):
       ### ONE TICK OF THE CLOCK: 
       ### have agents decide what to do, then collect their decisions and update the measurables.
       def tick(self,mode,param):
-            decision=[]
-            for agent in self._AGENTS:
-		  #------------------THIS IS THE GPU PART---------------------#
-                  #dec,message=agent.decide(mode,param)
+          decision=[]
+          for agent in self._AGENTS:
+              for ind in xrange(agent._SIZE):
+                  agent._OBSERVE.set(ind,agent._SENSORS[ind].val()[0])
+		      
+              agent.brain.sendSignal()
+		 
+              agent.brain.decide(mode,param)
 
-		  #the following is for the last command
-		  #data input
-		  for ind in xrange(agent._SIZE):
-            	        agent._OBSERVE.set(ind,agent._SENSORS[ind].val()[0])
-		  acc.setSignal(agent._OBSERVE._VAL.tolist())
+              dec,message=agent.brain.getValue()
+		 
+              decision.extend(dec)
 
-		  #based on different type of param, I use two parameter, so the type judgement here is necessary
-		  if type(param) is list:
-			acc.decide(mode,param,'')
-		  else:
-			acc.decide(mode,[],param)
-		  #after the GPU part is done, two variables are get from C++ and I cannot use return value because C++ can only return one value
-		  dec=acc.getDecision()
-		  message=acc.getMessage()
-		  #------------------THIS IS THE GPU PART---------------------#
-
-                  decision.extend(dec)
-
-            self.update_state([(meas._NAME in decision) for meas in self._CONTROL])
-            return message
+          self.update_state([(meas._NAME in decision) for meas in self._CONTROL])
+          return message
 
 
-class Snapshot(object):
+class Agent(object):
       ### initialize an empty snapshot with a list of sensors and a learning threshold
       ###
       def __init__(self,name,experiment,threshold):
@@ -360,215 +360,3 @@ class Snapshot(object):
 
       def set_context(self,name0,name1,name_tc):
             self._CONTEXT[(self._NAME_TO_NUM[name0],self._NAME_TO_NUM[name1])]=self._NAME_TO_NUM[name_tc]
-
-      ### MAKE OBSERVATION AND UPDATE INTERNAL CURRENT STATE
-      def update_state(self,mode='decide'):
-            ### read the values of all sensors into self._OBSERVE
-            for ind in xrange(self._SIZE):
-                  self._OBSERVE.set(ind,self._SENSORS[ind].val()[0])
-            ### update the weights and poc graph
-            self.update_weights()
-	    #acc.setSignal(self._OBSERVE._VAL.tolist())
-	    #self._WEIGHTS=np.array(acc.update_weights_GPU(self._WEIGHTS.tolist()))
-            if mode!='execute':
-                  self.orient_all()
-            ### propagate raw observation to obtain self._CURRENT
-            self._CURRENT=self.propagate(self._OBSERVE,Signal(allfalse(self._SIZE)))
-
-      ### UPDATE WEIGHTS FROM RAW OBSERVATION
-      def update_weights(self):
-            for nrow in xrange(self._SIZE):
-                  for ncol in xrange(self._SIZE):
-                        self._WEIGHTS[nrow][ncol]+=self._OBSERVE._VAL[nrow]*self._OBSERVE._VAL[ncol]
-   
-                              
-      ### test for the relation row<col where row,col are sensor names
-      ###
-      def implies(self,row,col):
-            ### allow testing a pair of sensors by name
-            if type(row)==type("string"):
-                  row=self._NAME_TO_NUM[row]
-                  col=self._NAME_TO_NUM[col]
-
-            ### applying the involution to indices (rather than names)
-            compi=lambda x: x+1 if x%2==0 else x-1
-
-            ### row and col are now indices in range(self._SIZE)
-            rc=0.+self._WEIGHTS[row][col]
-            r_c=0.+self._WEIGHTS[compi(row)][col]
-            rc_=0.+self._WEIGHTS[row][compi(col)]
-            r_c_=0.+self._WEIGHTS[compi(row)][compi(col)]
-            epsilon=(0.+rc+r_c+rc_+r_c_)*self._THRESHOLDS[row][col]
-            ### return True if rc_ is negligibly small compared to other sides of the square
-            return (rc_<np.amin([epsilon,rc,r_c,r_c_]))
-
-      def equivalent(self,row,col):
-            ### allow testing a pair of sensors by name:
-            if type(row)==type("string"):
-                  row=self._NAME_TO_NUM[row]
-                  col=self._NAME_TO_NUM[col]
-
-            ### apply involution to indices:
-            compi=lambda x: x+1 if x%2==0 else x-1
-
-            ### row and col are indices in range(self._SIZE)
-            rc=0.+self._WEIGHTS[row][col]
-            r_c=0.+self._WEIGHTS[compi(row)][col]
-            rc_=0.+self._WEIGHTS[row][compi(col)]
-            r_c_=0.+self._WEIGHTS[compi(row)][compi(col)]
-            epsilon=(rc+r_c+rc_+r_c_)*self._THRESHOLDS[row][col]
-            ### return True if rc_=r_c=0 and rc,r_c_>epsilon
-            return (rc_==0 and r_c==0)# and epsilon<0.+rc and epsilon<0.+r_c_)
-            
-      
-      ### recalculate the poc set structure self._DIR
-      ###
-      def orient_all(self):
-            ### go over all squares...
-            map(self.orient_square,[(x,y) for x in xrange(0,self._SIZE,2) for y in xrange(0,x,2)])
-
-
-      ### orienting a single square
-      def orient_square(self,(x,y)):
-            compi=lambda x: x+1 if x%2==0 else x-1
-            # wipe previous orientation
-            self._DIR[x][y]=False
-            self._DIR[x][compi(y)]=False
-            self._DIR[compi(x)][y]=False
-            self._DIR[compi(x)][compi(y)]=False
-            self._DIR[y][x]=False
-            self._DIR[compi(y)][x]=False
-            self._DIR[y][compi(x)]=False
-            self._DIR[compi(y)][compi(x)]=False
-
-            # assuming x,y are even
-            square_is_oriented=0
-            for i in [0,1]:
-                  for j in [0,1]:
-                        sx=x+i
-                        sy=y+j
-                        if square_is_oriented==0:
-                              if self.implies(sy,sx):
-                                    self._DIR[sy][sx]=True
-                                    self._DIR[compi(sx)][compi(sy)]=True
-                                    self._DIR[sx][sy]=False
-                                    self._DIR[compi(sy)][compi(sx)]=False
-                                    self._DIR[sx][compi(sy)]=False
-                                    self._DIR[compi(sy)][sx]=False
-                                    self._DIR[sy][compi(sx)]=False
-                                    self._DIR[compi(sx)][sy]=False
-                                    square_is_oriented=1
-                              if self.equivalent(sy,sx):
-                                    self._DIR[sy][sx]=True
-                                    self._DIR[sx][sy]=True
-                                    self._DIR[compi(sx)][compi(sy)]=True
-                                    self._DIR[compi(sy)][compi(sx)]=True
-                                    self._DIR[sx][compi(sy)]=False
-                                    self._DIR[compi(sy)][sx]=False
-                                    self._DIR[sy][compi(sx)]=False
-                                    self._DIR[compi(sx)][sy]=False
-                                    square_is_oriented=1
-
-      ### Signal to Names
-      def Signal_to_Names(self,signal):
-            return [sens._NAME for ind,sens in enumerate(self._SENSORS) if signal.value(ind)]
-
-      ### String to signal
-      def Names_to_Signal(self,names):
-            return Signal([(sens._NAME in names) for sens in self._SENSORS])
-
-      ### UPWARD CLOSURE OF A SIGNAL:
-      def up(self,input):
-            visited=allfalse(self._SIZE)
-
-            def dfs(ind):
-                  if not visited[ind]:
-                        visited[ind]=True
-                        map(dfs,[col for col in xrange(self._SIZE) if self._DIR[ind][col]])
-
-            if type(input)!=Signal: #assumes signal is a list of sensor names
-                  signal=self.Names_to_Signal(input)
-            else:
-                  signal=input
-
-            map(dfs,[ind for ind in xrange(self._SIZE) if signal._VAL[ind]])
-
-            return Signal(visited)
-
-
-      ### PROPAGATION
-      ###
-      ### (takes a True/False signal to propagate over a state)
-      def propagate(self,signal,load):
-            load=self.up(load)
-            mask_pos=self.up(signal)
-            return (load.add(mask_pos)).subtract(mask_pos.star())
-            
-
-      ### simulate the effect of a generalized action (input is a complete *-selection over $self._ACTIONS$, taken from $self._GENERALIZED_ACTIONS$, represented with sensor indices)
-      def halucinate(self,actions_list):
-            # form a mask signal to hold the output while recording the designated actions on this mask:
-            mask=Signal([(ind in actions_list) for ind in xrange(self._SIZE)])
-
-            # establish context pairs (actions for which there is a delayed conjunction on record, relevent at the current state)
-            relevant_pairs=[(act,ind) for act in actions_list for ind in xrange(self._SIZE) if (act,ind) in self._CONTEXT and self._CURRENT.value(ind)]
-            # record the corresponding delayed conjunctions in the mask
-            map(mask.set,[self._CONTEXT[i,j] for i,j in relevant_pairs],[True for i,j in relevant_pairs])
-
-            return self.propagate(mask,self._CURRENT)
-
-
-class Agent(Snapshot):
-      ### LATER MOVE ALL SNAPSHOT UPDATING TO THIS CLASS
-      
-      ### DECISION-MAKING MECHANISM
-      def decide(self,mode,param):
-            ### update the snapshot
-
-	    self.update_state(mode)
-	    
-	    #for ind in xrange(self._SIZE):
-            	  #self._OBSERVE.set(ind,self._SENSORS[ind].val()[0])
-	    #acc.setSignal(self._OBSERVE._VAL.tolist())
-	    #acc.update_state_GPU(mode=='decide')
-	    #self._CURRENT=Signal(np.array(acc.getCurrent()))
-	    #self._DIR=np.array(acc.getDir())
-
-            # translate indices into names for output to experiment
-            translate=lambda index_list: [self._SENSORS[ind]._NAME for ind in index_list]
-	    
-            if mode=='execute':
-                  if param in self._GENERALIZED_ACTIONS:
-                        decision=translate(param)
-                        message='Executing '+str(param)
-                  else:
-                        raise('Illegal input for execution by '+str(self._NAME)+' --- Aborting!\n\n')
-            elif mode=='decide':
-                  if param in self._EVALS:
-                        responses=map(self.halucinate,self._GENERALIZED_ACTIONS)
-			#responses=[]
-			#for actionlist in self._GENERALIZED_ACTIONS:
-			      #responses.append(Signal(np.array(acc.halucinate(actionlist))))
-            
-                        # compute the response (if any) to the motivational signal
-                        best_responses=[]
-
-                        for ind in xrange(len(responses)):
-                              if responses[ind].value(self._NAME_TO_NUM[param]):
-                                    best_responses.append(ind)
-
-                                    
-                        if best_responses!=[]:
-                              decision=translate(self._GENERALIZED_ACTIONS[best_responses[rand(len(best_responses))]])
-                              message=param+', '+str(decision)
-
-                        else:
-                              decision=translate(self._GENERALIZED_ACTIONS[rand(len(self._GENERALIZED_ACTIONS))])
-                              message=param+', random'
-                  else:
-                        raise('Invalid decision criterion '+str(param)+' --- Aborting!\n\n')
-            else:
-                  raise('Invalid operation mode for agent '+str(self._NAME)+' --- Aborting!\n\n')
-
-            return decision,message
-

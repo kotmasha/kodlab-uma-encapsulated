@@ -31,7 +31,7 @@ def start_experiment(stdscr):
     
 
     ### add agents
-    SNIFFY=EX.add_agent('Sniffy',THRESHOLD)
+    SNIFFY=EX.add_agent_empirical('Sniffy',THRESHOLD)
 
     ### introduce actions
     EX.new_sensor([SNIFFY],'rt')
@@ -159,8 +159,7 @@ def start_experiment(stdscr):
     #The tmp is a list for sensors names, every time you add some new sensors you have to recall the initData function, with new data given
     #And currently the method for initData is DELETE ALL OLD DATA, but in the future if you want to keep some old one I can adjust then
     #Function detail is in interface.txt
-    tmp=[sen._NAME for sen in SNIFFY._SENSORS]
-    acc.initData(SNIFFY._NAME,SNIFFY._SIZE,THRESHOLD,SNIFFY._CONTEXT.keys(),SNIFFY._CONTEXT.values(),tmp,SNIFFY._EVALS,SNIFFY._GENERALIZED_ACTIONS)
+    SNIFFY.brain.init()
 	#------------------------THIS IS THE DATA INIT--------------------------------------#
     
 

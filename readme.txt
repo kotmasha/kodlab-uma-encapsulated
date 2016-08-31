@@ -1,4 +1,4 @@
-way to compile file in Linux Ubuntu
+gway to compile file in Linux Ubuntu
 
 1 compile cpp file
 2 use swig(already installed) to compile and get a cpp interface file

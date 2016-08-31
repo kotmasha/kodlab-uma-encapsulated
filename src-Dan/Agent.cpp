@@ -1,10 +1,13 @@
 #include "Agent.h"
 
-Agent::Agent():Snapshot(){}
+/*
+----------------Agent Base Class-------------------
+*/
 
-Agent::Agent(double threshold,int type):Snapshot(threshold,type){}
-
-Agent::Agent(int type,double q):Snapshot(type,q){
+Agent::Agent(int type,double threshold){
+	Gdir=NULL;
+	this->type=type;
+	this->threshold=threshold;
 }
 
 Agent::~Agent(){}
@@ -114,3 +117,72 @@ vector<string> Agent::getDecision(){
 string Agent::getMessage(){
 	return message;
 }
+
+vector<bool> Agent::initMask(vector<int> actions_list){
+	//mask=Signal([(ind in actions_list) for ind in xrange(self._SIZE)])
+	vector<bool> result;
+	for(int i=0;i<measurableSize;++i){
+		bool flag=false;
+		for(int j=0;j<actions_list.size();++j){
+			if(i==actions_list[j]){
+				flag=true;
+				break;
+			}
+		}
+		result.push_back(flag);
+	}
+	return result;
+}
+
+vector<bool> Agent::halucinate(vector<int> action_list){//halucinate
+	halucinate_GPU(action_list);
+	return this->getLoad();
+}
+
+/*
+----------------Agent Base Class-------------------
+*/
+
+/*
+----------------Agent_Empirical Class-------------------
+*/
+
+Agent_Empirical::Agent_Empirical(double threshold):Agent(EMPIRICAL,threshold){
+}
+
+Agent_Empirical::~Agent_Empirical(){
+}
+
+/*
+----------------Agent_Empirical Class-------------------
+*/
+
+/*
+----------------Agent_Distributed Class-------------------
+*/
+
+Agent_Distributed::Agent_Distributed(double threshold):Agent(DISTRIBUTED,threshold){
+
+}
+
+Agent_Distributed::~Agent_Distributed(){}
+
+
+
+/*
+----------------Agent_Distributed Class-------------------
+*/
+
+/*
+----------------Agent_Discounted Class-------------------
+*/
+
+Agent_Discounted::Agent_Discounted(double threshold,double q):Agent(DISCOUNTED,threshold){
+	this->q=q;
+}
+
+Agent_Discounted::~Agent_Discounted(){}
+
+/*
+----------------Agent_Discounted Class-------------------
+*/

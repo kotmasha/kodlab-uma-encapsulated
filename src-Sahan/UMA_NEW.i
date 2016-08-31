@@ -3,7 +3,6 @@
 %include "std_vector.i"
 %include "std_string.i"
 %{
-#include "Snapshot.h"
 #include "Agent.h"
 #include "worker.h"
 %}
@@ -21,6 +20,5 @@ namespace std {
    %template(BoolVector2D) vector<vector<bool>>;
 }
 
-%include "Snapshot.h"
 %include "Agent.h"
 %include "worker.h"
