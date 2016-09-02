@@ -62,8 +62,91 @@ __global__ void bool2int_kernel(int *i,bool *b,int size){
 	}
 }
 
-//helper function
+__host__ __device__ bool *worker_dir(worker &worker,bool compiY,bool compiX,bool isSymmetry){
+	if(!isSymmetry){
+		if(!compiY&&!compiX) return worker.dij;
+		else if(!compiY&&compiX) return worker.di_j;
+		else if(compiY&&!compiX) return worker.d_ij;
+		else return worker.d_i_j;
+	}
+	else{
+		if(!compiX&&!compiY) return worker.dji;
+		else if(!compiX&&compiY) return worker.dj_i;
+		else if(compiX&&!compiY) return worker.d_ji;
+		else return worker.d_j_i;
+	}
+}
 
+__host__ __device__ double *worker_weight(worker &worker,bool compiY,bool compiX){
+	if(!compiY&&!compiX) return worker.wij;
+	else if(!compiY&&compiX) return worker.wi_j;
+	else if(compiY&&!compiX) return worker.w_ij;
+	else return worker.w_i_j;
+}
+
+//helper function
+__device__ bool implies_GPU(worker &worker,bool y,bool x){//implies
+	double rc=*(worker_weight(worker,y,x));
+	double r_c=*(worker_weight(worker,!y,x));
+	double rc_=*(worker_weight(worker,y,!x));
+	double r_c_=*(worker_weight(worker,!y,!x));
+	double epsilon=(rc+r_c+rc_+r_c_)*worker.threshold;
+	double m=min(epsilon,min(rc,min(r_c,r_c_)));
+	return rc_<m;
+}
+
+__device__ bool equivalent_GPU(worker &worker,bool y,bool x){//equivalent
+	double rc=*(worker_weight(worker,y,x));
+	double r_c=*(worker_weight(worker,!y,x));
+	double rc_=*(worker_weight(worker,y,!x));
+	double r_c_=*(worker_weight(worker,!y,!x));
+	double epsilon=(rc+r_c+rc_+r_c_)*worker.threshold;
+	return rc_==0&&r_c==0;
+}
+
+__device__ void orient_square_GPU(worker &worker){//orient_square
+	*(worker_dir(worker,false,false,false))=false;
+	*(worker_dir(worker,false,true,false))=false;
+	*(worker_dir(worker,true,false,false))=false;
+	*(worker_dir(worker,true,true,false))=false;
+	*(worker_dir(worker,false,false,true))=false;
+	*(worker_dir(worker,false,true,true))=false;
+	*(worker_dir(worker,true,false,true))=false;
+	*(worker_dir(worker,true,true,true))=false;
+
+	int square_is_oriented=0;
+	for(int x=0;x<2;++x){
+		for(int y=0;y<2;++y){
+			if(square_is_oriented==0){
+				if(implies_GPU(worker,y,x)){
+					*(worker_dir(worker,y,x,false))=true;
+					*(worker_dir(worker,!y,!x,true))=true;
+					*(worker_dir(worker,y,x,true))=false;
+					*(worker_dir(worker,!y,!x,false))=false;
+					*(worker_dir(worker,!y,x,true))=false;
+					*(worker_dir(worker,!y,x,false))=false;
+					*(worker_dir(worker,y,!x,false))=false;
+					*(worker_dir(worker,y,!x,true))=false;
+                    square_is_oriented=1;
+				}//implies
+				if(equivalent_GPU(worker,y,x)){
+					*(worker_dir(worker,y,x,false))=true;
+					*(worker_dir(worker,y,x,true))=true;
+					*(worker_dir(worker,!y,!x,true))=true;
+					*(worker_dir(worker,!y,!x,false))=true;
+					*(worker_dir(worker,!y,x,true))=false;
+					*(worker_dir(worker,!y,x,false))=false;
+					*(worker_dir(worker,y,!x,false))=false;
+					*(worker_dir(worker,y,!x,true))=false;
+                    square_is_oriented=1;
+				}//equivalent
+			}//square_is_oriented
+		}//j
+	}//i
+}
+
+
+/*
 __device__ bool implies_GPU(int row,int col,int width,double *weights,double threshold){//implies
 	double rc=weights[ind(row,col,width)];
 	double r_c=weights[ind(compi_GPU(row),col,width)];
@@ -125,6 +208,7 @@ __device__ void orient_square_GPU(bool *dir,double *weights,double *thresholds,i
 		}//j
 	}//i
 }
+*/
 
 __global__ void update_weights_kernel_empirical(worker *workers,bool *observe,int size){
 	int index=blockDim.x*blockIdx.x+threadIdx.x;
@@ -132,10 +216,10 @@ __global__ void update_weights_kernel_empirical(worker *workers,bool *observe,in
 		int y=workers[index].sensor_id1;
 		int x=workers[index].sensor_id2;
 
-		*(workers[index].ij)+=observe[2*y]*observe[2*x];
-		*(workers[index]._ij)+=observe[2*y+1]*observe[2*x];
-		*(workers[index].i_j)+=observe[2*y]*observe[2*x+1];
-		*(workers[index]._i_j)+=observe[2*y+1]*observe[2*x+1];
+		*(workers[index].wij)+=observe[2*y]*observe[2*x];
+		*(workers[index].w_ij)+=observe[2*y+1]*observe[2*x];
+		*(workers[index].wi_j)+=observe[2*y]*observe[2*x+1];
+		*(workers[index].w_i_j)+=observe[2*y+1]*observe[2*x+1];
 	}
 }
 
@@ -145,10 +229,10 @@ __global__ void update_weights_kernel_discounted(worker *workers,bool *observe,i
 		int y=workers[index].sensor_id1;
 		int x=workers[index].sensor_id2;
 		double q=workers[index].q;
-		*(workers[index].ij)=*(workers[index].ij)*q+(1-q)*observe[2*y]*observe[2*x];
-		*(workers[index]._ij)=*(workers[index]._ij)*q+(1-q)*observe[2*y+1]*observe[2*x];
-		*(workers[index].i_j)=*(workers[index].i_j)*q+(1-q)*observe[2*y]*observe[2*x+1];
-		*(workers[index]._i_j)=*(workers[index]._i_j)*q+(1-q)*observe[2*y+1]*observe[2*x+1];
+		*(workers[index].wij)=*(workers[index].wij)*q+(1-q)*observe[2*y]*observe[2*x];
+		*(workers[index].w_ij)=*(workers[index].w_ij)*q+(1-q)*observe[2*y+1]*observe[2*x];
+		*(workers[index].wi_j)=*(workers[index].wi_j)*q+(1-q)*observe[2*y]*observe[2*x+1];
+		*(workers[index].w_i_j)=*(workers[index].w_i_j)*q+(1-q)*observe[2*y+1]*observe[2*x+1];
 	}
 }
 
@@ -157,10 +241,10 @@ __global__ void calculate_sensor_value(worker *workers,float *sensor_value,int s
 	if(index<size){
 		int y=workers[index].sensor_id1;
 		int x=workers[index].sensor_id2;
-		atomicAdd(sensor_value+2*y,*(workers[index].ij)+*(workers[index].i_j));
-		atomicAdd(sensor_value+2*y+1,*(workers[index]._ij)+*(workers[index]._i_j));
-		atomicAdd(sensor_value+2*x,*(workers[index].ij)+*(workers[index]._ij));
-		atomicAdd(sensor_value+2*x+1,*(workers[index].i_j)+*(workers[index]._i_j));
+		atomicAdd(sensor_value+2*y,*(workers[index].wij)+*(workers[index].wi_j));
+		atomicAdd(sensor_value+2*y+1,*(workers[index].w_ij)+*(workers[index].w_i_j));
+		atomicAdd(sensor_value+2*x,*(workers[index].wij)+*(workers[index].w_ij));
+		atomicAdd(sensor_value+2*x+1,*(workers[index].wi_j)+*(workers[index].w_i_j));
 	}
 }
 
@@ -169,32 +253,31 @@ __global__ void update_weights_kernel_distributed(worker *workers,float *sensor_
 	if(index<size){
 		int y=workers[index].sensor_id1;
 		int x=workers[index].sensor_id2;
-		double tij=(*(workers[index].ij)*t+observe[2*y]*observe[2*x])/(t+1);
-		double t_ij=(*(workers[index]._ij)*t+observe[2*y+1]*observe[2*x])/(t+1);
-		double ti_j=(*(workers[index].i_j)*t+observe[2*y]*observe[2*x+1])/(t+1);
-		double t_i_j=(*(workers[index]._i_j)*t+observe[2*y+1]*observe[2*x+1])/(t+1);
-		double sij=-*(workers[index].ij)+(sensor_value[2*y]+sensor_value[2*x])/2;
-		double s_ij=-*(workers[index]._ij)+(sensor_value[2*y+1]+sensor_value[2*x])/2;
-		double si_j=-*(workers[index].i_j)+(sensor_value[2*y]+sensor_value[2*x+1])/2;
-		double s_i_j=-*(workers[index]._i_j)+(sensor_value[2*y+1]+sensor_value[2*x+1])/2;
+		double tij=(*(workers[index].wij)*t+observe[2*y]*observe[2*x])/(t+1);
+		double t_ij=(*(workers[index].w_ij)*t+observe[2*y+1]*observe[2*x])/(t+1);
+		double ti_j=(*(workers[index].wi_j)*t+observe[2*y]*observe[2*x+1])/(t+1);
+		double t_i_j=(*(workers[index].w_i_j)*t+observe[2*y+1]*observe[2*x+1])/(t+1);
+		double sij=-*(workers[index].wij)+(sensor_value[2*y]+sensor_value[2*x])/2;
+		double s_ij=-*(workers[index].w_ij)+(sensor_value[2*y+1]+sensor_value[2*x])/2;
+		double si_j=-*(workers[index].wi_j)+(sensor_value[2*y]+sensor_value[2*x+1])/2;
+		double s_i_j=-*(workers[index].w_i_j)+(sensor_value[2*y+1]+sensor_value[2*x+1])/2;
 
-		*(workers[index].ij)=(tij+sij)/(2*sensorSize-3);
-		*(workers[index]._ij)=(t_ij+s_ij)/(2*sensorSize-3);
-		*(workers[index].i_j)=(ti_j+si_j)/(2*sensorSize-3);
-		*(workers[index]._i_j)=(t_i_j+s_i_j)/(2*sensorSize-3);
+		*(workers[index].wij)=(tij+sij)/(2*sensorSize-3);
+		*(workers[index].w_ij)=(t_ij+s_ij)/(2*sensorSize-3);
+		*(workers[index].wi_j)=(ti_j+si_j)/(2*sensorSize-3);
+		*(workers[index].w_i_j)=(t_i_j+s_i_j)/(2*sensorSize-3);
 
-		//*(workers[index].ij)=tij;
-		//*(workers[index]._ij)=t_ij;
-		//*(workers[index].i_j)=ti_j;
-		//*(workers[index]._i_j)=t_i_j;
+		//*(workers[index].wij)=tij;
+		//*(workers[index].w_ij)=t_ij;
+		//*(workers[index].wi_j)=ti_j;
+		//*(workers[index].w_i_j)=t_i_j;
 	}
 }
 
-__global__ void orient_all_kernel(bool *dir,double *weights,double *thresholds,int size){
-	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
-	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
-	if(indexX<size/2&&indexY<indexX){
-		orient_square_GPU(dir,weights,thresholds,indexX*2,indexY*2,size);
+__global__ void orient_all_kernel(worker *workers,int size){
+	int index=blockDim.x*blockIdx.x+threadIdx.x;
+	if(index<size){
+		orient_square_GPU(workers[index]);
 	}
 }
 
@@ -337,9 +420,7 @@ void Agent::update_state_GPU(bool mode){//true for decide
 	//update_weight
 	
 	if(mode){
-		dim3 dimGrid1((measurableSize/2+15)/16,(measurableSize/2+15)/16);
-		dim3 dimBlock1(16,16);
-		orient_all_kernel<<<dimGrid1,dimBlock1>>>(dev_dir,dev_weights,dev_thresholds,measurableSize);
+		orient_all_kernel<<<(workerSize+255)/256,256>>>(dev_worker,workerSize);
 	}//orient_all
 
 	cudaMemcpy(dev_signal,dev_observe,measurableSize*sizeof(bool),cudaMemcpyDeviceToDevice);
@@ -453,7 +534,7 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	cudaMalloc(&dev_load,measurableSize*sizeof(bool));
 	cudaMalloc(&dev_sensor_value,measurableSize*sizeof(float));
 
-	initWorkerMemory(dev_weights);
+	initWorkerMemory(dev_weights,dev_dir);
 	cudaMalloc(&dev_worker,workerSize*sizeof(worker));
 	cudaMemcpy(dev_worker,Gworker,workerSize*sizeof(worker),cudaMemcpyHostToDevice);
 
@@ -493,32 +574,44 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	cout<<"succeed"<<endl;
 }
 
-void Agent::initWorkerMemory(double *weights){
+void Agent::initWorkerMemory(double *weights,bool *dir){
 	int y=0,x=y+1;
 	for(int i=0;i<workerSize;++i){
 		Gworker[i]=worker("","",y,x);//name input required
-		Gworker[i].ij=&weights[ind(2*y,2*x,measurableSize)];
-		Gworker[i]._ij=&weights[ind(2*y+1,2*x,measurableSize)];
-		Gworker[i].i_j=&weights[ind(2*y,2*x+1,measurableSize)];
-		Gworker[i]._i_j=&weights[ind(2*y+1,2*x+1,measurableSize)];
+		Gworker[i].wij=&weights[ind(2*y,2*x,measurableSize)];
+		Gworker[i].w_ij=&weights[ind(2*y+1,2*x,measurableSize)];
+		Gworker[i].wi_j=&weights[ind(2*y,2*x+1,measurableSize)];
+		Gworker[i].w_i_j=&weights[ind(2*y+1,2*x+1,measurableSize)];
+
+		Gworker[i].dij=&dir[ind(2*y,2*x,measurableSize)];
+		Gworker[i].d_ij=&dir[ind(2*y+1,2*x,measurableSize)];
+		Gworker[i].di_j=&dir[ind(2*y,2*x+1,measurableSize)];
+		Gworker[i].d_i_j=&dir[ind(2*y+1,2*x+1,measurableSize)];
+
+		Gworker[i].dji=&dir[ind(2*x,2*y,measurableSize)];
+		Gworker[i].d_ji=&dir[ind(2*x+1,2*y,measurableSize)];
+		Gworker[i].dj_i=&dir[ind(2*x,2*y+1,measurableSize)];
+		Gworker[i].d_j_i=&dir[ind(2*x+1,2*y+1,measurableSize)];
+
 		x++;
 		if(x==sensorSize){
 			y++;
 			x=y+1;
 		}
+		Gworker[i].threshold=threshold;
 	}
 }
 
-void Agent_Empirical::initWorkerMemory(double *weights){
-	Agent::initWorkerMemory(weights);
+void Agent_Empirical::initWorkerMemory(double *weights,bool *dir){
+	Agent::initWorkerMemory(weights,dir);
 }
 
-void Agent_Distributed::initWorkerMemory(double *weights){
-	Agent::initWorkerMemory(weights);
+void Agent_Distributed::initWorkerMemory(double *weights,bool *dir){
+	Agent::initWorkerMemory(weights,dir);
 }
 
-void Agent_Discounted::initWorkerMemory(double *weights){
-	Agent::initWorkerMemory(weights);
+void Agent_Discounted::initWorkerMemory(double *weights,bool *dir){
+	Agent::initWorkerMemory(weights,dir);
 	for(int i=0;i<workerSize;++i){
 		Gworker[i].q=q;
 	}

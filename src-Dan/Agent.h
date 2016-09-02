@@ -71,7 +71,7 @@ public:
 	vector<bool> getLoad();
 	vector<vector<bool> > getDir();
 	vector<bool> halucinate(vector<int> action_list);
-	virtual void initWorkerMemory(double *weights);
+	virtual void initWorkerMemory(double *weights,bool *dir);
 };
 
 /*
@@ -88,7 +88,7 @@ public:
 	Agent_Empirical(double threshold);
 	virtual ~Agent_Empirical();
 	virtual void update_weights();
-	virtual void initWorkerMemory(double *weights);
+	virtual void initWorkerMemory(double *weights,bool *dir);
 };
 
 /*
@@ -105,7 +105,7 @@ public:
 	Agent_Distributed(double threshold);
 	virtual ~Agent_Distributed();
 	virtual void update_weights();
-	virtual void initWorkerMemory(double *weights);
+	virtual void initWorkerMemory(double *weights,bool *dir);
 };
 
 /*
@@ -123,7 +123,7 @@ public:
 	Agent_Discounted(double threshold,double q);
 	virtual ~Agent_Discounted();
 	virtual void update_weights();
-	virtual void initWorkerMemory(double *weights);
+	virtual void initWorkerMemory(double *weights,bool *dir);
 };
 
 /*
