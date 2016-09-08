@@ -105,6 +105,7 @@ __device__ bool equivalent_GPU(worker &worker,bool y,bool x){//equivalent
 }
 
 __device__ void orient_square_GPU(worker &worker){//orient_square
+	if(worker.sensor_id1==worker.sensor_id2) return;
 	*(worker_dir(worker,false,false,false))=false;
 	*(worker_dir(worker,false,true,false))=false;
 	*(worker_dir(worker,true,false,false))=false;
@@ -144,71 +145,6 @@ __device__ void orient_square_GPU(worker &worker){//orient_square
 		}//j
 	}//i
 }
-
-
-/*
-__device__ bool implies_GPU(int row,int col,int width,double *weights,double threshold){//implies
-	double rc=weights[ind(row,col,width)];
-	double r_c=weights[ind(compi_GPU(row),col,width)];
-	double rc_=weights[ind(row,compi_GPU(col),width)];
-	double r_c_=weights[ind(compi_GPU(row),compi_GPU(col),width)];
-	double epsilon=(rc+r_c+rc_+r_c_)*threshold;
-	double m=min(epsilon,min(rc,min(r_c,r_c_)));
-	return rc_<m;
-}
-
-__device__ bool equivalent_GPU(int row,int col,int width,double *weights,double threshold){//equivalent
-	double rc=weights[ind(row,col,width)];
-	double r_c=weights[ind(compi_GPU(row),col,width)];
-	double rc_=weights[ind(row,compi_GPU(col),width)];
-	double r_c_=weights[ind(compi_GPU(row),compi_GPU(col),width)];
-	double epsilon=(rc+r_c+rc_+r_c_)*threshold;
-	return rc_==0&&r_c==0;
-}
-
-__device__ void orient_square_GPU(bool *dir,double *weights,double *thresholds,int x,int y,int width){//orient_square
-	dir[ind(x,y,width)]=false;
-	dir[ind(x,compi_GPU(y),width)]=false;
-	dir[ind(compi_GPU(x),y,width)]=false;
-	dir[ind(compi_GPU(x),compi_GPU(y),width)]=false;
-	dir[ind(y,x,width)]=false;
-	dir[ind(compi_GPU(y),x,width)]=false;
-	dir[ind(y,compi_GPU(x),width)]=false;
-	dir[ind(compi_GPU(y),compi_GPU(x),width)]=false;
-
-	int square_is_oriented=0;
-	for(int i=0;i<2;++i){
-		for(int j=0;j<2;++j){
-			int sx=x+i;
-            int sy=y+j;
-			if(square_is_oriented==0){
-				if(implies_GPU(sy,sx,width,weights,thresholds[ind(sy,sx,width)])){
-					dir[ind(sy,sx,width)]=true;
-					dir[ind(compi_GPU(sx),compi_GPU(sy),width)]=true;
-					dir[ind(sx,sy,width)]=false;
-                    dir[ind(compi_GPU(sy),compi_GPU(sx),width)]=false;
-                    dir[ind(sx,compi_GPU(sy),width)]=false;
-                    dir[ind(compi_GPU(sy),sx,width)]=false;
-                    dir[ind(sy,compi_GPU(sx),width)]=false;
-                    dir[ind(compi_GPU(sx),sy,width)]=false;
-                    square_is_oriented=1;
-				}//implies
-				if(equivalent_GPU(sy,sx,width,weights,thresholds[ind(sy,sx,width)])){
-					dir[ind(sy,sx,width)]=true;
-					dir[ind(sx,sy,width)]=true;
-					dir[ind(compi_GPU(sx),compi_GPU(sy),width)]=true;
-                    dir[ind(compi_GPU(sy),compi_GPU(sx),width)]=true;
-					dir[ind(sx,compi_GPU(sy),width)]=false;
-                    dir[ind(compi_GPU(sy),sx,width)]=false;
-                    dir[ind(sy,compi_GPU(sx),width)]=false;
-                    dir[ind(compi_GPU(sx),sy,width)]=false;
-                    square_is_oriented=1;
-				}//equivalent
-			}//square_is_oriented
-		}//j
-	}//i
-}
-*/
 
 __global__ void update_weights_kernel_empirical(worker *workers,bool *observe,int size){
 	int index=blockDim.x*blockIdx.x+threadIdx.x;
@@ -278,6 +214,70 @@ __global__ void orient_all_kernel(worker *workers,int size){
 	int index=blockDim.x*blockIdx.x+threadIdx.x;
 	if(index<size){
 		orient_square_GPU(workers[index]);
+	}
+}
+
+__global__ void multiply_kernel(worker *worker,int *input,int *output,int size,int measurableSize){
+	int index=threadIdx.x;
+	extern __shared__ int shared[];
+	int *xs=&shared[0];
+	int *ys=&shared[measurableSize];
+	__shared__ bool flag[1];
+	int x,y;
+	int j=index;
+	while(j<size){
+		x=worker[j].sensor_id2;
+		y=worker[j].sensor_id1;
+		xs[2*x]=input[2*x];xs[2*x+1]=input[2*x+1];
+		xs[2*y]=input[2*y];xs[2*y+1]=input[2*y+1];
+		ys[2*x]=input[2*x];ys[2*x+1]=input[2*x+1];
+		ys[2*y]=input[2*y];ys[2*y+1]=input[2*y+1];
+		j+=512;
+	}
+	flag[0]=true;
+	__syncthreads();
+	while(flag[0]){
+		flag[0]=false;
+		j=index;
+		__syncthreads();
+		while(j<size){
+			x=worker[j].sensor_id2;
+			y=worker[j].sensor_id1;
+			if(ys[2*x]==0&&xs[2*y]==1&&(*worker[j].dij)) ys[2*x]=1;
+			if(ys[2*x+1]==0&&xs[2*y]==1&&(*worker[j].di_j)) ys[2*x+1]=1;
+			if(ys[2*x]==0&&xs[2*y+1]==1&&(*worker[j].d_ij)) ys[2*x]=1;
+			if(ys[2*x+1]==0&&xs[2*y+1]==1&&(*worker[j].d_i_j)) ys[2*x+1]=1;
+			if(ys[2*y]==0&&xs[2*x]==1&&(*worker[j].dji)) ys[2*y]=1;
+			if(ys[2*y+1]==0&&xs[2*x]==1&&(*worker[j].dj_i)) ys[2*y+1]=1;
+			if(ys[2*y]==0&&xs[2*x+1]==1&&(*worker[j].d_ji)) ys[2*y]=1;
+			if(ys[2*y+1]==0&&xs[2*x+1]==1&&(*worker[j].d_j_i)) ys[2*y+1]=1;
+			j+=512;
+		}
+		j=index;
+		__syncthreads();
+		while(j<size){
+			x=worker[j].sensor_id2;
+			y=worker[j].sensor_id1;
+			if(ys[2*y]==1&&xs[2*y]==0) flag[0]=true;
+			if(ys[2*y+1]==1&&xs[2*y+1]==0) flag[0]=true;
+			if(ys[2*x]==1&&xs[2*x]==0) flag[0]=true;
+			if(ys[2*x+1]==1&&xs[2*x+1]==0) flag[0]=true;
+			xs[2*y]=ys[2*y];
+			xs[2*y+1]=ys[2*y+1];
+			xs[2*x]=ys[2*x];
+			xs[2*x+1]=ys[2*x+1];
+			j+=512;
+		}
+		__syncthreads();
+	}
+	j=index;
+	__syncthreads();
+	while(j<size){
+		x=worker[j].sensor_id2;
+		y=worker[j].sensor_id1;
+		output[2*x]=ys[2*x];output[2*x+1]=ys[2*x+1];
+		output[2*y]=ys[2*y];output[2*y+1]=ys[2*y+1];
+		j+=512;
 	}
 }
 
@@ -354,17 +354,19 @@ void Agent::propagate_GPU(){//propagate
 	// not copy the matrix
 	// find a different way
 	// THIS IS FOR LATER USE
-	bool2int_kernel<<<(measurableSize*measurableSize+255)/256,256>>>(tmp_dir, dev_dir, measurableSize*measurableSize);
-	// set out_load vector to 0
-	//cudaMemset(out_load, 0, size*sizeof(int));
-	multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_load, tmp_dir, out_load, measurableSize);
+	//bool2int_kernel<<<(measurableSize*measurableSize+255)/256,256>>>(tmp_dir, dev_dir, measurableSize*measurableSize);
+	
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(int)>>>(dev_worker,tmp_load,out_load,workerSize,measurableSize);
+	//multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_load, tmp_dir, out_load, measurableSize);
 	cudaMemcpy(tmp_load, out_load, measurableSize*sizeof(int), cudaMemcpyDeviceToDevice);
+	//cout<<workerSize<<","<<sensorSize<<endl;
 
 	// out_load must have the result for load
 	int2bool_kernel<<<(measurableSize+255)/256,256>>>(dev_load, tmp_load, measurableSize);
 
 	//cudaMemset(out_signal, 0, size*sizeof(int));
-	multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_signal, tmp_dir, out_signal, measurableSize);
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(int)>>>(dev_worker,tmp_signal,out_signal,workerSize,measurableSize);
+	//multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_signal, tmp_dir, out_signal, measurableSize);
 	cudaMemcpy(tmp_signal, out_signal, measurableSize*sizeof(int), cudaMemcpyDeviceToDevice);
 
 	// out_signal must have the result for signal
@@ -384,20 +386,6 @@ void Agent::setSignal(vector<bool> observe){//this is where data comes in in eve
 	cudaMemcpy(dev_observe,Gobserve,measurableSize*sizeof(bool),cudaMemcpyHostToDevice);
 }
 
-/*void Agent::update_weights(){
-	if(type==Agent::EMPIRICAL){
-		update_weights_kernel_empirical<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
-	}
-	else if(type==Agent::DISTRIBUTED){
-		cudaMemset(dev_sensor_value,0.0,measurableSize*sizeof(float));
-		calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,workerSize);
-		update_weights_kernel_distributed<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,sensorSize,worker::t);
-	}
-	else if(type==Agent::DISCOUNTED){
-		update_weights_kernel_discounted<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
-	}
-	worker::add_time();
-}*/
 void Agent::update_weights(){}
 
 void Agent_Empirical::update_weights(){
