@@ -23,12 +23,10 @@ protected:
 	bool *Gsignal,*dev_signal,*Gload,*dev_load;//signal and load variable in propagate
 	bool *Gcurrent,*dev_current;//current in python
 	bool *Gmask,*dev_mask;//bool value for mask signal in halucinate
-	int *tmp_signal,*tmp_load;//tmp variable for dfs on GPU, those two variable are mainly used in bool2int and int2bool, which are tricky ways to mark 'visited' in dfs
 	int *dev_scan;
-	int *tmp_weight;
 	// need to add temp_dir for matrix multiplication
-	int *tmp_dir;
-	int *out_signal, *out_load;
+	bool *out_signal, *out_load;
+	bool *dev_affected_worker;
 	worker *Gworker,*dev_worker;
 	float *dev_sensor_value;
 	//variables used in kernel.cu

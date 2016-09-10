@@ -217,21 +217,21 @@ __global__ void orient_all_kernel(worker *workers,int size){
 	}
 }
 
-__global__ void multiply_kernel(worker *worker,int *input,int *output,int size,int measurableSize){
+__global__ void multiply_kernel(worker *worker,bool *data,bool *affected_worker,int size,int measurableSize){
 	int index=threadIdx.x;
-	extern __shared__ int shared[];
-	int *xs=&shared[0];
-	int *ys=&shared[measurableSize];
+	extern __shared__ bool shared[];
+	bool *xs=&shared[0];
+	bool *ys=&shared[measurableSize];
 	__shared__ bool flag[1];
 	int x,y;
 	int j=index;
 	while(j<size){
 		x=worker[j].sensor_id2;
 		y=worker[j].sensor_id1;
-		xs[2*x]=input[2*x];xs[2*x+1]=input[2*x+1];
-		xs[2*y]=input[2*y];xs[2*y+1]=input[2*y+1];
-		ys[2*x]=input[2*x];ys[2*x+1]=input[2*x+1];
-		ys[2*y]=input[2*y];ys[2*y+1]=input[2*y+1];
+		xs[2*x]=data[2*x];xs[2*x+1]=data[2*x+1];
+		xs[2*y]=data[2*y];xs[2*y+1]=data[2*y+1];
+		ys[2*x]=data[2*x];ys[2*x+1]=data[2*x+1];
+		ys[2*y]=data[2*y];ys[2*y+1]=data[2*y+1];
 		j+=512;
 	}
 	flag[0]=true;
@@ -275,59 +275,10 @@ __global__ void multiply_kernel(worker *worker,int *input,int *output,int size,i
 	while(j<size){
 		x=worker[j].sensor_id2;
 		y=worker[j].sensor_id1;
-		output[2*x]=ys[2*x];output[2*x+1]=ys[2*x+1];
-		output[2*y]=ys[2*y];output[2*y+1]=ys[2*y+1];
+		data[2*x]=ys[2*x];data[2*x+1]=ys[2*x+1];
+		data[2*y]=ys[2*y];data[2*y+1]=ys[2*y+1];
+		if(ys[2*x]||ys[2*x+1]||ys[2*y]||ys[2*y+1]) affected_worker[j]=true;
 		j+=512;
-	}
-}
-
-
-// this is a standard implementation of matrix and vector multiplication 
-__global__ void multiply_kernel(int *x, int *dir, int *y,int size){//dfs
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	extern __shared__ int shared[];
-	int *xs=&shared[0];
-	int *ys=&shared[size];
-	__shared__ bool flag[1];
-	int j=index;
-	// matrix multiplication variable
-	while(j<size) {
-		xs[j]=x[j];
-		ys[j]=x[j];
-		j+=1024;
-	}
-	flag[0]=true;
-	__syncthreads();
-	while(flag[0]){
-		flag[0]=false;
-		__syncthreads();
-		j=index;
-		while(j<size){
-			if(xs[j]==1){
-				j+=1024;
-				continue;
-			}
-			for(int i=0;i<size;++i){
-				if(dir[(i*size)+j]&xs[i]==1){
-					ys[j]=1;
-					flag[0]=true;
-					break;
-				}
-			}
-			j+=1024;
-		}
-		__syncthreads();
-		j=index;
-		while(j<size){
-			xs[j]=ys[j];
-			j+=1024;
-		}
-		__syncthreads();
-	}
-	j=index;
-	while(j<size){
-		y[j]=ys[j];
-		j+=1024;
 	}
 }
 
@@ -348,29 +299,11 @@ __global__ void mask_kernel(bool *mask,int *actionlist,int size){
 //before invoke this function make sure dev_load and dev_signal have correct data
 //the computed data will be in dev_load
 void Agent::propagate_GPU(){//propagate
-	bool2int_kernel<<<(measurableSize+255)/256,256>>>(tmp_load,dev_load,measurableSize);
-	bool2int_kernel<<<(measurableSize+255)/256,256>>>(tmp_signal,dev_signal,measurableSize);
+	cudaMemset(dev_affected_worker,0,workerSize*sizeof(bool));
 
-	// not copy the matrix
-	// find a different way
-	// THIS IS FOR LATER USE
-	//bool2int_kernel<<<(measurableSize*measurableSize+255)/256,256>>>(tmp_dir, dev_dir, measurableSize*measurableSize);
-	
-	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(int)>>>(dev_worker,tmp_load,out_load,workerSize,measurableSize);
-	//multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_load, tmp_dir, out_load, measurableSize);
-	cudaMemcpy(tmp_load, out_load, measurableSize*sizeof(int), cudaMemcpyDeviceToDevice);
-	//cout<<workerSize<<","<<sensorSize<<endl;
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_load,dev_affected_worker,workerSize,measurableSize);
 
-	// out_load must have the result for load
-	int2bool_kernel<<<(measurableSize+255)/256,256>>>(dev_load, tmp_load, measurableSize);
-
-	//cudaMemset(out_signal, 0, size*sizeof(int));
-	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(int)>>>(dev_worker,tmp_signal,out_signal,workerSize,measurableSize);
-	//multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(int)>>>(tmp_signal, tmp_dir, out_signal, measurableSize);
-	cudaMemcpy(tmp_signal, out_signal, measurableSize*sizeof(int), cudaMemcpyDeviceToDevice);
-
-	// out_signal must have the result for signal
-	int2bool_kernel<<<(measurableSize+255)/256, 256>>>(dev_signal, tmp_signal, measurableSize);
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_signal,dev_affected_worker,workerSize,measurableSize);
 
 	// standard operations
 	disjunction_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
@@ -466,21 +399,18 @@ void Agent::freeData(){//free data in case of memory leak
 	cudaFree(dev_dfs);
 	cudaFree(dev_signal);
 	cudaFree(dev_load);
-	cudaFree(tmp_signal);
-	cudaFree(tmp_load);
 	
-	// cudaFree(tmp_dir)
-	cudaFree(tmp_dir);
 	cudaFree(out_load);
 	cudaFree(out_signal);
 
 	cudaFree(dev_scan);
-	cudaFree(tmp_weight);
 
 	cudaFree(dev_mask);
 	cudaFree(dev_current);
 
 	cudaFree(dev_sensor_value);
+
+	cudaFree(dev_affected_worker);
 }
 
 void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key,vector<int> context_value,
@@ -526,10 +456,6 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	cudaMalloc(&dev_worker,workerSize*sizeof(worker));
 	cudaMemcpy(dev_worker,Gworker,workerSize*sizeof(worker),cudaMemcpyHostToDevice);
 
-	// cudaMalloc tmp_dir
-	cudaMalloc(&tmp_dir, measurableSize*measurableSize*sizeof(int));
-	cudaMalloc(&tmp_signal,measurableSize*sizeof(int));
-	cudaMalloc(&tmp_load,measurableSize*sizeof(int));
 	cudaMalloc(&out_signal, measurableSize*sizeof(int));
 	cudaMalloc(&out_load, measurableSize*sizeof(int));
 
@@ -537,7 +463,8 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	cudaMalloc(&dev_current,measurableSize*sizeof(bool));
 
 	cudaMalloc(&dev_scan,measurableSize*sizeof(int));
-	cudaMalloc(&tmp_weight,measurableSize*sizeof(int));
+
+	cudaMalloc(&dev_affected_worker,workerSize*sizeof(bool));
 
 	// we need to make diagonals of Gdir = 1, true
 	for(int i=0;i<measurableSize;++i){
