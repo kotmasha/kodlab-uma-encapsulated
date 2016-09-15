@@ -230,8 +230,7 @@ def start_experiment(stdscr):
     #Update BOB_REPELLER by upwards-closing it under ALICE and turn
     #  BOB_REPELLER into an ALICE signal, denoted $SIGB$
     #  the contents of $discard$ will not be used at this point.
-    #SIGB,discard=ALICE.brain.up(Signal([(True if (ind in [ALICE._NAME_TO_NUM[item] for item in BOB_REPELLER]) else False) for ind in xrange(ALICE._SIZE)]))
-    SIGB,discard=ALICE.brain.up(Signal([(item._NAME in BOB_REPELLER) for item in ALICE._SENSORS]))
+    SIGB=ALICE.brain.up(Signal([(item._NAME in BOB_REPELLER) for item in ALICE._SENSORS]))
 
 
     ## Forming contextual sensors for BOB's actions

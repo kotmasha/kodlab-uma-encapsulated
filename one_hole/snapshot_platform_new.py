@@ -300,7 +300,7 @@ class Experiment(object):
               #   representing the workers which were involved in generating
               #   this prediction
               agent.set_projected(projected_signal)
-              agent.set_touched(touched_workers)
+              #agent.set_touched(touched_workers)
               
               decision.extend(dec)
 
@@ -350,7 +350,7 @@ class Agent(object):
             #ADDED this list will be updated each tick of the clock, and will
             #   contain [pointers to the] workers "touched" in the process
             #   of obtaining the most recent decision
-            self._TOUCHED=np.array([[False]],dtype=np.bool)
+            #self._TOUCHED=np.array([[False]],dtype=np.bool)
                   
       def __repr__(self):
             return 'The snapshot '+str(self._NAME)+' has '+str(self._SIZE/2)+' sensors:\n\n'+str([meas._NAME for ind,meas in enumerate(self._SENSORS) if ind%2==0])+'\nout of which the following are actions:\n'+str([self._SENSORS[ind]._NAME for ind in self._ACTIONS])+'\n\n'
@@ -408,10 +408,10 @@ class Agent(object):
             return Signal([item.projected(self) for item in self._SENSORS])
 
       #ADDED set/return the list of most recently "touched" workers
-      def set_touched(self,touched_matrix):
-            self._TOUCHED=np.copy(touched_matrix)
-      def touched(self):
-            return self._TOUCHED
+      #def set_touched(self,touched_matrix):
+      #      self._TOUCHED=np.copy(touched_matrix)
+      #def touched(self):
+      #      return self._TOUCHED
 
       #ADDED a function to return the value of self._CURRENT
       #---> Siqi, is self._CURRENT somehow updated on your ("brain") side of

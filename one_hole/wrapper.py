@@ -44,9 +44,9 @@ class wrapper:
 
     def up(self,sig):
         self.brain.up_GPU(sig._VAL.tolist())
-        SIGB=self.brain.getSignal()
-        discard=self.brain.getAffectedWorkers()
-        return snapshot_platform_new.Signal(SIGB),snapshot_platform_new.Signal(discard)
+        sig_up=self.brain.getSignal()
+        #affected_workers=self.brain.getAffectedWorkers()
+        return snapshot_platform_new.Signal(sig_up)#,snapshot_platform_new.Signal(affected_workers)
 
     def getValue(self):
         self.agent._CURRENT=self.brain.getCurrent()
