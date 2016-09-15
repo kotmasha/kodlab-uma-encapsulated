@@ -1341,6 +1341,9 @@ class Agent(_object):
     def propagate_GPU(self):
         return _UMA_NEW.Agent_propagate_GPU(self)
 
+    def up_GPU(self, signal):
+        return _UMA_NEW.Agent_up_GPU(self, signal)
+
     def halucinate_GPU(self, actions_list):
         return _UMA_NEW.Agent_halucinate_GPU(self, actions_list)
 
@@ -1352,6 +1355,9 @@ class Agent(_object):
 
     def getCurrent(self):
         return _UMA_NEW.Agent_getCurrent(self)
+
+    def getSignal(self):
+        return _UMA_NEW.Agent_getSignal(self)
 
     def getLoad(self):
         return _UMA_NEW.Agent_getLoad(self)

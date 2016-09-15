@@ -57,11 +57,11 @@ class icomplex(object):
     #def __coerce__(self,other):
     #    return complex(self.real,self.imag),complex(other)
 
-nulik=icomplex(0,0)
-up=icomplex(0,1)
-down=icomplex(0,-1)
-right=icomplex(1,0)
-left=icomplex(-1,0)
+_nulik=icomplex(0,0)
+_up=icomplex(0,1)
+_down=icomplex(0,-1)
+_right=icomplex(1,0)
+_left=icomplex(-1,0)
 #origin=icomplex(0,0)
 
 
@@ -76,7 +76,7 @@ def start_experiment(stdscr):
     #
     X_BOUND=20 #grid size
     Y_BOUND=20
-    THRESHOLD=1./(1+(X_BOUND+1)*(Y_BOUND+1.)) #learning threshold for ALICE and BOB
+    THRESHOLD=1./(1+max(X_BOUND,Y_BOUND)) #learning threshold for ALICE and BOB
     in_bounds=lambda pos: pos.real>=0 and pos.real<=X_BOUND and pos.imag>=0 and pos.imag<=Y_BOUND
     #
     HOLE_LEFT=X_BOUND/4+randint(0,X_BOUND/4) #hole size and location
@@ -137,12 +137,12 @@ def start_experiment(stdscr):
 
     ### introduce agent's position, 'pos' (an icomplex object):
     def motion(state):
-        triggers={'rt':rt,'lt':lt,'up':up,'dn':dn}
-        diff=nulik
+        triggers={'rt':_right,'lt':_left,'up':_up,'dn':_down}
+        diff=_nulik
         for t in triggers:
-            diff+=state[t][0]*triggers(t)
+            diff+=triggers[t]*int(state[t][0])
         newpos=state['pos'][0]+diff
-        if in_bounds(newpos) and not in_hole(new_pos):
+        if in_bounds(newpos) and not in_hole(newpos):
             return newpos
         else:
             return state['pos'][0]
@@ -217,33 +217,28 @@ def start_experiment(stdscr):
     ### Censor (BOB)
     #
     ## add description of hole to BOB
-    BOB_REPELLER={'x'+str(HOLE_RIGHT),
+    BOB_REPELLER=['x'+str(HOLE_RIGHT),
               name_comp('x'+str(HOLE_LEFT)),
               'y'+str(HOLE_UP),
               name_comp('y'+str(HOLE_DOWN)),
-    }
-    ## add the relevant sensors to BOB...
-    #    (had to add method "take_sensor" to platform file)
-    for name in BOB_REPELLER:
-        BOB.take_sensor(ALICE,name)
-
+    ]
     #Update BOB_REPELLER by upwards-closing it under ALICE and turn
     #  BOB_REPELLER into an ALICE signal, denoted $SIGB$
     #  the contents of $discard$ will not be used at this point.
     SIGB=ALICE.brain.up(Signal([(item._NAME in BOB_REPELLER) for item in ALICE._SENSORS]))
+    BOB_REPELLER=[ALICE._SENSORS[ind]._NAME for ind,tag in enumerate(SIGB.value_all()) if tag]
 
-
-    ## Forming contextual sensors for BOB's actions
-    for tmp_name in (sens._NAME for ind,sens in enumerate(BOB._SENSORS) if ind not in BOB._ACTIONS): # listing the sensors BOB inherited from ALICE
-        EX.new_sensor([BOB],tmp_name,xsensor(ind))
-        EX.twedge([BOB],'rt',tmp_name)
-        EX.twedge([BOB],name_comp('rt'),tmp_name)
-        EX.twedge([BOB],'lt',tmp_name)
-        EX.twedge([BOB],name_comp('lt'),tmp_name)
-        EX.twedge([BOB],'up',tmp_name)
-        EX.twedge([BOB],name_comp('up'),tmp_name)
-        EX.twedge([BOB],'dn',tmp_name)
-        EX.twedge([BOB],name_comp('dn'),tmp_name)
+    ## add the relevant sensors to BOB...
+    #    (had to add method "take_sensor" to platform file)
+    for name in BOB_REPELLER:
+        BOB.take_sensor(ALICE,name)
+        ## Forming contextual sensors for BOB's actions
+        for act in ['rt','rt*','lt','lt*','up','up*','dn','dn*']:
+            try:
+                BOB.take_sensor(ALICE,wedge(act,name))
+            except:
+                pass
+            
 
     ## If Alice predicts a decrease of the distance from the current state
     #  to the hole...
@@ -254,13 +249,13 @@ def start_experiment(stdscr):
     #ADDED now the following two functions are well-formed, which completes
     #   the construction of BOB.
     def dist_to_hole(state):
-        return sum(SIGB.intersect(ALICE.current().star()))
+        return sum(SIGB.intersect(ALICE.current().star()).value_all())
         
     INIT=dist_to_hole(EX.state_all())
     EX.add_measurable('dist_to_hole',[INIT,INIT],dist_to_hole)
         
     def projected_dist_to_hole(state):
-        return sum(SIGB.intersect(ALICE.projected()).star())
+        return sum(SIGB.intersect(ALICE.projected().star()).value_all())
         # We assume here that ALICE has made her decision. Therefore, in
         #    the "moment" between ALICE having made hers and BOB beginning
         #    to work on his, information ABOUT THE PROJECTED CONSEQUENCES OF
@@ -281,7 +276,7 @@ def start_experiment(stdscr):
 
     # Construct BOB's target sensor
     # This is the simplest, most naive version of BOB
-    EX.new_sensor([BOB],'evB',distB(0))
+    EX.new_sensor([BOB],'evB',distB(1))
     BOB.add_eval(name_comp('evB'))
 
     ### Initialize BOB on GPU
@@ -293,7 +288,7 @@ def start_experiment(stdscr):
     # prepare windows for output
     curses.curs_set(0)
     stdscr.erase()
-    WIN=curses.newwin(Y_BOUND+3,X_BOUND+3,6,7)
+    WIN=curses.newwin(Y_BOUND+3,X_BOUND+3,8,7)
     stdscr.nodelay(1)
     WIN.border(int(35),int(35),int(35),int(35),int(35),int(35),int(35),int(35))
     WIN.bkgdset(int(46))
@@ -311,8 +306,8 @@ def start_experiment(stdscr):
         stdscr.noutrefresh()
         WIN.clear()
         WIN.addstr(0,0,str(counter))
-        WIN.addch(Y_BOUND+1-Y_PLAY,1+X_PLAY,int(84)) # print target (playground)
-        WIN.addch(Y_BOUND+1-EX.state('pos')[0].imag,1+EX.state('pos')[0].real,int(83)) # print sniffy's position
+        WIN.addch(Y_BOUND+1-TARGET.imag,1+TARGET.real,int(84)) # print target 
+        WIN.addch(Y_BOUND+1-EX.state('pos')[0].imag,1+EX.state('pos')[0].real,int(83)) # print agent's position
         for x in xrange(HOLE_LEFT,HOLE_RIGHT): # print position of hole
             for y in xrange(HOLE_DOWN,HOLE_UP):
                 WIN.addch(Y_BOUND+1-y,1+x,int(67))
@@ -320,9 +315,12 @@ def start_experiment(stdscr):
         WIN.noutrefresh()
         curses.doupdate()
 
+    count=0
     while stdscr.getch()!=int(32):
+        message='RUNNING:\n'+EX.tick('decide','ordered')
         print_state(count,message)
-        message='RUNNING: '+EX.tick('decide','ordered')
+        while stdscr.getch() not in {int(61),int(32)}:
+            pass
         count+=1
     
 curses.wrapper(start_experiment)

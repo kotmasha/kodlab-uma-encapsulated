@@ -49,12 +49,12 @@ class wrapper:
         return snapshot_platform_new.Signal(sig_up)#,snapshot_platform_new.Signal(affected_workers)
 
     def getValue(self):
-        self.agent._CURRENT=self.brain.getCurrent()
+        self.agent._CURRENT=snapshot_platform_new.Signal(self.brain.getCurrent())
         decision=self.brain.getDecision()
         message=self.brain.getMessage()
         projected_signal=self.brain.selected_projected_signal
-        touched_workers=self.brain.selected_touched_workers
-        return decision,projected_signal,touched_workers,message 
+        #touched_workers=self.brain.selected_touched_workers
+        return decision,projected_signal,message#,touched_workers,message 
 
     def get_log_update_weight(self):
         n=self.brain.get_n_update_weight()

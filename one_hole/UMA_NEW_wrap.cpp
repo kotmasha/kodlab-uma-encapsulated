@@ -26857,6 +26857,38 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Agent_up_GPU(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Agent *arg1 = (Agent *) 0 ;
+  std::vector< bool > arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Agent_up_GPU",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_Agent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Agent_up_GPU" "', argument " "1"" of type '" "Agent *""'"); 
+  }
+  arg1 = reinterpret_cast< Agent * >(argp1);
+  {
+    std::vector<bool,std::allocator< bool > > *ptr = (std::vector<bool,std::allocator< bool > > *)0;
+    int res = swig::asptr(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Agent_up_GPU" "', argument " "2"" of type '" "std::vector< bool >""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  (arg1)->up_GPU(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Agent_halucinate_GPU(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   Agent *arg1 = (Agent *) 0 ;
@@ -26969,6 +27001,28 @@ SWIGINTERN PyObject *_wrap_Agent_getCurrent(PyObject *SWIGUNUSEDPARM(self), PyOb
   }
   arg1 = reinterpret_cast< Agent * >(argp1);
   result = (arg1)->getCurrent();
+  resultobj = swig::from(static_cast< std::vector<bool,std::allocator< bool > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Agent_getSignal(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Agent *arg1 = (Agent *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< bool > result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Agent_getSignal",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_Agent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Agent_getSignal" "', argument " "1"" of type '" "Agent *""'"); 
+  }
+  arg1 = reinterpret_cast< Agent * >(argp1);
+  result = (arg1)->getSignal();
   resultobj = swig::from(static_cast< std::vector<bool,std::allocator< bool > > >(result));
   return resultobj;
 fail:
@@ -29175,10 +29229,12 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Agent_update_weights", _wrap_Agent_update_weights, METH_VARARGS, NULL},
 	 { (char *)"Agent_update_state_GPU", _wrap_Agent_update_state_GPU, METH_VARARGS, NULL},
 	 { (char *)"Agent_propagate_GPU", _wrap_Agent_propagate_GPU, METH_VARARGS, NULL},
+	 { (char *)"Agent_up_GPU", _wrap_Agent_up_GPU, METH_VARARGS, NULL},
 	 { (char *)"Agent_halucinate_GPU", _wrap_Agent_halucinate_GPU, METH_VARARGS, NULL},
 	 { (char *)"Agent_initMask", _wrap_Agent_initMask, METH_VARARGS, NULL},
 	 { (char *)"Agent_setSignal", _wrap_Agent_setSignal, METH_VARARGS, NULL},
 	 { (char *)"Agent_getCurrent", _wrap_Agent_getCurrent, METH_VARARGS, NULL},
+	 { (char *)"Agent_getSignal", _wrap_Agent_getSignal, METH_VARARGS, NULL},
 	 { (char *)"Agent_getLoad", _wrap_Agent_getLoad, METH_VARARGS, NULL},
 	 { (char *)"Agent_getAffectedWorkers", _wrap_Agent_getAffectedWorkers, METH_VARARGS, NULL},
 	 { (char *)"Agent_getDir", _wrap_Agent_getDir, METH_VARARGS, NULL},

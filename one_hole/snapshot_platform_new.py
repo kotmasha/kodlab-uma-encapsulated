@@ -86,6 +86,9 @@ class Signal(object):
       def value(self,ind):
             return self._VAL[ind]
 
+      def value_all(self):
+            return self._VAL
+
       def extend(self,value):
             if len(value)%2==0 and type(value)==type(self._VAL):
                   self._VAL=np.array(list(self._VAL)+list(value))
@@ -259,6 +262,8 @@ class Experiment(object):
             ### add the sensor to the agents
             for agent in agent_list:
                   agent.add_sensor(name,new_meas,new_meas_comp,definition==None)
+                  new_meas.set_projected(agent,False)
+                  new_meas_comp.set_projected(agent,False)
 
             ### return the new pair of measurables
             return new_meas,new_meas_comp
@@ -281,6 +286,7 @@ class Experiment(object):
       ### have agents decide what to do, then collect their decisions and update the measurables.
       def tick(self,mode,param):
           decision=[]
+          message_all=''
           for agent in self._AGENTS:
               for ind in xrange(agent._SIZE):
                   agent._OBSERVE.set(ind,agent._SENSORS[ind].val()[0])
@@ -294,7 +300,8 @@ class Experiment(object):
               #      decision $dec$;
               #-  $touched_workers$ is the list of workers "touched" during
               #      the same propagation (halucination) run.
-              dec,projected_signal,touched_workers,message=agent.brain.getValue()
+              dec,projected_signal,message=agent.brain.getValue()
+              #dec,projected_signal,touched_workers,message=agent.brain.getValue()
               #ADDED now the agent updates its predicted values for the
               #   measurables associated with its sensors and a Boolean matric
               #   representing the workers which were involved in generating
@@ -303,9 +310,10 @@ class Experiment(object):
               #agent.set_touched(touched_workers)
               
               decision.extend(dec)
-
+              message_all+=('\t'+agent._NAME+':\t'+message+'\n')
+              
           self.update_state([(meas._NAME in decision) for meas in self._CONTROL])
-          return message
+          return message_all
 
 
 #ADDED method self.projected() returning the signal currently projected by the
