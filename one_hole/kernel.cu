@@ -297,6 +297,16 @@ __global__ void mask_kernel(bool *mask,int *actionlist,int size){
 	}
 }
 
+void Agent::up_GPU(vector<bool> signal){
+	for(int i=0;i<measurableSize;++i) Gsignal[i]=signal[i];
+	cudaMemcpy(dev_signal,Gsignal,measurableSize*sizeof(bool),cudaMemcpyHostToDevice);
+	cudaMemset(dev_affected_worker,0,workerSize*sizeof(bool));
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_signal,dev_affected_worker,workerSize,measurableSize);
+
+	cudaMemcpy(Gsignal,dev_signal,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
+	cudaMemcpy(Gaffected_worker,dev_affected_worker,workerSize*sizeof(bool),cudaMemcpyDeviceToHost);
+}
+
 //before invoke this function make sure dev_load and dev_signal have correct data
 //the computed data will be in dev_load
 void Agent::propagate_GPU(){//propagate

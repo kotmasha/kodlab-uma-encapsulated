@@ -171,6 +171,14 @@ vector<bool> Agent::getCurrent(){
 	return result;
 }
 
+vector<bool> Agent::getSignal(){
+	vector<bool> result;
+	for(int i=0;i<measurableSize;++i){
+		result.push_back(Gsignal[i]);
+	}
+	return result;
+}
+
 vector<bool> Agent::getLoad(){
 	vector<bool> result;
 	for(int i=0;i<measurableSize;++i){

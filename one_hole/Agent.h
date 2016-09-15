@@ -67,10 +67,12 @@ public:
 	virtual void update_weights();
 	void update_state_GPU(bool mode);
 	void propagate_GPU();
+	void up_GPU(vector<bool> signal);
 	void halucinate_GPU(vector<int> actions_list);
 	vector<bool> initMask(vector<int> actions_list);
 	void setSignal(vector<bool> observe);
 	vector<bool> getCurrent();
+	vector<bool> getSignal();
 	vector<bool> getLoad();
 	vector<bool> getAffectedWorkers();
 	vector<vector<bool> > getDir();

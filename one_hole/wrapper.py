@@ -1,4 +1,4 @@
-from snapshot_platform_new import *
+import snapshot_platform_new
 import atexit
 import UMA_NEW
 
@@ -41,6 +41,12 @@ class wrapper:
             self.brain.decide(mode,param,'')
         else:
             self.brain.decide(mode,[],param)
+
+    def up(self,sig):
+        self.brain.up_GPU(sig._VAL.tolist())
+        SIGB=self.brain.getSignal()
+        discard=self.brain.getAffectedWorkers()
+        return snapshot_platform_new.Signal(SIGB),snapshot_platform_new.Signal(discard)
 
     def getValue(self):
         self.agent._CURRENT=self.brain.getCurrent()
