@@ -8,8 +8,6 @@ class worker{
 public:
 	worker();
 	worker(string sensor_name1,string sensor_name2,int sensor_id1,int sensor_id2);
-	static void add_time();
-	static void reset_time();
 
 public:
 	string sensor_name1,sensor_name2;
@@ -20,7 +18,6 @@ public:
 	double threshold;
 	double epsilon;
 	double q;
-	static int t;
 };
 
 #endif

@@ -4,10 +4,19 @@
 ----------------Agent Base Class-------------------
 */
 
-Agent::Agent(int type,double threshold){
+Agent::Agent(int type,double threshold,bool using_worker){
 	Gdir=NULL;
 	this->type=type;
 	this->threshold=threshold;
+	this->is_worker_solution=using_worker;
+	t_halucinate=0;
+	t_orient_all=0;
+	t_propagation=0;
+	t_update_weight=0;
+	n_halucinate=0;
+	n_orient_all=0;
+	n_propagation=0;
+	n_update_weight=0;
 }
 
 Agent::~Agent(){}
@@ -18,6 +27,9 @@ static int randInt(int n){
 
 void Agent::decide(string mode,vector<int> param1,string param2){//the decide function
 	update_state_GPU(mode=="decide");
+	
+	projected_signal.clear();
+	touched_workers.clear();
 	if(mode=="execute"){
 		if(checkParam(param1)){
 			decision=translate(param1);
@@ -46,14 +58,24 @@ void Agent::decide(string mode,vector<int> param1,string param2){//the decide fu
 					}
 				}
 				if(!best_responses.empty()){
-					decision=translate(generalized_actions[best_responses[randInt(best_responses.size())]]);
+					int randIndex=randInt(best_responses.size());
+					decision=translate(generalized_actions[best_responses[randIndex]]);
 					message=evals_names[i]+", ";
+					
+					selected_projected_signal=projected_signal[randIndex];
+					selected_touched_workers=touched_workers[randIndex];
+
 					for(int i=0;i<decision.size();++i) message+=(decision[i]+" ");	
+					break;
 				}
 			}
 			if(best_responses.empty()){
-				decision=translate(generalized_actions[randInt(generalized_actions.size())]);
+				int randIndex=randInt(generalized_actions.size());
+				decision=translate(generalized_actions[randIndex]);
 				message="random";
+
+				selected_projected_signal=projected_signal[randIndex];
+				selected_touched_workers=touched_workers[randIndex];
 			}
 		}
 		else if(checkParam(param2)){
@@ -69,14 +91,21 @@ void Agent::decide(string mode,vector<int> param1,string param2){//the decide fu
 			}
 			
 			if(!best_responses.empty()){
-				decision=translate(generalized_actions[best_responses[randInt(best_responses.size())]]);
+				int randIndex=randInt(best_responses.size());
+				decision=translate(generalized_actions[best_responses[randIndex]]);
 				message=param2+", ";
 				for(int i=0;i<decision.size();++i) message+=(decision[i]+" ");
-				
+
+				selected_projected_signal=projected_signal[randIndex];
+				selected_touched_workers=touched_workers[randIndex];
 			}
 			else{
-				decision=translate(generalized_actions[randInt(generalized_actions.size())]);
+				int randIndex=randInt(generalized_actions.size());
+				decision=translate(generalized_actions[randIndex]);
 				message=param2+", random";
+
+				selected_projected_signal=projected_signal[randIndex];
+				selected_touched_workers=touched_workers[randIndex];
 			}
 		}
 		else{
@@ -136,7 +165,131 @@ vector<bool> Agent::initMask(vector<int> actions_list){
 
 vector<bool> Agent::halucinate(vector<int> action_list){//halucinate
 	halucinate_GPU(action_list);
+	projected_signal.push_back(this->getLoad());
+	touched_workers.push_back(this->getAffectedWorkers());
 	return this->getLoad();
+}
+
+void Agent::appendSensor(int id1, int id2, vector<vector<double> > &data, bool merge){
+	vector<double> tmp,tmp_c;
+	double w12=data[2*id2][2*id1],w_12=data[2*id2][2*id1+1];
+	double w1_2=data[2*id2+1][2*id1],w_1_2=data[2*id2+1][2*id1+1];
+	for(int i=0;i<data.back().size();++i){
+		if(i==id1*2||i==id2*2) tmp.push_back(w12);
+		else if(i==id1*2+1||i==id2*2+1) tmp.push_back(0);
+		else if(i%2==0) tmp.push_back(w12*data[i][i]);
+		else tmp.push_back(w12*(1-data[i-1][i-1]));
+	}
+	tmp.push_back(tmp[0]+tmp[1]);
+	data.push_back(tmp);
+
+	for(int i=0;i<data.back().size();++i){
+		if(i==id1*2) tmp_c.push_back(w1_2);
+		else if(i==id2*2) tmp_c.push_back(w_12);
+		else if(i==id1*2+1) tmp_c.push_back(w_12+w_1_2);
+		else if(i==id2*2+1) tmp_c.push_back(w1_2+w_1_2);
+		else if(i%2==0) tmp_c.push_back((1-w12)*data[i][i]);
+		else tmp_c.push_back((1-w12)*(1-data[i-1][i-1]));
+	}
+	tmp_c.push_back(tmp_c[0]+tmp_c[1]);
+	data.push_back(tmp_c);
+
+	if(!merge){
+		data.pop_back();
+		data.pop_back();
+		for(int i=0;i<tmp.size()-3;++i){
+			data[data.size()-2][i]=tmp[i];
+			data.back()[i]=tmp_c[i];
+		}
+		data[data.size()-2].back()=tmp.back();
+		data.back().back()=tmp_c.back();
+	}
+}
+
+void Agent::addSensor(vector<int> &list, vector<vector<double> > &data){
+	if(list.size()<2) return;//if list size is not larger than 1, return
+	appendSensor(list[0],list[1],data,true);
+	//end for two
+	for(int i=2;i<list.size();++i){
+		appendSensor(data.size()/2,list[i],data,false);
+	}
+}
+
+void Agent::addSensors(vector<vector<int> > &list){
+	vector<vector<double> > data=getVectorWeight();
+	for(int i=0;i<list.size();++i){
+		addSensor(list[i],data);
+	}
+	copyNewSensorToDevice(data);
+}
+
+//those three functions down there are get functions for the variable in C++
+vector<bool> Agent::getCurrent(){
+	vector<bool> result;
+	for(int i=0;i<measurableSize;++i){
+		result.push_back(Gcurrent[i]);
+	}
+	return result;
+}
+
+vector<bool> Agent::getSignal(){
+	vector<bool> result;
+	for(int i=0;i<measurableSize;++i){
+		result.push_back(Gsignal[i]);
+	}
+	return result;
+}
+
+vector<bool> Agent::getLoad(){
+	vector<bool> result;
+	for(int i=0;i<measurableSize;++i){
+		result.push_back(Gload[i]);
+	}
+	return result;
+}
+
+vector<bool> Agent::getAffectedWorkers(){
+	vector<bool> result;
+	for(int i=0;i<workerSize;++i){
+		result.push_back(Gaffected_worker[i]);
+	}
+	return result;
+}
+
+vector<vector<bool> > Agent::getDir(){
+	vector<vector<bool> > result;
+	for(int i=0;i<measurableSize;++i){
+		vector<bool> tmp;
+		for(int j=0;j<measurableSize;++j){
+			tmp.push_back(Gdir[i*measurableSize+j]);
+		}
+		result.push_back(tmp);
+	}
+	return result;
+}
+
+int Agent::get_n_update_weight(){
+	return n_update_weight;
+}
+
+int Agent::get_n_orient_all(){
+	return n_orient_all;
+}
+
+int Agent::get_n_propagation(){
+	return n_propagation;
+}
+
+float Agent::get_t_update_weight(){
+	return t_update_weight;
+}
+
+float Agent::get_t_orient_all(){
+	return t_orient_all;
+}
+
+float Agent::get_t_propagation(){
+	return t_propagation;
 }
 
 /*
@@ -147,7 +300,7 @@ vector<bool> Agent::halucinate(vector<int> action_list){//halucinate
 ----------------Agent_Empirical Class-------------------
 */
 
-Agent_Empirical::Agent_Empirical(double threshold):Agent(EMPIRICAL,threshold){
+Agent_Empirical::Agent_Empirical(double threshold,bool using_worker):Agent(EMPIRICAL,threshold,using_worker){
 }
 
 Agent_Empirical::~Agent_Empirical(){
@@ -161,7 +314,7 @@ Agent_Empirical::~Agent_Empirical(){
 ----------------Agent_Distributed Class-------------------
 */
 
-Agent_Distributed::Agent_Distributed(double threshold):Agent(DISTRIBUTED,threshold){
+Agent_Distributed::Agent_Distributed(double threshold,bool using_worker):Agent(DISTRIBUTED,threshold,using_worker){
 
 }
 
@@ -177,7 +330,7 @@ Agent_Distributed::~Agent_Distributed(){}
 ----------------Agent_Discounted Class-------------------
 */
 
-Agent_Discounted::Agent_Discounted(double threshold,double q):Agent(DISCOUNTED,threshold){
+Agent_Discounted::Agent_Discounted(double threshold,double q,bool using_worker):Agent(DISCOUNTED,threshold,using_worker){
 	this->q=q;
 }
 

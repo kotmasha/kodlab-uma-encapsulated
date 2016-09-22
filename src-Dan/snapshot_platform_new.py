@@ -86,6 +86,9 @@ class Signal(object):
       def value(self,ind):
             return self._VAL[ind]
 
+      def value_all(self):
+            return self._VAL
+
       def extend(self,value):
             if len(value)%2==0 and type(value)==type(self._VAL):
                   self._VAL=np.array(list(self._VAL)+list(value))
@@ -110,7 +113,10 @@ class Signal(object):
       def intersect(self,other):
             return Signal(conjunction(self._VAL,other._VAL))
 
-
+#ADDED the field self._PROJECTED to all measurables (default value is None),
+#   the value of this fields is Boolean.
+#ADDED methods self.set_projected(value) and self.projected() to set and report
+#   the value of this field, respectively.
 class Measurable(object):
       ### initialize a measurable
       def __init__(self,name,experiment,value,definition=None):
@@ -126,7 +132,12 @@ class Measurable(object):
 
             ### a function of the experiment state (the latter is a dictionary indexed by [all] measurables)
             self._DEFN=definition
-      
+            #ADDED a dictionary of the form $agent:value$ reserved for Boolean-
+            #   valued measurables, where $agent$ is [a pointer to] an agent
+            #   and $value$ is the projected value (if any) for the given
+            #   measurable by the agent $name$.
+            self._PROJECTED={}
+            
       def __repr__(self):
             return str(self._VAL)
 
@@ -139,7 +150,13 @@ class Measurable(object):
             self._VAL=[value]+list(self.val())[:self._EXPERIMENT._DEPTH]
             return self._VAL
 
- 
+      #ADDED
+      def set_projected(self,agent,value):
+            self._PROJECTED[agent]=value
+
+      #ADDED
+      def projected(self,agent):
+            return self._PROJECTED[agent]
 
 class Experiment(object):
       def __init__(self,depth):
@@ -168,21 +185,21 @@ class Experiment(object):
             return intro+state_data
 
       ### initialize an agent
-      def add_agent_empirical(self,name,threshold):
+      def add_agent_empirical(self,name,threshold,using_worker=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'EMPIRICAL',threshold)
+          new_agent.brain=wrapper(new_agent,'EMPIRICAL',threshold,using_worker)
           self._AGENTS.append(new_agent)
           return new_agent
 
-      def add_agent_distributed(self,name,threshold):
+      def add_agent_distributed(self,name,threshold,using_worker=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'DISTRIBUTED',threshold)
+          new_agent.brain=wrapper(new_agent,'DISTRIBUTED',threshold,using_worker)
           self._AGENTS.append(new_agent)
           return new_agent
 
-      def add_agent_discounted(self,name,threshold,q):
+      def add_agent_discounted(self,name,threshold,q,using_worker=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'DISCOUNTED',threshold,q)
+          new_agent.brain=wrapper(new_agent,'DISCOUNTED',threshold,using_worker,q)
           self._AGENTS.append(new_agent)
           return new_agent
 
@@ -245,6 +262,8 @@ class Experiment(object):
             ### add the sensor to the agents
             for agent in agent_list:
                   agent.add_sensor(name,new_meas,new_meas_comp,definition==None)
+                  new_meas.set_projected(agent,False)
+                  new_meas_comp.set_projected(agent,False)
 
             ### return the new pair of measurables
             return new_meas,new_meas_comp
@@ -267,22 +286,38 @@ class Experiment(object):
       ### have agents decide what to do, then collect their decisions and update the measurables.
       def tick(self,mode,param):
           decision=[]
+          message_all=''
           for agent in self._AGENTS:
               for ind in xrange(agent._SIZE):
                   agent._OBSERVE.set(ind,agent._SENSORS[ind].val()[0])
-		      
               agent.brain.sendSignal()
-		 
+              
               agent.brain.decide(mode,param)
-
-              dec,message=agent.brain.getValue()
-		 
+           
+              #ADDED to output of agent.brain.getValue():
+              #-  $projected_signal$ is the signal obtained as the result
+              #      of the run of $halucinate$ corresponding to the
+              #      decision $dec$;
+              #-  $touched_workers$ is the list of workers "touched" during
+              #      the same propagation (halucination) run.
+              dec,projected_signal,message=agent.brain.getValue()
+              #dec,projected_signal,touched_workers,message=agent.brain.getValue()
+              #ADDED now the agent updates its predicted values for the
+              #   measurables associated with its sensors and a Boolean matric
+              #   representing the workers which were involved in generating
+              #   this prediction
+              agent.set_projected(projected_signal)
+              #agent.set_touched(touched_workers)
+              
               decision.extend(dec)
-
+              message_all+=('\t'+agent._NAME+':\t'+message+'\n')
+          
           self.update_state([(meas._NAME in decision) for meas in self._CONTROL])
-          return message
+          return message_all
 
 
+#ADDED method self.projected() returning the signal currently projected by the
+#   agent.
 class Agent(object):
       ### initialize an empty snapshot with a list of sensors and a learning threshold
       ###
@@ -320,7 +355,10 @@ class Agent(object):
 
             ### context is a dictionary of the form (i,j):k indicating that sensor number k was constructed as twedge(i,j).
             self._CONTEXT={}
-   
+            #ADDED this list will be updated each tick of the clock, and will
+            #   contain [pointers to the] workers "touched" in the process
+            #   of obtaining the most recent decision
+            #self._TOUCHED=np.array([[False]],dtype=np.bool)
                   
       def __repr__(self):
             return 'The snapshot '+str(self._NAME)+' has '+str(self._SIZE/2)+' sensors:\n\n'+str([meas._NAME for ind,meas in enumerate(self._SENSORS) if ind%2==0])+'\nout of which the following are actions:\n'+str([self._SENSORS[ind]._NAME for ind in self._ACTIONS])+'\n\n'
@@ -345,14 +383,18 @@ class Agent(object):
             self._NAME_TO_NUM[name]=self._SIZE-2
             self._NAME_TO_NUM[name+'*']=self._SIZE-1
             ### update current values of sensor according to definition in both the experiment and the snapshot:
-            self._OBSERVE.extend(np.array([self._EXPERIMENT.state(name)[0],self._EXPERIMENT.state(name+'*')[0]]))
+            self._OBSERVE.extend(np.array([self._EXPERIMENT.state(name)[0],self._EXPERIMENT.state(name_comp(name))[0]]))
             self._CURRENT.extend(np.array([False,False]))
             ### preparing weight, threshold and direction matrices:
             self._WEIGHTS=np.array([[self._WEIGHTS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
             self._THRESHOLDS=np.array([[self._THRESHOLDS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
             self._DIR=np.array([[False for col in range(self._SIZE)] for row in range(self._SIZE)],dtype=np.bool)
 
-
+      ## Adding a sensor from another agent
+      #
+      def take_sensor(self,other,name):
+            self.add_sensor(name,other._NAME_TO_SENS[name],other._NAME_TO_SENS[name_comp(name)],False)
+            
       def add_eval(self,name):
             # any non-action sensor may serve as an evaluation sensor
             if name in self._NAME_TO_NUM and self._NAME_TO_NUM[name] not in self._ACTIONS:
@@ -360,3 +402,32 @@ class Agent(object):
 
       def set_context(self,name0,name1,name_tc):
             self._CONTEXT[(self._NAME_TO_NUM[name0],self._NAME_TO_NUM[name1])]=self._NAME_TO_NUM[name_tc]
+            return None
+
+      #ADDED: sets the projected values of the agent's sensorium to
+      #   a given signal
+      def set_projected(self,signal):
+            for ind,value in enumerate(signal):
+                  self._SENSORS[ind].set_projected(self,value)
+                            
+      #ADDED: returns a signal formed of the projected sensor values currently
+      #   stored in the measurables corresponding to the agent's sensorium
+      def projected(self):
+            return Signal([item.projected(self) for item in self._SENSORS])
+
+      #ADDED set/return the list of most recently "touched" workers
+      #def set_touched(self,touched_matrix):
+      #      self._TOUCHED=np.copy(touched_matrix)
+      #def touched(self):
+      #      return self._TOUCHED
+
+      #ADDED a function to return the value of self._CURRENT
+      #---> Siqi, is self._CURRENT somehow updated on your ("brain") side of
+      #     the code? If not, this needs to be taken care of: it should be
+      #     updated to the result of propagating the raw observation of
+      #     current sensor values through the agent's snapshot.
+      def current(self):
+            return self._CURRENT #return a signal corresponding to the agent's perceived current state
+
+
+      

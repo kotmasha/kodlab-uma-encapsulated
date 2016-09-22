@@ -6,7 +6,7 @@
 #include "Agent.h"
 #include "worker.h"
 
-int worker::t=0;
+cudaEvent_t start,stop;
 //helper function
 /*
 */
@@ -85,6 +85,11 @@ __host__ __device__ double *worker_weight(worker &worker,bool compiY,bool compiX
 }
 
 //helper function
+
+/*
+------------------------------worker-kernel------------------------------
+*/
+
 __device__ bool implies_GPU(worker &worker,bool y,bool x){//implies
 	double rc=*(worker_weight(worker,y,x));
 	double r_c=*(worker_weight(worker,!y,x));
@@ -277,10 +282,150 @@ __global__ void multiply_kernel(worker *worker,bool *data,bool *affected_worker,
 		y=worker[j].sensor_id1;
 		data[2*x]=ys[2*x];data[2*x+1]=ys[2*x+1];
 		data[2*y]=ys[2*y];data[2*y+1]=ys[2*y+1];
-		if(ys[2*x]||ys[2*x+1]||ys[2*y]||ys[2*y+1]) affected_worker[j]=true;
+		if(affected_worker!=NULL&&ys[2*x]||ys[2*x+1]||ys[2*y]||ys[2*y+1]) affected_worker[j]=true;
 		j+=512;
 	}
 }
+
+/*
+------------------------------worker-kernel------------------------------
+*/
+
+
+/*
+-----------------------------------------non-worker-kernel-----------------------------------
+*/
+
+
+__device__ bool implies_GPU(int row,int col,int width,double *weights,double threshold){//implies
+	double rc=weights[ind(row,col,width)];
+	double r_c=weights[ind(compi_GPU(row),col,width)];
+	double rc_=weights[ind(row,compi_GPU(col),width)];
+	double r_c_=weights[ind(compi_GPU(row),compi_GPU(col),width)];
+	double epsilon=(rc+r_c+rc_+r_c_)*threshold;
+	double m=min(epsilon,min(rc,min(r_c,r_c_)));
+	return rc_<m;
+}
+
+__device__ bool equivalent_GPU(int row,int col,int width,double *weights,double threshold){//equivalent
+	double rc=weights[ind(row,col,width)];
+	double r_c=weights[ind(compi_GPU(row),col,width)];
+	double rc_=weights[ind(row,compi_GPU(col),width)];
+	double r_c_=weights[ind(compi_GPU(row),compi_GPU(col),width)];
+	double epsilon=(rc+r_c+rc_+r_c_)*threshold;
+	return rc_==0&&r_c==0;
+}
+
+__device__ void orient_square_GPU(bool *dir,double *weights,double *thresholds,int x,int y,int width){//orient_square
+	dir[ind(x,y,width)]=false;
+	dir[ind(x,compi_GPU(y),width)]=false;
+	dir[ind(compi_GPU(x),y,width)]=false;
+	dir[ind(compi_GPU(x),compi_GPU(y),width)]=false;
+	dir[ind(y,x,width)]=false;
+	dir[ind(compi_GPU(y),x,width)]=false;
+	dir[ind(y,compi_GPU(x),width)]=false;
+	dir[ind(compi_GPU(y),compi_GPU(x),width)]=false;
+
+	int square_is_oriented=0;
+	for(int i=0;i<2;++i){
+		for(int j=0;j<2;++j){
+			int sx=x+i;
+            int sy=y+j;
+			if(square_is_oriented==0){
+				if(implies_GPU(sy,sx,width,weights,thresholds[ind(sy,sx,width)])){
+					dir[ind(sy,sx,width)]=true;
+					dir[ind(compi_GPU(sx),compi_GPU(sy),width)]=true;
+					dir[ind(sx,sy,width)]=false;
+                    dir[ind(compi_GPU(sy),compi_GPU(sx),width)]=false;
+                    dir[ind(sx,compi_GPU(sy),width)]=false;
+                    dir[ind(compi_GPU(sy),sx,width)]=false;
+                    dir[ind(sy,compi_GPU(sx),width)]=false;
+                    dir[ind(compi_GPU(sx),sy,width)]=false;
+                    square_is_oriented=1;
+				}//implies
+				if(equivalent_GPU(sy,sx,width,weights,thresholds[ind(sy,sx,width)])){
+					dir[ind(sy,sx,width)]=true;
+					dir[ind(sx,sy,width)]=true;
+					dir[ind(compi_GPU(sx),compi_GPU(sy),width)]=true;
+                    dir[ind(compi_GPU(sy),compi_GPU(sx),width)]=true;
+					dir[ind(sx,compi_GPU(sy),width)]=false;
+                    dir[ind(compi_GPU(sy),sx,width)]=false;
+                    dir[ind(sy,compi_GPU(sx),width)]=false;
+                    dir[ind(compi_GPU(sx),sy,width)]=false;
+                    square_is_oriented=1;
+				}//equivalent
+			}//square_is_oriented
+		}//j
+	}//i
+}
+
+__global__ void update_weights_kernel(double *weights,bool *observe,int size){
+	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
+	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
+	if(indexX<size&&indexY<size){
+		weights[ind(indexY,indexX,size)]+=observe[indexX]*observe[indexY];
+	}
+}
+
+__global__ void orient_all_kernel(bool *dir,double *weights,double *thresholds,int size){
+	int indexX=blockDim.x*blockIdx.x+threadIdx.x;
+	int indexY=blockDim.y*blockIdx.y+threadIdx.y;
+	if(indexX<size/2&&indexY<indexX){
+		orient_square_GPU(dir,weights,thresholds,indexX*2,indexY*2,size);
+	}
+}
+
+__global__ void multiply_kernel(bool *x, bool *dir,int size){//dfs
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	extern __shared__ bool shared[];
+	bool *xs=&shared[0];
+	bool *ys=&shared[size];
+	__shared__ bool flag[1];
+	int j=index;
+	// matrix multiplication variable
+	while(j<size) {
+		xs[j]=x[j];
+		ys[j]=x[j];
+		j+=1024;
+	}
+	flag[0]=true;
+	__syncthreads();
+	while(flag[0]){
+		flag[0]=false;
+		__syncthreads();
+		j=index;
+		while(j<size){
+			if(xs[j]==1){
+				j+=1024;
+				continue;
+			}
+			for(int i=0;i<size;++i){
+				if(dir[(i*size)+j]&xs[i]==1){
+					ys[j]=1;
+					flag[0]=true;
+					break;
+				}
+			}
+			j+=1024;
+		}
+		__syncthreads();
+		j=index;
+		while(j<size){
+			xs[j]=ys[j];
+			j+=1024;
+		}
+		__syncthreads();
+	}
+	j=index;
+	while(j<size){
+		x[j]=ys[j];
+		j+=1024;
+	}
+}
+
+/*
+----------------------------non-worker-kernel---------------------------
+*/
 
 //mask=Signal([(ind in actions_list) for ind in xrange(self._SIZE)])
 __global__ void mask_kernel(bool *mask,int *actionlist,int size){
@@ -296,20 +441,39 @@ __global__ void mask_kernel(bool *mask,int *actionlist,int size){
 	}
 }
 
+void Agent::up_GPU(vector<bool> signal){
+	for(int i=0;i<measurableSize;++i) Gsignal[i]=signal[i];
+	cudaMemcpy(dev_signal,Gsignal,measurableSize*sizeof(bool),cudaMemcpyHostToDevice);
+	cudaMemset(dev_affected_worker,0,workerSize*sizeof(bool));
+	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_signal,dev_affected_worker,workerSize,measurableSize);
+
+	cudaMemcpy(Gsignal,dev_signal,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
+	cudaMemcpy(Gaffected_worker,dev_affected_worker,workerSize*sizeof(bool),cudaMemcpyDeviceToHost);
+}
+
 //before invoke this function make sure dev_load and dev_signal have correct data
 //the computed data will be in dev_load
 void Agent::propagate_GPU(){//propagate
-	cudaMemset(dev_affected_worker,0,workerSize*sizeof(bool));
-
-	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_load,dev_affected_worker,workerSize,measurableSize);
-
-	multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_signal,dev_affected_worker,workerSize,measurableSize);
-
-	// standard operations
-	disjunction_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
-	negate_disjunction_star_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
+	if(is_worker_solution){
+		cudaMemset(dev_affected_worker,0,workerSize*sizeof(bool));
+		multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_load,dev_affected_worker,workerSize,measurableSize);
+		multiply_kernel<<<1, 512, 2*measurableSize*sizeof(bool)>>>(dev_worker,dev_signal,dev_affected_worker,workerSize,measurableSize);
+		// standard operations
+		disjunction_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
+		negate_disjunction_star_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
 	
-	cudaMemcpy(Gload,dev_load,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
+		cudaMemcpy(Gload,dev_load,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
+		cudaMemcpy(Gaffected_worker,dev_affected_worker,workerSize*sizeof(bool),cudaMemcpyDeviceToHost);
+	}
+	else{
+		multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(bool)>>>(dev_load, dev_dir, measurableSize);
+		multiply_kernel<<<1, 1024, 2*measurableSize*sizeof(bool)>>>(dev_signal, dev_dir, measurableSize);
+
+		// standard operations
+		disjunction_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
+		negate_disjunction_star_kernel<<<(measurableSize+255)/256,256>>>(dev_load,dev_signal,measurableSize);
+		cudaMemcpy(Gload,dev_load,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
+	}
 }
 
 void Agent::setSignal(vector<bool> observe){//this is where data comes in in every frame
@@ -322,13 +486,20 @@ void Agent::setSignal(vector<bool> observe){//this is where data comes in in eve
 void Agent::update_weights(){}
 
 void Agent_Empirical::update_weights(){
-	update_weights_kernel_empirical<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	if(is_worker_solution){
+		update_weights_kernel_empirical<<<(workerSize+255)/256,256>>>(dev_worker,dev_observe,workerSize);
+	}
+	else{
+		dim3 dimGrid2((measurableSize+15)/16,(measurableSize+15)/16);
+		dim3 dimBlock2(16,16);
+		update_weights_kernel<<<dimGrid2,dimBlock2>>>(dev_weights,dev_observe,measurableSize);
+	}
 }
 
 void Agent_Distributed::update_weights(){
 	cudaMemset(dev_sensor_value,0.0,measurableSize*sizeof(float));
 	calculate_sensor_value<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,workerSize);
-	update_weights_kernel_distributed<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,sensorSize,worker::t);
+	update_weights_kernel_distributed<<<(workerSize+255)/256,256>>>(dev_worker,dev_sensor_value,dev_observe,workerSize,sensorSize,t);
 }
 
 void Agent_Discounted::update_weights(){
@@ -336,17 +507,60 @@ void Agent_Discounted::update_weights(){
 }
 
 void Agent::update_state_GPU(bool mode){//true for decide
+	float dt=0;
+	is_log_on=true;
+	if(is_log_on){
+		//cudaEventCreate(&start);
+		cudaEventRecord(start);
+	}
 	update_weights();
-	worker::add_time();//when distributed or multiply agents, need to move it to upper loop
+	n_update_weight++;
+	if(is_log_on){
+		//cudaEventCreate(&stop);
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&dt, start,stop);
+		t_update_weight+=dt;
+	}
+	t++;//when distributed or multiply agents, need to move it to upper loop
 	//update_weight
 	
 	if(mode){
-		orient_all_kernel<<<(workerSize+255)/256,256>>>(dev_worker,workerSize);
+		if(is_log_on){
+			cudaEventRecord(start);
+		}
+		if(is_worker_solution){
+			orient_all_kernel<<<(workerSize+255)/256,256>>>(dev_worker,workerSize);
+		}
+		else{
+			dim3 dimGrid1((measurableSize/2+15)/16,(measurableSize/2+15)/16);
+			dim3 dimBlock1(16,16);
+			orient_all_kernel<<<dimGrid1,dimBlock1>>>(dev_dir,dev_weights,dev_thresholds,measurableSize);
+		}
+		n_orient_all++;
+		if(is_log_on){
+			cudaEventRecord(stop);
+			cudaEventSynchronize(stop);
+			cudaEventElapsedTime(&dt, start,stop);
+			t_orient_all+=dt;
+		}
 	}//orient_all
 
 	cudaMemcpy(dev_signal,dev_observe,measurableSize*sizeof(bool),cudaMemcpyDeviceToDevice);
 	cudaMemset(dev_load,false,measurableSize*sizeof(bool));
+	if(is_log_on){
+		//cudaEventCreate(&start);
+		cudaEventRecord(start);
+	}
 	propagate_GPU();
+	n_propagation++;
+	if(is_log_on){
+		//cudaEventCreate(&stop);
+		cudaEventRecord(stop);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&dt, start,stop);
+		t_propagation+=dt;
+	}
 	cudaMemcpy(Gcurrent,dev_load,measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
 	cudaMemcpy(dev_current,dev_load,measurableSize*sizeof(bool),cudaMemcpyDeviceToDevice);
 	cudaMemcpy(Gdir,dev_dir,measurableSize*measurableSize*sizeof(bool),cudaMemcpyDeviceToHost);
@@ -390,6 +604,7 @@ void Agent::freeData(){//free data in case of memory leak
 	delete[] Gmask;
 	delete[] Gcurrent;
 	delete[] Gworker;
+	delete[] Gaffected_worker;
 
 	cudaFree(dev_worker);
 	cudaFree(dev_dir);
@@ -423,6 +638,7 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	this->sensors_names=sensors_names;
 	this->evals_names=evals_names;
 	this->generalized_actions=generalized_actions;
+	this->t=0;
 	srand (time(NULL));
 	for(int i=0;i<measurableSize;++i){
 		name_to_num[sensors_names[i]]=i;
@@ -442,6 +658,7 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	Gmask=new bool[measurableSize];
 	Gcurrent=new bool[measurableSize];
 	Gworker=new worker[workerSize];
+	Gaffected_worker=new bool[workerSize];
 	
 	cudaMalloc(&dev_dir,measurableSize*measurableSize*sizeof(bool));
 	cudaMalloc(&dev_thresholds,measurableSize*measurableSize*sizeof(double));
@@ -486,6 +703,9 @@ void Agent::initData(string name,int sensorSize,vector<vector<int> > context_key
 	for(int i=0;i<context_key.size();++i){
 		context[pair<int,int>(context_key[i][0],context_key[i][1])]=context_value[i];
 	}
+
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
 	cout<<"succeed"<<endl;
 }
 
@@ -517,6 +737,63 @@ void Agent::initWorkerMemory(double *weights,bool *dir){
 	}
 }
 
+vector<vector<double> > Agent::getVectorWeight(){
+	vector<vector<double> > result;
+	for(int i=0;i<measurableSize;++i){
+		vector<double> tmp;
+		result.push_back(tmp);
+	}
+	cudaMemcpy(Gweights,dev_weights,measurableSize*measurableSize*sizeof(double),cudaMemcpyDeviceToHost);
+	int x=1,y=0;
+	while(y<measurableSize-1){
+		result[x].push_back(Gweights[ind(y,x,measurableSize)]);
+		x++;
+		if(x>=measurableSize){
+			y++;
+			x=y+1;
+		}
+	}
+	int index=measurableSize/2,index_c=index+1;
+	if(index%2==1){
+		index--;
+		index_c--;
+	}
+	for(int i=0;i<measurableSize;++i){
+		double value=0.0;
+		if(index==i||index_c==i){
+			value+=result[i][index-2];
+			value+=result[i][index_c-2];
+		}
+		else{
+			if(index>i) value+=result[index][i];
+			else if(index<i) value+=result[i][index];
+			if(index_c>i) value+=result[index_c][i];
+			else if(index_c<i) value+=result[i][index_c];
+		}
+		result[i].push_back(value);
+	}
+	return result;
+}
+
+void Agent::copyNewSensorToDevice(vector<vector<double> > &data){
+	this->sensorSize=data.size()/2;
+	this->measurableSize=2*sensorSize;
+	this->workerSize=sensorSize*(sensorSize-1)/2;
+
+	delete[] Gweights;
+	Gweights=new double[measurableSize*measurableSize];
+	cudaFree(dev_weights);
+	cudaMalloc(&dev_weights,measurableSize*measurableSize*sizeof(double));
+
+	for(int i=0;i<measurableSize;++i){
+		for(int j=0;j<measurableSize;++j){
+			if(i<j) Gweights[ind(i,j,measurableSize)]=data[j][i];
+			else Gweights[ind(i,j,measurableSize)]=data[i][j];
+		}
+	}
+	cudaMemcpy(dev_weights,Gweights,measurableSize*measurableSize*sizeof(double),cudaMemcpyHostToDevice);
+}
+
 void Agent_Empirical::initWorkerMemory(double *weights,bool *dir){
 	Agent::initWorkerMemory(weights,dir);
 }
@@ -530,33 +807,4 @@ void Agent_Discounted::initWorkerMemory(double *weights,bool *dir){
 	for(int i=0;i<workerSize;++i){
 		Gworker[i].q=q;
 	}
-}
-
-//those three functions down there are get functions for the variable in C++
-vector<bool> Agent::getCurrent(){
-	vector<bool> result;
-	for(int i=0;i<measurableSize;++i){
-		result.push_back(Gcurrent[i]);
-	}
-	return result;
-}
-
-vector<bool> Agent::getLoad(){
-	vector<bool> result;
-	for(int i=0;i<measurableSize;++i){
-		result.push_back(Gload[i]);
-	}
-	return result;
-}
-
-vector<vector<bool> > Agent::getDir(){
-	vector<vector<bool> > result;
-	for(int i=0;i<measurableSize;++i){
-		vector<bool> tmp;
-		for(int j=0;j<measurableSize;++j){
-			tmp.push_back(Gdir[i*measurableSize+j]);
-		}
-		result.push_back(tmp);
-	}
-	return result;
 }

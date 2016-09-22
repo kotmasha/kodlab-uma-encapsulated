@@ -1,6 +1,7 @@
 #import sys as sys
 import numpy as np
 import curses
+import sys
 
 
 from snapshot_platform_new import *
@@ -31,7 +32,7 @@ def start_experiment(stdscr):
     
 
     ### add agents
-    SNIFFY=EX.add_agent_empirical('Sniffy',THRESHOLD)
+    SNIFFY=EX.add_agent_empirical('Sniffy',THRESHOLD,False)
 
     ### introduce actions
     EX.new_sensor([SNIFFY],'rt')
