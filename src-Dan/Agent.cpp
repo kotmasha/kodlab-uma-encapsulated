@@ -4,19 +4,14 @@
 ----------------Agent Base Class-------------------
 */
 
-Agent::Agent(int type,double threshold,bool using_worker){
+Agent::Agent(int type,double threshold,bool using_worker,bool using_log){
 	Gdir=NULL;
 	this->type=type;
 	this->threshold=threshold;
 	this->is_worker_solution=using_worker;
-	t_halucinate=0;
-	t_orient_all=0;
-	t_propagation=0;
-	t_update_weight=0;
-	n_halucinate=0;
-	n_orient_all=0;
-	n_propagation=0;
-	n_update_weight=0;
+	this->is_log_on=using_log;
+	this->logging_info=new logging(using_log);
+	test=1;
 }
 
 Agent::~Agent(){}
@@ -147,7 +142,7 @@ string Agent::getMessage(){
 	return message;
 }
 
-vector<bool> Agent::initMask(vector<int> actions_list){
+vector<bool> Agent::initMask(vector<int> &actions_list){
 	//mask=Signal([(ind in actions_list) for ind in xrange(self._SIZE)])
 	vector<bool> result;
 	for(int i=0;i<measurableSize;++i){
@@ -163,7 +158,7 @@ vector<bool> Agent::initMask(vector<int> actions_list){
 	return result;
 }
 
-vector<bool> Agent::halucinate(vector<int> action_list){//halucinate
+vector<bool> Agent::halucinate(vector<int> &action_list){//halucinate
 	halucinate_GPU(action_list);
 	projected_signal.push_back(this->getLoad());
 	touched_workers.push_back(this->getAffectedWorkers());
@@ -215,12 +210,12 @@ void Agent::addSensor(vector<int> &list, vector<vector<double> > &data){
 	}
 }
 
-void Agent::addSensors(vector<vector<int> > &list){
+vector<vector<double> > Agent::addSensors(vector<vector<int> > &list){
 	vector<vector<double> > data=getVectorWeight();
 	for(int i=0;i<list.size();++i){
 		addSensor(list[i],data);
 	}
-	copyNewSensorToDevice(data);
+	return data;
 }
 
 //those three functions down there are get functions for the variable in C++
@@ -268,28 +263,9 @@ vector<vector<bool> > Agent::getDir(){
 	return result;
 }
 
-int Agent::get_n_update_weight(){
-	return n_update_weight;
-}
-
-int Agent::get_n_orient_all(){
-	return n_orient_all;
-}
-
-int Agent::get_n_propagation(){
-	return n_propagation;
-}
-
-float Agent::get_t_update_weight(){
-	return t_update_weight;
-}
-
-float Agent::get_t_orient_all(){
-	return t_orient_all;
-}
-
-float Agent::get_t_propagation(){
-	return t_propagation;
+logging Agent::get_log(){
+	logging_info->finalize_log();
+	return *logging_info;
 }
 
 /*
@@ -300,7 +276,8 @@ float Agent::get_t_propagation(){
 ----------------Agent_Empirical Class-------------------
 */
 
-Agent_Empirical::Agent_Empirical(double threshold,bool using_worker):Agent(EMPIRICAL,threshold,using_worker){
+Agent_Empirical::Agent_Empirical(double threshold,bool using_worker,bool using_log)
+	:Agent(EMPIRICAL,threshold,using_worker,using_log){
 }
 
 Agent_Empirical::~Agent_Empirical(){
@@ -314,7 +291,8 @@ Agent_Empirical::~Agent_Empirical(){
 ----------------Agent_Distributed Class-------------------
 */
 
-Agent_Distributed::Agent_Distributed(double threshold,bool using_worker):Agent(DISTRIBUTED,threshold,using_worker){
+Agent_Distributed::Agent_Distributed(double threshold,bool using_worker,bool using_log)
+	:Agent(DISTRIBUTED,threshold,using_worker,using_log){
 
 }
 
@@ -330,7 +308,8 @@ Agent_Distributed::~Agent_Distributed(){}
 ----------------Agent_Discounted Class-------------------
 */
 
-Agent_Discounted::Agent_Discounted(double threshold,double q,bool using_worker):Agent(DISCOUNTED,threshold,using_worker){
+Agent_Discounted::Agent_Discounted(double threshold,double q,bool using_worker,bool using_log)
+	:Agent(DISCOUNTED,threshold,using_worker,using_log){
 	this->q=q;
 }
 

@@ -17,7 +17,7 @@ def start_experiment(stdscr):
     X_BOUND=10 #length of the interval environment
     Y_BOUND=10
     THRESHOLD=1./((X_BOUND+1)*(Y_BOUND+1.)) #learning threshold for Sniffy
-
+    
     ### open a new experiment
     EX=Experiment(1)
     
@@ -30,10 +30,10 @@ def start_experiment(stdscr):
         Y_PLAY=rand(Y_BOUND+1)
         OK=((X_START-X_PLAY)**2+(Y_START-Y_PLAY)**2>9)
     
-
+    
     ### add agents
     SNIFFY=EX.add_agent_empirical('Sniffy',THRESHOLD,False)
-
+    
     ### introduce actions
     EX.new_sensor([SNIFFY],'rt')
     EX.new_sensor([SNIFFY],'lt')
@@ -53,7 +53,7 @@ def start_experiment(stdscr):
     DOWN=[1,3,5,6]
     STAND_STILL=[1,3,5,7]
 
-
+    
     #
     ### ``mapping'' system
     #
@@ -74,13 +74,13 @@ def start_experiment(stdscr):
         if state['dn'][0] and state['ypos'][0]-1 in range(Y_BOUND+1):
             ydiff+=-1
         return state['ypos'][0]+ydiff
-
+    
     INIT=X_START
     EX.add_measurable('xpos',[INIT,INIT],xmotion)
-
+   
     INIT=Y_START
     EX.add_measurable('ypos',[INIT,INIT],ymotion)
-        
+    
     # set up position sensors
     def xsensor(m):
         return lambda state: state['xpos'][0]<m+1

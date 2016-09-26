@@ -5,6 +5,7 @@
 %{
 #include "Agent.h"
 #include "worker.h"
+#include "logging.h"
 %}
 
 namespace std {
@@ -22,3 +23,4 @@ namespace std {
 
 %include "Agent.h"
 %include "worker.h"
+%include "logging.h"
