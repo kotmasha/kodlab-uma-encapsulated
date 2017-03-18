@@ -53,8 +53,21 @@ def name_invert(names):
       ### return the set of complemented names in the list/set names
       return set(comp(name) for name in names)
 
+def ampersand(name_list):
+      ### conjunction
+      L=len(name_list)
+      if L<2:
+            raise Exception('Trivial conjunctions not allowed.\n')
+      else:
+            amp='('
+            for ind,name in enumerate(name_list):
+                  if ind<L-1:
+                        amp+=name+'&'
+                  else:
+                        amp+=name+')'
+      
 def wedge(name0,name1):
-      ### conjunction of two names
+      ### delayed conjunction
       return '('+str(name0)+'^'+str(name1)+')'
 
 ###
@@ -185,21 +198,21 @@ class Experiment(object):
             return intro+state_data
 
       ### initialize an agent
-      def add_agent_empirical(self,name,threshold,using_worker=True):
+      def add_agent_empirical(self,name,threshold,using_worker=False,using_log=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'EMPIRICAL',threshold,using_worker)
+          new_agent.brain=wrapper(new_agent,'EMPIRICAL',threshold,using_worker,using_log)
           self._AGENTS.append(new_agent)
           return new_agent
 
-      def add_agent_distributed(self,name,threshold,using_worker=True):
+      def add_agent_distributed(self,name,threshold,using_worker=False,using_log=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'DISTRIBUTED',threshold,using_worker)
+          new_agent.brain=wrapper(new_agent,'DISTRIBUTED',threshold,using_worker,using_log)
           self._AGENTS.append(new_agent)
           return new_agent
 
-      def add_agent_discounted(self,name,threshold,q,using_worker=True):
+      def add_agent_discounted(self,name,threshold,q,using_worker=False,using_log=True):
           new_agent=Agent(name,self,threshold)
-          new_agent.brain=wrapper(new_agent,'DISCOUNTED',threshold,using_worker,q)
+          new_agent.brain=wrapper(new_agent,'DISCOUNTED',threshold,using_worker,using_log,q)
           self._AGENTS.append(new_agent)
           return new_agent
 
@@ -213,7 +226,7 @@ class Experiment(object):
                   raise Exception("The name ["+name+"] is already in use as the name of a measurable in this experiment -- Aborting!\n\n")
             else:
                   # construct the new measurable
-                  new_measurable=Measurable(name,self,init,definition)
+                  new_measurable=Measurable(name,self, init,definition)
                   #the case of a control signal
                   if definition==None:
                         self._CONTROL.append(new_measurable)
@@ -290,10 +303,10 @@ class Experiment(object):
           for agent in self._AGENTS:
               for ind in xrange(agent._SIZE):
                   agent._OBSERVE.set(ind,agent._SENSORS[ind].val()[0])
+		      
               agent.brain.sendSignal()
-              
+		 
               agent.brain.decide(mode,param)
-           
               #ADDED to output of agent.brain.getValue():
               #-  $projected_signal$ is the signal obtained as the result
               #      of the run of $halucinate$ corresponding to the
@@ -311,7 +324,7 @@ class Experiment(object):
               
               decision.extend(dec)
               message_all+=('\t'+agent._NAME+':\t'+message+'\n')
-          
+              
           self.update_state([(meas._NAME in decision) for meas in self._CONTROL])
           return message_all
 
@@ -347,11 +360,11 @@ class Agent(object):
 
             ### poc set learning machinery:
             ### learning thresholds matrix
-            self._THRESHOLDS=np.array([[threshold]])
+            #self._THRESHOLDS=np.array([[threshold]])
             ### snapshot weight matrix
-            self._WEIGHTS=np.array([[0.]])
+            #self._WEIGHTS=np.array([[0.]])
             ### snapshot graph matrix
-            self._DIR=np.array([[False]],dtype=np.bool)
+            #self._DIR=np.array([[False]],dtype=np.bool)
 
             ### context is a dictionary of the form (i,j):k indicating that sensor number k was constructed as twedge(i,j).
             self._CONTEXT={}
@@ -386,20 +399,60 @@ class Agent(object):
             self._OBSERVE.extend(np.array([self._EXPERIMENT.state(name)[0],self._EXPERIMENT.state(name_comp(name))[0]]))
             self._CURRENT.extend(np.array([False,False]))
             ### preparing weight, threshold and direction matrices:
-            self._WEIGHTS=np.array([[self._WEIGHTS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
-            self._THRESHOLDS=np.array([[self._THRESHOLDS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
-            self._DIR=np.array([[False for col in range(self._SIZE)] for row in range(self._SIZE)],dtype=np.bool)
+            #self._WEIGHTS=np.array([[self._WEIGHTS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
+            #self._THRESHOLDS=np.array([[self._THRESHOLDS[0][0] for col in range(self._SIZE)] for row in range(self._SIZE)])
+            #self._DIR=np.array([[False for col in range(self._SIZE)] for row in range(self._SIZE)],dtype=np.bool)
 
       ## Adding a sensor from another agent
       #
       def take_sensor(self,other,name):
             self.add_sensor(name,other._NAME_TO_SENS[name],other._NAME_TO_SENS[name_comp(name)],False)
-            
+            return other._NAME_TO_SENS[name]
+
+      ### PICK OUT SENSORS CORRESPONDING TO A SIGNAL
+      def select(self,signal):
+            return [item for ind,item in zip(signal.value_all(),self._SENSORS) if ind]
+
+
+      ### FORM NEW CONJUNCTIONS      
+      def amper(self,signals):
+            # $signals$ is a list of signals each describing a conjunction
+            # that needs to be added to the snapshot
+            for signal in signals:
+                  # Name for new sensor:
+                  new_name=ampersand([item._NAME for item in self.select(signal)])
+                  new_namec=name_comp(new_name)
+                  # Definition for new sensor as a function of the experiment
+                  # state:
+                  new_def=lambda state: all([state[item._NAME][0] for item in self.select(signal)])
+                  new_defc=lambda state: any([negate(state[item._NAME][0]) for item in self.select(signal)])
+                  # Initialization values of new sensors
+                  init=[all([self._EXPERIMENT.state(item._NAME)[0][t] for item in self.select(signal)]) for t in xrange(DEPTH+1)]
+                  # Introducing new measurables
+                  new_meas=self._EXPERIMENT.add_measurable(new_name,init,new_def)
+                  new_measc=self._EXPERIMENT.add_measurable(new_namec,negate(init),new_defc)
+                  ### EXTENDING THE SNAPSHOT:
+                  self._SIZE+=2
+                  # adding new sensors to lists
+                  self._SENSORS.extend([new_meas,new_measc])
+                  # extending lookup tables
+                  self._NAME_TO_SENS[new_name]=new_meas
+                  self._NAME_TO_SENS[new_namec]=new_measc
+                  self._NAME_TO_NUM[new_name]=self._SIZE-2
+                  self._NAME_TO_NUM[new_namec]=self._SIZE-1
+                  ### update current values of sensor according to definition in both the experiment and the snapshot:
+                  self._OBSERVE.extend(np.array([init[0],negate(init[0])]))
+                  self._CURRENT.extend(np.array([False,False]))
+                  ### update the brain side
+            self.brain.amper(signals)
+      
+
       def add_eval(self,name):
             # any non-action sensor may serve as an evaluation sensor
             if name in self._NAME_TO_NUM and self._NAME_TO_NUM[name] not in self._ACTIONS:
                   self._EVALS.append(name)
-
+            return None
+                  
       def set_context(self,name0,name1,name_tc):
             self._CONTEXT[(self._NAME_TO_NUM[name0],self._NAME_TO_NUM[name1])]=self._NAME_TO_NUM[name_tc]
             return None
