@@ -22,7 +22,7 @@ protected:
 	double *Gthresholds, *dev_thresholds;//weight and threshold in python
 	bool *GMask_amper, *dev_mask_amper;//amper value collection for mask
 
-	bool *Gobserve, *dev_observe;//observe in python
+	bool *Gobserve, *dev_observe, *Gobserve_old, *dev_observe_old;//observe in python
 	bool *Gsignal, *dev_signal, *Gload, *dev_load;//signal and load variable in propagate
 	bool *Gcurrent, *dev_current;//current in python
 	bool *Gmask, *dev_mask;//bool value for mask signal in halucinate
@@ -101,6 +101,7 @@ public:
 	vector<double> getWeight();
 	vector<bool> getDir();
 	vector<bool> getObserve();
+	vector<bool> getObserveOld();
 	vector<double> getMeasurable();
 	vector<double> getMeasurable_old();
 	vector<vector<bool> > getMask_amper2D();
@@ -123,11 +124,12 @@ public:
 	---------------------SET FUNCTION----------------------
 	*/
 
-	void generate_delayed_weights(vector<vector<double> > &weights, vector<double> &measurable, vector<double> &measurable_old, double last_total, int measurable_id, bool merge, int LOG_TYPE);
+	void generate_delayed_weights(vector<vector<double> > &weights, vector<double> &measurable, vector<double> &measurable_old, double last_total, int measurable_id, bool merge, vector<bool> &mask_amper, int LOG_TYPE);
 	void amper(vector<vector<bool> > list, int LOG_TYPE);
 	void delay(vector<vector<bool> > list);
 	void amperand(vector<vector<double> > &weights, vector<double> &measurable, vector<double> &measurable_old, int idx1, int idx2, double total, bool merge, int LOT_TYPE);
 	void pruning(vector<bool> signal);
+	bool get_delay_amper(int idx, vector<bool> &mask_amper);
 
 	void init_sensors_name(vector<string> &sensors_names,int P_TYPE);
 	void init_size(int sensor_size, int P_TYPE);

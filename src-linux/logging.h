@@ -49,6 +49,7 @@ public:
 	string str_num_sim;
 	string str_process;
 	string agent_name;
+	string result;
 	std::map<int, string> log_section_name;
 	static long long GPU_MEM, CPU_MEM;
 	static void add_GPU_MEM(int mem);
@@ -73,6 +74,8 @@ public:
 	void init_log_name_to_type();
 	void init_log_section_name();
 	void read_log_filter(string filter);
+	void set_result(string result);
+	string get_result();
 };
 
 #endif

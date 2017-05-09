@@ -15,7 +15,7 @@ Agent::Agent(int type, bool print_info){
 	this->threshold = 0.25;
 	this->last_total = 1;
 	this->total = 1;
-	this->memory_expansion = 0.5;
+	this->memory_expansion = 5;
 }
 
 Agent::~Agent(){}
@@ -26,7 +26,9 @@ void Agent::init_pointers(){
 	Gthresholds = NULL;
 	GMask_amper = NULL;
 	Gobserve = NULL;
+	Gobserve_old = NULL;
 	Gsignal = NULL;
+	Gload = NULL;
 	Gcurrent = NULL;
 	Gmask = NULL;
 	Gtarget = NULL;
@@ -40,6 +42,12 @@ void Agent::init_pointers(){
 	dev_weights = NULL;
 	dev_thresholds = NULL;
 	dev_mask_amper = NULL;
+	dev_observe = NULL;
+	dev_observe_old = NULL;
+	dev_signal = NULL;
+	dev_load = NULL;
+	dev_current = NULL;
+	dev_mask = NULL;
 	dev_target = NULL;
 	dev_measurable = NULL;
 	dev_measurable_old = NULL;
@@ -53,6 +61,16 @@ float Agent::decide(vector<bool> signal, double phi, bool active){//the decide f
 	update_state_GPU(active);
 	//logging::num_sim++;
 	halucinate_GPU();
+	
+	vector<vector<double> > tmp_dir = this->getWeight2D();
+	string result = "";
+	for(int i = 0; i < tmp_dir.size(); ++i){
+		for(int j = 0; j <tmp_dir[i].size(); ++j){
+			result += (to_string(tmp_dir[i][j]) + " ");
+		}
+		result += "\n";
+	}
+	this->logging_info->set_result(result);
 	if(t < 200) return 0;
 	return distance(dev_load, dev_target);
 }
@@ -100,7 +118,7 @@ void Agent::init_name(string name, int LOG_TYPE){
 void Agent::reset_time(int n, int LOG_TYPE){
 	this->t = n;
 	logging_info->append_log(LOG_TYPE, "Time Reset to: " + to_string(n) + "\n");
-	srand(time(NULL));
+	//srand(time(NULL));
 	logging_info->append_log(LOG_TYPE, "Time Seed Set \n");
 }
 
@@ -156,8 +174,10 @@ vector<bool> Agent::getCurrent(){
 vector<bool> Agent::getPrediction(){
 	vector<bool> result;
 	for(int i = 0; i < measurable_size; ++i){
+		//cout<<Gprediction[i]<<",";
 		result.push_back(Gprediction[i]);
 	}
+	//cout<<endl;
 	return result;
 }
 
@@ -220,6 +240,7 @@ void Agent::copy_weight(int P_TYPE, int start_idx, int end_idx, vector<double> &
 	int amper_end = (end_idx / 2) * (end_idx / 2 + 1);
 	if(measurable_end > measurable_size_max){
 		//record error message in log
+		exit(0);
 		return;
 	}
 	for(int i = measurable_start; i < measurable_end; ++i){
@@ -386,21 +407,21 @@ void Agent::delay(vector<vector<bool> > lists){
 			for(int j = 2; j < list.size(); ++j){
 				amperand(weights, measurable, measurable_old, list[j], measurable.size() - 2, total, false, logging::DELAY);
 			}
-			generate_delayed_weights(weights, measurable, measurable_old, last_total, weights.size() - 2, false, logging::DELAY);
+			generate_delayed_weights(weights, measurable, measurable_old, last_total, weights.size() - 2, false, lists[i], logging::DELAY);
 		}
 		else{
-			generate_delayed_weights(weights, measurable, measurable_old, last_total, list[0], true, logging::DELAY);
+			generate_delayed_weights(weights, measurable, measurable_old, last_total, list[0], true, lists[i], logging::DELAY);
 		}
 		
 		int s = mask_amper.back().size() + 2;
 		vector<bool> tmp;
 		for(int j = 0; j < s; ++j){
-			if(j > lists[i].size()) tmp.push_back(0);
+			if(j >= lists[i].size()) tmp.push_back(false);
 			else tmp.push_back(lists[i][j]);
 		}
 		mask_amper.push_back(tmp);
 	}
-
+	
 	this->logging_info->append_log(logging::DELAY, "Amper Done: " + to_string(success_amper) + "("+ to_string(lists.size()) + ")\n");
 
 	if(measurable.size() > measurable_size_max){//need to reallocate
@@ -408,11 +429,11 @@ void Agent::delay(vector<vector<bool> > lists){
 		copy_weight(logging::INIT, 0, measurable.size(), measurable, measurable_old, weights, mask_amper);
 	}
 	else{//just copy to the back
-		copy_weight(logging::INIT, measurable_size, measurable.size(), measurable, measurable_old, weights, mask_amper);
 		this->sensor_size = measurable.size() / 2;
 		this->measurable_size = measurable.size();
 		this->array_size = this->measurable_size * (this->measurable_size + 1) / 2;
 		this->mask_amper_size = this->sensor_size * (this->sensor_size + 1);
+		copy_weight(logging::INIT, 0, measurable.size(), measurable, measurable_old, weights, mask_amper);
 	}
 
 	this->logging_info->reduce_indent();
@@ -501,7 +522,7 @@ Output: None
 */
 void Agent::init_direction(int P_TYPE){
 	int x = 0, y = 0;
-	for(int i = 0; i < array_size; ++i){
+	for(int i = 0; i < array_size_max; ++i){
 		Gdir[i] = (x == y);
 		x++;
 		if(x > y){
@@ -509,7 +530,7 @@ void Agent::init_direction(int P_TYPE){
 			x = 0;
 		}
 	}
-	cudaMemcpy(dev_dir, Gdir, array_size * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_dir, Gdir, array_size_max * sizeof(bool), cudaMemcpyHostToDevice);
 	logging_info->append_log(P_TYPE, "Direction Matrix Init on GPU, Values: True on diagonal False otherwise\n");
 }
 
@@ -520,10 +541,10 @@ Input: data to copy to GPU, log type, indicating where this function is invoked
 Output: None
 */
 void Agent::init_weight(int P_TYPE){
-	for(int i = 0; i < array_size; ++i){
+	for(int i = 0; i < array_size_max; ++i){
 		Gweights[i] = 0.0;
 	}
-	cudaMemcpy(dev_weights, Gweights, array_size * sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_weights, Gweights, array_size_max * sizeof(double), cudaMemcpyHostToDevice);
 	logging_info->append_log(P_TYPE, "Weight Matrix Init on GPU, Values: 0\n");
 }
 
@@ -534,15 +555,17 @@ Input: data to copy to GPU, log type, indicating where this function is invoked
 Output: None
 */
 void Agent::init_thresholds(int P_TYPE){
-	for(int i = 0; i < array_size; ++i){
+	for(int i = 0; i < array_size_max; ++i){
 		Gthresholds[i] = threshold;
 	}
-	cudaMemcpy(dev_thresholds, Gthresholds, array_size * sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_thresholds, Gthresholds, array_size_max * sizeof(double), cudaMemcpyHostToDevice);
 	logging_info->append_log(P_TYPE, "Thresholds Matrix Init on GPU, Values: " + to_string(threshold) + "\n");
 }
 
 void Agent::init_mask_amper(int P_TYPE){
-	cudaMemset(dev_mask_amper, 0, mask_amper_size_max * sizeof(bool));
+	for(int i = 0; i < mask_amper_size_max; ++i) GMask_amper[i] = false;
+	cudaMemcpy(dev_mask_amper, GMask_amper, mask_amper_size_max * sizeof(bool), cudaMemcpyHostToDevice);
+	//cudaMemset(dev_mask_amper, 0, mask_amper_size_max * sizeof(bool));
 	logging_info->append_log(P_TYPE, "Mask Amper Matrix Init on GPU, Values: 0\n");
 }
 
@@ -553,6 +576,7 @@ Output: None
 */
 void Agent::gen_other_parameters(int P_TYPE){
 	Gobserve = new bool[measurable_size_max];
+	Gobserve_old = new bool[measurable_size_max];
 	Gsignal = new bool[measurable_size_max];
 	Gload = new bool[measurable_size_max];
 	Gmask = new bool[measurable_size_max];
@@ -569,6 +593,7 @@ void Agent::gen_other_parameters(int P_TYPE){
 	//logging::add_CPU_MEM(9 * measurable_size_max * sizeof(bool) + 2 * measurable_size_max * sizeof(double));
 	
 	cudaMalloc(&dev_observe, measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_observe_old, measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_signal, measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_load, measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_mask, measurable_size_max * sizeof(bool));
@@ -609,6 +634,7 @@ void Agent::setSignal(vector<bool> observe){//this is where data comes in in eve
 	for(int i = 0; i < observe.size(); ++i){
 		Gobserve[i] = observe[i];
 	}
+	cudaMemcpy(dev_observe_old, dev_observe, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_observe, Gobserve, measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
@@ -624,6 +650,7 @@ void Agent::setLastTotal(double last_total){
 */
 vector<bool> Agent::getTarget(){
 	vector<bool> result;
+	cudaMemcpy(Gtarget, dev_target, measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	for(int i = 0; i < measurable_size; ++i){
 		result.push_back(Gtarget[i]);
 	}
@@ -728,6 +755,13 @@ vector<bool> Agent::getObserve(){
 	return result;
 }
 
+vector<bool> Agent::getObserveOld(){
+	vector<bool> result;
+	cudaMemcpy(Gobserve, dev_observe_old, this->measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for(int i = 0; i < this->measurable_size; ++i) result.push_back(Gobserve[i]);
+	return result;
+}
+
 vector<bool> Agent::getUp(){
 	vector<bool> result;
 	for(int i = 0; i < measurable_size; ++i){
@@ -754,14 +788,19 @@ void Agent::amperand(vector<vector<double> > &weights, vector<double> &measurabl
 	
 	this->logging_info->append_log(logging::AMPERAND, "Amper Index: " + to_string(idx1) + ", " + to_string(idx2) + "\n");
 
+	double f = 1.0;
+	if(total > 0 && abs(total) < 1e-5) f = weights[idx2][idx1] / total;
+
 	for(int i = 0; i < measurable.size(); ++i){
 		if(i == idx1 || i == idx2){
 			result1.push_back(weights[idx2][idx1]);
 			result1.push_back(0);
 		}
 		else{
-			result1.push_back(weights[idx2][idx1] * measurable[i] / total);
-			result1.push_back(weights[idx2][idx1] * (1 - measurable[i] / total));
+			//result1.push_back(weights[idx2][idx1] * measurable[i] / total);
+			//result1.push_back(weights[idx2][idx1] * (1 - measurable[i] / total));
+			result1.push_back(weights[i][i] * f);
+			result1.push_back(weights[i + 1][i + 1] * f);
 		}
 	}
 	result1.push_back(result1[0] + result1[1]);
@@ -769,16 +808,20 @@ void Agent::amperand(vector<vector<double> > &weights, vector<double> &measurabl
 	//first row
 	for(int i = 0; i < measurable.size(); ++i){
 		if(i == idx1){
+			//result2.push_back(weights[compi(idx2)][idx1]);
+			//result2.push_back(weights[idx2][compi(idx1)] + weights[compi(idx2)][compi(idx1)]);
 			result2.push_back(weights[compi(idx2)][idx1]);
-			result2.push_back(weights[idx2][compi(idx1)] + weights[compi(idx2)][compi(idx1)]);
+			result2.push_back(weights[compi(idx1)][compi(idx1)]);
 		}
 		else if(i == idx2){
+			//result2.push_back(weights[idx2][compi(idx1)]);
+			//result2.push_back(weights[compi(idx2)][idx1] + weights[compi(idx2)][compi(idx1)]);
 			result2.push_back(weights[idx2][compi(idx1)]);
-			result2.push_back(weights[compi(idx2)][idx1] + weights[compi(idx2)][compi(idx1)]);
+			result2.push_back(weights[compi(idx2)][compi(idx2)]);
 		}
 		else{
-			result2.push_back((1 - weights[idx2][idx1]) * measurable[i] / total);
-			result2.push_back((1 - weights[idx2][idx1]) * (1 - measurable[i] / total));
+			result2.push_back(weights[i][i] * (1.0 - f));
+			result2.push_back(weights[i + 1][i + 1] * (1.0 - f));
 		}
 	}
 	result2.push_back(0);
@@ -819,7 +862,15 @@ void Agent::amperand(vector<vector<double> > &weights, vector<double> &measurabl
 	this->logging_info->reduce_indent();
 }
 
-void Agent::generate_delayed_weights(vector<vector<double> > &weights, vector<double> &measurable, vector<double> &measurable_old, double last_total, int measurable_id, bool merge, int LOG_TYPE){
+bool Agent::get_delay_amper(int idx, vector<bool> &mask_amper){
+	vector<bool> observe_old = this->getObserveOld();
+	for(int i = 0; i < mask_amper.size(); ++i){
+		if(mask_amper[i] && !observe_old[i]) return false;
+	}
+	return true;
+}
+
+void Agent::generate_delayed_weights(vector<vector<double> > &weights, vector<double> &measurable, vector<double> &measurable_old, double last_total, int measurable_id, bool merge, vector<bool> &mask_amper, int LOG_TYPE){
 	vector<double> result1, result2;
 
 	this->logging_info->add_indent();
@@ -828,14 +879,18 @@ void Agent::generate_delayed_weights(vector<vector<double> > &weights, vector<do
 
 	this->logging_info->append_log(logging::GENERATE_DELAY, "Delay Index: " + to_string(delay_sensor_id1) + ", " + to_string(delay_sensor_id2) + "\n");
 	
+	bool is_sensor_active = this->get_delay_amper(delay_sensor_id1/2, mask_amper);
 	for(int i = 0; i < measurable.size() - 2 + 2 * merge; ++i){
-		result1.push_back(measurable_old[delay_sensor_id1] * measurable[i] / last_total);
+		//result1.push_back(measurable_old[delay_sensor_id1] * measurable[i] / last_total);
+		result1.push_back(measurable[i] * is_sensor_active);
 	}
 	result1.push_back(result1[0] + result1[1]);
 	//row 1
 	for(int i = 0; i < measurable.size() - 2 + 2 * merge; ++i){
-		result2.push_back(measurable_old[delay_sensor_id2] * measurable[i] / last_total);
+		//result2.push_back(measurable_old[delay_sensor_id2] * measurable[i] / last_total);
+		result2.push_back(measurable[i] * !is_sensor_active);
 	}
+	
 	result2.push_back(0);
 	result2.push_back(result2[0] + result2[1]);
 	//row 2
@@ -920,6 +975,7 @@ void Agent::free_all_parameters(){//free data in case of memory leak
 	delete[] Gweights;
 	delete[] Gthresholds;
 	delete[] Gobserve;
+	delete[] Gobserve_old;
 	delete[] Gsignal;
 	delete[] Gload;
 	delete[] Gmask;
@@ -932,7 +988,7 @@ void Agent::free_all_parameters(){//free data in case of memory leak
 	delete[] Gup;
 	delete[] Gdown;
 
-	cudaFree(dev_dir);
+	//cudaFree(dev_dir);
 	cudaFree(dev_weights);
 	cudaFree(dev_thresholds);
 
@@ -941,6 +997,7 @@ void Agent::free_all_parameters(){//free data in case of memory leak
 	cudaFree(dev_target);
 
 	cudaFree(dev_observe);
+	cudaFree(dev_observe_old);
 	cudaFree(dev_signal);
 	cudaFree(dev_load);
 	cudaFree(dev_mask_amper);

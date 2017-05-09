@@ -39,11 +39,15 @@ using namespace std;
 /*
 ----------------------HOST DEVICE---------------------
 */
+
+/*
+This function is for extracting the 1d index from a triangelized 2d structure
+The function requires that the 'row' has to be not small than the 'col'
+*/
 __host__ __device__ int ind(int row, int col){
 	if(row >= col)
 		return row * (row + 1) / 2 + col;
-	else 
-		return col * (col + 1) / 2 + row;
+	return -1;
 }
 
 __host__ __device__ int compi(int x){
@@ -179,13 +183,15 @@ Input: direction, weight, threshold matrix, xy location, and measurable size
 Output: None
 */
 __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds, double total, double q, int x, int y, int width){//orient_square
-	//double threshold = 1.0 / 125.0;
+	double threshold = 1.0 / 125.0;
 	//threshold = 0.25;
-	double threshold = thresholds[ind(y, x)];
+	//double threshold = thresholds[ind(y, x)];
+	/*
 	bool old_y_x = dir[ind(y, x)];
 	bool old_cy_x = dir[ind(compi(y), x)];
 	bool old_y_cx = dir[ind(y, compi(x))];
 	bool old_cy_cx = dir[ind(compi(y), compi(x))];
+	*/
 	if(y >= x)
 		dir[ind(y, x)] = implies_GPU(y, x, weights, total, threshold) || equivalent_GPU(y, x, weights);
 	else
@@ -202,7 +208,7 @@ __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds
 		dir[ind(compi(y), compi(x))] = implies_GPU(compi(y), compi(x), weights, total, threshold) || equivalent_GPU(compi(y), compi(x), weights);
 	else
 		dir[ind(x, y)] = implies_GPU(x, y, weights, total, threshold) || equivalent_GPU(x, y, weights);
-	
+	/*
 	bool changed = false;
 	//SIQI:if(!old_y_x && dir[ind(y, x)] && threshold >= 1 - q){
 	if(dir[ind(y, x)] && threshold >= 1 - q){
@@ -241,7 +247,7 @@ __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds
 		changed = true;
 		thresholds[ind(y, x)] = raise_threshold(q, threshold);
 	}
-	
+	*/
 }
 
 /*
@@ -252,16 +258,24 @@ __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds
 ---------------------GLOBAL---------------------
 */
 
+__global__ void init_mask_kernel(bool *mask, int base_sensor_size, int size){
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if(index < size){
+		if(index < base_sensor_size * 2) mask[index] = false;
+		else mask[index] = true;
+	}
+}
+
 __global__ void init_measurable_kernel(double *measurable, double *measurable_old, int measurable_size){
-	int index = blockDim.x * blockDim.x + threadIdx.x;
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if(index < measurable_size){
 		if(index % 2 == 0){
 			measurable[index] = 0;
 			measurable_old[index] = 0;
 		}
 		else{
-			measurable[index] = 1;
-			measurable_old[index] = 1;
+			measurable[index] = 0;
+			measurable_old[index] = 0;
 		}
 	}
 }
@@ -346,7 +360,7 @@ __global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_
 	while(j < size) {
 		xs[j] = x[j];
 		ys[j] = x[j];
-		j += 1024;
+		j += 512;
 	}
 	flag[0] = true;
 	__syncthreads();
@@ -356,35 +370,35 @@ __global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_
 		j = index;
 		while(j < size){
 			if(xs[j] == 1){
-				j += 1024;
+				j += 512;
 				continue;
 			}
 			for(int i = 0; i < size; ++i){
-				if(i >= j && dir[ind(i, j)] && xs[i] == 1 && (!is_stable || thresholds[ind(i - i % 2, j - j % 2)] < lowest)){
+				if(i >= j && dir[ind(i, j)] && xs[i] == 1){
 					ys[j] = 1;
 					flag[0] = true;
 					break;
 				}
-				else if(i < j && dir[ind(compi(j),compi(i))] && xs[i] == 1 && (!is_stable || thresholds[ind(i - i % 2, j - j % 2)] < lowest)){
+				else if(i < j && dir[ind(compi(j),compi(i))] && xs[i] == 1){
 					ys[j] = 1;
 					flag[0] = true;
 					break;
 				}
 			}
-			j += 1024;
+			j += 512;
 		}
 		__syncthreads();
 		j = index;
 		while(j < size){
 			xs[j] = ys[j];
-			j += 1024;
+			j += 512;
 		}
 		__syncthreads();
 	}
 	j = index;
 	while(j < size){
 		x[j] = ys[j];
-		j += 1024;
+		j += 512;
 	}
 }
 
@@ -433,6 +447,7 @@ __global__ void delta_weight_sum_kernel(double *measurable, bool *signal, float 
 
 void Agent::init_other_parameter(int P_TYPE){
 	cudaMemset(dev_observe, 0, measurable_size_max * sizeof(bool));
+	cudaMemset(dev_observe_old, 0, measurable_size_max * sizeof(bool));
 	cudaMemset(dev_signal, 0, measurable_size_max * sizeof(bool));
 	cudaMemset(dev_load, 0, measurable_size_max * sizeof(bool));
 	cudaMemset(dev_mask, 0, measurable_size_max * sizeof(bool));
@@ -441,9 +456,9 @@ void Agent::init_other_parameter(int P_TYPE){
 	
 	cudaMemset(dev_signal1, 0, measurable_size_max * sizeof(bool));
 	cudaMemset(dev_signal2, 0, measurable_size_max * sizeof(bool));
-	cudaMemset(dev_measurable, 0, measurable_size_max * sizeof(double));
-	cudaMemset(dev_measurable_old, 0, measurable_size_max * sizeof(double));
-	//init_measurable_kernel<<<(measurable_size + 255) / 256, 256>>>(dev_measurable, dev_measurable_old, measurable_size);
+	//cudaMemset(dev_measurable, 0, measurable_size_max * sizeof(double));
+	//cudaMemset(dev_measurable_old, 0, measurable_size_max * sizeof(double));
+	init_measurable_kernel<<<(measurable_size_max + 255) / 256, 256>>>(dev_measurable, dev_measurable_old, measurable_size_max);
 	logging_info->append_log(P_TYPE, "Other Parameter Matrix Init on GPU, Values: 0\n");
 }
 /*
@@ -458,18 +473,10 @@ void Agent::up_GPU(vector<bool> signal, bool is_stable){
 	cudaMemcpy(dev_signal, Gsignal, measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 	logging_info->append_log(logging::UP, "Separate Up Process is Invoked Size of Signal: "+to_string(signal.size())+"\n");
 	
-	multiply_kernel<<<1, 1024, 2 * measurable_size * sizeof(bool)>>>(dev_signal, dev_dir, dev_thresholds, is_stable, 1-q, measurable_size);
+	multiply_kernel<<<1, 512, 2 * measurable_size * sizeof(bool)>>>(dev_signal, dev_dir, dev_thresholds, is_stable, 1-q, measurable_size);
 
 	cudaMemcpy(Gup, dev_signal, measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	//cudaMemcpy(Gdir, dev_dir, array_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	//int result = 0;
-	//for(int i = 0; i < measurable_size; ++i) result += Gup[i];
-	//cout<<result<<endl;
-	//cout<<result<<","<<measurable_size<<endl;
-	//exit(0);
-	
-	//up2down<<<(measurable_size + 255) / 256, 256>>>(dev_signal, dev_load, measurable_size);
-	//cudaMemcpy(Gdown, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+
 	string res = "";
 	for(int i = 0; i < measurable_size; ++i) res += (to_string(Gup[i]) + " ");
 	cudaCheckErrors("kernel fails");
@@ -479,9 +486,7 @@ void Agent::up_GPU(vector<bool> signal, bool is_stable){
 }
 
 void Agent::gen_mask(){
-	cudaMemset(dev_mask, false, 2 * this->base_sensor_size * sizeof(bool));
-	//cudaMemcpy(dev_mask, dev_current, 2 * this->base_sensor_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-	cudaMemset(dev_mask + 2 * this->base_sensor_size, true, (measurable_size - 2 * this->base_sensor_size) * sizeof(bool));
+	init_mask_kernel<<<(this->measurable_size + 255) / 256, 256>>>(dev_mask, this->base_sensor_size, this->measurable_size);
 
 	dim3 dimGrid((sensor_size + 15) / 16,(sensor_size + 15) / 16);
 	dim3 dimBlock(16, 16);
@@ -512,8 +517,8 @@ void Agent::propagate_GPU(vector<bool> signal, vector<bool> load, bool t){//prop
 	}
 
 	//don't forget to add logging system
-	multiply_kernel<<<1, 1024, 2 * measurable_size * sizeof(bool)>>>(dev_load, dev_dir, dev_thresholds, false, 0, measurable_size);
-	multiply_kernel<<<1, 1024, 2 * measurable_size * sizeof(bool)>>>(dev_signal, dev_dir, dev_thresholds, false, 0, measurable_size);
+	multiply_kernel<<<1, 512, 2 * measurable_size * sizeof(bool)>>>(dev_load, dev_dir, dev_thresholds, false, 0, measurable_size);
+	multiply_kernel<<<1, 512, 2 * measurable_size * sizeof(bool)>>>(dev_signal, dev_dir, dev_thresholds, false, 0, measurable_size);
 
 	// standard operations
 	disjunction_kernel<<<(measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, measurable_size);
@@ -539,13 +544,13 @@ double Agent::get_delta_weight_sum(vector<bool> signal){
 
 float Agent::distance(bool *signal1, bool *signal2){
 	cudaMemcpy(dev_signal, signal1, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-	cudaMemset(dev_load, false, measurable_size * sizeof(bool));
+	cudaMemset(dev_load, 0, measurable_size * sizeof(bool));
 	vector<bool> tmp_signal, tmp_load;
 	propagate_GPU(tmp_signal, tmp_load,false);
 	cudaMemcpy(dev_signal1, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	cudaMemcpy(dev_signal, signal2, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-	cudaMemset(dev_load, false, measurable_size * sizeof(bool));
+	cudaMemset(dev_load, 0, measurable_size * sizeof(bool));
 	propagate_GPU(tmp_signal, tmp_load, true);
 	cudaMemcpy(dev_signal2, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
@@ -557,6 +562,8 @@ float Agent::distance(bool *signal1, bool *signal2){
 	//cout<<endl;
 	//for(int i = 0; i < measurable_size; ++i) cout<<Gload[i]<<",";
 	//cout<<endl;
+	//for(int i = 0; i < measurable_size; ++i) cout<<Gsignal[i]<<",";
+	//cout<<endl;
 	return sum;
 }
 
@@ -567,13 +574,13 @@ float Agent::distance_big(bool *signal1, bool *signal2){
 	cudaMemset(dev_result, 0, sizeof(float));
 
     cudaMemcpy(dev_signal, signal1, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-	cudaMemset(dev_load, false, measurable_size * sizeof(bool));
+	cudaMemset(dev_load, 0, measurable_size * sizeof(bool));
 	vector<bool> tmp_signal, tmp_load;
 	propagate_GPU(tmp_signal, tmp_load,false);
 	cudaMemcpy(dev_signal1, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	cudaMemcpy(dev_signal, signal2, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-	cudaMemset(dev_load, false, measurable_size * sizeof(bool));
+	cudaMemset(dev_load, 0, measurable_size * sizeof(bool));
 	propagate_GPU(tmp_signal, tmp_load, true);
 	cudaMemcpy(dev_signal2, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 

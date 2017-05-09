@@ -207,3 +207,11 @@ void logging::record_stop(int LOG_TYPE){
 		break;
 	}
 }
+
+void logging::set_result(string result){
+	this->result = result;
+}
+
+string logging::get_result(){
+	return this->result;
+}
