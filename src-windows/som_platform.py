@@ -257,6 +257,7 @@ class Experiment(object):
       #    the last $depth+1$ will be used as initial values)
       #  - $definition$ should be a function of state
       def construct_measurable(self,mid,definition=None,init_value=None,depth=1):
+            import time
             self._MID.append(mid)
             self._DEFS[mid]=definition
             if init_value==None:
@@ -309,12 +310,12 @@ class Experiment(object):
                   raise Exception('New agent id has not been registered.')
             # construct new sensor and agent and append to agents list
             self.construct_sensor(id_agent,definition)
-            new_agent = Agent(self, id_agent, id_motivation, params, using_log)
+            new_agent = Agent(self, id_agent, id_motivation, params)
             self._AGENTS[id_agent]=new_agent
 
             # construct the agent's snapshots
-            new_agent.add_snapshot('plus', params, False, using_log)
-            new_agent.add_snapshot('minus', params, True, using_log)
+            #new_agent.add_snapshot('plus', params, False, using_log)
+            #new_agent.add_snapshot('minus', params, True, using_log)
             # return a pointer to the agent
             return new_agent
 
@@ -330,7 +331,7 @@ class Experiment(object):
             ## Iterate over agents and decision-dependent measurables
             # - if id of an agent, then form a decision and append to id_dec
             # - if id of a measurable, update its value
-            for mid in [tmp_id for tmp_id in self._MID if self.dep(tmp_id)]:
+            for mid in (tmp_id for tmp_id in self._MID if self.dep(tmp_id)):
                   try:
                         midc=self.comp(mid)
                         agentQ=mid in self._AGENTS or midc in self._AGENTS
@@ -344,12 +345,13 @@ class Experiment(object):
                               agent.active=self.this_state(mid)
                               
                               # agent analyzes outcomes of preceding decision
-                              # cycle if the prediction is too broad, add a
-                              # sensor
-                              #if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
+                              # cycle; if the prediction is too broad, add a
+                              # sensor:
+                              #print "in"
+                              if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
                                     #agent.delay([(agent.report_last().intersect(agent.report_target())).intersect(agent._INITMASK)])
-                              #      agent.delay([agent.report_last().intersect(agent._INITMASK)])
-
+                                    agent.delay([agent.report_last().intersect(agent._INITMASK)])
+                              #print "out"
                               ## agent makes a decision 
                               messages[mid]=agent.decide()
 
@@ -399,7 +401,7 @@ class Experiment(object):
 
 class Agent(object):
       ### initialize an "empty" agent with prescribed learning parameters
-      def __init__(self,experiment,id_agent,id_motivation,params,using_log=False):
+      def __init__(self,experiment,id_agent,id_motivation,params):
             # a string naming the agent/action
             self._MID=id_agent
             id_agentc=experiment.comp(id_agent)
@@ -456,10 +458,6 @@ class Agent(object):
             #            value=False
             #self._OBSERVE.set(ind,value)
             return None
-
-      ## Form a snapshot structure
-      def add_snapshot(self, mid, params, state, using_log=False):
-            self.brain.add_snapshot(mid, params, state, using_log)
                               
       ### Adding a sensor to the agent
       ### - intended ONLY to be called by $experiment.new_sensor$
@@ -538,6 +536,8 @@ class Agent(object):
                   self._TARGET[token]=Signal(self.brain._snapshots[token].getTarget())
                   self._CURRENT[token]=Signal(self.brain._snapshots[token].getCurrent())
                   self._PREDICTED[token]=Signal(self.brain._snapshots[token].getPrediction())
+
+            #print dist['plus'], dist['minus']
 
             # make a decision
             token,quality=rlessthan((dist['plus'],'plus'),(dist['minus'],'minus'))

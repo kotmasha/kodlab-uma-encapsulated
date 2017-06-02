@@ -5,12 +5,12 @@ import curses
 import time
 from som_platform import *
 
-
+### SNIFFY with autonomous self-enrichment of snapshots
 def start_experiment(stdscr,agent_to_examine):
+    # wait (=0) / don't wait (=1) for spacebar to execute next cycle:
     NODELAY=1
-    # grid definitions
-    X_BOUND=6 #length
-    THRESHOLD=1./(1.+2*pow(X_BOUND,2))
+    # experiment parameters and definitions
+    X_BOUND=10 #length
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
 
@@ -20,8 +20,6 @@ def start_experiment(stdscr,agent_to_examine):
 
     # agent discount parameters
     MOTION_PARAMS=tuple([1.-pow(2,-6), False])
-    #ARBITRATION_PARAMS=tuple([1.-pow(2,-2)])
-    #ARBITRATION_PEAK=2
     
     # initialize a new experiment
     EX=Experiment()
@@ -29,25 +27,21 @@ def start_experiment(stdscr,agent_to_examine):
     
     # register basic motion agents;
     # - $True$ tag means they will be marked as dependent (on other agents)
-    id_rt,id_rtc=EX.register_sensor('rt',True)
-    id_lt,id_ltc=EX.register_sensor('lt',True)
+    id_rt,cid_rt=EX.register_sensor('rt',True)
+    id_lt,cid_lt=EX.register_sensor('lt',True)
+
     # register motivation for motion agents
     # - this one is NOT dependent on agents except through the position, so
     #   it carries the default False tag.
     id_distM=EX.register('distM')
     id_navM,cid_navM=EX.register_sensor('navM')
-    # register supervising agent
-    #id_super,id_superc=EX.register_sensor('super',True)
 
     # agent to be visualized
     id_lookat=EX.nid(agent_to_examine)
     
-    # register arbiter variable whose purpose is to synchronize the responses
-    # of agents 'lt' and 'rt' to the action of 'super', it does not depend on
-    # agent decisions, hence carries the default False tag.
+    # register arbiter variable whose purpose is provide a hard-wired response to a conflict
+    # between agents 'lt' and 'rt'.
     id_arbiter=EX.register('ar',True)
-    # register the failure mode sensor
-    #id_fail,id_failc=EX.register_sensor('fl')
 
     # add a counter
     id_count=EX.register('count')
@@ -55,23 +49,28 @@ def start_experiment(stdscr,agent_to_examine):
         return 1+state[id_count][0]
     EX.construct_measurable(id_count,ex_counter,[0])
     
-    # introduce arbitration
+    #
+    ### Arbitration
+    #
+
+    # arbitration state
     def arbiter(state):
         return bool(rnd(2))
     EX.construct_measurable(id_arbiter,arbiter,[bool(rnd(2))],0)
 
-    id_toRT,id_toRTc=EX.register_sensor('toR',True)
+    # intention sensors
+    id_toRT,cid_toRT=EX.register_sensor('toR',True)
     def intention_RT(state):
         return id_rt in state[id_dec][0]
     EX.construct_sensor(id_toRT,intention_RT)
     
-    id_toLT,id_toLTc=EX.register_sensor('toL',True)
+    id_toLT,cid_toLT=EX.register_sensor('toL',True)
     def intention_LT(state):
         return id_lt in state[id_dec][0]
     EX.construct_sensor(id_toLT,intention_LT)
 
     # failure mode for action $lt^rt$
-    id_toF,id_toFc=EX.register_sensor('toF',True)
+    id_toF,cid_toF=EX.register_sensor('toF',True)
     def about_to_enter_failure_mode(state):
         return state[id_toLT][0] and state[id_toRT][0]
     EX.construct_sensor(id_toF,about_to_enter_failure_mode)
@@ -94,11 +93,7 @@ def start_experiment(stdscr,agent_to_examine):
         else:
             return lt_decided
     LT=EX.construct_agent(id_lt,id_distM,action_LT,MOTION_PARAMS,True)
-    
-    # immediately introduce corresponding action sensors
-    #EX.assign_sensor(id_rt,True,[id_lt])
-    #EX.assign_sensor(id_lt,True,[id_rt])
-
+ 
     #
     ### "mapping" system
     #
@@ -122,13 +117,10 @@ def start_experiment(stdscr,agent_to_examine):
             return state[id_pos][0]
     EX.construct_measurable(id_pos,motion,[START,START])
 
-    ## introduce effect of agent (not/)feeding (finding and consuming targets):
-
     # generate target position
     TARGET=START
     while dist(TARGET,START)<X_BOUND/8:
         TARGET=rnd(X_BOUND+1)
-    #TARGET = 3
 
     # set up position sensors
     def xsensor(m): # along x-axis
@@ -149,48 +141,47 @@ def start_experiment(stdscr,agent_to_examine):
         else:
             #sharp (near-logarithmic) spike at the target 
             #return 1.-np.log((1.+dist(state[id_pos][0],TARGET))/(X_BOUND+2))
+
             #linear peak at the target
             return 1+X_BOUND-dist(state[id_pos][0],TARGET)
 
+    #initial value for log spike:
+    #INIT=1.-np.log((1.+dist(START,TARGET))/(X_BOUND+2.))
+
+    #initial value for linear peak:
     INIT=1+X_BOUND-dist(START,TARGET)
     EX.construct_measurable(id_distM,distM,[INIT,INIT])
 
+    # performance sensor ("am I better now than in the last cycle?")
+    # - $id_navM$ has already been registered
     def navM(state):
         return state[id_distM][0]-state[id_distM][1]>0
     EX.construct_sensor(id_navM,navM)
     EX.assign_sensor(id_navM,True,[id_rt,id_lt]) #assigns the sensor to all agents
     
     #
-    ### Initialize agents on GPU
+    ### Initialize agents
     #
 
+    # initialize data structures in the back end:
     for agent_name in EX._AGENTS:
         tmp=EX._AGENTS[agent_name].init()
-    #
-    ### Introduce a conjunction
-    #
 
+    # introduce delayed position sensors for both agents
     #for agent in [RT,LT]:
-    #    agent.amper([agent.generate_signal([EX.nid('x0*'),EX.nid('x2')])])
-    #    
-
-    ### Introduce delayed position sensors for both agents
-    print "!"
-    for agent in [RT,LT]:
-        delay_sigs=[agent.generate_signal([EX.nid('x'+str(ind))]) for ind in xrange(X_BOUND)]
-        agent.delay(delay_sigs)
-        print "*"
-
-    #exit()
-    # another update cycle
-    message=EX.update_state()
-    #message=EX.update_state()
-
-    ## SET ARTIFICIAL TARGET ONCE AND FOR ALL
+    #    delay_sigs=[agent.generate_signal([EX.nid('x'+str(ind))]) for ind in xrange(X_BOUND)]
+    #    agent.delay(delay_sigs)
+        
+    # set artificial target once and for all
     for agent in [RT,LT]:
         for token in ['plus','minus']:
             tmp_target=agent.generate_signal([id_navM]).value_all().tolist()
             agent.brain._snapshots[token].setTarget(tmp_target)
+
+    # perform one update cycle to update back-end data structures
+    message=EX.update_state()
+
+
     #
     ### Run
     #
@@ -285,39 +276,40 @@ def start_experiment(stdscr,agent_to_examine):
         # display agent's position with FG attributes
         WIN.addch(4,1+2*EX.this_state(id_pos,1),ord('S'),FG)
         
-        ## Unpacking extra information
+        
+        ### Unpacking extra information
         WINs.clear()
-        WINs.addstr(0,0,'Observation:')
-        WINs.addstr(4,0,'Chosen signed signal:')
+        #WINs.addstr(0,0,'Observation:')
+        #WINs.addstr(4,0,'Chosen signed signal:')
         #
-        tok_BG={'plus':POS_BG,'minus':NEG_BG}
-        vpos={'plus':6,'minus':8}
-        hpos=lambda x: 0 if x==0 else 2+len('  '.join(namelist[:x]))
-        
-        # CURRENT OBSERVATION
-        OBS=agent._OBSERVE
-        #OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
-
-        #SIGNED SIGNAL TO WATCH:
-        #SIG=agent._CURRENT
-        
-        sig=agent.generate_signal([EX.nid('x0')])
-        #sig = Signal([True,False,False,True])
-        #sig=agent.generate_signal([EX.nid('{x0*;x2}')])
-        #sig=agent.generate_signal([EX.nid('#x2')])
-        #sig=agent.generate_signal([EX.nid('#x0*')])
-        SIG=agent.brain.up(sig,False)
+        #tok_BG={'plus':POS_BG,'minus':NEG_BG}
+        #vpos={'plus':6,'minus':8}
+        #hpos=lambda x: 0 if x==0 else 2+len('  '.join(namelist[:x]))
         #
-        namelist=[EX.din(mid) for mid in agent._SENSORS]
+        ## CURRENT OBSERVATION
+        ##OBS=agent._OBSERVE
+        ##OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
         #
-        for x,mid in enumerate(agent._SENSORS):
-            this_BG=OBS_BG if OBS.value(x) else REG_BG
-            WINs.addstr(2,hpos(x),namelist[x],this_BG)
-            for token in ['plus','minus']:
-                this_BG=tok_BG[token] if SIG[token].value(x) else REG_BG
-                WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
-        
-        # refresh the window
+        ##SIGNED SIGNAL TO WATCH:
+        ##SIG=agent._CURRENT
+        #
+        #sig=agent.generate_signal([EX.nid('x0')])
+        ##sig = Signal([True,False,False,True])
+        ##sig=agent.generate_signal([EX.nid('{x0*;x2}')])
+        ##sig=agent.generate_signal([EX.nid('#x2')])
+        ##sig=agent.generate_signal([EX.nid('#x0*')])
+        #SIG=agent.brain.up(sig,False)
+        ##
+        #namelist=[EX.din(mid) for mid in agent._SENSORS]
+        ##
+        #for x,mid in enumerate(agent._SENSORS):
+        #    this_BG=OBS_BG if OBS.value(x) else REG_BG
+        #    WINs.addstr(2,hpos(x),namelist[x],this_BG)
+        #    for token in ['plus','minus']:
+        #        this_BG=tok_BG[token] if SIG[token].value(x) else REG_BG
+        #        WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
+        #
+        ## refresh the window
         WIN.overlay(stdscr)
         WIN.noutrefresh()
         WINs.noutrefresh()
@@ -338,6 +330,6 @@ def start_experiment(stdscr,agent_to_examine):
     else:
         raise Exception('Aborting at your request...\n\n')
         
-curses.wrapper(start_experiment,'lt')
+curses.wrapper(start_experiment,'rt')
 exit(0)
 

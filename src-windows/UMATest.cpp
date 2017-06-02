@@ -1,5 +1,7 @@
 #include "UMATest.h"
-#include "Agent.h"
+#include "Snapshot.h"
+#include "Sensor.h"
+#include "SensorPair.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
@@ -30,10 +32,10 @@ int CPUTest::TEST_compi_host(int x){
 }
 //compi host test
 
+/*
 vector<bool> CPUTest::TEST_up_GPU(vector<bool> signal, vector<bool> dir){
-	Agent *agent = new Agent(Agent::FORGETFUL, false);
-	vector<string> names;
-	agent->init_data("test", signal.size() / 2, names, "");
+	Snapshot_UnitTest *snpashot = new Snapshot_UnitTest(Snapshot::FORGETFUL, signal.size(), 0.25);
+
 	agent->copy_dir(0, dir);
 
 	agent->up_GPU(signal, false);
@@ -62,7 +64,7 @@ vector<bool> CPUTest::TEST_gen_mask(vector<bool> mask_amper, vector<bool> curren
 
 	return result;
 }
-
+/*
 vector<bool> CPUTest::TEST_set_signal(vector<bool> signal){
 	Agent *agent = new Agent(Agent::FORGETFUL, false);
 	vector<string> names;
