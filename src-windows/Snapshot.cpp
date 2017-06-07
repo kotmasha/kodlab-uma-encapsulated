@@ -3,26 +3,38 @@
 #include "SensorPair.h"
 #include "Measurable.h"
 #include "MeasurablePair.h"
+#include "logManager.h"
 /*
 ----------------Snapshot Base Class-------------------
 */
 extern int ind(int row, int col);
 extern int compi(int x);
 
-Snapshot::Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_names,bool cal_target):
+Snapshot::Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names,bool cal_target, string log_path):
 	_type(type),_base_sensor_size(base_sensor_size){
+	_name = name;
+	_log_path = log_path;
+	_log = new logManager(logging::VERBOSE, log_path, name + ".txt", typeid(*this).name());
 	_threshold = threshold;
 	_memory_expansion = .5;
+
+	_log->info() << "Default threshold value set to " + to_string(_threshold);
+	_log->info() << "Default memory expansion rate is " + to_string(_memory_expansion);
+
 	//set the init value for 0.5 for now, ideally should read such value from conf file
 	//TBD: read conf file for _memory_expansion
-	_name = name;
 	_sensor_num = 0;
 	_total = 1.0;
 	_total_ = 1.0;
 	t = 0;
 	this->cal_target = cal_target;
+
+	_log->debug() << "Setting init total value to " + to_string(_total);
+	_log->info() << "Target calculation is " + to_string(cal_target);
+
 	init_pointers();
-	init_data(sensor_names);
+	init_data(sensor_ids, sensor_names);
+	_log->info() << "A Snapshot " + name + " is created";
 }
 
 
@@ -73,6 +85,8 @@ void Snapshot::init_pointers(){
 	dev_diag_ = NULL;
 	dev_d1 = NULL;
 	dev_d2 = NULL;
+
+	_log->debug() << "Setting all pointers to NULL";
 }
 
 float Snapshot::decide(vector<bool> signal, double phi, bool active){//the decide function
@@ -88,13 +102,14 @@ float Snapshot::decide(vector<bool> signal, double phi, bool active){//the decid
 	return distance(dev_d1, dev_d2);
 }
 
-void Snapshot::init_sensors(vector<string> uuid, vector<string> sensor_names){
+void Snapshot::init_sensors(vector<string> &uuid, vector<string> &sensor_names){
 	for(int i = 0; i < _sensor_size; ++i){
 		try{
 			Sensor *sensor = new Sensor(uuid[i], sensor_names[i], i);
 			sensor->setMeasurableDiagPointers(h_diag, h_diag_);
 			sensor->setMeasurableStatusPointers(h_current);
 			_sensors.push_back(sensor);
+			_log->debug() << "A sensor with id " + uuid[i] + " is created";
 		}
 		catch(exception &e){
 			cout<<e.what()<<endl;
@@ -104,6 +119,7 @@ void Snapshot::init_sensors(vector<string> uuid, vector<string> sensor_names){
 		//store the sensor pointer
 	}
 	_sensor_num = _sensor_size;
+	_log->info() << to_string(_sensor_num) + " sensors are created";
 }
 
 void Snapshot::init_sensor_pairs(){
@@ -115,6 +131,7 @@ void Snapshot::init_sensor_pairs(){
 				sensor_pair->setDirPointers(h_dirs);
 				sensor_pair->setThresholdPointers(h_thresholds);
 				_sensor_pairs.push_back(sensor_pair);
+				_log->debug() << "A sensor pair with sensor1=" + _sensors[i]->_sid + " sensor2=" + _sensors[j]->_sid + " is created";
 			}
 			catch(exception &e){
 				cout<<e.what()<<endl;
@@ -123,6 +140,7 @@ void Snapshot::init_sensor_pairs(){
 			}
 		}
 	}
+	_log->info() << to_string(ind(_sensor_num, _sensor_num)) + " sensor pairs are created";
 }
 
 void Snapshot::init_size(int sensor_size){
@@ -132,14 +150,26 @@ void Snapshot::init_size(int sensor_size){
 	_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
 
+	_log->info() << "Setting sensor size to " + to_string(_sensor_size);
+	_log->debug() << "Setting measurable size to " + to_string(_measurable_size);
+	_log->debug() << "Setting sensor size 2D to " + to_string(_sensor2d_size);
+	_log->debug() << "Setting measurable size 2D to " + to_string(_measurable2d_size);
+	_log->debug() << "Setting mask amper size to " + to_string(_mask_amper_size);
+
 	_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
 	_measurable_size_max = 2 * _sensor_size_max;
 	_sensor2d_size_max = _sensor_size_max * (_sensor_size_max + 1) / 2;
 	_measurable2d_size_max = _measurable_size_max * (_measurable_size_max + 1) / 2;
 	_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
+
+	_log->debug() << "Setting max sensor size to " + to_string(_sensor_size_max);
+	_log->debug() << "Setting max measurable size to " + to_string(_measurable_size_max);
+	_log->debug() << "Setting max sensor size 2D to " + to_string(_sensor2d_size_max);
+	_log->debug() << "Setting max measurable size 2D to " + to_string(_measurable2d_size_max);
+	_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
 }
 
-void Snapshot::init_data(vector<string> sensor_names){
+void Snapshot::init_data(vector<string> &sensor_ids, vector<string> &sensor_names){
 	init_size(_base_sensor_size);
 	//init the sensor size
 
@@ -155,8 +185,10 @@ void Snapshot::init_data(vector<string> sensor_names){
 	init_mask_amper();
 	init_other_parameter();
 
-	init_sensors(vector<string>(sensor_names.size(), ""), sensor_names);
+	init_sensors(sensor_ids, sensor_names);
 	init_sensor_pairs();
+
+	_log->info() << "Data init succeed";
 }
 
 void Snapshot::reallocate_memory(int sensor_size){
@@ -184,6 +216,7 @@ void Snapshot::copy_sensor_pair(int start_idx, int end_idx){
 	cudaMemcpy(dev_weights + ind(2 * start_idx, 0), h_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_dirs + ind(2 * start_idx, 0), h_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_thresholds + ind(start_idx, 0), h_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
+	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied";
 }
 
 void Snapshot::copy_sensor(int start_idx, int end_idx){
@@ -196,6 +229,7 @@ void Snapshot::copy_sensor(int start_idx, int end_idx){
 	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
+	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied";
 }
 
 void Snapshot::copy_mask(vector<bool> mask){
@@ -374,6 +408,10 @@ void Snapshot::delays(vector<vector<bool> > lists){
 				throw UMA_EXCEPTION::CORE_ERROR;
 			}
 		}
+		_log->info() << "A delayed sensor is generated";
+		string delay_list="";
+		for(int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
+		_log->verbose() << "The delayed sensor generated from " + delay_list;
 	}
 	//cout<<_sensor_num<<","<<_sensor_size_max<<_name<<","<<success_delay<<endl;
 	if(_sensor_num > _sensor_size_max){
@@ -403,6 +441,8 @@ void Snapshot::gen_direction(){
 	h_dirs = new bool[_measurable2d_size_max];
 	
 	cudaMalloc(&dev_dirs, _measurable2d_size_max * sizeof(bool));
+
+	_log->debug() << "Dir matrix generated with size " + to_string(_measurable2d_size_max);
 }
 
 /*
@@ -412,6 +452,8 @@ void Snapshot::gen_weight(){
 	h_weights = new double[_measurable2d_size_max];
 	
 	cudaMalloc(&dev_weights, _measurable2d_size_max * sizeof(double));
+
+	_log->debug() << "Weight matrix generated with size " + to_string(_measurable2d_size_max);
 }
 
 /*
@@ -420,6 +462,8 @@ This function is generating threshold matrix memory both on host and device
 void Snapshot::gen_thresholds(){
 	h_thresholds = new double[_sensor2d_size_max];
 	cudaMalloc(&dev_thresholds, _sensor2d_size_max * sizeof(double));
+
+	_log->debug() << "Threshold matrix generated with the size " + to_string(_sensor2d_size_max);
 }
 
 /*
@@ -429,6 +473,8 @@ void Snapshot::gen_mask_amper(){
 	h_mask_amper = new bool[_mask_amper_size_max];
 
 	cudaMalloc(&dev_mask_amper, _mask_amper_size_max * sizeof(bool));
+
+	_log->debug() << "Mask amper matrix generated with size " + to_string(_mask_amper_size_max);
 }
 
 /*
@@ -444,7 +490,9 @@ void Snapshot::init_direction(){
 			x = 0;
 		}
 	}
+	_log->debug() << "Dir matrix initiated with value 1 on diagonal and 0 otherwise";
 	cudaMemcpy(dev_dirs, h_dirs, _measurable2d_size_max * sizeof(bool), cudaMemcpyHostToDevice);
+	_log->debug() << "Dir matrix value copied to GPU";
 }
 
 /*
@@ -454,7 +502,9 @@ void Snapshot::init_weight(){
 	for(int i = 0; i < _measurable2d_size_max; ++i){
 		h_weights[i] = _total / 4.0;
 	}
+	_log->debug() << "Weight matrix initiated with value " + to_string(_total / 4.0);
 	cudaMemcpy(dev_weights, h_weights, _measurable2d_size_max * sizeof(double), cudaMemcpyHostToDevice);
+	_log->debug() << "Weight matrix value copied to GPU";
 }
 
 /*
@@ -464,7 +514,9 @@ void Snapshot::init_thresholds(){
 	for(int i = 0; i < _sensor2d_size_max; ++i){
 		h_thresholds[i] = _threshold;
 	}
+	_log->debug() << "Threshold matrix initiated with value " + to_string(_threshold);
 	cudaMemcpy(dev_thresholds, h_thresholds, _sensor2d_size_max * sizeof(double), cudaMemcpyHostToDevice);
+	_log->debug() << "Threshold matrix value copied to GPU";
 }
 
 /*
@@ -472,7 +524,9 @@ This function init all mask amper matrix value to be false
 */
 void Snapshot::init_mask_amper(){
 	for(int i = 0; i < _mask_amper_size_max; ++i) h_mask_amper[i] = false;
+	_log->debug() << "Mask amper matrix initiated with value 0";
 	cudaMemcpy(dev_mask_amper, h_mask_amper, _mask_amper_size_max * sizeof(bool), cudaMemcpyHostToDevice);
+	_log->debug() << "Mask amper matrix value copied to GPU";
 }
 
 /*
@@ -503,6 +557,8 @@ void Snapshot::gen_other_parameters(){
 	cudaMalloc(&dev_d2, _measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
 	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
+
+	_log->debug() << "Other parameter generated, with size " + to_string(_measurable_size_max);
 }
 
 //*********************************The folloing get/set function may change under REST Call infra***********************
@@ -1041,6 +1097,8 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 	cudaFree(dev_d2);
 	cudaFree(dev_diag);
 	cudaFree(dev_diag_);
+
+	_log->info() << "All memory released";
 }
 /*
 ----------------Snapshot Base Class-------------------
@@ -1050,8 +1108,8 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 ----------------Snapshot_Stationary Class-------------------
 */
 
-Snapshot_Stationary::Snapshot_Stationary(int base_sensor_size, double threshold, string name, vector<string> sensor_names, double q, bool cal_target)
-	:Snapshot(STATIONARY, base_sensor_size, threshold, name, sensor_names, cal_target){
+Snapshot_Stationary::Snapshot_Stationary(int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, double q, bool cal_target, string log_path)
+	:Snapshot(STATIONARY, base_sensor_size, threshold, name, sensor_ids, sensor_names, cal_target, log_path){
 	_q = q;
 }
 
@@ -1066,8 +1124,8 @@ Snapshot_Stationary::~Snapshot_Stationary(){}
 ----------------Snapshot_Forgetful Class-------------------
 */
 
-Snapshot_Forgetful::Snapshot_Forgetful(int base_sensor_size, double threshold, string name, vector<string> sensor_names, double q, bool cal_target)
-	:Snapshot(FORGETFUL, base_sensor_size, threshold, name, sensor_names, cal_target){
+Snapshot_Forgetful::Snapshot_Forgetful(int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, double q, bool cal_target, string log_path)
+	:Snapshot(FORGETFUL, base_sensor_size, threshold, name, sensor_ids, sensor_names, cal_target, log_path){
 	_q = q;
 }
 
@@ -1081,8 +1139,8 @@ Snapshot_Forgetful::~Snapshot_Forgetful(){}
 ----------------Snapshot_UnitTest Class--------------------
 */
 
-Snapshot_UnitTest::Snapshot_UnitTest(int base_sensor_size, double threshold, double q)
-	:Snapshot(UNITTEST, base_sensor_size, threshold, "test", vector<string>(base_sensor_size, "test_name"), false){
+Snapshot_UnitTest::Snapshot_UnitTest(int base_sensor_size, double threshold, double q, string log_path)
+	:Snapshot(UNITTEST, base_sensor_size, threshold, "test", vector<string>(base_sensor_size, "test_name"), vector<string>(base_sensor_size, "test_name"), false, log_path){
 	_q = q;
 }
 

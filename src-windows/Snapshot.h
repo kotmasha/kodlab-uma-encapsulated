@@ -10,6 +10,7 @@ class Measurable;
 class Sensor;
 class MeasurablePair;
 class SensorPair;
+class logManager;
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -115,6 +116,9 @@ protected:
 	//record current sensor num in the current Snapshot
 	int t;
 	bool cal_target;
+	logManager *_log;
+	string _log_path;
+
 public:
 	enum Snapshot_type{STATIONARY, FORGETFUL, UNITTEST};
 	double _total, _total_;
@@ -125,14 +129,14 @@ protected:
 	vector<bool> convert_signal_to_sensor(vector<bool> &signal);
 
 public:
-	Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_names, bool cal_target);
+	Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
 	
 	virtual float decide(vector<bool> signal, double phi, bool active);
 
 	void init_size(int sensor_size);
-	void init_sensors(vector<string> uuid, vector<string> names);
+	void init_sensors(vector<string> &uuid, vector<string> &names);
 	void init_sensor_pairs();
-	void init_data(vector<string> sensor_names);
+	void init_data(vector<string> &sensor_ids, vector<string> &sensor_names);
 
 	void free_all_parameters();
 	void init_pointers();
@@ -228,7 +232,7 @@ Stationary Snapshot is not throwing away information when it is not active
 */
 class Snapshot_Stationary: public Snapshot{
 public:
-	Snapshot_Stationary(int base_sensor_size, double threshold, string name, vector<string> sensor_names, double q, bool cal_target);
+	Snapshot_Stationary(int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, double q, bool cal_target, string log_path);
 	virtual ~Snapshot_Stationary();
 	virtual void update_weights(bool active);
 	virtual void update_thresholds();
@@ -245,7 +249,7 @@ Forgetful Snapshot will throw away information when it is not active
 */
 class Snapshot_Forgetful: public Snapshot{
 public:
-	Snapshot_Forgetful(int base_sensor_size, double threshold, string name, vector<string> sensor_names, double q, bool cal_target);
+	Snapshot_Forgetful(int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, double q, bool cal_target, string log_path);
 	virtual ~Snapshot_Forgetful();
 	virtual void update_weights(bool active);
 	virtual void update_thresholds();
@@ -262,7 +266,7 @@ UnitTest Snapshot are just used to do unit test, sensor names, snapshot name wil
 */
 class Snapshot_UnitTest: public Snapshot{
 public:
-	Snapshot_UnitTest(int base_sensor_size, double threshold, double q);
+	Snapshot_UnitTest(int base_sensor_size, double threshold, double q, string log_path);
 	virtual ~Snapshot_UnitTest();
 	virtual void update_weights(bool active);
 	virtual void orient_all();

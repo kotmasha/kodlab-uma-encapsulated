@@ -152,7 +152,7 @@ Input: ofstream file
 */
 void Sensor::save_sensor(ofstream &file){
 	//write sid, name and idx
-	file.write(_sid, strlen(_sid) * sizeof(char));
+	//file.write(_sid, strlen(_sid) * sizeof(char));
 	file.write(_sname.c_str(), _sname.length() * sizeof(char)); 
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	//write the amper list

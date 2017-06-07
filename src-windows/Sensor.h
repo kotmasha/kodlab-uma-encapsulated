@@ -1,11 +1,10 @@
 #ifndef _SENSOR_
 #define _SENSOR_
 #include "Global.h"
-
-
 class Snapshot;
 class Measurable;
 class SensorPair;
+class logManager;
 
 using namespace std;
 /*
@@ -16,7 +15,7 @@ Every sensor is distinguished by the sensor id(sid)
 class Sensor{
 protected:
 	//sid is the id of the sensor, get from python side, not changable
-	char const *_sid;
+	string _sid;
 	//idx is the index of sensor in the array structure, can be changed due to pruning
 	int _idx;
 	//the given sensor name
@@ -24,6 +23,7 @@ protected:
 	//*m is the pointer to the measurable object under this sensor, and cm is the compi
 	Measurable *_m, *_cm;
 	vector<int> _amper;
+
 	friend class SensorPair;
 	friend class Snapshot;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor

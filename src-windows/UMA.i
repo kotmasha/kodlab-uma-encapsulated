@@ -11,6 +11,7 @@
 #include "SensorPair.h"
 #include "Measurable.h"
 #include "UMATest.h"
+#include "logManager"
 %}
 
 namespace std {
@@ -32,3 +33,4 @@ namespace std {
 %include "SensorPair.h"
 %include "Measurable.h"
 %include "UMATest.h"
+%include "logManager"

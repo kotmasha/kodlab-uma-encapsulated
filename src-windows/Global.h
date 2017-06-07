@@ -8,6 +8,7 @@
 #include <vector>
 #include <time.h>
 #include <exception>
+#include <direct.h>
 
 enum UMA_EXCEPTION{CORE_FATAL, CORE_ERROR, CORE_WARNING};
 
