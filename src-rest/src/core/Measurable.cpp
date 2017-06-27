@@ -3,6 +3,12 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
+Measurable::Measurable(ifstream &file) {
+	file.read((char *)&_idx, sizeof(int));
+	file.read((char *)&_isOriginPure, sizeof(bool));
+	pointers_to_null();
+}
+
 Measurable::Measurable(int idx, bool isOriginPure){
 	_idx = idx;
 	_isOriginPure = isOriginPure;
@@ -66,10 +72,6 @@ Saving order MUST FOLLOW:
 void Measurable::save_measurable(ofstream &file){
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&_isOriginPure), sizeof(bool));
-}
-
-void Measurable::load_measurable(ifstream &file){
-	//_idx = 
 }
 
 Measurable::~Measurable(){

@@ -31,6 +31,7 @@ protected:
 	friend class MeasurablePair;
 
 public:
+	Measurable(ifstream &file);
 	Measurable(int idx, bool isOriginPure);
 	void pointers_to_null();
 	void pointers_to_values();
@@ -39,7 +40,6 @@ public:
 	void setStatusPointers(bool *status);
 	void setIdx(int idx);
 	void save_measurable(ofstream &file);
-	void load_measurable(ifstream &file);
 	~Measurable();
 };
 

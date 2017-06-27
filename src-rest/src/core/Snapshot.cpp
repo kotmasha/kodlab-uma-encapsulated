@@ -37,6 +37,46 @@ Snapshot::Snapshot(int type, int base_sensor_size, double threshold, string name
 	_log->info() << "A Snapshot " + name + " is created";
 }
 */
+Snapshot::Snapshot(ifstream &file, string &log_dir) {
+	//write uuid
+	int uuid_length = -1;
+	file.read((char *)(&uuid_length), sizeof(int));
+	_uuid = string(uuid_length, ' ');
+	file.read(&_uuid[0], uuid_length * sizeof(char));
+	_name = _uuid;
+	_log_dir = log_dir + _name;
+	_log = new logManager(logging::VERBOSE, _log_dir, _uuid + ".txt", typeid(*this).name());
+	_memory_expansion = .5;
+
+	_log->info() << "Default memory expansion rate is " + to_string(_memory_expansion);
+
+	//set the init value for 0.5 for now, ideally should read such value from conf file
+	//TBD: read conf file for _memory_expansion
+	_sensor_num = 0;
+	_total = 1.0;
+	_total_ = 1.0;
+	_q = 0.9;
+	_threshold = 0.125;
+	_log->debug() << "Setting init total value to " + to_string(_total);
+
+	init_pointers();
+
+	int sensor_size = -1;
+	int sensor_pair_size = -1;
+	file.read((char *)(&sensor_size), sizeof(int));
+	file.read((char *)(&sensor_pair_size), sizeof(int));
+	for (int i = 0; i < sensor_size; ++i) {
+		Sensor *sensor = new Sensor(file);
+		_sensors.push_back(sensor);
+	}
+	for (int i = 0; i < sensor_pair_size; ++i) {
+		SensorPair *sensor_pair = new SensorPair(file, _sensors);
+		_sensor_pairs.push_back(sensor_pair);
+	}
+
+	_log->info() << "A Snapshot " + _name + " is loaded";
+}
+
 Snapshot::Snapshot(string name, string uuid, string log_dir){
 	_name = name;
 	_uuid = uuid;
@@ -51,7 +91,8 @@ Snapshot::Snapshot(string name, string uuid, string log_dir){
 	_sensor_num = 0;
 	_total = 1.0;
 	_total_ = 1.0;
-
+	_q = 0.9;
+	_threshold = 0.125;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -110,14 +151,14 @@ void Snapshot::init_pointers(){
 	_log->debug() << "Setting all pointers to NULL";
 }
 
-float Snapshot::decide(vector<bool> &signal, double &phi, bool &active){//the decide function
+float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	//if(t<200) active = true;
+	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	//if(t<200) return 0;
+	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
@@ -153,6 +194,9 @@ bool Snapshot::validate() {
 	free_all_parameters();
 	init_size(_sensor_num);
 
+	_base_sensor_size = _sensor_num;
+	_log->info() << "base sensor size is: " + to_string(_base_sensor_size);
+
 	gen_weight();
 	gen_direction();
 	gen_thresholds();
@@ -186,7 +230,7 @@ void Snapshot::init_sensors(){
 		}
 		catch(exception &e){
 			cout<<e.what()<<endl;
-			throw UMA_EXCEPTION::CORE_FATAL;
+			throw CORE_EXCEPTION::CORE_FATAL;
 			//this is propabaly because the sensor name vector is not long enough, regard as fatal error and will abort test
 		}
 		//store the sensor pointer
@@ -204,7 +248,7 @@ void Snapshot::init_sensor_pairs(){
 			}
 			catch(exception &e){
 				cout<<e.what()<<endl;
-				throw UMA_EXCEPTION::CORE_FATAL;
+				throw CORE_EXCEPTION::CORE_FATAL;
 				//probably because sensors is not init correctly, regarded as fatal error
 			}
 		}
@@ -278,6 +322,25 @@ void Snapshot::reallocate_memory(int sensor_size){
 	init_other_parameter();
 }
 
+void Snapshot::copy_arrays_to_sensors() {
+	cudaMemcpy(h_diag, dev_diag, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_diag_, dev_diag_, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _sensors.size(); ++i) {
+		//bring all sensor and measurable info into the object
+		_sensors[i]->pointers_to_values();
+	}
+}
+
+void Snapshot::copy_arrays_to_sensor_pairs() {
+	cudaMemcpy(h_weights, dev_weights, _measurable2d_size * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_thresholds, dev_thresholds, _sensor2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _sensor_pairs.size(); ++i) {
+		//bring all sensor pair info into the object
+		_sensor_pairs[i]->pointers_to_values();
+	}
+}
+
 void Snapshot::copy_sensor_pair(int start_idx, int end_idx){
 	for(int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i){
 		_sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
@@ -294,7 +357,7 @@ void Snapshot::copy_sensor(int start_idx, int end_idx){
 		_sensors[i]->copyAmperList(h_mask_amper);
 		_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
 		_sensors[i]->setMeasurableStatusPointers(h_current);
-		_sensors[i]->setMeasurableValuestoPointers();
+		_sensors[i]->values_to_pointers();
 	}
 	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
@@ -378,26 +441,15 @@ vector<int> Snapshot::convert_list(vector<bool> &list){
 	return converted_list;
 }
 
-void Snapshot::ampers(vector<vector<bool> > lists){
-	cudaMemcpy(h_diag, dev_diag, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_diag_, dev_diag_, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	for(int i = 0; i < _sensors.size(); ++i){
-		//bring all sensor and measurable info into the object
-		_sensors[i]->setMeasurablePointerstoValues();
-	}
-	cudaMemcpy(h_weights, dev_weights, _measurable2d_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_thresholds, dev_thresholds, _sensor2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	for(int i = 0; i < _sensor_pairs.size(); ++i){
-		//bring all sensor pair info into the object
-		_sensor_pairs[i]->pointers_to_values();
-	}
+void Snapshot::ampers(vector<vector<bool> > &lists, vector<string> &uuids){
+	copy_arrays_to_sensors();
+	copy_arrays_to_sensor_pairs();
 	int success_amper = 0;
 	//record how many delay are successful
 	
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
-		amper(list);
+		amper(list, uuids[i]);
 		success_amper++;
 	}
 
@@ -421,69 +473,57 @@ void Snapshot::ampers(vector<vector<bool> > lists){
 	}
 }
 
-void Snapshot::amper(vector<int> &list){
+void Snapshot::amper(vector<int> &list, string uuid){
 	if(list.size() < 2) return;
 	try{
-		amperand(list[1], list[0], true);
+		amperand(list[1], list[0], true, uuid);
 		_sensor_num++;
 		for(int j = 2; j < list.size(); ++j){
-			amperand(_sensors.back()->_m->_idx, list[j], false);
+			amperand(_sensors.back()->_m->_idx, list[j], false, uuid);
 		}
 	}
 	catch(exception &e){
 		cout<<e.what()<<endl;
-		throw UMA_EXCEPTION::CORE_ERROR;
+		throw CORE_EXCEPTION::CORE_ERROR;
 	}
 }
 
-void Snapshot::delays(vector<vector<bool> > lists){
-	cudaMemcpy(h_diag, dev_diag, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_diag_, dev_diag_, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	for(int i = 0; i < _sensors.size(); ++i){
-		//bring all sensor and measurable info into the object
-		_sensors[i]->setMeasurablePointerstoValues();
-	}
-	cudaMemcpy(h_weights, dev_weights, _measurable2d_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_thresholds, dev_thresholds, _sensor2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	for(int i = 0; i < _sensor_pairs.size(); ++i){
-		//bring all sensor pair info into the object
-		_sensor_pairs[i]->pointers_to_values();
-	}
+void Snapshot::delays(vector<vector<bool> > &lists, vector<string> &uuids){
+	copy_arrays_to_sensors();
+	copy_arrays_to_sensor_pairs();
 	int success_delay = 0;
 	//record how many delay are successful
 	
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
-		amper(list);
+		amper(list, uuids[i]);
 		if(list.size() == 0) continue;
 		if(list.size() == 1){
 			try{
-				generate_delayed_weights(list[0], true);
+				generate_delayed_weights(list[0], true, uuids[i]);
 				_sensor_num++;
 				success_delay++;
 			}
 			catch(exception &e){
 				cout<<e.what()<<endl;
-				throw UMA_EXCEPTION::CORE_ERROR;
+				throw CORE_EXCEPTION::CORE_ERROR;
 			}
 		}
 		else{
 			try{
-				generate_delayed_weights(_sensors.back()->_m->_idx, false);
+				generate_delayed_weights(_sensors.back()->_m->_idx, false, uuids[i]);
 				success_delay++;
 			}
 			catch(exception &e){
 				cout<<e.what()<<endl;
-				throw UMA_EXCEPTION::CORE_ERROR;
+				throw CORE_EXCEPTION::CORE_ERROR;
 			}
 		}
-		_log->info() << "A delayed sensor is generated";
+		_log->info() << "A delayed sensor is generated " + uuids[i];
 		string delay_list="";
 		for(int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
 		_log->verbose() << "The delayed sensor generated from " + delay_list;
 	}
-	//cout<<_sensor_num<<","<<_sensor_size_max<<_name<<","<<success_delay<<endl;
 	if(_sensor_num > _sensor_size_max){
 		//if need to reallocate
 		reallocate_memory(_sensor_num);
@@ -636,7 +676,22 @@ void Snapshot::gen_other_parameters(){
 /*
 ------------------------------------SET FUNCTION------------------------------------
 */
-void Snapshot::setTarget(vector<bool> signal){
+void Snapshot::setThreshold(double &threshold) {
+	_threshold = threshold;
+	_log->info() << "snapshot threshold changed to " + to_string(threshold);
+}
+
+void Snapshot::setQ(double &q) {
+	_q = q;
+	_log->info() << "snapshot q changed to " + to_string(q);
+}
+
+void Snapshot::setName(string &name) {
+	_name = name;
+	_log->info() << "snapshot name changed to " + name;
+}
+
+void Snapshot::setTarget(vector<bool> &signal){
 	for(int i = 0; i < _measurable_size; ++i){
 		h_target[i] = signal[i];
 	}
@@ -646,7 +701,7 @@ void Snapshot::setTarget(vector<bool> signal){
 /*
 This function set observe signal from python side
 */
-void Snapshot::setObserve(vector<bool> observe){//this is where data comes in in every frame
+void Snapshot::setObserve(vector<bool> &observe){//this is where data comes in in every frame
 	for(int i = 0; i < observe.size(); ++i){
 		h_observe[i] = observe[i];
 	}
@@ -918,9 +973,9 @@ MeasurablePair *Snapshot::getMeasurablePair(int m_idx1, int m_idx2){
 This is the amper and function, used in amper and delay
 Input: m_idx1, m_idx2 are the measurable idx that need to be amperand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
 */
-void Snapshot::amperand(int m_idx1, int m_idx2, bool merge){
+void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, string uuid){
 	vector<SensorPair*> amper_and_sensor_pairs;
-	Sensor *amper_and_sensor = new Sensor("", "", _sensor_num);
+	Sensor *amper_and_sensor = new Sensor(uuid, uuid, _sensor_num);
 	double f = 1.0;
 	if(_total > 0 && _total < 1e-5)
 		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
@@ -1006,9 +1061,9 @@ This function is generating the delayed weights
 Before this function is called, have to make sure, _sensors and _sensor_pairs have valid info in vwxx;
 Input: mid of the measurable doing the delay, and whether to merge after the operation
 */
-void Snapshot::generate_delayed_weights(int mid, bool merge){
+void Snapshot::generate_delayed_weights(int mid, bool merge, string uuid){
 	//create a new delayed sensor
-	Sensor *delayed_sensor = new Sensor("", "", _sensor_num);
+	Sensor *delayed_sensor = new Sensor(uuid, uuid, _sensor_num);
 	vector<SensorPair *> delayed_sensor_pairs;
 	//the sensor name is TBD, need python input
 	int delay_mid1 = mid, delay_mid2 = compi(mid);
@@ -1089,6 +1144,7 @@ Output: None
 void Snapshot::update_state_GPU(bool activity){//true for decide	
     // udpate the snapshot weights and total count:
     update_weights(activity);
+
 	calculate_total(activity);
 
 	// SIQI: update the thresholds:
@@ -1170,6 +1226,25 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 
 	_log->info() << "All memory released";
 }
+
+void Snapshot::save_snapshot(ofstream &file) {
+	//write uuid
+	int uuid_size = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuid_size), sizeof(int));
+	file.write(_uuid.c_str(), uuid_size * sizeof(char));
+	int sensor_size = _sensors.size();
+	int sensor_pair_size = _sensor_pairs.size();
+	file.write(reinterpret_cast<const char *>(&sensor_size), sizeof(int));
+	file.write(reinterpret_cast<const char *>(&sensor_pair_size), sizeof(int));
+	copy_arrays_to_sensors();
+	copy_arrays_to_sensor_pairs();
+	for (int i = 0; i < sensor_size; ++i) {
+		_sensors[i]->save_sensor(file);
+	}
+	for (int i = 0; i < sensor_pair_size; ++i) {
+		_sensor_pairs[i]->save_sensor_pair(file);
+	}
+}
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -1177,6 +1252,7 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 /*
 ----------------Snapshot_Stationary Class-------------------
 */
+Snapshot_Stationary::Snapshot_Stationary(ifstream &file, string &log_dir):Snapshot(file, log_dir) {}
 
 Snapshot_Stationary::Snapshot_Stationary(string name, string uuid, string log_dir)
 	:Snapshot(name, uuid, log_dir){

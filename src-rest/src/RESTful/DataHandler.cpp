@@ -5,152 +5,122 @@
 #include "logManager.h"
 
 DataHandler::DataHandler(logManager *log_access):AdminHandler(log_access) {
-	UMA_BASE_SENSOR_SIZE = L"base_sensor_size";
-	UMA_THRESHOLD = L"threshold";
-	UMA_Q = L"q";
+	UMA_TARGET = L"target";
+	UMA_CURRENT = L"current";
+	UMA_PREDICTION = L"prediction";
+
+	UMA_TARGET_LIST = L"target_list";
 }
 
 void DataHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
 	json::value &data = request.extract_json().get();
-	if (paths[0] == UMA_AGENT) {
-		create_agent(world, data, request);
-		return;
-	}
-	else if (paths[0] == UMA_SNAPSHOT) {
-		create_snapshot(world, data, request);
-		return;
-	}
-	else if (paths[0] == UMA_SENSOR) {
-		create_sensor(world, data, request);
-		return;
-	}
 
-	_log_access->error() << request.absolute_uri().to_string() + L" 400";
-	request.reply(status_codes::BadRequest, json::value::string(L"cannot handle " + paths[0] + L" object"));
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	json::value message;
+	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	request.reply(status_codes::BadRequest, message);
 }
 
 void DataHandler::handle_update(World *world, vector<string_t> &paths, http_request &request) {
+	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	json::value &data = request.extract_json().get();
+	string agent_id, snapshot_id;
+	vector<bool> target;
+	try {
+		agent_id = get_string_input(query, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(query, UMA_SNAPSHOT_ID, request);
+		target = get_bool1d_input(data, UMA_TARGET_LIST, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
 
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+
+	if (paths[0] == UMA_TARGET) {
+		snapshot->setTarget(target);
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"target value updated");
+		request.reply(status_codes::OK, message);
+		return;
+	}
+
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	json::value message;
+	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	request.reply(status_codes::BadRequest, message);
 }
 
 void DataHandler::handle_read(World *world, vector<string_t> &paths, http_request &request) {
+	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	string agent_id, snapshot_id;
+	try {
+		agent_id = get_string_input(query, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(query, UMA_SNAPSHOT_ID, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
 
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+
+	if (paths[0] == UMA_CURRENT) {
+		vector<bool> current = snapshot->getCurrent();
+		vector<json::value> json_current;
+		vector_bool_to_array(current, json_current);
+		json::value return_data = json::value::array(json_current);
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
+
+		json::value message;
+		message[MESSAGE] = json::value::string(L"get current value");
+		message[L"data"] = return_data;
+		request.reply(status_codes::OK, message);
+		return;
+	}
+	else if(paths[0] == UMA_PREDICTION){
+		vector<bool> prediction = snapshot->getPrediction();
+		vector<json::value> json_prediction;
+		vector_bool_to_array(prediction, json_prediction);
+		json::value return_data = json::value::array(json_prediction);
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
+
+		json::value message;
+		message[MESSAGE] = json::value::string(L"get prediction value");
+		message[L"data"] = return_data;
+		request.reply(status_codes::OK, message);
+		return;
+	}
+	else if (paths[0] == UMA_TARGET) {
+		vector<bool> target = snapshot->getTarget();
+		vector<json::value> json_target;
+		vector_bool_to_array(target, json_target);
+		json::value return_data = json::value::array(json_target);
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
+
+		json::value message;
+		message[MESSAGE] = json::value::string(L"get target value");
+		message[L"data"] = return_data;
+		request.reply(status_codes::OK, message);
+		return;
+	}
+
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	json::value message;
+	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	request.reply(status_codes::BadRequest, message);
 }
 
 void DataHandler::handle_delete(World *world, vector<string_t> &paths, http_request &request) {
 
-}
-
-void DataHandler::create_agent(World *world, json::value &data, http_request &request) {
-	if (!check_field(data, NAME, request)) return;
-	if (!check_field(data, UUID, request)) return;
-	string_t name, uuid;
-	try {
-		name = data[NAME].as_string();
-		uuid = data[UUID].as_string();
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		parsing_error(request);
-		return;
-	}
-	//convent from wstring to string
-	std::string s_name(name.begin(), name.end());
-	std::string s_uuid(uuid.begin(), uuid.end());
-	bool status = world->add_agent(s_name, s_uuid);
-	if (status) {
-		_log_access->info()<< request.absolute_uri().to_string() + L" 201";
-		request.reply(status_codes::Created, json::value::string(L"Agent created"));
-	}
-	else {
-		_log_access->error()<< request.absolute_uri().to_string() + L" 400";
-		request.reply(status_codes::BadRequest, json::value::string(L"Cannot create agent!"));
-	}
-}
-
-void DataHandler::create_snapshot(World *world, json::value &data, http_request &request) {
-	if (!check_field(data, NAME, request)) return;
-	if (!check_field(data, UUID, request)) return;
-	if (!check_field(data, UMA_AGENT_ID, request)) return;
-
-	string_t name, uuid, agent_id;
-	try {
-		name = data[NAME].as_string();
-		uuid = data[UUID].as_string();
-		agent_id = data[UMA_AGENT_ID].as_string();
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		parsing_error(request);
-		return;
-	}
-	//convent from wstring to string
-	std::string s_name(name.begin(), name.end());
-	std::string s_uuid(uuid.begin(), uuid.end());
-	std::string s_agent_id(agent_id.begin(), agent_id.end());
-	
-	Agent *agent = world->getAgent(s_agent_id);
-	if (agent == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		request.reply(status_codes::NotFound, json::value::string(L"Cannot find the agent id!"));
-		return;
-	}
-	bool status = agent->add_snapshot_stationary(s_name, s_uuid);
-	if (status) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 201";
-		request.reply(status_codes::Created, json::value::string(L"Snapshot created"));
-	}
-	else {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
-		request.reply(status_codes::BadRequest, json::value::string(L"Cannot create snapshot!"));
-	}
-}
-
-void DataHandler::create_sensor(World *world, json::value &data, http_request &request) {
-	if (!check_field(data, NAME, request)) return;
-	if (!check_field(data, UUID, request)) return;
-	if (!check_field(data, UMA_AGENT_ID, request)) return;
-	if (!check_field(data, UMA_SNAPSHOT_ID, request)) return;
-
-	string_t name, uuid, agent_id, snapshot_id;
-	try {
-		name = data[NAME].as_string();
-		uuid = data[UUID].as_string();
-		agent_id = data[UMA_AGENT_ID].as_string();
-		snapshot_id = data[UMA_SNAPSHOT_ID].as_string();
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		parsing_error(request);
-		return;
-	}
-	//convent from wstring to string
-	std::string s_name(name.begin(), name.end());
-	std::string s_uuid(uuid.begin(), uuid.end());
-	std::string s_agent_id(agent_id.begin(), agent_id.end());
-	std::string s_snapshot_id(snapshot_id.begin(), snapshot_id.end());
-
-	Agent *agent = world->getAgent(s_agent_id);
-	if (agent == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		request.reply(status_codes::NotFound, json::value::string(L"Cannot find the agent id!"));
-		return;
-	}
-	Snapshot *snapshot = agent->getSnapshot(s_snapshot_id);
-	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		request.reply(status_codes::NotFound, json::value::string(L"Cannot find the snapshot id!"));
-		return;
-	}
-	bool status = snapshot->add_sensor(s_name, s_uuid);
-	if (status) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 201";
-		request.reply(status_codes::Created, json::value::string(L"Sensor created"));
-	}
-	else {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
-		request.reply(status_codes::BadRequest, json::value::string(L"Cannot create sensor!"));
-	}
 }
 
 DataHandler::~DataHandler() {}

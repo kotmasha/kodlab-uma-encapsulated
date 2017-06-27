@@ -14,9 +14,9 @@ variable start with v are temparay variable to store the value, used in amper/de
 class MeasurablePair{
 private:
 	//const pointer to measurable, larger idx
-	Measurable * const _measurable_i;
+	Measurable * _measurable_i;
 	//const pointer to measurable, smaller idx
-	Measurable * const _measurable_j;
+	Measurable * _measurable_j;
 	//weight matrix pointer
 	double *_w;
 	//tmp variable for weight
@@ -30,6 +30,7 @@ private:
 	friend class Snapshot;
 
 public:
+	MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j);
 	MeasurablePair(Measurable *_m_i, Measurable *_m_j);
 	void pointers_to_null();
 	void pointers_to_values();

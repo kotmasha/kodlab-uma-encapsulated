@@ -14,9 +14,9 @@ It is distinguished by 2 sensor ids, and it will point to values like weight, di
 class SensorPair{
 private:
 	//const pointer to sensor, larger idx
-	Sensor * const _sensor_i;
+	Sensor * _sensor_i;
 	//const pointer to sensor, smaller idx
-	Sensor * const _sensor_j;
+	Sensor * _sensor_j;
 	//pointers to measurable pairs
 	MeasurablePair *mij, *mi_j, *m_ij, *m_i_j;
 	//pointer to threshold matrix
@@ -28,6 +28,7 @@ private:
 	friend class Snapshot;
 
 public:
+	SensorPair(ifstream &file, vector<Sensor *> &sensors);
 	SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold);
 	//init functions
 	void setWeightPointers(double *weights);

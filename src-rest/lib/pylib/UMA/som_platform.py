@@ -3,13 +3,14 @@ from collections import deque
 from Service_World import *
 from Service_Agent import *
 from Service_Snapshot import *
+from Service_Sensor import *
 import numpy as np
 import uuid
 import time
 from numpy.random import randint as rnd
 
 N_CORES=8
-
+service = UMA_service()
 ###
 ### Randomized inequality
 ###
@@ -315,6 +316,7 @@ class Experiment(object):
 
             new_agent = Agent(self, id_agent, id_motivation, params)
             self._AGENTS[id_agent]=new_agent
+            ServiceWorld(service).add_agent(id_agent, id_agent)
 
             return new_agent
 
@@ -347,9 +349,9 @@ class Experiment(object):
                               # cycle; if the prediction is too broad, add a
                               # sensor:
                               #print "in"
-                              if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
+                              #if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
                                     #agent.delay([(agent.report_last().intersect(agent.report_target())).intersect(agent._INITMASK)])
-                                    agent.delay([agent.report_last().intersect(agent._INITMASK)])
+                                    #agent.delay([agent.report_last().intersect(agent._INITMASK)])
                               #print "out"
                               ## agent makes a decision 
                               messages[mid]=agent.decide()
@@ -444,7 +446,11 @@ class Agent(object):
       ## Activate the agent when the initial definitions stage is completed
       def init(self):
             self.collect_observation()
-            return self.brain.init()
+            agent = ServiceAgent(self._MID, service)
+            snapshot_plus = agent.add_snapshot('plus')
+            snapshot_minus = agent.add_snapshot('minus')
+            snapshot_plus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
+            snapshot_minus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
 
       def collect_observation(self):
             self._OBSERVE=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS])
@@ -527,14 +533,25 @@ class Agent(object):
             # move the latest record of the current state to "last state"
             self._LAST=self.report_current()
 
-            #update the agent's snapshots
+            agent = ServiceAgent(self._MID, service)
+            res = agent.make_decision(self._OBSERVE._VAL.tolist(), self._EXPERIMENT.this_state(self._MOTIVATION), activity['plus'])
             for token in ['plus','minus']:
-                  #print self._OBSERVE._VAL.tolist()
-                  dist[token]=self.brain._snapshots[token].decide(self._OBSERVE._VAL.tolist(),self._EXPERIMENT.this_state(self._MOTIVATION),activity[token])
-                  self._TARGET[token]=Signal(self.brain._snapshots[token].getTarget())
-                  self._CURRENT[token]=Signal(self.brain._snapshots[token].getCurrent())
-                  self._PREDICTED[token]=Signal(self.brain._snapshots[token].getPrediction())
+                  dist[token] = res[token]['res']
+                  self._TARGET[token]=Signal(res[token]['target'])
+                  self._CURRENT[token]=Signal(res[token]['current'])
+                  self._PREDICTED[token]=Signal(res[token]['prediction'])
 
+            #update the agent's snapshots
+            #for token in ['plus','minus']:
+            #      snapshot = ServiceSnapshot(self._MID, self._MID + '_' + token, service)
+            #      (dist[token], current, prediction, target) = snapshot.make_decision(self._OBSERVE._VAL.tolist(), self._EXPERIMENT.this_state(self._MOTIVATION), activity[token])
+            #      self._TARGET[token]=Signal(target)
+            #      self._CURRENT[token]=Signal(current)
+            #      self._PREDICTED[token]=Signal(prediction)
+
+                  #self._TARGET[token]=Signal(list(snapshot.getTarget()))
+                  #self._CURRENT[token]=Signal(list(snapshot.getCurrent()))
+                  #self._PREDICTED[token]=Signal(list(snapshot.getPrediction()))
             #print dist['plus'], dist['minus']
 
             # make a decision
@@ -603,6 +620,7 @@ class Agent(object):
       ###   conjunction which must be added to the agent's snapshots
       def delay(self,signals):
             new_signals=[]
+            new_uuids = []
             for signal in signals:
                   #if signal is trivial (no sensors), skip it
                   if sum(signal.value_all()) < 1: 
@@ -611,6 +629,7 @@ class Agent(object):
                   mid_list=self.select(signal)
                   #new name as a means of verifying redundancy (CHANGE THIS!!)
                   new_name=name_delay(name_ampersand([self._EXPERIMENT.din(mid) for mid in mid_list]))
+                  #print new_name
                   #construct definition for new sensor
                   #def new_def(state):
                   #      return all([state[mid][1] for mid in mid_list])
@@ -626,6 +645,7 @@ class Agent(object):
                         #add the new sensor to this agent as non-initial
                         self.add_sensor(new_mid,False)
                         new_signals.append(signal)
+                        new_uuids.append(new_mid)
                   except: #if the sensor was registered
                         new_mid=self._EXPERIMENT.nid(new_name)
                         if new_mid in self._SENSORS:
@@ -633,8 +653,13 @@ class Agent(object):
                         else:
                               self.add_sensor(new_mid,False)
                               new_signals.append(signal)
+                              new_uuids.append(new_mid)
             if new_signals:
-                  self.brain.delay(new_signals)
+                  agent = ServiceAgent(self._MID, service)
+                  snapshot_plus = ServiceSnapshot(self._MID, self._MID + '_plus', service)
+                  snapshot_minus = ServiceSnapshot(self._MID, self._MID + '_minus', service)
+                  snapshot_plus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
+                  snapshot_minus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
             else:
                   pass
             return None

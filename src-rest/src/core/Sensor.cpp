@@ -4,6 +4,29 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
+Sensor::Sensor(ifstream &file) {
+	int sid_length = -1;
+	file.read((char *)(&sid_length), sizeof(int));
+	if (sid_length > 0) {
+		_sid = string(sid_length, ' ');
+		file.read(&_sid[0], sid_length * sizeof(char));
+	}
+	else _sid = "";
+	_sname = _sid;
+
+	file.read((char *)(&_idx), sizeof(int));
+	//write the amper list
+	int amper_size = -1;
+	file.read((char *)(&amper_size), sizeof(int));
+	for (int i = 0; i < amper_size; ++i) {
+		int tmp_value = -1;
+		file.read((char *)(&tmp_value), sizeof(int));
+		_amper.push_back(tmp_value);
+	}
+	_m = new Measurable(file);
+	_cm = new Measurable(file);
+}
+
 /*
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
@@ -87,7 +110,7 @@ void Sensor::setMeasurableStatusPointers(bool *status){
 /*
 This function is copying the diag value of _m and _cm to the pointer
 */
-void Sensor::setMeasurableValuestoPointers(){
+void Sensor::values_to_pointers(){
 	_m->values_to_pointers();
 	_cm->values_to_pointers();
 }
@@ -95,7 +118,7 @@ void Sensor::setMeasurableValuestoPointers(){
 /*
 This function is copying the pointer of _m and _cm to value
 */
-void Sensor::setMeasurablePointerstoValues(){
+void Sensor::pointers_to_values(){
 	_m->pointers_to_values();
 	_cm->pointers_to_values();
 }
@@ -151,30 +174,19 @@ Saving order MUST FOLLOW:
 Input: ofstream file
 */
 void Sensor::save_sensor(ofstream &file){
-	//write sid, name and idx
-	//file.write(_sid, strlen(_sid) * sizeof(char));
-	file.write(_sname.c_str(), _sname.length() * sizeof(char)); 
+	//write sid and idx
+	int sid_length = _sid.length();
+	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
+	file.write(_sid.c_str(), sid_length * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	//write the amper list
 	int amper_size = _amper.size();
 	file.write(reinterpret_cast<const char *>(&amper_size), sizeof(int));
-	for(int i = 0; i < _amper.size(); ++i){
+	for(int i = 0; i < amper_size; ++i){
 		file.write(reinterpret_cast<const char *>(&_amper[i]), sizeof(int));
 	}
 	_m->save_measurable(file);
 	_cm->save_measurable(file);
-}
-
-void Sensor::load_sensor(ifstream &file){
-	/*file.read(_sid, strlen(_sid) * sizeof(char));
-	file.read(_sname.c_str(), _sname.length() * sizeof(char)); 
-	file.read(reinterpret_cast<char *>(&_idx), sizeof(int));
-	//write the amper list
-	int amper_size = _amper.size();
-	file.write(reinterpret_cast<const char *>(&amper_size), sizeof(int));
-	for(int i = 0; i < _amper.size(); ++i){
-		file.write(reinterpret_cast<const char *>(&_amper[i]), sizeof(int));
-	}*/
 }
 
 /*

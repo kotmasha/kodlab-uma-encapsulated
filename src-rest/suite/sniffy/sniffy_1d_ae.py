@@ -176,7 +176,9 @@ def start_experiment(stdscr,agent_to_examine):
     for agent in [RT,LT]:
         for token in ['plus','minus']:
             tmp_target=agent.generate_signal([id_navM]).value_all().tolist()
-            agent.brain._snapshots[token].setTarget(tmp_target)
+            #agent.brain._snapshots[token].setTarget(tmp_target)
+            service_snapshot = ServiceSnapshot(agent._MID, agent._MID + '_' + token, service)
+            service_snapshot.setTarget(tmp_target)
 
     # perform one update cycle to update back-end data structures
     message=EX.update_state()

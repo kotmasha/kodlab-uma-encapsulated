@@ -15,8 +15,10 @@ void DataValidationHandler::handle_create(World *world, vector<string_t> &paths,
 		return;
 	}
 
-	_log_access->error() << request.absolute_uri().to_string() + L" 400";
-	request.reply(status_codes::BadRequest, json::value::string(L"cannot handle " + paths[0] + L" object"));
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	json::value message;
+	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	request.reply(status_codes::BadRequest, message);
 }
 
 void DataValidationHandler::handle_update(World *world, vector<string_t> &paths, http_request &request) {
@@ -32,42 +34,32 @@ void DataValidationHandler::handle_delete(World *world, vector<string_t> &paths,
 }
 
 void DataValidationHandler::validate_snapshot(World *world, json::value &data, http_request &request) {
-	if (!check_field(data, UMA_AGENT_ID, request)) return;
-	if (!check_field(data, UMA_SNAPSHOT_ID, request)) return;
-	string_t agent_id, snapshot_id;
+	string agent_id, snapshot_id;
 	try {
-		agent_id = data[UMA_AGENT_ID].as_string();
-		snapshot_id = data[UMA_SNAPSHOT_ID].as_string();
+		agent_id = get_string_input(data, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
-		parsing_error(request);
 		return;
 	}
-	//convent from wstring to string
-	std::string s_agent_id(agent_id.begin(), agent_id.end());
-	std::string s_snapshot_id(snapshot_id.begin(), snapshot_id.end());
 	
-	Agent *agent = world->getAgent(s_agent_id);
-	if (agent == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		request.reply(status_codes::NotFound, json::value::string(L"Cannot find the agent id!"));
-		return;
-	}
-	Snapshot *snapshot = agent->getSnapshot(s_snapshot_id);
-	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		request.reply(status_codes::NotFound, json::value::string(L"Cannot find the snapshot id!"));
-		return;
-	}
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
 	bool status = snapshot->validate();
 	if (status) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 201";
-		request.reply(status_codes::Created, json::value::string(L"Snapshot Validation succeed"));
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"Snapshot validation succeed");
+		request.reply(status_codes::Created, message);
 	}
 	else {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
-		request.reply(status_codes::BadRequest, json::value::string(L"Cannot validate the snapshot!"));
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"Cannot validate the snapshot");
+		request.reply(status_codes::BadRequest, message);
 	}
 }
 

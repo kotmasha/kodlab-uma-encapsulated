@@ -11,6 +11,7 @@ class Sensor;
 class MeasurablePair;
 class SensorPair;
 class logManager;
+class Agent;
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -121,6 +122,7 @@ protected:
 	bool cal_target;
 	logManager *_log;
 	string _log_dir;
+	friend class Agent;
 
 public:
 	enum Snapshot_type{STATIONARY, FORGETFUL, UNITTEST};
@@ -133,9 +135,10 @@ protected:
 
 public:
 	//Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
+	Snapshot(ifstream &file, string &log_dir);
 	Snapshot(string name, string uuid, string log_dir);
 
-	virtual float decide(vector<bool> &signal, double &phi, bool &active);
+	virtual float decide(vector<bool> &signal, double phi, bool active);
 
 	bool add_sensor(string name, string uuid);
 	bool validate();
@@ -193,8 +196,11 @@ public:
 	/*
 	---------------------SET FUNCTION----------------------
 	*/
-	void setTarget(vector<bool> signal);
-	void setObserve(vector<bool> observe);
+	void setThreshold(double &threshold);
+	void setQ(double &q);
+	void setName(string &name);
+	void setTarget(vector<bool> &signal);
+	void setObserve(vector<bool> &observe);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/
@@ -206,15 +212,19 @@ public:
 	void copy_sensor_pair(int start_idx, int end_idx);
 	void copy_sensor(int start_idx, int end_idx);
 	void copy_mask(vector<bool> mask);
+	void copy_sensors_to_arrays();
+	void copy_sensor_pairs_to_arrays();
+	void copy_arrays_to_sensors();
+	void copy_arrays_to_sensor_pairs();
 	/*
 	---------------------COPY FUNCTION---------------------
 	*/
 
-	void generate_delayed_weights(int mid, bool merge);
-	void ampers(vector<vector<bool> > lists);
-	void amper(vector<int> &list);
-	void delays(vector<vector<bool> > list);
-	void amperand(int mid1, int mid2, bool merge);
+	void generate_delayed_weights(int mid, bool merge, string uuid);
+	void ampers(vector<vector<bool> > &lists, vector<string> &uuids);
+	void amper(vector<int> &list, string uuid);
+	void delays(vector<vector<bool> > &lists, vector<string> &uuids);
+	void amperand(int mid1, int mid2, bool merge, string uuid);
 	void pruning(vector<bool> signal);
 
 	void init_direction();
@@ -231,6 +241,8 @@ public:
 	
 	void gen_other_parameters();
 
+	void save_snapshot(ofstream &file);
+
 	~Snapshot();
 };
 
@@ -239,6 +251,7 @@ Stationary Snapshot is not throwing away information when it is not active
 */
 class Snapshot_Stationary: public Snapshot{
 public:
+	Snapshot_Stationary(ifstream &file, string &log_dir);
 	Snapshot_Stationary(string name, string uuid, string log_dir);
 	virtual ~Snapshot_Stationary();
 	virtual void update_weights(bool active);

@@ -7,6 +7,7 @@ class Snapshot;
 class Snapshot_Stationary;
 class Snapshot_Forgetful;
 class logManager;
+class World;
 
 /*
 This is the Agent class, store several snapshot, and makes decision based on the python world observation
@@ -20,11 +21,19 @@ protected:
 	string _uuid;
 	string _log_dir;
 	logManager *_log;
+	friend class World;
 
 public:
+	Agent(ifstream &file);
 	Agent(string name, string uuid);
 	bool add_snapshot_stationary(string name, string uuid);
 	Snapshot *getSnapshot(string snapshot_id);
+	vector<float> decide(vector<bool> &signal, double phi, bool active);
+	vector<vector<bool>> getCurrent();
+	vector<vector<bool>> getPrediction();
+	vector<vector<bool>> getTarget();
+	void setName(string name);
+	void save_agent(ofstream &file);
 	~Agent();
 };
 

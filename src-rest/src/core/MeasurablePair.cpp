@@ -4,6 +4,10 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
+MeasurablePair::MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j) {
+	file.read((char *)(&v_w), sizeof(double));
+}
+
 MeasurablePair::MeasurablePair(Measurable *_m_i, Measurable *_m_j)
 	:_measurable_i(_m_i), _measurable_j(_m_j){
 	v_w = 0.0;
@@ -62,8 +66,6 @@ No dir matrix is needed as it can be concluded from weight
 Input: file ofstream
 */
 void MeasurablePair::save_measurable_pair(ofstream &file){
-	file.write(reinterpret_cast<const char *>(&_measurable_i->_idx), sizeof(int));
-	file.write(reinterpret_cast<const char *>(&_measurable_j->_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&v_w), sizeof(double));
 }
 

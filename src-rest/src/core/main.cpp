@@ -2,6 +2,9 @@
 #include "listener.h"
 #include "World.h"
 
+#include <stdio.h>
+using namespace std;
+
 int main() {
 	listener listener(L"http://localhost:8000");
 	try

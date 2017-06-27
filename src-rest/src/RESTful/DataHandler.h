@@ -19,10 +19,8 @@ public:
 	~DataHandler();
 
 protected:
-	string_t UMA_BASE_SENSOR_SIZE, UMA_THRESHOLD, UMA_Q;
-	void create_agent(World *world, json::value &data, http_request &request);
-	void create_snapshot(World *world, json::value &data, http_request &request);
-	void create_sensor(World *world, json::value &data, http_request &request);
+	string_t UMA_CURRENT, UMA_PREDICTION, UMA_TARGET;
+	string_t UMA_TARGET_LIST;
 };
 
 #endif

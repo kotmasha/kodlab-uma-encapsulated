@@ -13,6 +13,7 @@ using namespace std;
 class World;
 class AdminHandler;
 class DataHandler;
+class ObjectHandler;
 class DataValidationHandler;
 class SimulationHandler;
 class logging;
@@ -27,6 +28,7 @@ public:
 protected:
 	World *_world;
 	DataHandler *_data_handler;
+	ObjectHandler *_object_handler;
 	DataValidationHandler *_data_validation_handler;
 	SimulationHandler *_simulation_handler;
 	string _log_path;

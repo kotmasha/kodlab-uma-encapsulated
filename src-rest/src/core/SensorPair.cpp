@@ -5,6 +5,20 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
+SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
+	int idx_i = -1, idx_j = -1;
+	file.read((char *)(&idx_i), sizeof(int));
+	file.read((char *)(&idx_j), sizeof(int));
+	file.read((char *)(&vthreshold), sizeof(double));
+	_sensor_i = sensors[idx_i];
+	_sensor_j = sensors[idx_j];
+	mij = new MeasurablePair(file, _sensor_i->_m, _sensor_j->_m);
+	mi_j = new MeasurablePair(file, _sensor_i->_m, _sensor_j->_cm);
+	m_ij = new MeasurablePair(file, _sensor_i->_cm, _sensor_j->_m);
+	m_i_j = new MeasurablePair(file, _sensor_i->_cm, _sensor_j->_cm);
+	pointers_to_null();
+}
+
 /*
 init function use sensor pointer, measurable pointer to create measurable pairs
 */
@@ -52,6 +66,10 @@ This function is validating the SensorPair value from the pointer, used before d
 */
 void SensorPair::pointers_to_values(){	
 	vthreshold = *threshold;
+	mij->pointers_to_values();
+	mi_j->pointers_to_values();
+	m_ij->pointers_to_values();
+	m_i_j->pointers_to_values();
 }
 
 /*

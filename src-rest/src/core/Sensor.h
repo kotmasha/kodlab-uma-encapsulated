@@ -28,12 +28,13 @@ protected:
 	friend class Snapshot;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 public:
+	Sensor(ifstream &file);
 	Sensor(string sid, string sname, int idx);
 
 	void setMeasurableDiagPointers(double *_diags, double *_diags_);
 	void setMeasurableStatusPointers(bool *current);
-	void setMeasurableValuestoPointers();
-	void setMeasurablePointerstoValues();
+	void values_to_pointers();
+	void pointers_to_values();
 	void init_amper_list(bool *ampers);
 	void setAmperList(bool *ampers, int start, int end);
 	void setAmperList(int idx);
@@ -44,7 +45,6 @@ public:
 	bool isSensorActive();
 	void pointers_to_null();
 	void save_sensor(ofstream &file);
-	void load_sensor(ifstream &file);
 
 	~Sensor();
 };

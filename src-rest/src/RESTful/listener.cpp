@@ -1,6 +1,7 @@
 #include "listener.h"
 #include "World.h"
 #include "DataHandler.h"
+#include "ObjectHandler.h"
 #include "DataValidationHandler.h"
 #include "SimulationHandler.h"
 #include "AdminHandler.h"
@@ -32,6 +33,9 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	_data_handler = new DataHandler(_log_access);
 	_log_server->info() << "A data handler is created";
 
+	_object_handler = new ObjectHandler(_log_access);
+	_log_server->info() << "A object handler is created";
+
 	_data_validation_handler = new DataValidationHandler(_log_access);
 	_log_server->info() << "A data validation handler is created";
 
@@ -39,33 +43,55 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	_log_server->info() << "A simulation handler is created";
 }
 
-void listener::handle_get(http_request message){
-	std::cout << "a request is coming in" << std::endl;
-	std::wcout << message.absolute_uri().to_string() << std::endl;
-	std::wcout << message.relative_uri().to_string() << std::endl;
-	message.reply(status_codes::BadRequest);
+void listener::handle_get(http_request request){
+	vector<string_t> &paths = uri::split_path(request.request_uri().path());
+
+	AdminHandler *handler = find_handler(paths);
+	if (handler == NULL) {
+		_log_access->error() << request.absolute_uri().to_string() + L" 400";
+		json::value message;
+		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		request.reply(status_codes::BadRequest, message);
+		return;
+	}
+	handler->REQUEST_MODE = handler->GET;
+	handler->handle_read(_world, paths, request);
 }
 
-void listener::handle_put(http_request message){
-	message.reply(status_codes::NotFound);
-	const web::uri &s = message.relative_uri();
-}
-
-void listener::handle_post(http_request request){
-	vector<string_t> &paths = uri::split_path(request.relative_uri().to_string());
+void listener::handle_put(http_request request){
+	vector<string_t> &paths = uri::split_path(request.request_uri().path());
 
 	AdminHandler *handler = find_handler(paths);
 	// if no handlers can be found
 	if (handler == NULL) {
 		_log_access->error() << request.absolute_uri().to_string() + L" 400";
-		request.reply(status_codes::BadRequest, json::value::string(L"cannot find coresponding handler!"));
+		json::value message;
+		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		request.reply(status_codes::BadRequest, message);
 		return;
 	}
+	handler->REQUEST_MODE = handler->PUT;
+	handler->handle_update(_world, paths, request);
+}
+
+void listener::handle_post(http_request request){
+	vector<string_t> &paths = uri::split_path(request.request_uri().path());
+
+	AdminHandler *handler = find_handler(paths);
+	// if no handlers can be found
+	if (handler == NULL) {
+		_log_access->error() << request.absolute_uri().to_string() + L" 400";
+		json::value message;
+		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		request.reply(status_codes::BadRequest, message);
+		return;
+	}
+	handler->REQUEST_MODE = handler->POST;
 	handler->handle_create(_world, paths, request);
 }
 
-void listener::handle_delete(http_request message){
-	message.reply(status_codes::NotFound);
+void listener::handle_delete(http_request request){
+	request.reply(status_codes::NotFound);
 }
 
 AdminHandler *listener::find_handler(vector<string_t> &paths) {
@@ -76,6 +102,10 @@ AdminHandler *listener::find_handler(vector<string_t> &paths) {
 	if (paths[0] == L"data") {
 		paths.erase(paths.begin());
 		return _data_handler;
+	}
+	else if (paths[0] == L"object") {
+		paths.erase(paths.begin());
+		return _object_handler;
 	}
 	else if (paths[0] == L"simulation") {
 		paths.erase(paths.begin());

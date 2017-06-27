@@ -19,6 +19,8 @@ public:
 	World();
 	bool add_agent(string name, string uuid);
 	Agent *getAgent(const string agent_id);
+	void save_world(string &name);
+	void load_world(string &name);
 	~World();
 };
 
