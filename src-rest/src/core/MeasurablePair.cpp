@@ -4,7 +4,8 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
-MeasurablePair::MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j) {
+MeasurablePair::MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j)
+	:_measurable_i(_m_i), _measurable_j(_m_j) {
 	file.read((char *)(&v_w), sizeof(double));
 }
 
