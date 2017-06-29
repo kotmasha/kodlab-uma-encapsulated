@@ -365,7 +365,7 @@ class Experiment(object):
                               #if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
                                     #agent.delay([(agent.report_last().intersect(agent.report_target())).intersect(agent._INITMASK)])
                                     #agent.delay([agent.report_last().intersect(agent._INITMASK)])
-                              agent.pruning()
+                              #agent.pruning()
                               #print "out"
                               ## agent makes a decision 
                               messages[mid]=agent.decide()
