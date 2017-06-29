@@ -11,13 +11,13 @@ World::World(){
 	_log->info() << "A new world is created";
 }
 
-bool World::add_agent(string name, string uuid){
+bool World::add_agent(string uuid){
 	if (_agents.find(uuid) != _agents.end()) {
 		_log->error() << "Cannot create a duplicate agent " + uuid;
 		return false;
 	}
-	_agents[uuid] = new Agent(name, uuid);
-	_log->info() << "An agent " + uuid + "(" + name + ") is created";
+	_agents[uuid] = new Agent(uuid);
+	_log->info() << "An agent " + uuid + " is created";
 	return true;
 }
 

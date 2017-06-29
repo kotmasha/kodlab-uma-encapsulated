@@ -8,7 +8,6 @@ Agent::Agent(ifstream &file) {
 	file.read((char *)(&uuid_length), sizeof(int));
 	_uuid = string(uuid_length, ' ');
 	file.read(&_uuid[0], uuid_length * sizeof(char));
-	_name = _uuid;
 
 	_log_dir = "log/Agent_" + _uuid;
 	_log = new logManager(logging::VERBOSE, _log_dir, "agent.txt", typeid(*this).name());
@@ -21,24 +20,23 @@ Agent::Agent(ifstream &file) {
 		_snapshots[snapshot->_uuid] = snapshot;
 	}
 
-	_log->info() << "An agent " + _uuid + "(" + _name + ") is loaded";
+	_log->info() << "An agent " + _uuid + " is loaded";
 }
 
-Agent::Agent(string name, string uuid){
-	_name = name;
+Agent::Agent(string uuid){
 	_uuid = uuid;
 	_log_dir = "log/Agent_" + uuid;
 	_log = new logManager(logging::VERBOSE, _log_dir, "agent.txt", typeid(*this).name());
-	_log->info() << "An agent " + uuid + "(" + name + ") is created";
+	_log->info() << "An agent " + uuid + " is created";
 }
 
-bool Agent::add_snapshot_stationary(string name, string uuid){
+bool Agent::add_snapshot_stationary(string uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		_log->error() << "Cannot create a duplicate snapshot!";
 		return false;
 	}
-	_snapshots[uuid] = new Snapshot_Stationary(name, uuid, _log_dir + "/Snapshot_" + name);
-	_log->info() << "A Snapshot Stationary " + uuid + "(" + name + ") is created";
+	_snapshots[uuid] = new Snapshot_Stationary(uuid, _log_dir + "/Snapshot_" + uuid);
+	_log->info() << "A Snapshot Stationary " + uuid + " is created";
 	return true;
 }
 
@@ -53,35 +51,30 @@ Snapshot *Agent::getSnapshot(string snapshot_id) {
 
 vector<float> Agent::decide(vector<bool> &signal, double phi, bool active) {
 	vector<float> result;
-	result.push_back(_snapshots[_uuid + "_plus"]->decide(signal, phi, active));
-	result.push_back(_snapshots[_uuid + "_minus"]->decide(signal, phi, !active));
+	result.push_back(_snapshots["plus"]->decide(signal, phi, active));
+	result.push_back(_snapshots["minus"]->decide(signal, phi, !active));
 	return result;
 }
 
 vector<vector<bool>> Agent::getCurrent() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots[_uuid + "_plus"]->getCurrent());
-	result.push_back(_snapshots[_uuid + "_minus"]->getCurrent());
+	result.push_back(_snapshots["plus"]->getCurrent());
+	result.push_back(_snapshots["minus"]->getCurrent());
 	return result;
 }
 
 vector<vector<bool>> Agent::getPrediction() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots[_uuid + "_plus"]->getPrediction());
-	result.push_back(_snapshots[_uuid + "_minus"]->getPrediction());
+	result.push_back(_snapshots["plus"]->getPrediction());
+	result.push_back(_snapshots["minus"]->getPrediction());
 	return result;
 }
 
 vector<vector<bool>> Agent::getTarget() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots[_uuid + "_plus"]->getTarget());
-	result.push_back(_snapshots[_uuid + "_minus"]->getTarget());
+	result.push_back(_snapshots["plus"]->getTarget());
+	result.push_back(_snapshots["minus"]->getTarget());
 	return result;
-}
-
-void Agent::setName(string name) {
-	_name = name;
-	_log->info() << "agent name changed to " + name;
 }
 
 void Agent::save_agent(ofstream &file) {

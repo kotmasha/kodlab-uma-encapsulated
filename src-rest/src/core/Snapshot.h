@@ -107,8 +107,6 @@ protected:
 	//q value from python
 	double _memory_expansion;
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
-	string _name;
-	//snapshot name
 	string _uuid;
 	//snapshot uuid
 	vector<Sensor*> _sensors;
@@ -136,11 +134,11 @@ protected:
 public:
 	//Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
 	Snapshot(ifstream &file, string &log_dir);
-	Snapshot(string name, string uuid, string log_dir);
+	Snapshot(string uuid, string log_dir);
 
 	virtual float decide(vector<bool> &signal, double phi, bool active);
 
-	bool add_sensor(string name, string uuid);
+	bool add_sensor(string uuid);
 	bool validate();
 
 	void init_size(int sensor_size);
@@ -188,7 +186,8 @@ public:
 	vector<bool> getDown();
 	Measurable *getMeasurable(int idx);
 	MeasurablePair *getMeasurablePair(int m_idx1, int m_idx2);
-	string getName();
+	Sensor *getSensor(string &sensor_id);
+	vector<string> getAmperList(string &sensor_id);
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -198,7 +197,6 @@ public:
 	*/
 	void setThreshold(double &threshold);
 	void setQ(double &q);
-	void setName(string &name);
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
 	/*
@@ -252,7 +250,7 @@ Stationary Snapshot is not throwing away information when it is not active
 class Snapshot_Stationary: public Snapshot{
 public:
 	Snapshot_Stationary(ifstream &file, string &log_dir);
-	Snapshot_Stationary(string name, string uuid, string log_dir);
+	Snapshot_Stationary(string uuid, string log_dir);
 	virtual ~Snapshot_Stationary();
 	virtual void update_weights(bool active);
 	virtual void update_thresholds();
@@ -269,7 +267,7 @@ Forgetful Snapshot will throw away information when it is not active
 */
 class Snapshot_Forgetful: public Snapshot{
 public:
-	Snapshot_Forgetful(string name, string uuid, string log_dir);
+	Snapshot_Forgetful(string uuid, string log_dir);
 	virtual ~Snapshot_Forgetful();
 	virtual void update_weights(bool active);
 	virtual void update_thresholds();
@@ -286,7 +284,7 @@ UnitTest Snapshot are just used to do unit test, sensor names, snapshot name wil
 */
 class Snapshot_UnitTest: public Snapshot{
 public:
-	Snapshot_UnitTest(string name, string uuid, string log_dir);
+	Snapshot_UnitTest(string uuid, string log_dir);
 	virtual ~Snapshot_UnitTest();
 	virtual void update_weights(bool active);
 	virtual void orient_all();

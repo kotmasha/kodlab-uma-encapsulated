@@ -9,6 +9,7 @@ SimulationHandler::SimulationHandler(logManager *log_access): AdminHandler(log_a
 	UMA_UP = L"up";
 	UMA_AMPER = L"amper";
 	UMA_DELAY = L"delay";
+	UMA_PRUNING = L"pruning";
 	UMA_SIGNALS = L"signals";
 	UMA_PHI = L"phi";
 	UMA_ACTIVE = L"active";
@@ -46,6 +47,10 @@ void SimulationHandler::handle_create(World *world, vector<string_t> &paths, htt
 	}
 	else if (paths[0] == UMA_LOADING) {
 		create_loading(world, data, request);
+		return;
+	}
+	else if (paths[0] == UMA_PRUNING) {
+		create_pruning(world, data, request);
 		return;
 	}
 
@@ -332,6 +337,40 @@ void SimulationHandler::create_loading(World *world, json::value &data, http_req
 		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
 		json::value message;
 		message[MESSAGE] = json::value::string(L"cannot load data!");
+		request.reply(status_codes::BadRequest, message);
+	}
+}
+
+void SimulationHandler::create_pruning(World *world, json::value &data, http_request &request) {
+	string agent_id, snapshot_id;
+	vector<bool> signals;
+	try {
+		agent_id = get_string_input(data, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
+		signals = get_bool1d_input(data, UMA_SIGNALS, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
+
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+	try {
+		snapshot->pruning(signals);
+		json::value message;
+
+		message[MESSAGE] = json::value::string(L"pruning made successful");
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		request.reply(status_codes::Created, message);
+		return;
+	}
+	catch (exception &e) {
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"pruning made error!");
 		request.reply(status_codes::BadRequest, message);
 	}
 }

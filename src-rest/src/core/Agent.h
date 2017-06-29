@@ -16,8 +16,6 @@ class Agent{
 protected:
 	//the snapshot map, from name to pointer
 	std::map<string, Snapshot_Stationary*> _snapshots;
-	//the sensor name
-	string _name;
 	string _uuid;
 	string _log_dir;
 	logManager *_log;
@@ -25,14 +23,13 @@ protected:
 
 public:
 	Agent(ifstream &file);
-	Agent(string name, string uuid);
-	bool add_snapshot_stationary(string name, string uuid);
+	Agent(string uuid);
+	bool add_snapshot_stationary(string uuid);
 	Snapshot *getSnapshot(string snapshot_id);
 	vector<float> decide(vector<bool> &signal, double phi, bool active);
 	vector<vector<bool>> getCurrent();
 	vector<vector<bool>> getPrediction();
 	vector<vector<bool>> getTarget();
-	void setName(string name);
 	void save_agent(ofstream &file);
 	~Agent();
 };

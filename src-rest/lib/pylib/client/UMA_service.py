@@ -11,8 +11,8 @@ class UMA_service:
         uri = self._url + uri
         try:
             r = requests.post(uri, data = json.dumps(data), headers = self._headers)
-        except:
-            self._log.write("Errors while doing post request " + uri + '\n')
+        except Exception, e:
+            self._log.write("Errors while doing post request " + uri + ': ' + str(e) + '\n')
             return None
         if r.status_code >= 400 and r.status_code < 500:
             self._log.write("Client Error(" + str(r.status_code) + "): " + str(r.json()['message'] + '\n'))

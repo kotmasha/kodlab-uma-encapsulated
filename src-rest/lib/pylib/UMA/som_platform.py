@@ -160,6 +160,7 @@ class Experiment(object):
             
             # Dictionaries translating user-assigned names to
             # system-assigned uuids
+            self._dicts = {}
             self._NAME_TO_ID={'decision':id_dec}
             self._ID_TO_NAME={id_dec:'decision'}
             self._ID_TO_DEP={id_dec:False}
@@ -184,6 +185,15 @@ class Experiment(object):
                   return state[id_dec][0]
             self._DEFS={id_dec:ex_decision}
 
+
+      def read_experiment(self, filename):
+            self._dicts = ServiceWorld(service).load(filename)
+            for name, id in self._dicts.iteritems():
+                  if name not in self._NAME_TO_ID:
+                        self._NAME_TO_ID[name] = id
+                        self._ID_TO_NAME[id] = name
+
+
       ## Register $name$ in experiment and return an id for it.
       #
       ## ANY MEASURABLE HAS TO BE REGISTERED before it can be added.
@@ -196,7 +206,11 @@ class Experiment(object):
       #    of whether the measurable depends on intermediate agent decisions.
       def register(self,name,decdep=False):
             if name in self._NAME_TO_ID:
-                  raise Exception('The name \"'+str(name)+'\" is already in use.')
+                  #raise Exception('The name \"'+str(name)+'\" is already in use.')
+                  id = self._NAME_TO_ID[name]
+                  self._ID_TO_DEP[id] = bool(decdep)
+                  self._dicts.pop(name)
+                  return id
             else:
                   new_id=str(uuid.uuid4())
                   self._NAME_TO_ID[name]=new_id
@@ -260,7 +274,6 @@ class Experiment(object):
       #    the last $depth+1$ will be used as initial values)
       #  - $definition$ should be a function of state
       def construct_measurable(self,mid,definition=None,init_value=None,depth=1):
-            import time
             self._MID.append(mid)
             self._DEFS[mid]=definition
             if init_value==None:
@@ -316,7 +329,7 @@ class Experiment(object):
 
             new_agent = Agent(self, id_agent, id_motivation, params)
             self._AGENTS[id_agent]=new_agent
-            ServiceWorld(service).add_agent(id_agent, id_agent)
+            ServiceWorld(service).add_agent(id_agent)
 
             return new_agent
 
@@ -352,6 +365,7 @@ class Experiment(object):
                               #if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
                                     #agent.delay([(agent.report_last().intersect(agent.report_target())).intersect(agent._INITMASK)])
                                     #agent.delay([agent.report_last().intersect(agent._INITMASK)])
+                              agent.pruning()
                               #print "out"
                               ## agent makes a decision 
                               messages[mid]=agent.decide()
@@ -405,7 +419,7 @@ class Agent(object):
       def __init__(self, experiment, id_agent, id_motivation, params):
             # a string naming the agent/action
             self._MID=id_agent
-            id_agentc=experiment.comp(id_agent)
+            self.id_agentc=experiment.comp(id_agent)
             self._MOTIVATION=id_motivation
             # the experiment serving as the agent's environment
             self._EXPERIMENT=experiment
@@ -451,6 +465,20 @@ class Agent(object):
             snapshot_minus = agent.add_snapshot('minus')
             snapshot_plus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
             snapshot_minus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
+
+      def pruning(self):
+            agent = ServiceAgent(self._MID, service)
+            snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+            snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
+            snapshot_plus.pruning(allfalse(self._SIZE).tolist())
+            snapshot_minus.pruning(allfalse(self._SIZE).tolist())
+
+      def validate(self):
+            agent = ServiceAgent(self._MID, service)
+            snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+            snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
+            snapshot_plus.validate()
+            snapshot_minus.validate()
 
       def collect_observation(self):
             self._OBSERVE=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS])
@@ -656,8 +684,8 @@ class Agent(object):
                               new_uuids.append(new_mid)
             if new_signals:
                   agent = ServiceAgent(self._MID, service)
-                  snapshot_plus = ServiceSnapshot(self._MID, self._MID + '_plus', service)
-                  snapshot_minus = ServiceSnapshot(self._MID, self._MID + '_minus', service)
+                  snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+                  snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
                   snapshot_plus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
                   snapshot_minus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
             else:

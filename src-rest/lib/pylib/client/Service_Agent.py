@@ -6,9 +6,8 @@ class ServiceAgent:
         self._agent_id = agent_id
         self._service = service
 
-    def add_snapshot(self, name):
-        snapshot_id = self._agent_id + '_' + name
-        data = {'name': name, 'uuid': snapshot_id, 'agent_id': self._agent_id}
+    def add_snapshot(self, snapshot_id):
+        data = {'uuid': snapshot_id, 'agent_id': self._agent_id}
         result = self._service.post('/UMA/object/snapshot', data)
         if not result:
             print "add snapshot failed!"
@@ -18,7 +17,6 @@ class ServiceAgent:
 
     def make_decision(self, signals, phi, active):
         data =  {'agent_id': self._agent_id, 'phi': phi, 'active': active, 'signals': signals}
-        #print signals
         result = self._service.post('/UMA/simulation/decision', data)
         if not result:
             return None
@@ -26,9 +24,6 @@ class ServiceAgent:
         plus = {'res': float(result['res_plus']), 'current': result['current_plus'], 'prediction': result['prediction_plus'], 'target': result['target_plus']}
         minus = {'res': float(result['res_minus']), 'current': result['current_minus'], 'prediction': result['prediction_minus'], 'target': result['target_minus']}
         return {'plus': plus, 'minus': minus}
-
-    def set_name(self, name):
-        return self._service.put('/UMA/object/agent', {'name': name}, {'agent_id': self._agent_id})
 
     def get_snapshot_count(self):
         return

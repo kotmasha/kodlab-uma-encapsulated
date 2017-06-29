@@ -43,8 +43,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	file.read((char *)(&uuid_length), sizeof(int));
 	_uuid = string(uuid_length, ' ');
 	file.read(&_uuid[0], uuid_length * sizeof(char));
-	_name = _uuid;
-	_log_dir = log_dir + _name;
+	_log_dir = log_dir + _uuid;
 	_log = new logManager(logging::VERBOSE, _log_dir, _uuid + ".txt", typeid(*this).name());
 	_memory_expansion = .5;
 
@@ -65,6 +64,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	int sensor_pair_size = -1;
 	file.read((char *)(&sensor_size), sizeof(int));
 	file.read((char *)(&sensor_pair_size), sizeof(int));
+	_sensor_num = sensor_size;
 	for (int i = 0; i < sensor_size; ++i) {
 		Sensor *sensor = new Sensor(file);
 		_sensors.push_back(sensor);
@@ -74,11 +74,10 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 		_sensor_pairs.push_back(sensor_pair);
 	}
 
-	_log->info() << "A Snapshot " + _name + " is loaded";
+	_log->info() << "A Snapshot " + _uuid + " is loaded";
 }
 
-Snapshot::Snapshot(string name, string uuid, string log_dir){
-	_name = name;
+Snapshot::Snapshot(string uuid, string log_dir){
 	_uuid = uuid;
 	_log_dir = log_dir;
 	_log = new logManager(logging::VERBOSE, log_dir, uuid + ".txt", typeid(*this).name());
@@ -96,7 +95,7 @@ Snapshot::Snapshot(string name, string uuid, string log_dir){
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
-	_log->info() << "A Snapshot " + name + " is created";
+	_log->info() << "A Snapshot " + _uuid + " is created";
 }
 
 
@@ -154,26 +153,26 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	if(t<200) active = true;
+	//if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	if(t<200) return 0;
+	//if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
 	return distance(dev_d1, dev_d2);
 }
 
-bool Snapshot::add_sensor(string name, string uuid) {
+bool Snapshot::add_sensor(string uuid) {
 	if (_sensor_idx.find(uuid) != _sensor_idx.end()) {
 		_log->error() << "Cannot create a duplicate sensor!";
 		return false;
 	}
-	Sensor *sensor = new Sensor(uuid, name, _sensor_num++);
+	Sensor *sensor = new Sensor(uuid, _sensor_num++);
 	_sensor_idx[uuid] = sensor;
 	_sensors.push_back(sensor);
-	_log->debug() << "A Sensor " + uuid + "(" + name + ") is created with idx " + to_string(sensor->_idx);
+	_log->debug() << "A Sensor " + uuid + " is created with idx " + to_string(sensor->_idx);
 	//creating sensor pairs
 	for (int i = 0; i < _sensor_num; ++i) {
 		SensorPair *sensor_pair = new SensorPair(sensor, _sensors[i], 1.0);
@@ -375,6 +374,8 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all measurable
 */
 void Snapshot::pruning(vector<bool> signal){
+	copy_arrays_to_sensors();
+	copy_arrays_to_sensor_pairs();
 	//get converted sensor list, from measurable signal
 	vector<bool> sensor_list = convert_signal_to_sensor(signal);
 	int row_escape = 0;
@@ -407,6 +408,7 @@ void Snapshot::pruning(vector<bool> signal){
 			}
 		}
 	}
+
 	//earse the additional space
 	_sensors.erase(_sensors.end() - row_escape, _sensors.end());
 	_sensor_pairs.erase(_sensor_pairs.end() - total_escape, _sensor_pairs.end());
@@ -417,8 +419,11 @@ void Snapshot::pruning(vector<bool> signal){
 	_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
 	//copy just the sensors and sensor pairs
+
 	copy_sensor(0, _sensor_num);
 	copy_sensor_pair(0, _sensor_num);
+
+	_log->info() << "Pruning done successful";
 }
 
 vector<bool> Snapshot::convert_signal_to_sensor(vector<bool> &signal){
@@ -493,7 +498,6 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<string> &uuids){
 	copy_arrays_to_sensor_pairs();
 	int success_delay = 0;
 	//record how many delay are successful
-	
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
 		amper(list, uuids[i]);
@@ -684,11 +688,6 @@ void Snapshot::setThreshold(double &threshold) {
 void Snapshot::setQ(double &q) {
 	_q = q;
 	_log->info() << "snapshot q changed to " + to_string(q);
-}
-
-void Snapshot::setName(string &name) {
-	_name = name;
-	_log->info() << "snapshot name changed to " + name;
 }
 
 void Snapshot::setTarget(vector<bool> &signal){
@@ -937,10 +936,6 @@ vector<bool> Snapshot::getDown(){
 	return result;
 }
 
-string Snapshot::getName(){
-	return _name;
-}
-
 /*
 this function is getting the measurable, from the sensor list
 */
@@ -965,6 +960,28 @@ MeasurablePair *Snapshot::getMeasurablePair(int m_idx1, int m_idx2){
 	Measurable *m2 = getMeasurable(m_idx2);
 	return _sensor_pairs[ind(s_idx1, s_idx2)]->getMeasurablePair(m2->_isOriginPure, m1->_isOriginPure);
 }
+
+//naive implementation, need dict to optimize!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Sensor *Snapshot::getSensor(string &sensor_id) {
+	for (int i = 0; i < _sensors.size(); ++i) {
+		if (_sensors[i]->_sid == sensor_id) return _sensors[i];
+	}
+	return NULL;
+}
+
+//very naive implementation, need optimization !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+vector<string> Snapshot::getAmperList(string &sensor_id) {
+	Sensor *sensor = getSensor(sensor_id);
+	if (sensor == NULL) {
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	vector<string> result;
+	for (int i = 0; i < sensor->_amper.size(); ++i) {
+		cout << sensor->_amper[i] << "," << _sensors[sensor->_amper[i] / 2]->_sid << endl;
+		result.push_back(_sensors[sensor->_amper[i] / 2]->_sid);
+	}
+	return result;
+}
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
@@ -975,7 +992,7 @@ Input: m_idx1, m_idx2 are the measurable idx that need to be amperand, m_idx1 > 
 */
 void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, string uuid){
 	vector<SensorPair*> amper_and_sensor_pairs;
-	Sensor *amper_and_sensor = new Sensor(uuid, uuid, _sensor_num);
+	Sensor *amper_and_sensor = new Sensor(uuid, _sensor_num);
 	double f = 1.0;
 	if(_total > 0 && _total < 1e-5)
 		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
@@ -1063,7 +1080,7 @@ Input: mid of the measurable doing the delay, and whether to merge after the ope
 */
 void Snapshot::generate_delayed_weights(int mid, bool merge, string uuid){
 	//create a new delayed sensor
-	Sensor *delayed_sensor = new Sensor(uuid, uuid, _sensor_num);
+	Sensor *delayed_sensor = new Sensor(uuid, _sensor_num);
 	vector<SensorPair *> delayed_sensor_pairs;
 	//the sensor name is TBD, need python input
 	int delay_mid1 = mid, delay_mid2 = compi(mid);
@@ -1254,8 +1271,8 @@ void Snapshot::save_snapshot(ofstream &file) {
 */
 Snapshot_Stationary::Snapshot_Stationary(ifstream &file, string &log_dir):Snapshot(file, log_dir) {}
 
-Snapshot_Stationary::Snapshot_Stationary(string name, string uuid, string log_dir)
-	:Snapshot(name, uuid, log_dir){
+Snapshot_Stationary::Snapshot_Stationary(string uuid, string log_dir)
+	:Snapshot(uuid, log_dir){
 }
 
 Snapshot_Stationary::~Snapshot_Stationary(){}
@@ -1269,8 +1286,8 @@ Snapshot_Stationary::~Snapshot_Stationary(){}
 ----------------Snapshot_Forgetful Class-------------------
 */
 
-Snapshot_Forgetful::Snapshot_Forgetful(string name, string uuid, string log_dir)
-	:Snapshot(name, uuid, log_dir){
+Snapshot_Forgetful::Snapshot_Forgetful(string uuid, string log_dir)
+	:Snapshot(uuid, log_dir){
 }
 
 Snapshot_Forgetful::~Snapshot_Forgetful(){}
@@ -1283,8 +1300,8 @@ Snapshot_Forgetful::~Snapshot_Forgetful(){}
 ----------------Snapshot_UnitTest Class--------------------
 */
 
-Snapshot_UnitTest::Snapshot_UnitTest(string name, string uuid, string log_dir)
-	:Snapshot(name, uuid, log_dir){
+Snapshot_UnitTest::Snapshot_UnitTest(string uuid, string log_dir)
+	:Snapshot(uuid, log_dir){
 }
 
 Snapshot_UnitTest::~Snapshot_UnitTest(){}

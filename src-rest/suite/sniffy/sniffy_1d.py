@@ -128,7 +128,7 @@ def start_experiment(stdscr,agent_to_examine):
     TARGET=START
     while dist(TARGET,START)<X_BOUND/8:
         TARGET=rnd(X_BOUND+1)
-    #TARGET = 3
+    #TARGET = 1
 
     # set up position sensors
     def xsensor(m): # along x-axis
@@ -189,7 +189,7 @@ def start_experiment(stdscr,agent_to_examine):
         for token in ['plus','minus']:
             tmp_target=agent.generate_signal([id_navM]).value_all().tolist()
             #agent.brain._snapshots[token].setTarget(tmp_target)
-            service_snapshot = ServiceSnapshot(agent._MID, agent._MID + '_' + token, service)
+            service_snapshot = ServiceSnapshot(agent._MID, token, service)
             service_snapshot.setTarget(tmp_target)
 
     #
@@ -311,7 +311,7 @@ def start_experiment(stdscr,agent_to_examine):
 
         SIG = {}
         for token in ['plus', 'minus']:
-            snapshot = ServiceSnapshot(agent._MID, agent._MID + '_' + token, service)
+            snapshot = ServiceSnapshot(agent._MID, token, service)
             res = snapshot.make_up(sig.value_all().tolist())
             SIG[token] = Signal(res)
             #print sig.value_all().tolist()
@@ -346,7 +346,7 @@ def start_experiment(stdscr,agent_to_examine):
         message=EX.update_state()
 
     else:
-        ServiceWorld(service).save("sniffy1d")
+        ServiceWorld(service).save("sniffy1d", EX._NAME_TO_ID)
         print "data saved"
         raise Exception('Aborting at your request...\n\n')
         

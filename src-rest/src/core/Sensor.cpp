@@ -12,7 +12,6 @@ Sensor::Sensor(ifstream &file) {
 		file.read(&_sid[0], sid_length * sizeof(char));
 	}
 	else _sid = "";
-	_sname = _sid;
 
 	file.read((char *)(&_idx), sizeof(int));
 	//write the amper list
@@ -31,8 +30,7 @@ Sensor::Sensor(ifstream &file) {
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
-Sensor::Sensor(string sid, string sname, int idx):_sid(sid.c_str()){
-	_sname = sname;
+Sensor::Sensor(string sid, int idx):_sid(sid.c_str()){
 	_idx = idx;
 	_m = new Measurable(2 * idx, true);
 	_cm = new Measurable(2 * idx + 1, false);

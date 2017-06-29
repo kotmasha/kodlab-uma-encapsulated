@@ -9,7 +9,6 @@ bool to_bool(string_t &s) {
 }
 
 AdminHandler::AdminHandler() {
-	NAME = L"name";
 	UUID = L"uuid";
 	UMA_AGENT = L"agent";
 	UMA_SNAPSHOT = L"snapshot";
@@ -65,6 +64,13 @@ void AdminHandler::vector_bool_to_array(std::vector<bool> &list, std::vector<jso
 	}
 }
 
+void AdminHandler::vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list) {
+	for (int i = 0; i < list.size(); ++i) {
+		string_t tmp(list[i].begin(), list[i].end());
+		json_list.push_back(json::value::string(tmp));
+	}
+}
+
 bool AdminHandler::get_agent_by_id(World *world, string agent_id, Agent *&agent, http_request &request) {
 	agent = world->getAgent(agent_id);
 	if (agent == NULL) {
@@ -83,6 +89,18 @@ bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot
 		_log_access->info() << request.absolute_uri().to_string() + L" 404";
 		json::value message;
 		message[MESSAGE] = json::value::string(L"Cannot find the snapshot id!");
+		request.reply(status_codes::NotFound, message);
+		return false;
+	}
+	return true;
+}
+
+bool AdminHandler::get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request) {
+	sensor = snapshot->getSensor(sensor_id);
+	if (sensor == NULL) {
+		_log_access->info() << request.absolute_uri().to_string() + L" 404";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"Cannot find the sensor id!");
 		request.reply(status_codes::NotFound, message);
 		return false;
 	}
