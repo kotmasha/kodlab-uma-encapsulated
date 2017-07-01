@@ -9,6 +9,7 @@ ObjectHandler::ObjectHandler(logManager *log_access) :AdminHandler(log_access) {
 	UMA_BASE_SENSOR_SIZE = L"base_sensor_size";
 	UMA_THRESHOLD = L"threshold";
 	UMA_Q = L"q";
+	UMA_C_SID = L"c_sid";
 }
 
 void ObjectHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
@@ -70,7 +71,7 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 		Snapshot *snapshot = NULL;
 		if (!get_agent_by_id(world, agent_id, agent, request)) return;
 		if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-		vector<string> amper_list;
+		vector<bool> amper_list;
 		try {
 			amper_list = snapshot->getAmperList(sensor_id);
 		}
@@ -82,7 +83,7 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 			return;
 		}
 		vector<json::value> json_amper_list;
-		vector_string_to_array(amper_list, json_amper_list);
+		vector_bool_to_array(amper_list, json_amper_list);
 		json::value return_data = json::value::array(json_amper_list);
 		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
 
@@ -157,11 +158,12 @@ void ObjectHandler::create_snapshot(World *world, json::value &data, http_reques
 }
 
 void ObjectHandler::create_sensor(World *world, json::value &data, http_request &request) {
-	string uuid, agent_id, snapshot_id;
+	string uuid, agent_id, snapshot_id, c_sid;
 	try {
 		uuid = get_string_input(data, UUID, request);
 		agent_id = get_string_input(data, UMA_AGENT_ID, request);
 		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
+		c_sid = get_string_input(data, UMA_C_SID, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
@@ -172,7 +174,8 @@ void ObjectHandler::create_sensor(World *world, json::value &data, http_request 
 	Snapshot *snapshot = NULL;
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;
 	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	bool status = snapshot->add_sensor(uuid);
+	std::pair<string, string> id_pair(uuid, c_sid);
+	bool status = snapshot->add_sensor(id_pair);
 	if (status) {
 		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
 		json::value message;

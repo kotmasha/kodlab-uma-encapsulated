@@ -14,6 +14,7 @@ class Measurable{
 protected:
 	//the id of the measurable,get from python side
 	//char const *_mid;
+	string _uuid;
 	//_idx is the index of the measurable in the matrix
 	int _idx;
 	//_diag is the pointer pointing to the diagonal value of the sensor(weights[i][i])
@@ -32,7 +33,7 @@ protected:
 
 public:
 	Measurable(ifstream &file);
-	Measurable(int idx, bool isOriginPure);
+	Measurable(string uuid, int idx, bool isOriginPure);
 	void pointers_to_null();
 	void pointers_to_values();
 	void values_to_pointers();

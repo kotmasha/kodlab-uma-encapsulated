@@ -138,7 +138,7 @@ public:
 
 	virtual float decide(vector<bool> &signal, double phi, bool active);
 
-	bool add_sensor(string uuid);
+	bool add_sensor(std::pair<string, string> &id_pair);
 	bool validate();
 
 	void init_size(int sensor_size);
@@ -186,8 +186,7 @@ public:
 	vector<bool> getDown();
 	Measurable *getMeasurable(int idx);
 	MeasurablePair *getMeasurablePair(int m_idx1, int m_idx2);
-	Sensor *getSensor(string &sensor_id);
-	vector<string> getAmperList(string &sensor_id);
+	vector<bool> getAmperList(string &sensor_id);
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -218,11 +217,11 @@ public:
 	---------------------COPY FUNCTION---------------------
 	*/
 
-	void generate_delayed_weights(int mid, bool merge, string uuid);
-	void ampers(vector<vector<bool> > &lists, vector<string> &uuids);
-	void amper(vector<int> &list, string uuid);
-	void delays(vector<vector<bool> > &lists, vector<string> &uuids);
-	void amperand(int mid1, int mid2, bool merge, string uuid);
+	void generate_delayed_weights(int mid, bool merge, std::pair<string, string> &id_pair);
+	void ampers(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs);
+	void amper(vector<int> &list, std::pair<string, string> &uuid);
+	void delays(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs);
+	void amperand(int mid1, int mid2, bool merge, std::pair<string, string> &id_pair);
 	void pruning(vector<bool> signal);
 
 	void init_direction();

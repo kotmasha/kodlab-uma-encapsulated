@@ -67,6 +67,8 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	_sensor_num = sensor_size;
 	for (int i = 0; i < sensor_size; ++i) {
 		Sensor *sensor = new Sensor(file);
+		_sensor_idx[sensor->_m->_uuid] = sensor;
+		_sensor_idx[sensor->_cm->_uuid] = sensor;
 		_sensors.push_back(sensor);
 	}
 	for (int i = 0; i < sensor_pair_size; ++i) {
@@ -153,30 +155,31 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	//if(t<200) active = true;
+	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	//if(t<200) return 0;
+	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
 	return distance(dev_d1, dev_d2);
 }
 
-bool Snapshot::add_sensor(string uuid) {
-	if (_sensor_idx.find(uuid) != _sensor_idx.end()) {
+bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
+	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		_log->error() << "Cannot create a duplicate sensor!";
 		return false;
 	}
-	Sensor *sensor = new Sensor(uuid, _sensor_num++);
-	_sensor_idx[uuid] = sensor;
+	Sensor *sensor = new Sensor(id_pair, _sensor_num++);
+	_sensor_idx[id_pair.first] = sensor;
+	_sensor_idx[id_pair.second] = sensor;
 	_sensors.push_back(sensor);
-	_log->debug() << "A Sensor " + uuid + " is created with idx " + to_string(sensor->_idx);
+	_log->debug() << "A Sensor " + id_pair.first + " is created with idx " + to_string(sensor->_idx);
 	//creating sensor pairs
 	for (int i = 0; i < _sensor_num; ++i) {
 		SensorPair *sensor_pair = new SensorPair(sensor, _sensors[i], 1.0);
-		_log->debug() << "A sensor pair with sensor1=" + sensor->_sid + " sensor2=" + _sensors[i]->_sid + " is created";
+		_log->debug() << "A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created";
 		_sensor_pairs.push_back(sensor_pair);
 	}
 	_log->info() << to_string(_sensor_num) + " Sensor Pairs are created, total is " + to_string(ind(_sensor_num, 0));
@@ -446,7 +449,7 @@ vector<int> Snapshot::convert_list(vector<bool> &list){
 	return converted_list;
 }
 
-void Snapshot::ampers(vector<vector<bool> > &lists, vector<string> &uuids){
+void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs){
 	copy_arrays_to_sensors();
 	copy_arrays_to_sensor_pairs();
 	int success_amper = 0;
@@ -454,7 +457,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<string> &uuids){
 	
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
-		amper(list, uuids[i]);
+		amper(list, id_pairs[i]);
 		success_amper++;
 	}
 
@@ -478,7 +481,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<string> &uuids){
 	}
 }
 
-void Snapshot::amper(vector<int> &list, string uuid){
+void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 	if(list.size() < 2) return;
 	try{
 		amperand(list[1], list[0], true, uuid);
@@ -493,18 +496,18 @@ void Snapshot::amper(vector<int> &list, string uuid){
 	}
 }
 
-void Snapshot::delays(vector<vector<bool> > &lists, vector<string> &uuids){
+void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs) {
 	copy_arrays_to_sensors();
 	copy_arrays_to_sensor_pairs();
 	int success_delay = 0;
 	//record how many delay are successful
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
-		amper(list, uuids[i]);
+		amper(list, id_pairs[i]);
 		if(list.size() == 0) continue;
 		if(list.size() == 1){
 			try{
-				generate_delayed_weights(list[0], true, uuids[i]);
+				generate_delayed_weights(list[0], true, id_pairs[i]);
 				_sensor_num++;
 				success_delay++;
 			}
@@ -515,7 +518,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<string> &uuids){
 		}
 		else{
 			try{
-				generate_delayed_weights(_sensors.back()->_m->_idx, false, uuids[i]);
+				generate_delayed_weights(_sensors.back()->_m->_idx, false, id_pairs[i]);
 				success_delay++;
 			}
 			catch(exception &e){
@@ -523,7 +526,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<string> &uuids){
 				throw CORE_EXCEPTION::CORE_ERROR;
 			}
 		}
-		_log->info() << "A delayed sensor is generated " + uuids[i];
+		_log->info() << "A delayed sensor is generated " + id_pairs[i].first;
 		string delay_list="";
 		for(int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
 		_log->verbose() << "The delayed sensor generated from " + delay_list;
@@ -961,24 +964,14 @@ MeasurablePair *Snapshot::getMeasurablePair(int m_idx1, int m_idx2){
 	return _sensor_pairs[ind(s_idx1, s_idx2)]->getMeasurablePair(m2->_isOriginPure, m1->_isOriginPure);
 }
 
-//naive implementation, need dict to optimize!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Sensor *Snapshot::getSensor(string &sensor_id) {
-	for (int i = 0; i < _sensors.size(); ++i) {
-		if (_sensors[i]->_sid == sensor_id) return _sensors[i];
-	}
-	return NULL;
-}
-
-//very naive implementation, need optimization !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-vector<string> Snapshot::getAmperList(string &sensor_id) {
-	Sensor *sensor = getSensor(sensor_id);
-	if (sensor == NULL) {
+vector<bool> Snapshot::getAmperList(string &sensor_id) {
+	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
 		throw CLIENT_EXCEPTION::CLIENT_ERROR;
 	}
-	vector<string> result;
+	Sensor *sensor = _sensor_idx[sensor_id];
+	vector<bool> result(_measurable_size, false);
 	for (int i = 0; i < sensor->_amper.size(); ++i) {
-		cout << sensor->_amper[i] << "," << _sensors[sensor->_amper[i] / 2]->_sid << endl;
-		result.push_back(_sensors[sensor->_amper[i] / 2]->_sid);
+		result[sensor->_amper[i]] = true;
 	}
 	return result;
 }
@@ -990,9 +983,12 @@ vector<string> Snapshot::getAmperList(string &sensor_id) {
 This is the amper and function, used in amper and delay
 Input: m_idx1, m_idx2 are the measurable idx that need to be amperand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
 */
-void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, string uuid){
+void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, string> &id_pair) {
 	vector<SensorPair*> amper_and_sensor_pairs;
-	Sensor *amper_and_sensor = new Sensor(uuid, _sensor_num);
+	Sensor *amper_and_sensor = new Sensor(id_pair, _sensor_num);
+	_sensor_idx[id_pair.first] = amper_and_sensor;
+	_sensor_idx[id_pair.second] = amper_and_sensor;
+
 	double f = 1.0;
 	if(_total > 0 && _total < 1e-5)
 		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
@@ -1078,9 +1074,11 @@ This function is generating the delayed weights
 Before this function is called, have to make sure, _sensors and _sensor_pairs have valid info in vwxx;
 Input: mid of the measurable doing the delay, and whether to merge after the operation
 */
-void Snapshot::generate_delayed_weights(int mid, bool merge, string uuid){
+void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, string> &id_pair){
 	//create a new delayed sensor
-	Sensor *delayed_sensor = new Sensor(uuid, _sensor_num);
+	Sensor *delayed_sensor = new Sensor(id_pair, _sensor_num);
+	_sensor_idx[id_pair.first] = delayed_sensor;
+	_sensor_idx[id_pair.second] = delayed_sensor;
 	vector<SensorPair *> delayed_sensor_pairs;
 	//the sensor name is TBD, need python input
 	int delay_mid1 = mid, delay_mid2 = compi(mid);

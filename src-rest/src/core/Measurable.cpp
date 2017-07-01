@@ -4,12 +4,20 @@ extern int ind(int row, int col);
 extern int compi(int x);
 
 Measurable::Measurable(ifstream &file) {
+	int uuid_length = -1;
+	file.read((char *)(&uuid_length), sizeof(int));
+	if (uuid_length > 0) {
+		_uuid = string(uuid_length, ' ');
+		file.read(&_uuid[0], uuid_length * sizeof(char));
+	}
+	else _uuid = "";
 	file.read((char *)&_idx, sizeof(int));
 	file.read((char *)&_isOriginPure, sizeof(bool));
 	pointers_to_null();
 }
 
-Measurable::Measurable(int idx, bool isOriginPure){
+Measurable::Measurable(string uuid, int idx, bool isOriginPure){
+	_uuid = uuid;
 	_idx = idx;
 	_isOriginPure = isOriginPure;
 	pointers_to_null();
@@ -70,6 +78,9 @@ Saving order MUST FOLLOW:
 2 whether the measurable is originally pure
 */
 void Measurable::save_measurable(ofstream &file){
+	int sid_length = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
+	file.write(_uuid.c_str(), sid_length * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&_isOriginPure), sizeof(bool));
 }

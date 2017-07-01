@@ -14,7 +14,7 @@ class ServiceWorld:
         else:
             return ServiceAgent(uuid, self._service)
 
-    def save(self, filename, dicts):
+    def save(self, filename, dicts, id_list):
         data = {'filename': filename}
         result = self._service.post('/UMA/simulation/saving', data)
         if not result:
@@ -22,8 +22,8 @@ class ServiceWorld:
             return None
         else:
             f = open(filename + '.txt', 'w+')
-            for key, value in dicts.iteritems():
-                f.write(key + ': ' + value + '\n')
+            for id in id_list:
+                f.write(id + ': ' + dicts[id] + '\n')
             f.close()
             return result
 

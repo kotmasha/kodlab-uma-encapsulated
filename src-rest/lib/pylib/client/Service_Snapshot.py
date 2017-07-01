@@ -7,8 +7,8 @@ class ServiceSnapshot:
         self._snapshot_id = snapshot_id
         self._service = service
 
-    def add_sensor(self, sensor_id):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'uuid': sensor_id}
+    def add_sensor(self, sensor_id, c_sensor_id):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'uuid': sensor_id, 'c_sid': c_sensor_id}
         result =  self._service.post('/UMA/object/sensor', data)
         if not result:
             print "add sensor failed!"
@@ -25,7 +25,7 @@ class ServiceSnapshot:
 
     def init_with_sensors(self, sensors):
         for sensor in sensors:
-            self.add_sensor(sensor)
+            self.add_sensor(sensor[0], sensor[1])
         self.validate()
 
     def make_up(self, signals):

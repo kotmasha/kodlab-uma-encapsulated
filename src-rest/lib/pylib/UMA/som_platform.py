@@ -209,7 +209,8 @@ class Experiment(object):
                   #raise Exception('The name \"'+str(name)+'\" is already in use.')
                   id = self._NAME_TO_ID[name]
                   self._ID_TO_DEP[id] = bool(decdep)
-                  self._dicts.pop(name)
+                  if name in self._dicts:
+                        self._dicts.pop(name)
                   return id
             else:
                   new_id=str(uuid.uuid4())
@@ -463,8 +464,9 @@ class Agent(object):
             agent = ServiceAgent(self._MID, service)
             snapshot_plus = agent.add_snapshot('plus')
             snapshot_minus = agent.add_snapshot('minus')
-            snapshot_plus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
-            snapshot_minus.init_with_sensors([sensor for idx, sensor in enumerate(self._SENSORS) if idx % 2 == 0])
+            [[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)]
+            snapshot_plus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
+            snapshot_minus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
 
       def pruning(self):
             agent = ServiceAgent(self._MID, service)
@@ -673,15 +675,17 @@ class Agent(object):
                         #add the new sensor to this agent as non-initial
                         self.add_sensor(new_mid,False)
                         new_signals.append(signal)
-                        new_uuids.append(new_mid)
-                  except: #if the sensor was registered
+                        new_uuids.append([new_mid, new_midc])
+                  except Exception ,e: #if the sensor was registered
+                        print str(e)
+                        exit()
                         new_mid=self._EXPERIMENT.nid(new_name)
                         if new_mid in self._SENSORS:
                               pass
                         else:
                               self.add_sensor(new_mid,False)
                               new_signals.append(signal)
-                              new_uuids.append(new_mid)
+                              new_uuids.append([new_mid, new_midc])
             if new_signals:
                   agent = ServiceAgent(self._MID, service)
                   snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)

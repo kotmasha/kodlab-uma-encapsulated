@@ -5,13 +5,13 @@ extern int ind(int row, int col);
 extern int compi(int x);
 
 Sensor::Sensor(ifstream &file) {
-	int sid_length = -1;
-	file.read((char *)(&sid_length), sizeof(int));
-	if (sid_length > 0) {
-		_sid = string(sid_length, ' ');
-		file.read(&_sid[0], sid_length * sizeof(char));
+	int uuid_length = -1;
+	file.read((char *)(&uuid_length), sizeof(int));
+	if (uuid_length > 0) {
+		_uuid = string(uuid_length, ' ');
+		file.read(&_uuid[0], uuid_length * sizeof(char));
 	}
-	else _sid = "";
+	else _uuid = "";
 
 	file.read((char *)(&_idx), sizeof(int));
 	//write the amper list
@@ -30,10 +30,11 @@ Sensor::Sensor(ifstream &file) {
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
-Sensor::Sensor(string sid, int idx):_sid(sid.c_str()){
+Sensor::Sensor(std::pair<string, string> &id_pair, int idx){
+	_uuid = id_pair.first;
 	_idx = idx;
-	_m = new Measurable(2 * idx, true);
-	_cm = new Measurable(2 * idx + 1, false);
+	_m = new Measurable(id_pair.first, 2 * idx, true);
+	_cm = new Measurable(id_pair.second, 2 * idx + 1, false);
 }
 
 /*
@@ -173,9 +174,9 @@ Input: ofstream file
 */
 void Sensor::save_sensor(ofstream &file){
 	//write sid and idx
-	int sid_length = _sid.length();
+	int sid_length = _uuid.length();
 	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
-	file.write(_sid.c_str(), sid_length * sizeof(char));
+	file.write(_uuid.c_str(), sid_length * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	//write the amper list
 	int amper_size = _amper.size();

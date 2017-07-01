@@ -56,6 +56,7 @@ protected:
 	vector<bool> get_bool1d_input(json::value &data, string_t &name, http_request &request);
 	vector<vector<bool> > get_bool2d_input(json::value &data, string_t &name, http_request &request);
 	vector<string> get_string1d_input(json::value &data, string_t &name, http_request &request);
+	vector<std::pair<string, string> > get_string_pair1d_input(json::value &data, string_t &name, http_request &request);
 };
 
 #endif

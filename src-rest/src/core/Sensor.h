@@ -15,7 +15,7 @@ Every sensor is distinguished by the sensor id(sid)
 class Sensor{
 protected:
 	//sid is the id of the sensor, get from python side, not changable
-	string _sid;
+	string _uuid;
 	//idx is the index of sensor in the array structure, can be changed due to pruning
 	int _idx;
 	//*m is the pointer to the measurable object under this sensor, and cm is the compi
@@ -27,7 +27,7 @@ protected:
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 public:
 	Sensor(ifstream &file);
-	Sensor(string sid, int idx);
+	Sensor(std::pair<string, string> &id_pair, int idx);
 
 	void setMeasurableDiagPointers(double *_diags, double *_diags_);
 	void setMeasurableStatusPointers(bool *current);

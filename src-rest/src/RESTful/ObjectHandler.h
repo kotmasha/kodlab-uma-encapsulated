@@ -20,6 +20,7 @@ public:
 
 protected:
 	string_t UMA_BASE_SENSOR_SIZE, UMA_THRESHOLD, UMA_Q;
+	string_t UMA_C_SID;
 	void create_agent(World *world, json::value &data, http_request &request);
 	void create_snapshot(World *world, json::value &data, http_request &request);
 	void create_sensor(World *world, json::value &data, http_request &request);

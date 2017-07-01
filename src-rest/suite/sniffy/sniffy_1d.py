@@ -346,7 +346,7 @@ def start_experiment(stdscr,agent_to_examine):
         message=EX.update_state()
 
     else:
-        ServiceWorld(service).save("sniffy1d", EX._NAME_TO_ID)
+        ServiceWorld(service).save("sniffy1d", EX._ID_TO_NAME, EX._MID)
         print "data saved"
         raise Exception('Aborting at your request...\n\n')
         

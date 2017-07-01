@@ -187,12 +187,12 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 void SimulationHandler::create_amper(World *world, json::value &data, http_request &request) {
 	string agent_id, snapshot_id;
 	vector<vector<bool>> amper_lists;
-	vector<string> uuid_lists;
+	vector<std::pair<string, string> > uuid_lists;
 	try {
 		agent_id = get_string_input(data, UMA_AGENT_ID, request);
 		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
 		amper_lists = get_bool2d_input(data, UMA_AMPER_LIST, request);
-		uuid_lists = get_string1d_input(data, UMA_UUID_LIST, request);
+		uuid_lists = get_string_pair1d_input(data, UMA_UUID_LIST, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
@@ -221,18 +221,17 @@ void SimulationHandler::create_amper(World *world, json::value &data, http_reque
 void SimulationHandler::create_delay(World *world, json::value &data, http_request &request) {
 	string agent_id, snapshot_id;
 	vector<vector<bool>> delay_lists;
-	vector<string> uuid_lists;
+	vector<std::pair<string, string> > uuid_lists;
 	try {
 		agent_id = get_string_input(data, UMA_AGENT_ID, request);
 		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
 		delay_lists = get_bool2d_input(data, UMA_DELAY_LIST, request);
-		uuid_lists = get_string1d_input(data, UMA_UUID_LIST, request);
+		uuid_lists = get_string_pair1d_input(data, UMA_UUID_LIST, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
 		return;
 	}
-
 	Agent *agent = NULL;
 	Snapshot *snapshot = NULL;
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;

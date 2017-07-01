@@ -95,18 +95,6 @@ bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot
 	return true;
 }
 
-bool AdminHandler::get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request) {
-	sensor = snapshot->getSensor(sensor_id);
-	if (sensor == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
-		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot find the sensor id!");
-		request.reply(status_codes::NotFound, message);
-		return false;
-	}
-	return true;
-}
-
 string AdminHandler::get_string_input(json::value &data, string_t &name, http_request &request) {
 	if (!check_field(data, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
 	string_t value;
@@ -247,6 +235,29 @@ vector<string> AdminHandler::get_string1d_input(json::value &data, string_t &nam
 			string_t tmp = list[i].as_string();
 			std::string s_tmp(tmp.begin(), tmp.end());
 			value.push_back(s_tmp);
+		}
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		parsing_error(request);
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	return value;
+}
+
+vector<std::pair<string, string> > AdminHandler::get_string_pair1d_input(json::value &data, string_t &name, http_request &request) {
+	if (!check_field(data, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	vector<std::pair<string, string> > value;
+	try {
+		auto &lists = data[name].as_array();
+		for (int i = 0; i < lists.size(); ++i) {
+			auto list = lists[i].as_array();
+			if (list.size() != 2) throw CLIENT_EXCEPTION::CLIENT_ERROR;
+			string_t tmp1 = list[0].as_string();
+			string_t tmp2 = list[1].as_string();
+			std::string s_tmp1(tmp1.begin(), tmp1.end());
+			std::string s_tmp2(tmp2.begin(), tmp2.end());
+			value.push_back(std::pair<string, string>(s_tmp1, s_tmp2));
 		}
 	}
 	catch (exception &e) {
