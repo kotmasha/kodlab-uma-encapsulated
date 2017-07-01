@@ -407,7 +407,7 @@ void Snapshot::pruning(vector<bool> signal){
 			}
 			else{
 				//or just change the position
-				_sensor_pairs[i - total_escape] = _sensor_pairs[i];
+				_sensor_pairs[ind(i, j) - total_escape] = _sensor_pairs[ind(i, j)];
 			}
 		}
 	}
