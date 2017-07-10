@@ -85,6 +85,12 @@ void Measurable::save_measurable(ofstream &file){
 	file.write(reinterpret_cast<const char *>(&_isOriginPure), sizeof(bool));
 }
 
+void Measurable::copy_data(Measurable *m) {
+	_isOriginPure = m->_isOriginPure;
+	_vdiag = m->_vdiag;
+	_vdiag_ = m->_vdiag_;
+}
+
 Measurable::~Measurable(){
 	pointers_to_null();
 }

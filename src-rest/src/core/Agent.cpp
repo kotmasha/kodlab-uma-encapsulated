@@ -89,4 +89,20 @@ void Agent::save_agent(ofstream &file) {
 	}
 }
 
+void Agent::copy_test_data(Agent *agent) {
+	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
+		string snapshot_id = it->first;
+		Snapshot *snapshot = it->second;
+		if (agent->_snapshots.find(snapshot_id) != agent->_snapshots.end()) {
+			//if find the 'same' snapshot
+			Snapshot *c_snapshot = agent->_snapshots[snapshot_id];
+			snapshot->copy_test_data(c_snapshot);
+			_log->info() << "Snapshot(" + snapshot_id + ") data merged";
+		}
+		else {
+			_log->info() << "Cannot find snapshot(" + snapshot_id + ") data in old test, this should be a new snapshot";
+		}
+	}
+}
+
 Agent::~Agent(){}

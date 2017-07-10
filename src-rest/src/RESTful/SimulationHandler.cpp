@@ -21,6 +21,8 @@ SimulationHandler::SimulationHandler(logManager *log_access): AdminHandler(log_a
 	UMA_LOADING = L"loading";
 
 	UMA_FILE_NAME = L"filename";
+	
+	UMA_MERGE = L"merge";
 }
 
 void SimulationHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
@@ -52,6 +54,9 @@ void SimulationHandler::handle_create(World *world, vector<string_t> &paths, htt
 	else if (paths[0] == UMA_PRUNING) {
 		create_pruning(world, data, request);
 		return;
+	}
+	else if (paths[0] == UMA_MERGE) {
+		create_merging(world, data, request);
 	}
 
 	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
@@ -370,6 +375,24 @@ void SimulationHandler::create_pruning(World *world, json::value &data, http_req
 		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
 		json::value message;
 		message[MESSAGE] = json::value::string(L"pruning made error!");
+		request.reply(status_codes::BadRequest, message);
+	}
+}
+
+void SimulationHandler::create_merging(World *world, json::value &data, http_request &request) {
+	try {
+		world->merge_test();
+		json::value message;
+
+		message[MESSAGE] = json::value::string(L"test data merged successfully");
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		request.reply(status_codes::Created, message);
+		return;
+	}
+	catch (exception &e) {
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"test data merged error!");
 		request.reply(status_codes::BadRequest, message);
 	}
 }

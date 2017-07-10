@@ -9,34 +9,7 @@
 */
 extern int ind(int row, int col);
 extern int compi(int x);
-/*
-Snapshot::Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names,bool cal_target, string log_path):
-	_type(type),_base_sensor_size(base_sensor_size){
-	_name = name;
-	_log_path = log_path;
-	_log = new logManager(logging::VERBOSE, log_path, name + ".txt", typeid(*this).name());
-	_threshold = threshold;
-	_memory_expansion = .5;
 
-	_log->info() << "Default threshold value set to " + to_string(_threshold);
-	_log->info() << "Default memory expansion rate is " + to_string(_memory_expansion);
-
-	//set the init value for 0.5 for now, ideally should read such value from conf file
-	//TBD: read conf file for _memory_expansion
-	_sensor_num = 0;
-	_total = 1.0;
-	_total_ = 1.0;
-	t = 0;
-	this->cal_target = cal_target;
-
-	_log->debug() << "Setting init total value to " + to_string(_total);
-	_log->info() << "Target calculation is " + to_string(cal_target);
-
-	init_pointers();
-	init_data(sensor_ids, sensor_names);
-	_log->info() << "A Snapshot " + name + " is created";
-}
-*/
 Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	//write uuid
 	int uuid_length = -1;
@@ -102,18 +75,7 @@ Snapshot::Snapshot(string uuid, string log_dir){
 
 
 Snapshot::~Snapshot(){
-	/*
-	for(int i = 0; i < _sensors.size(); ++i){
-		delete _sensors[i];
-		_sensors[i] = NULL;
-	}
-	/*
-	for(int i = 0; i < _sensor_pairs.size(); ++i){
-		delete _sensor_pairs[i];
-		_sensor_pairs[i] = NULL;
-	}
-	free_all_parameters();
-	*/
+
 }
 
 void Snapshot::init_pointers(){
@@ -178,7 +140,7 @@ bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 	_log->debug() << "A Sensor " + id_pair.first + " is created with idx " + to_string(sensor->_idx);
 	//creating sensor pairs
 	for (int i = 0; i < _sensor_num; ++i) {
-		SensorPair *sensor_pair = new SensorPair(sensor, _sensors[i], 1.0);
+		SensorPair *sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, _total);
 		_log->debug() << "A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created";
 		_sensor_pairs.push_back(sensor_pair);
 	}
@@ -191,25 +153,26 @@ bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 /*
 This function is doing validation after adding sensors
 */
-bool Snapshot::validate() {
+bool Snapshot::validate(int base_sensor_size) {
 	_log->info() << "start data validation";
 	free_all_parameters();
 	init_size(_sensor_num);
 
-	_base_sensor_size = _sensor_num;
+	_base_sensor_size = base_sensor_size;
 	_log->info() << "base sensor size is: " + to_string(_base_sensor_size);
 
 	gen_weight();
 	gen_direction();
 	gen_thresholds();
 	gen_mask_amper();
-	gen_other_parameters();
 
-	init_weight();
-	init_direction();
-	init_thresholds();
-	init_mask_amper();
+	gen_other_parameters();
 	init_other_parameter();
+
+	create_sensors_to_arrays_index(0, _sensor_num);
+	create_sensor_pairs_to_arrays_index(0, _sensor_num);
+	copy_sensors_to_arrays(0, _sensor_num);
+	copy_sensor_pairs_to_arrays(0, _sensor_num);
 
 	try {
 		init_sensors();
@@ -283,30 +246,6 @@ void Snapshot::init_size(int sensor_size){
 	_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
 }
 
-/*
-void Snapshot::init_data(vector<string> &sensor_ids, vector<string> &sensor_names){
-	init_size(_base_sensor_size);
-	//init the sensor size
-
-	gen_weight();
-	gen_direction();
-	gen_thresholds();
-	gen_mask_amper();
-	gen_other_parameters();
-
-	init_weight();
-	init_direction();
-	init_thresholds();
-	init_mask_amper();
-	init_other_parameter();
-
-	init_sensors(sensor_ids, sensor_names);
-	init_sensor_pairs();
-
-	_log->info() << "Data init succeed";
-}
-*/
-
 void Snapshot::reallocate_memory(int sensor_size){
 	free_all_parameters();
 
@@ -315,57 +254,164 @@ void Snapshot::reallocate_memory(int sensor_size){
 	gen_direction();
 	gen_thresholds();
 	gen_mask_amper();
-	gen_other_parameters();
 
-	init_weight();
-	init_direction();
-	init_thresholds();
-	init_mask_amper();
+	gen_other_parameters();
 	init_other_parameter();
 }
 
-void Snapshot::copy_arrays_to_sensors() {
-	cudaMemcpy(h_diag, dev_diag, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_diag_, dev_diag_, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
-	for (int i = 0; i < _sensors.size(); ++i) {
+/*
+This function is copying the snapshot data to the current one, but only copying the sensor/sensorpair that already exist in current snapshot
+*/
+void Snapshot::copy_test_data(Snapshot *snapshot) {
+	for (int i = 0; i < _sensor_num; ++i) {
+		//the current sensor to look at
+		Sensor *sensor = _sensors[i];
+		//the current sensor id
+		string sensor_id = sensor->_uuid;
+		if (snapshot->_sensor_idx.find(sensor_id) != snapshot->_sensor_idx.end()) {
+			//if the current sensor id also in the other snapshot
+
+			//copy sensors
+			//get the 'same' sensor in the other snapshot
+			Sensor *c_sensor = snapshot->_sensor_idx[sensor_id];
+			//copy the value
+			sensor->copy_data(c_sensor);
+			//reconstruct the amper list
+			vector<int> amper_list;
+			for (int i = 0; i < c_sensor->_amper.size(); ++i) {
+				int idx = c_sensor->_amper[i];
+				bool isOriginPure = (idx % 2 == 0);
+				Sensor *a_sensor = _sensors[idx / 2];
+				if (_sensor_idx.find(a_sensor->_uuid) != _sensor_idx.end()) {
+					if (isOriginPure) {
+						amper_list.push_back(_sensor_idx[a_sensor->_uuid]->_m->_idx);
+						_log->debug() << "found the amper sensor(" + a_sensor->_uuid + ") in Pure position in new test";
+					}
+					else {
+						amper_list.push_back(_sensor_idx[a_sensor->_uuid]->_cm->_idx);
+						_log->debug() << "found the amper sensor(" + a_sensor->_uuid + ") in Complementary position in new test";
+					}
+				}
+				else {
+					_log->debug() << "Cannot found the amper sensor(" + a_sensor->_uuid + ") in new test";
+				}
+			}
+			//set the amper list
+			sensor->setAmperList(amper_list);
+			_log->debug() << "Sensor(" + sensor_id + ") data are copied";
+
+			//copy sensor pairs
+			for (int j = 0; j <= i; ++j) {
+				//go through all the sensor pair list of the current sensor
+				//the current other sensor
+				Sensor *s = _sensors[j];
+				if (snapshot->_sensor_idx.find(s->_uuid) != snapshot->_sensor_idx.end()) {
+					//if the other sensor id also in the other snapshot
+					//get the current sensor pair
+					SensorPair *sensor_pair = _sensor_pairs[ind(i, j)];
+					//get the other 'same' sensor
+					Sensor *c_s = snapshot->_sensor_idx[s->_uuid];
+					//get the corresponding sensorpair in the other snapshot, the idx of the sensorpair in the other one maybe different
+					SensorPair *c_sensor_pair = snapshot->getSensorPair(c_sensor, c_s);
+					//copy the data
+					sensor_pair->copy_data(c_sensor_pair);
+					_log->debug() << "Sensor Pair(sensor1=" + sensor_id + ", sensor2=" + s->_uuid + ") are copied";
+				}
+				else {
+					_log->debug() << "Cannot find the sensor(" + s->_uuid + ") while copying sensor pair, must be a new sensor";
+				}
+			}//j
+		}//if
+		else {
+			_log->debug() << "Cannot find the sensor(" + sensor_id + ") while copying sensor, must be a new sensor";
+		}
+	}//i
+}
+
+/*
+--------------------Sensor Object And Array Data Transfer---------------------
+*/
+void Snapshot::copy_arrays_to_sensors(int start_idx, int end_idx) {
+	//copy necessary info back from cpu array to GPU array first
+	cudaMemcpy(h_diag + start_idx, dev_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_diag_ + start_idx, dev_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
+	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays";
+	for (int i = start_idx; i < end_idx; ++i) {
 		//bring all sensor and measurable info into the object
 		_sensors[i]->pointers_to_values();
 	}
+	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from cpu arrays to sensor";
+	_log->info() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied back from arrays";
 }
 
-void Snapshot::copy_arrays_to_sensor_pairs() {
-	cudaMemcpy(h_weights, dev_weights, _measurable2d_size * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_thresholds, dev_thresholds, _sensor2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+void Snapshot::copy_sensors_to_arrays(int start_idx, int end_idx) {
+	//copy necessary info from sensor object to cpu arrays
+	for (int i = start_idx; i < end_idx; ++i) {
+		_sensors[i]->copyAmperList(h_mask_amper);
+		_sensors[i]->values_to_pointers();
+	}
+	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays";
+	//copy data from cpu array to GPU array
+	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
+	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays";
+	_log->info() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied to arrays";
+}
+
+void Snapshot::create_sensors_to_arrays_index(int start_idx, int end_idx) {
+	//create idx for diag and current
+	for (int i = start_idx; i < end_idx; ++i) {
+		_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
+		_sensors[i]->setMeasurableStatusPointers(h_current);
+	}
+	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " have created idx to arrays";
+}
+/*
+--------------------Sensor Object And Array Data Transfer---------------------
+*/
+
+/*
+--------------------SensorPair Object And Array Data Transfer---------------------
+*/
+void Snapshot::copy_sensor_pairs_to_arrays(int start_idx, int end_idx){
+	//copy data from sensor pair object to CPU arrays
+	for(int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i){
+		_sensor_pairs[i]->values_to_pointers();
+	}
+	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays";
+	//copy data from CPU arrays to GPU arrays
+	cudaMemcpy(dev_weights + ind(2 * start_idx, 0), h_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_dirs + ind(2 * start_idx, 0), h_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_thresholds + ind(start_idx, 0), h_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
+	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to GPU arrays";
+	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied to arrays";
+}
+
+void Snapshot::copy_arrays_to_sensor_pairs(int start_idx, int end_idx) {
+	//copy data from GPU arrays to CPU arrays
+	cudaMemcpy(h_weights + ind(2 * start_idx, 0), dev_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_dirs + ind(2 * start_idx, 0), dev_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_thresholds + ind(start_idx, 0), dev_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
+	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from GPU arrays to CPU arrays";
+	//copy data from CPU arrays to sensor pairs
 	for (int i = 0; i < _sensor_pairs.size(); ++i) {
 		//bring all sensor pair info into the object
 		_sensor_pairs[i]->pointers_to_values();
 	}
+	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to sensor pairs";
+	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied back from arrays";
 }
 
-void Snapshot::copy_sensor_pair(int start_idx, int end_idx){
-	for(int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i){
+void Snapshot::create_sensor_pairs_to_arrays_index(int start_idx, int end_idx) {
+	for (int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i) {
 		_sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
-		_sensor_pairs[i]->values_to_pointers();
 	}
-	cudaMemcpy(dev_weights + ind(2 * start_idx, 0), h_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_dirs + ind(2 * start_idx, 0), h_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_thresholds + ind(start_idx, 0), h_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
-	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied";
+	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " have created idx to arrays";
 }
-
-void Snapshot::copy_sensor(int start_idx, int end_idx){
-	for(int i = start_idx; i < end_idx; ++i){
-		_sensors[i]->copyAmperList(h_mask_amper);
-		_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
-		_sensors[i]->setMeasurableStatusPointers(h_current);
-		_sensors[i]->values_to_pointers();
-	}
-	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
-	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied";
-}
+/*
+--------------------SensorPair Object And Array Data Transfer---------------------
+*/
 
 void Snapshot::copy_mask(vector<bool> mask){
 	for(int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
@@ -377,8 +423,8 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all measurable
 */
 void Snapshot::pruning(vector<bool> signal){
-	copy_arrays_to_sensors();
-	copy_arrays_to_sensor_pairs();
+	copy_arrays_to_sensors(0, _sensor_num);
+	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	//get converted sensor list, from measurable signal
 	vector<bool> sensor_list = convert_signal_to_sensor(signal);
 	int row_escape = 0;
@@ -423,8 +469,10 @@ void Snapshot::pruning(vector<bool> signal){
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
 	//copy just the sensors and sensor pairs
 
-	copy_sensor(0, _sensor_num);
-	copy_sensor_pair(0, _sensor_num);
+	create_sensors_to_arrays_index(0, _sensor_num);
+	create_sensor_pairs_to_arrays_index(0, _sensor_num);
+	copy_sensors_to_arrays(0, _sensor_num);
+	copy_sensor_pairs_to_arrays(0, _sensor_num);
 
 	_log->info() << "Pruning done successful";
 }
@@ -450,8 +498,8 @@ vector<int> Snapshot::convert_list(vector<bool> &list){
 }
 
 void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs){
-	copy_arrays_to_sensors();
-	copy_arrays_to_sensor_pairs();
+	copy_arrays_to_sensors(0, _sensor_num);
+	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	int success_amper = 0;
 	//record how many delay are successful
 	
@@ -465,8 +513,10 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 		//if need to reallocate
 		reallocate_memory(_sensor_num);
 		//copy every sensor back, since the memory is new
-		copy_sensor(0, _sensor_num);
-		copy_sensor_pair(0, _sensor_num);
+		create_sensors_to_arrays_index(0, _sensor_num);
+		create_sensor_pairs_to_arrays_index(0, _sensor_num);
+		copy_sensors_to_arrays(0, _sensor_num);
+		copy_sensor_pairs_to_arrays(0, _sensor_num);
 	}
 	else{
 		//else just update the actual size
@@ -476,8 +526,10 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 		_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
 		_mask_amper_size = _sensor_size * (_sensor_size + 1);
 		//copy just the new added sensors and sensor pairs
-		copy_sensor(_sensor_num - success_amper, _sensor_num);
-		copy_sensor_pair(_sensor_num - success_amper, _sensor_num);
+		create_sensors_to_arrays_index(_sensor_num - success_amper, _sensor_num);
+		create_sensor_pairs_to_arrays_index(_sensor_num - success_amper, _sensor_num);
+		copy_sensors_to_arrays(_sensor_num - success_amper, _sensor_num);
+		copy_sensor_pairs_to_arrays(_sensor_num - success_amper, _sensor_num);
 	}
 }
 
@@ -497,8 +549,8 @@ void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 }
 
 void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs) {
-	copy_arrays_to_sensors();
-	copy_arrays_to_sensor_pairs();
+	copy_arrays_to_sensors(0, _sensor_num);
+	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	int success_delay = 0;
 	//record how many delay are successful
 	for(int i = 0; i < lists.size(); ++i){
@@ -535,8 +587,10 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 		//if need to reallocate
 		reallocate_memory(_sensor_num);
 		//copy every sensor back, since the memory is new
-		copy_sensor(0, _sensor_num);
-		copy_sensor_pair(0, _sensor_num);
+		create_sensors_to_arrays_index(0, _sensor_num);
+		create_sensor_pairs_to_arrays_index(0, _sensor_num);
+		copy_sensors_to_arrays(0, _sensor_num);
+		copy_sensor_pairs_to_arrays(0, _sensor_num);
 	}
 	else{
 		//else just update the actual size
@@ -546,8 +600,10 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 		_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
 		_mask_amper_size = _sensor_size * (_sensor_size + 1);
 		//copy just the new added sensors and sensor pairs
-		copy_sensor(_sensor_num - success_delay, _sensor_num);
-		copy_sensor_pair(_sensor_num - success_delay, _sensor_num);
+		create_sensors_to_arrays_index(_sensor_num - success_delay, _sensor_num);
+		create_sensor_pairs_to_arrays_index(_sensor_num - success_delay, _sensor_num);
+		copy_sensors_to_arrays(_sensor_num - success_delay, _sensor_num);
+		copy_sensor_pairs_to_arrays(_sensor_num - success_delay, _sensor_num);
 	}
 }
 
@@ -555,9 +611,13 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 This function is generating dir matrix memory both on host and device
 */
 void Snapshot::gen_direction(){
+	//malloc the space
 	h_dirs = new bool[_measurable2d_size_max];
-	
 	cudaMalloc(&dev_dirs, _measurable2d_size_max * sizeof(bool));
+
+	//fill in all 0
+	memset(h_dirs, 0, _measurable2d_size_max * sizeof(bool));
+	cudaMemset(dev_dirs, 0, _measurable2d_size_max * sizeof(bool));
 
 	_log->debug() << "Dir matrix generated with size " + to_string(_measurable2d_size_max);
 }
@@ -566,9 +626,13 @@ void Snapshot::gen_direction(){
 This function is generating weight matrix memory both on host and device
 */
 void Snapshot::gen_weight(){
+	//malloc the space
 	h_weights = new double[_measurable2d_size_max];
-	
 	cudaMalloc(&dev_weights, _measurable2d_size_max * sizeof(double));
+
+	//fill in all 0
+	memset(h_weights, 0, _measurable2d_size_max * sizeof(double));
+	cudaMemset(dev_weights, 0, _measurable2d_size_max * sizeof(double));
 
 	_log->debug() << "Weight matrix generated with size " + to_string(_measurable2d_size_max);
 }
@@ -577,8 +641,13 @@ void Snapshot::gen_weight(){
 This function is generating threshold matrix memory both on host and device
 */
 void Snapshot::gen_thresholds(){
+	//malloc the space
 	h_thresholds = new double[_sensor2d_size_max];
 	cudaMalloc(&dev_thresholds, _sensor2d_size_max * sizeof(double));
+
+	//fill in all 0
+	memset(h_thresholds, 0, _sensor2d_size_max * sizeof(double));
+	cudaMemset(dev_thresholds, 0, _sensor2d_size_max * sizeof(double));
 
 	_log->debug() << "Threshold matrix generated with the size " + to_string(_sensor2d_size_max);
 }
@@ -587,11 +656,47 @@ void Snapshot::gen_thresholds(){
 This function is generating mask amper matrix memory both on host and device
 */
 void Snapshot::gen_mask_amper(){
+	//malloc the space
 	h_mask_amper = new bool[_mask_amper_size_max];
-
 	cudaMalloc(&dev_mask_amper, _mask_amper_size_max * sizeof(bool));
 
+	//fill in all 0
+	memset(h_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
+	cudaMemset(dev_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
+
 	_log->debug() << "Mask amper matrix generated with size " + to_string(_mask_amper_size_max);
+}
+
+/*
+This function generate other parameter
+*/
+void Snapshot::gen_other_parameters() {
+	h_observe = new bool[_measurable_size_max];
+	h_signal = new bool[_measurable_size_max];
+	h_load = new bool[_measurable_size_max];
+	h_mask = new bool[_measurable_size_max];
+	h_current = new bool[_measurable_size_max];
+	h_target = new bool[_measurable_size_max];
+	h_diag = new double[_measurable_size_max];
+	h_diag_ = new double[_measurable_size_max];
+	h_prediction = new bool[_measurable_size_max];
+	h_up = new bool[_measurable_size_max];
+	h_down = new bool[_measurable_size_max];
+
+	cudaMalloc(&dev_observe, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_observe_, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_signal, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_load, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_mask, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_current, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_target, _measurable_size_max * sizeof(bool));
+
+	cudaMalloc(&dev_d1, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_d2, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
+	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
+
+	_log->debug() << "Other parameter generated, with size " + to_string(_measurable_size_max);
 }
 
 /*
@@ -646,37 +751,6 @@ void Snapshot::init_mask_amper(){
 	_log->debug() << "Mask amper matrix value copied to GPU";
 }
 
-/*
-This function generate other parameter
-*/
-void Snapshot::gen_other_parameters(){
-	h_observe = new bool[_measurable_size_max];
-	h_signal = new bool[_measurable_size_max];
-	h_load = new bool[_measurable_size_max];
-	h_mask = new bool[_measurable_size_max];
-	h_current = new bool[_measurable_size_max];
-	h_target = new bool[_measurable_size_max];
-	h_diag = new double[_measurable_size_max];
-	h_diag_ = new double[_measurable_size_max];
-	h_prediction = new bool[_measurable_size_max];
-	h_up = new bool[_measurable_size_max];
-	h_down = new bool[_measurable_size_max];
-	
-	cudaMalloc(&dev_observe, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_observe_, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_signal, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_load, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_mask, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_current, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_target, _measurable_size_max * sizeof(bool));
-	
-	cudaMalloc(&dev_d1, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_d2, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
-	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
-
-	_log->debug() << "Other parameter generated, with size " + to_string(_measurable_size_max);
-}
 
 //*********************************The folloing get/set function may change under REST Call infra***********************
 
@@ -704,6 +778,7 @@ void Snapshot::setTarget(vector<bool> &signal){
 This function set observe signal from python side
 */
 void Snapshot::setObserve(vector<bool> &observe){//this is where data comes in in every frame
+	_log->debug() << "Setting observe signal";
 	for(int i = 0; i < observe.size(); ++i){
 		h_observe[i] = observe[i];
 	}
@@ -952,6 +1027,12 @@ Measurable *Snapshot::getMeasurable(int idx){
 	}
 }
 
+SensorPair *Snapshot::getSensorPair(Sensor *sensor1, Sensor *sensor2) {
+	int idx1 = max(sensor1->_idx, sensor2->_idx);
+	int idx2 = min(sensor1->_idx, sensor2->_idx);
+	return _sensor_pairs[ind(idx1, idx2)];
+}
+
 /*
 This function is getting the measurable pair from the sensor pair list
 Input: m_idx1, m_idx2 are index of the measurable, m_idx1 > m_idx2
@@ -975,6 +1056,28 @@ vector<bool> Snapshot::getAmperList(string &sensor_id) {
 	}
 	return result;
 }
+
+vector<string> Snapshot::getAmperListID(string &sensor_id) {
+	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	Sensor *sensor = _sensor_idx[sensor_id];
+	vector<string> result;
+	for (int i = 0; i < sensor->_amper.size(); ++i) {
+		int idx = sensor->_amper[i];
+		Sensor *s = _sensors[idx / 2];
+		if (idx % 2 == 0) result.push_back(s->_m->_uuid);
+		else result.push_back(s->_cm->_uuid);
+	}
+	return result;
+}
+
+Sensor *Snapshot::getSensor(string &sensor_id) {
+	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	return _sensor_idx[sensor_id];
+}
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
@@ -994,7 +1097,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, st
 		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
 	for(int i = 0; i < _sensors.size(); ++i){
 		SensorPair *sensor_pair = NULL;
-		sensor_pair = new SensorPair(amper_and_sensor, _sensors[i], _threshold);
+		sensor_pair = new SensorPair(amper_and_sensor, _sensors[i], _threshold, _total);
 		Measurable *m1 = _sensors[i]->_m;
 		Measurable *m2 = _sensors[i]->_cm;
 		//mij
@@ -1033,7 +1136,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, st
 		}
 		amper_and_sensor_pairs.push_back(sensor_pair);
 	}
-	SensorPair *self_pair = new SensorPair(amper_and_sensor, amper_and_sensor, _threshold);
+	SensorPair *self_pair = new SensorPair(amper_and_sensor, amper_and_sensor, _threshold, _total);
 	self_pair->mij->v_w = amper_and_sensor_pairs[0]->mij->v_w + amper_and_sensor_pairs[0]->mi_j->v_w;
 	self_pair->mi_j->v_w = 0.0;
 	self_pair->m_ij->v_w = 0.0;
@@ -1100,7 +1203,7 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, s
 		SensorPair *sensor_pair = NULL;
 		if(i == _sensor_num){
 			//if this is the last sensor pair, and it is the pair of the delayed sensor itself
-			sensor_pair = new SensorPair(delayed_sensor, delayed_sensor, _threshold);
+			sensor_pair = new SensorPair(delayed_sensor, delayed_sensor, _threshold, _total);
 			//copy all those diag values first
 			delayed_sensor->_m->_vdiag = delayed_sensor_pairs[0]->mij->v_w + delayed_sensor_pairs[0]->mi_j->v_w;
 			delayed_sensor->_cm->_vdiag = delayed_sensor_pairs[0]->m_ij->v_w + delayed_sensor_pairs[0]->m_i_j->v_w;
@@ -1114,7 +1217,7 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, s
 			delayed_sensor_pairs.push_back(sensor_pair);
 		}
 		else{
-			sensor_pair = new SensorPair(delayed_sensor, _sensors[i], _threshold);
+			sensor_pair = new SensorPair(delayed_sensor, _sensors[i], _threshold, _total);
 			sensor_pair->mij->v_w = is_sensor_active * _sensors[i]->_m->_vdiag;
 			sensor_pair->mi_j->v_w = is_sensor_active * _sensors[i]->_cm->_vdiag;
 			sensor_pair->m_ij->v_w = !is_sensor_active * _sensors[i]->_m->_vdiag;
@@ -1158,6 +1261,8 @@ Output: None
 */
 void Snapshot::update_state_GPU(bool activity){//true for decide	
     // udpate the snapshot weights and total count:
+	_log->debug() << "start updating data on GPU";
+
     update_weights(activity);
 
 	calculate_total(activity);
@@ -1251,8 +1356,8 @@ void Snapshot::save_snapshot(ofstream &file) {
 	int sensor_pair_size = _sensor_pairs.size();
 	file.write(reinterpret_cast<const char *>(&sensor_size), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&sensor_pair_size), sizeof(int));
-	copy_arrays_to_sensors();
-	copy_arrays_to_sensor_pairs();
+	copy_arrays_to_sensors(0, sensor_size);
+	copy_arrays_to_sensor_pairs(0, sensor_size);
 	for (int i = 0; i < sensor_size; ++i) {
 		_sensors[i]->save_sensor(file);
 	}

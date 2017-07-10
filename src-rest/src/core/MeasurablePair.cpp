@@ -9,10 +9,10 @@ MeasurablePair::MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_
 	file.read((char *)(&v_w), sizeof(double));
 }
 
-MeasurablePair::MeasurablePair(Measurable *_m_i, Measurable *_m_j)
+MeasurablePair::MeasurablePair(Measurable *_m_i, Measurable *_m_j, double w, bool d)
 	:_measurable_i(_m_i), _measurable_j(_m_j){
-	v_w = 0.0;
-	v_d = false;
+	v_w = w;
+	v_d = d;
 }
 
 /*
@@ -68,6 +68,11 @@ Input: file ofstream
 */
 void MeasurablePair::save_measurable_pair(ofstream &file){
 	file.write(reinterpret_cast<const char *>(&v_w), sizeof(double));
+}
+
+void MeasurablePair::copy_data(MeasurablePair *mp) {
+	//dir value will not be copied
+	v_w = mp->v_w;
 }
 
 MeasurablePair::~MeasurablePair(){

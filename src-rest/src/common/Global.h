@@ -9,6 +9,7 @@
 #include <time.h>
 #include <exception>
 #include <direct.h>
+#include <algorithm>
 
 enum CORE_EXCEPTION {CORE_FATAL, CORE_ERROR, CORE_WARNING};
 enum CLIENT_EXCEPTION {CLIENT_FATAL, CLIENT_ERROR, CLIENT_WARNING};

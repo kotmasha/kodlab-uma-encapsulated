@@ -124,8 +124,8 @@ protected:
 
 public:
 	enum Snapshot_type{STATIONARY, FORGETFUL, UNITTEST};
-	double _total, _total_;
 	//the total sum(a square block sum, wij+wi_j+w_ij+w_i_j), and the value in last iteration
+	double _total, _total_;
 
 protected:
 	vector<int> convert_list(vector<bool> &list);
@@ -139,12 +139,11 @@ public:
 	virtual float decide(vector<bool> &signal, double phi, bool active);
 
 	bool add_sensor(std::pair<string, string> &id_pair);
-	bool validate();
+	bool validate(int base_sensor_size);
 
 	void init_size(int sensor_size);
 	void init_sensors();
 	void init_sensor_pairs();
-	//void init_data(vector<string> &sensor_ids, vector<string> &sensor_names);
 
 	void free_all_parameters();
 	void init_pointers();
@@ -184,9 +183,12 @@ public:
 	vector<bool> getMask();
 	vector<bool> getUp();
 	vector<bool> getDown();
+	SensorPair *getSensorPair(Sensor *sensor1, Sensor *sensor2);
 	Measurable *getMeasurable(int idx);
 	MeasurablePair *getMeasurablePair(int m_idx1, int m_idx2);
 	vector<bool> getAmperList(string &sensor_id);
+	vector<string> getAmperListID(string &sensor_id);
+	Sensor *getSensor(string &sensor_id);
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -206,17 +208,18 @@ public:
 	---------------------COPY FUNCTION---------------------
 	before using the copy function, have to make sure all necessary variable are in place
 	*/
-	void copy_sensor_pair(int start_idx, int end_idx);
-	void copy_sensor(int start_idx, int end_idx);
+	void copy_test_data(Snapshot *snapshot);
+	void copy_sensor_pairs_to_arrays(int start_idx, int end_idx);
+	void copy_sensors_to_arrays(int start_idx, int end_idx);
 	void copy_mask(vector<bool> mask);
-	void copy_sensors_to_arrays();
-	void copy_sensor_pairs_to_arrays();
-	void copy_arrays_to_sensors();
-	void copy_arrays_to_sensor_pairs();
+	void copy_arrays_to_sensors(int start_idx, int end_idx);
+	void copy_arrays_to_sensor_pairs(int start_idx, int end_idx);
 	/*
 	---------------------COPY FUNCTION---------------------
 	*/
 
+	void create_sensors_to_arrays_index(int start_idx, int end_idx);
+	void create_sensor_pairs_to_arrays_index(int start_idx, int end_idx);
 	void generate_delayed_weights(int mid, bool merge, std::pair<string, string> &id_pair);
 	void ampers(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs);
 	void amper(vector<int> &list, std::pair<string, string> &uuid);
@@ -235,7 +238,6 @@ public:
 	void gen_weight();
 	void gen_thresholds();
 	void gen_mask_amper();
-	
 	void gen_other_parameters();
 
 	void save_snapshot(ofstream &file);

@@ -29,7 +29,7 @@ private:
 
 public:
 	SensorPair(ifstream &file, vector<Sensor *> &sensors);
-	SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold);
+	SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, double total);
 	//init functions
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);
@@ -40,6 +40,7 @@ public:
 	void setAllPointers(double *weights, bool *dirs, double *thresholds);
 	MeasurablePair *getMeasurablePair(bool isOriginPure_i, bool isOriginPure_j);
 	void save_sensor_pair(ofstream &file);
+	void copy_data(SensorPair *sp);
 	~SensorPair();
 };
 

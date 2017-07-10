@@ -18,6 +18,7 @@ public:
 
 protected:
 	logManager *_log_access;
+	string_t UMA_BASE_SENSOR_SIZE;
 	void validate_snapshot(World *world, json::value &data, http_request &request);
 };
 

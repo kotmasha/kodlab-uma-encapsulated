@@ -9,7 +9,7 @@ from som_platform import *
 def start_experiment(stdscr,agent_to_examine):
     NODELAY=1
     # grid definitions
-    X_BOUND=6 #length
+    X_BOUND=4 #length
     THRESHOLD=1./(1.+2*pow(X_BOUND,2))
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
@@ -23,60 +23,45 @@ def start_experiment(stdscr,agent_to_examine):
     #ARBITRATION_PARAMS=tuple([1.-pow(2,-2)])
     #ARBITRATION_PEAK=2
     
-    # initialize a new experiment
+    #------------------------------init------------------------------
     EX=Experiment()
-    id_dec=EX.nid('decision')
-    
-    # register basic motion agents;
-    # - $True$ tag means they will be marked as dependent (on other agents)
-    id_rt,id_rtc=EX.register_sensor('rt',True)
-    id_lt,id_ltc=EX.register_sensor('lt',True)
-    # register motivation for motion agents
-    # - this one is NOT dependent on agents except through the position, so
-    #   it carries the default False tag.
-    id_distM=EX.register('distM')
-    id_navM,cid_navM=EX.register_sensor('navM')
-    # register supervising agent
-    #id_super,id_superc=EX.register_sensor('super',True)
+    id_dec='decision'
 
+    # generate target position
+    # select starting position
+    START=rnd(X_BOUND+1)
+    TARGET=START
+    while dist(TARGET,START)<X_BOUND/8:
+        TARGET=rnd(X_BOUND+1)
+    TARGET = 1
     # agent to be visualized
-    id_lookat=EX.nid(agent_to_examine)
-    
-    # register arbiter variable whose purpose is to synchronize the responses
-    # of agents 'lt' and 'rt' to the action of 'super', it does not depend on
-    # agent decisions, hence carries the default False tag.
-    id_arbiter=EX.register('ar',True)
-    # register the failure mode sensor
-    #id_fail,id_failc=EX.register_sensor('fl')
+    id_lookat = agent_to_examine
 
-    # add a counter
-    id_count=EX.register('count')
-    def ex_counter(state):
-        return 1+state[id_count][0]
-    EX.construct_measurable(id_count,ex_counter,[0])
-    
     # introduce arbitration
+    id_arbiter = 'ar'
     def arbiter(state):
         return bool(rnd(2))
     EX.construct_measurable(id_arbiter,arbiter,[bool(rnd(2))],0)
 
-    id_toRT,id_toRTc=EX.register_sensor('toR',True)
+    id_rt = 'rt'
+    id_lt = 'lt'
+
+    id_toRT = 'toR'
     def intention_RT(state):
         return id_rt in state[id_dec][0]
     EX.construct_sensor(id_toRT,intention_RT)
-    
-    id_toLT,id_toLTc=EX.register_sensor('toL',True)
+
+    id_toLT = 'toL'
     def intention_LT(state):
         return id_lt in state[id_dec][0]
     EX.construct_sensor(id_toLT,intention_LT)
 
     # failure mode for action $lt^rt$
-    id_toF,id_toFc=EX.register_sensor('toF',True)
+    id_toF = 'toF'
     def about_to_enter_failure_mode(state):
         return state[id_toLT][0] and state[id_toRT][0]
     EX.construct_sensor(id_toF,about_to_enter_failure_mode)
 
-    # add basic motion agents
     def action_RT(state):
         rt_decided=(id_rt in state[id_dec][0])
         if state[id_toF][0]:
@@ -84,7 +69,7 @@ def start_experiment(stdscr,agent_to_examine):
             return state[id_arbiter][0]
         else:
             return rt_decided
-    RT=EX.construct_agent(id_rt,id_distM,action_RT,MOTION_PARAMS,True)
+    RT = EX.construct_agent('rt', 'distM', action_RT, True, MOTION_PARAMS)
 
     def action_LT(state):
         lt_decided=(id_lt in state[id_dec][0])
@@ -93,23 +78,10 @@ def start_experiment(stdscr,agent_to_examine):
             return not(state[id_arbiter][0])
         else:
             return lt_decided
-    LT=EX.construct_agent(id_lt,id_distM,action_LT,MOTION_PARAMS,True)
-    
-    # immediately introduce corresponding action sensors
-    #EX.assign_sensor(id_rt,True,[id_lt])
-    #EX.assign_sensor(id_lt,True,[id_rt])
-
-    #
-    ### "mapping" system
-    #
-
-    ## introduce agent's position
-
-    # select starting position
-    START=rnd(X_BOUND+1)
+    LT = EX.construct_agent('lt', 'distM', action_LT, True, MOTION_PARAMS)
 
     # effect of motion on position
-    id_pos=EX.register('pos')
+    id_pos = 'pos'
     def motion(state):
         triggers={id_rt:1,id_lt:-1}
         diff=0
@@ -122,27 +94,20 @@ def start_experiment(stdscr,agent_to_examine):
             return state[id_pos][0]
     EX.construct_measurable(id_pos,motion,[START,START])
 
-    ## introduce effect of agent (not/)feeding (finding and consuming targets):
-
-    # generate target position
-    TARGET=START
-    while dist(TARGET,START)<X_BOUND/8:
-        TARGET=rnd(X_BOUND+1)
-    #TARGET = 1
-
     # set up position sensors
     def xsensor(m): # along x-axis
         return lambda state: state[id_pos][0]<m+1
-
     for ind in xrange(X_BOUND):
-        tmp_name='x'+str(ind)
-        id_tmp,id_tmpc=EX.register_sensor(tmp_name) #registers the sensor pairs
-        EX.construct_sensor(id_tmp,xsensor(ind)) #constructs the measurables associated with the sensor
-        EX.assign_sensor(id_tmp,True,[id_rt,id_lt]) #assigns the sensor to all agents
+        id_tmp = 'x' + str(ind)
+        EX.construct_sensor(id_tmp, xsensor(ind)) #constructs the measurables associated with the sensor
+        EX.assign_sensor(id_tmp, True, True, [id_rt, id_lt]) #assigns the sensor to all agents
 
+    id_count = 'count'
+    def ex_counter(state):
+        return 1+state[id_count][0]
+    EX.construct_measurable(id_count,ex_counter,[0])
 
-    # normalized distance to playground (nav function #1)
-    # - $id_distM$ has already been registerd 
+    id_distM = 'distM'
     def distM(state):
         if state[id_pos][0]==TARGET and state[id_pos][1]==TARGET:
             return state[id_distM][0]+1
@@ -155,34 +120,23 @@ def start_experiment(stdscr,agent_to_examine):
     INIT=1+X_BOUND-dist(START,TARGET)
     EX.construct_measurable(id_distM,distM,[INIT,INIT])
 
+    id_navM = 'navM'
     def navM(state):
         return state[id_distM][0]-state[id_distM][1]>0
     EX.construct_sensor(id_navM,navM)
-    EX.assign_sensor(id_navM,True,[id_rt,id_lt]) #assigns the sensor to all agents
-    
-    #
-    ### Initialize agents on GPU
-    #
+    EX.assign_sensor(id_navM,True, True, [id_rt,id_lt]) #assigns the sensor to all agents
+    #-------------------------------------init--------------------------------------------
 
     for agent_name in EX._AGENTS:
-        tmp=EX._AGENTS[agent_name].init()
-    #
-    ### Introduce a conjunction
-    #
-
-    #for agent in [RT,LT]:
-    #    agent.amper([agent.generate_signal([EX.nid('x0*'),EX.nid('x2')])])
-    #    
-
-    ### Introduce delayed position sensors for both agents
-
-    for agent in [RT,LT]:
-        delay_sigs=[agent.generate_signal([EX.nid('x'+str(ind))]) for ind in xrange(X_BOUND)]
-        agent.delay(delay_sigs)
-
+        EX._AGENTS[agent_name].init()
+        EX._AGENTS[agent_name].validate()
 
     # another update cycle
     message=EX.update_state()
+
+    for agent in [RT,LT]:
+        delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
+        agent.delay(delay_sigs)
 
     ## SET ARTIFICIAL TARGET ONCE AND FOR ALL
     for agent in [RT,LT]:
@@ -244,7 +198,7 @@ def start_experiment(stdscr,agent_to_examine):
         ## Unpacking the output from the tested agent (RT/LT)
         
         #determining the start position of geographic sensors in signals
-        geo_start=min(ind for ind,id_tmp in enumerate(LT._SENSORS) if id_tmp==EX.nid('x0'))
+        geo_start=min(ind for ind,id_tmp in enumerate(LT._SENSORS) if id_tmp=='x0')
         #decompose extra info from agent
         agent=EX._AGENTS[id_agent]
         curr=agent._CURRENT
@@ -302,7 +256,7 @@ def start_experiment(stdscr,agent_to_examine):
         #SIGNED SIGNAL TO WATCH:
         #SIG=agent._CURRENT
         
-        sig=agent.generate_signal([EX.nid('x0')])
+        sig=agent.generate_signal(['x0'])
         #sig = Signal([True,False,False,True])
         #sig=agent.generate_signal([EX.nid('{x0*;x2}')])
         #sig=agent.generate_signal([EX.nid('#x2')])
@@ -318,7 +272,7 @@ def start_experiment(stdscr,agent_to_examine):
             #print SIG[token]._VAL
 
         #
-        namelist=[EX.din(mid) for mid in agent._SENSORS]
+        namelist = agent._SENSORS
         #
         for x,mid in enumerate(agent._SENSORS):
             this_BG=OBS_BG if OBS.value(x) else REG_BG
@@ -346,7 +300,7 @@ def start_experiment(stdscr,agent_to_examine):
         message=EX.update_state()
 
     else:
-        ServiceWorld(service).save("sniffy1d", EX._ID_TO_NAME, EX._MID)
+        EX.save_experiment('sniffy1d')
         print "data saved"
         raise Exception('Aborting at your request...\n\n')
         

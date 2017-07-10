@@ -12,6 +12,8 @@
 #include "Snapshot.h"
 #include "Sensor.h"
 #include "UMATest.h"
+//#include "logging.h"
+//#include "logManager.h"
 
 using namespace std;
 
@@ -539,6 +541,7 @@ float Snapshot::distance(bool *signal1, bool *signal2){
 }
 
 void Snapshot::calculate_total(bool active){
+	//_log->debug() << "start calculating total";
 	get_weights_diag_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_weights, dev_diag, dev_diag_, _measurable_size);
 	_total_ = _total;
 	_total = _q * _total + (1 - _q) * _phi;
@@ -550,6 +553,7 @@ void Snapshot::calculate_target(){
 }
 
 void Snapshot::update_weights(bool active){
+	//_log->debug() << "start updating weights";
 	dim3 dimGrid2((_measurable_size + 15) / 16, (_measurable_size + 15) / 16);
 	dim3 dimBlock2(16, 16);
 	update_weights_kernel<<<dimGrid2, dimBlock2>>>(dev_weights, dev_observe, _measurable_size, _q, _phi, active);
@@ -562,6 +566,7 @@ void Snapshot::orient_all(){
 }
 
 void Snapshot::update_thresholds() {
+	//_log->debug() << "start updating threshold";
 	dim3 dimGrid1((_sensor_size + 15) / 16, (_sensor_size + 15) / 16);
 	dim3 dimBlock1(16, 16);
 	update_thresholds_kernel << <dimGrid1, dimBlock1 >> >(dev_dirs, dev_thresholds, _total_, _q, _phi, _sensor_size);

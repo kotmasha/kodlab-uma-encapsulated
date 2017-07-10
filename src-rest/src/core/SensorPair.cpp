@@ -22,12 +22,12 @@ SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
 /*
 init function use sensor pointer, measurable pointer to create measurable pairs
 */
-SensorPair::SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold):
+SensorPair::SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, double total):
 	_sensor_i(_sensor_i),_sensor_j(_sensor_j){
-	mij = new MeasurablePair(_sensor_i->_m, _sensor_j->_m);
-	mi_j = new MeasurablePair(_sensor_i->_m, _sensor_j->_cm);
-	m_ij = new MeasurablePair(_sensor_i->_cm, _sensor_j->_m);
-	m_i_j = new MeasurablePair(_sensor_i->_cm, _sensor_j->_cm);
+	mij = new MeasurablePair(_sensor_i->_m, _sensor_j->_m, total / 4.0, _sensor_i == _sensor_j);
+	mi_j = new MeasurablePair(_sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
+	m_ij = new MeasurablePair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
+	m_i_j = new MeasurablePair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
 	pointers_to_null();
 	this->vthreshold = threshold;
 }
@@ -126,6 +126,14 @@ void SensorPair::save_sensor_pair(ofstream &file){
 	mi_j->save_measurable_pair(file);
 	m_ij->save_measurable_pair(file);
 	m_i_j->save_measurable_pair(file);
+}
+
+void SensorPair::copy_data(SensorPair *sp) {
+	vthreshold = sp->vthreshold;
+	mij->copy_data(sp->mij);
+	mi_j->copy_data(sp->mi_j);
+	m_ij->copy_data(sp->m_ij);
+	m_i_j->copy_data(sp->m_i_j);
 }
 
 /*

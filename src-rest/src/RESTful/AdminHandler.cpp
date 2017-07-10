@@ -95,6 +95,18 @@ bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot
 	return true;
 }
 
+bool AdminHandler::get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request) {
+	sensor = snapshot->getSensor(sensor_id);
+	if (snapshot == NULL) {
+		_log_access->info() << request.absolute_uri().to_string() + L" 404";
+		json::value message;
+		message[MESSAGE] = json::value::string(L"Cannot find the snapshot id!");
+		request.reply(status_codes::NotFound, message);
+		return false;
+	}
+	return true;
+}
+
 string AdminHandler::get_string_input(json::value &data, string_t &name, http_request &request) {
 	if (!check_field(data, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
 	string_t value;
@@ -115,7 +127,7 @@ string AdminHandler::get_string_input(map<string_t, string_t> &query, string_t &
 	if (!check_field(query, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
 	string_t value;
 	try {
-		value = query[name];
+		value = web::uri::decode(query[name]);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
@@ -125,6 +137,36 @@ string AdminHandler::get_string_input(map<string_t, string_t> &query, string_t &
 	//convent from wstring to string
 	std::string s_value(value.begin(), value.end());
 	return s_value;
+}
+
+int AdminHandler::get_int_input(json::value &data, string_t &name, http_request &request) {
+	if (!check_field(data, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	int value;
+	try {
+		value = data[name].as_integer();
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		parsing_error(request);
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	//convent from wstring to string
+	return value;
+}
+
+int AdminHandler::get_int_input(map<string_t, string_t> &query, string_t &name, http_request &request) {
+	if (!check_field(query, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	int value;
+	try {
+		value = stoi(query[name]);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		parsing_error(request);
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
+	//convent from wstring to string
+	return value;
 }
 
 double AdminHandler::get_double_input(json::value &data, string_t &name, http_request &request) {
@@ -184,6 +226,23 @@ bool AdminHandler::get_bool_input(map<string_t, string_t> &query, string_t &name
 		throw CLIENT_EXCEPTION::CLIENT_ERROR;
 	}
 	//convent from wstring to string
+	return value;
+}
+
+vector<int> AdminHandler::get_int1d_input(json::value &data, string_t &name, http_request &request) {
+	if (!check_field(data, name, request)) throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	vector<int> value;
+	try {
+		auto &list = data[name].as_array();
+		for (int i = 0; i < list.size(); ++i) {
+			value.push_back(list[i].as_integer());
+		}
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		parsing_error(request);
+		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+	}
 	return value;
 }
 

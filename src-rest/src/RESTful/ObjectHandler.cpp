@@ -10,6 +10,7 @@ ObjectHandler::ObjectHandler(logManager *log_access) :AdminHandler(log_access) {
 	UMA_THRESHOLD = L"threshold";
 	UMA_Q = L"q";
 	UMA_C_SID = L"c_sid";
+	UMA_AMPER_LIST = L"amper_list";
 }
 
 void ObjectHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
@@ -72,8 +73,10 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 		if (!get_agent_by_id(world, agent_id, agent, request)) return;
 		if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
 		vector<bool> amper_list;
+		vector<string> amper_list_id;
 		try {
 			amper_list = snapshot->getAmperList(sensor_id);
+			amper_list_id = snapshot->getAmperListID(sensor_id);
 		}
 		catch (exception &e) {
 			_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 404";
@@ -82,9 +85,14 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 			request.reply(status_codes::BadRequest, message);
 			return;
 		}
-		vector<json::value> json_amper_list;
+		vector<json::value> json_amper_list, json_amper_list_id;
 		vector_bool_to_array(amper_list, json_amper_list);
-		json::value return_data = json::value::array(json_amper_list);
+		vector_string_to_array(amper_list_id, json_amper_list_id);
+		json::value return_data;
+		json::value return_lists = json::value::array(json_amper_list);
+		json::value return_ids = json::value::array(json_amper_list_id);
+		return_data[L"amper_list"] = return_lists;
+		return_data[L"amper_list_id"] = return_ids;
 		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
 
 		json::value message;
@@ -248,6 +256,47 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
 			json::value message;
 			message[MESSAGE] = json::value::string(L"snapshot threshold changed to " + to_wstring(threshold));
+			request.reply(status_codes::OK, message);
+		}
+		catch (exception &e) {
+			cout << e.what() << endl;
+		}
+		return;
+	}
+
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	json::value message;
+	message[MESSAGE] = json::value::string(L"not a valid field to update!");
+	request.reply(status_codes::BadRequest, message);
+}
+
+void ObjectHandler::update_sensor(World *world, json::value &data, http_request &request) {
+	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	string agent_id, snapshot_id, sensor_id;
+	try {
+		agent_id = get_string_input(query, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(query, UMA_SNAPSHOT_ID, request);
+		sensor_id = get_string_input(query, UMA_SENSOR_ID, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
+
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	Sensor *sensor = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+	if (!get_sensor_by_id(snapshot, sensor_id, sensor, request)) return;
+
+	if (check_field(data, UMA_AMPER_LIST, request, false)) {
+		try {
+			vector<int> amper_list = get_int1d_input(data, UMA_AMPER_LIST, request);
+			sensor->setAmperList(amper_list);
+			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+			json::value message;
+			message[MESSAGE] = json::value::string(L"sensor amper list changed");
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {

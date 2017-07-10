@@ -37,12 +37,14 @@ public:
 	void setAmperList(bool *ampers, int start, int end);
 	void setAmperList(int idx);
 	void setAmperList(Sensor *sensor);
+	void setAmperList(vector<int> &amper_list);
 	void setIdx(int idx);
 	void copyAmperList(bool *ampers);
 	bool amper_and_signals(bool *observe);
 	bool isSensorActive();
 	void pointers_to_null();
 	void save_sensor(ofstream &file);
+	void copy_data(Sensor *s);
 
 	~Sensor();
 };

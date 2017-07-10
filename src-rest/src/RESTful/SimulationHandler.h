@@ -20,6 +20,7 @@ protected:
 	string_t UMA_SIGNALS, UMA_PHI, UMA_ACTIVE;
 	string_t UMA_AMPER_LIST, UMA_DELAY_LIST, UMA_UUID_LIST;
 	string_t UMA_FILE_NAME;
+	string_t UMA_MERGE;
 	void create_decision(World *world, json::value &data, http_request &request);
 	void create_amper(World *world, json::value &data, http_request &request);
 	void create_delay(World *world, json::value &data, http_request &request);
@@ -27,6 +28,7 @@ protected:
 	void create_saving(World *world, json::value &data, http_request &request);
 	void create_loading(World *world, json::value &data, http_request &request);
 	void create_pruning(World *world, json::value &data, http_request &request);
+	void create_merging(World *world, json::value &data, http_request &request);
 };
 
 #endif

@@ -8,6 +8,7 @@ import numpy as np
 import uuid
 import time
 from numpy.random import randint as rnd
+import json
 
 N_CORES=8
 service = UMA_service()
@@ -156,13 +157,11 @@ class Experiment(object):
             self._AGENTS={}
 
             # registering the decision observable
-            id_dec=str(uuid.uuid4())
-            
+            id_dec='decision'
+            self._ID = set()
+            self._ID.add(id_dec)
             # Dictionaries translating user-assigned names to
             # system-assigned uuids
-            self._dicts = {}
-            self._NAME_TO_ID={'decision':id_dec}
-            self._ID_TO_NAME={id_dec:'decision'}
             self._ID_TO_DEP={id_dec:False}
             
             # List of names of the experiment measurables:
@@ -186,70 +185,148 @@ class Experiment(object):
             self._DEFS={id_dec:ex_decision}
 
 
-      def read_experiment(self, filename):
-            self._dicts = ServiceWorld(service).load(filename)
-            for name, id in self._dicts.iteritems():
-                  if name not in self._NAME_TO_ID:
-                        self._NAME_TO_ID[name] = id
-                        self._ID_TO_NAME[id] = name
+      def load_experiment(self, filename):
+            ServiceWorld(service).load(filename)
+            f = open(filename + '.txt', 'r')
+            self.basic_sensors = []
+            self.complex_sensors = []
+            self.agents = []
+            self.measurables = []
 
+            for line in f:
+                  data = json.loads(line)
+                  # get id and type
+                  id = data['id']
+                  type = data['type']
+                  if type == 'measurable':
+                        # save in measurable
+                        self.measurables.append(id)
+                  elif type == 'agent':
+                        # save in agent
+                        self.agents.append(id)
+                  else:
+                        # save in sensor
+                        if data['is_basic']:
+                              # save in basic sensor
+                              self.basic_sensors.append(id)
+                        else:
+                              # save in complex sensor
+                              if 'pure_id' not in data:
+                                    # this is a pure sensor, must have amper list
+                                    self.complex_sensors.append({'id': id, 'amper_list': data['amper_list']})
+                              else:
+                                    # this is a complementary sensor, must have a pure id
+                                    self.complex_sensors.append({'id': id, 'pure_id': data['pure_id']})
 
-      ## Register $name$ in experiment and return an id for it.
-      #
-      ## ANY MEASURABLE HAS TO BE REGISTERED before it can be added.
-      #
-      ## ALL AGENTS MUST BE REGISTERED WITH $decdep=True$.
-      #
-      #  - returns a new universal id string unless $name$ has already
-      #    been registered, in which case an exception is raised.
-      #  - $decdep$ is cast to boolean, and saved for future indication
-      #    of whether the measurable depends on intermediate agent decisions.
-      def register(self,name,decdep=False):
-            if name in self._NAME_TO_ID:
-                  #raise Exception('The name \"'+str(name)+'\" is already in use.')
-                  id = self._NAME_TO_ID[name]
-                  self._ID_TO_DEP[id] = bool(decdep)
-                  if name in self._dicts:
-                        self._dicts.pop(name)
-                  return id
-            else:
-                  new_id=str(uuid.uuid4())
-                  self._NAME_TO_ID[name]=new_id
-                  self._ID_TO_NAME[new_id]=name
-                  self._ID_TO_DEP[new_id]=bool(decdep)
+      def save_experiment(self, filename):
+            ServiceWorld(service).save(filename)
+            f = open(filename + '.txt', 'w+')
+            existing_sensors = {} # id to whether it is basic sensor
+            for id in self._MID:
+                  data = {}
+                  data['id'] = id
+                  if id in self._AGENTS:
+                        # the type is agent
+                        data['type'] = 'agent'
+                  else:
+                        tmp_agent = None
+                        # may need to optimize in the future
+                        for agent_name, agent in self._AGENTS.iteritems():
+                              if id in agent._SENSORS:
+                                    tmp_agent = agent
+                                    break
+                        if tmp_agent is None:
+                              # not exist in any agent, just an experiment measurable
+                              data['type'] = 'measurable'
+                        else:
+                              # found an agent hold the measurable, then it is a sensor
+                              data['type'] = 'sensor'
+                              if name_comp(id) in existing_sensors:
+                                    # if find the pure id, then this one must be a complementary
+                                    pure_id = name_comp(id)
+                                    data['pure_id'] = pure_id
+                                    data['is_basic'] = existing_sensors[pure_id]
+                              else:
+                                    # it is a pure measurable
+                                    amper_list_id = ServiceSensor(tmp_agent._MID, 'plus', id, service).getAmperListID()
+                                    data['amper_list'] = amper_list_id
+                                    if len(amper_list_id) == 0:
+                                          # indicating if it is basic sensor or not
+                                          data['is_basic'] = True
+                                          existing_sensors[id] = True
+                                    else:
+                                          data['is_basic'] = False
+                                          existing_sensors[id] = False
+                  json.dump(data, f)
+                  f.write('\n')
+            f.close()
+
+      def reconstruct(self):
+            diff_measurables = []
+            diff_basic_sensors = []
+
+            #for mid in self.measurables:
+            #      if mid not in self._ID:
+            #            diff_measurables.append(mid)
+                        # maybe this will be useful later
+
+            # record all basic sensors that is not used in this test
+            for sensor in self.basic_sensors:
+                  if sensor not in self._ID:
+                        diff_basic_sensors.append(sensor)
+
+            for data in self.complex_sensors:
+                  id = data['id']
+                  if 'amper_list' in data:
+                        [data['amper_list'].remove(aid) for aid in data['amper_list'] if aid in diff_basic_sensors]
+                        if len(data['amper_list']) > 0:
+                              self.construct_sensor(id, func_delay(data['amper_list']), init_value = [False, False])
+                              self.assign_sensor(id, False, False, ['rt', 'lt'])
+                        else:
+                              pass
+                  else:
+                        if data['pure_id'] in self._ID:
+                              self.construct_sensor(id, func_not(data['pure_id']), init_value = [False, False])
+
+      # The register function, just do id register.
+      # If id is None, generate a new one, if not just add it
+      # The function is NOT supposed to be used in any test file directly
+      def register(self, id = None):
+            """
+            :param id: the id to be registered, if it is None, will generate an uuid
+            :return: the id
+            """
+            if id is None: # means the sensor is a new one, uuid will be generated
+                  new_id = str(uuid.uuid4())
+                  self._ID.add(new_id)
                   return new_id
+            else: # need to add the id. if same name provided, just override
+                  self._ID.add(id)
+                  return id
 
-      def register_sensor(self,name,decdep=False):
-            mid=self.register(name,decdep)
-            midc=self.register(name_comp(name),decdep)
-            return mid,midc
-
-      
-      ## Return the ID of a registered name, of $None$ if not registered
-      def nid(self,name):
-            try:
-                  return self._NAME_TO_ID[name]
-            except:
-                  raise Exception('Measurable name is not registered.')
-
-      ## Return the name corresponding to a registered id else $None$
-      def din(self,mid):
-            try:
-                  return self._ID_TO_NAME[mid]
-            except:
-                  raise Exception('This id is not registered.') 
+      # The function for register sensor
+      # If id is None, generate 2 new sensor ids
+      # The function is NOT supposed to be used in any test file directly
+      def register_sensor(self, id = None):
+            """
+            :param id: the id to be registered as sensor
+            :return: the id and cid of the sensor
+            """
+            # generate the mid first
+            mid = self.register(id)
+            if id is None:
+                  # if the id is None, the midc will generate from the #new_id
+                  midc = self.register(name_comp(mid))
+            else:
+                  # else the midc will generate from #id
+                  midc = self.register(name_comp(id))
+            return mid, midc
 
       def dep(self,mid):
             try:
                   return self._ID_TO_DEP[mid]
             except:
                   raise Exception('This id is not registered.')
-            
-      def comp(self,mid):
-            try:
-                  return self.nid(name_comp(self.din(mid)))
-            except:
-                  raise Exception('Attempted complementing an id not belonging to a registered sensor.')
       
       ## Front-end query (name-based) of an experiment state variable
       def this_state(self,mid,delta=0):
@@ -267,79 +344,88 @@ class Experiment(object):
             self._STATE[mid].appendleft(value)
             return None
 
-
-      ## Extend the experiment state by adding a measurable with id $mid$
-      #  - $mid$ must be registered ahead of time
-      #  - measurables hold current and preceding state by default
-      #  - initialize with $init$: an iterable of values (out of which
-      #    the last $depth+1$ will be used as initial values)
-      #  - $definition$ should be a function of state
-      def construct_measurable(self,mid,definition=None,init_value=None,depth=1):
+      # Construct the measurable using id
+      def construct_measurable(self, mid = None, definition=None, init_value=None, depth=1, decdep = False):
+            """
+            :param mid:  the input id, if it is none, id will be generated
+            :param definition: the definition function of the measurable
+            :param init_value: the init value for the measurable
+            :param depth: the depth of the measurable
+            :param decdep: value indicating if the measurable is decision dependent
+            :return: nothing
+            """
+            # register the mid in Experiment's ID
+            mid = self.register(mid)
+            # add the mid into the MID list, ID_TO_DEP, and DEFS
             self._MID.append(mid)
-            self._DEFS[mid]=definition
-            if init_value==None:
+            self._ID_TO_DEP[mid] = bool(decdep)
+            self._DEFS[mid] = definition
+            if init_value is None: # will try to generate the init_value based on the definition
                   self._STATE[mid]=deque([],depth+1)
-                  try:
-                        self.set_state(mid,definition(self._STATE))
-                  except:
-                        pass
+                  # -------------------- Remove the old try/except block, because: -----------------------
+                  # 1 if definition is None, getting this by throwing an exception will reduce performance, an if else check will be faster
+                  # 2 if definition is not None, and there is an error generating values, than the exception will not be catched because those error are unexpected
+                  if definition is not None: # if definition exist, calculate the init value, any error will throw to outer scope
+                        self.set_state(mid, definition(self._STATE))
             else:
                   self._STATE[mid]=deque(init_value,depth+1)
             return None
-      
-      ## Construct a binary sensor pair with ids supplied by a
-      ##   preceding Experiment.register_sensor(name) command.
-      #  - INPUT: $mid$, $definition$ (default=None), $depth$ (default=1)
-      def construct_sensor(self,mid,definition=None,init_value=None,depth=1):
-            #verify proper registration of sensor
-            midc=self.comp(mid)
+
+      #construct the agent using id
+      def construct_sensor(self, mid = None, definition=None, init_value=None, depth=1, decdep = False):
+            """
+            :param mid:  the input id, if it is none, id will be generated
+            :param definition: the definition function of the measurable
+            :param init_value: the init value for the measurable
+            :param depth: the depth of the measurable
+            :param decdep: value indicating if the measurable is decision dependent
+            :return: nothing
+            """
+            mid, midc = self.register_sensor(mid)
             #compute initial value of sensor
             if definition==None: # this is an action sensor, init value WILL be defaulted to None...
-                  self.construct_measurable(mid,None,[False for ind in xrange(depth+1)],depth)
-                  self.construct_measurable(midc,None,[True for ind in xrange(depth+1)],depth)
+                  self.construct_measurable(mid, None, [False for ind in xrange(depth + 1)], depth, decdep)
+                  self.construct_measurable(midc, None, [True for ind in xrange(depth + 1)], depth, decdep)
             else:
-                  self.construct_measurable(mid,definition,init_value,depth)
-                  self.construct_measurable(midc,func_not(definition),negate(init_value) if init_value else None,depth)
+                  self.construct_measurable(mid, definition, init_value, depth, decdep)
+                  self.construct_measurable(midc, func_not(definition), negate(init_value) if init_value else None, depth, decdep)
             return None
 
 
       # Add the indicated sensor to the listed agents (by mid)
-      def assign_sensor(self,mid,is_initial,agent_id_list):
+      def assign_sensor(self, mid, is_initial, is_base_sensor, agent_id_list):
             for id_agent in agent_id_list:
                   try:
-                        self._AGENTS[id_agent].add_sensor(mid,is_initial)
+                        self._AGENTS[id_agent].add_sensor(mid, is_initial, is_base_sensor)
                   except:
                         raise Exception('Attempted sensor assignment to unregistered agent.')
             return None
 
-      ## Decision phase
-      #  - $instruction$ is a complete selection of action sensor names
-      #    for 'command' mode; empty/disregarded in 'decide' mode
-
-      ### Attach an agent to the experiment
-      ### - $params$ is a tuple of initialization parameters for the agent
-      ### - $name$ measurable is constructed in the experiment
-      def construct_agent(self, id_agent, id_motivation, definition, params, using_log):
-            #verify validity of measurable identifier $mid$
-            try:
-                  id_agentc=self.comp(id_agent)
-            except:
-                  raise Exception('New agent id has not been registered.')
-            # construct new sensor and agent and append to agents list
-            self.construct_sensor(id_agent,definition)
-
-            new_agent = Agent(self, id_agent, id_motivation, params)
-            self._AGENTS[id_agent]=new_agent
-            ServiceWorld(service).add_agent(id_agent)
-
-            return new_agent
-
+      def construct_agent(self, id_agent, id_motivation, definition, decdep, params):
+            """
+            :param id_agent: the agent id, must provide, cannot be None
+            :param id_motivation: id for phi value
+            :param definition: definition of the agent
+            :param decdep: bool indicating whether the agent is decision dependent
+            :param params: other parameters for the agent
+            :return: agent if succeed, None if fail
+            """
+            # -------------------- Remove the old try/except block, because: -----------------------
+            # if id_agent is None, getting this by throwing an exception will reduce performance, an if else check will be faster
+            if id_agent not in self._ID:
+                  # construct new sensor and agent and append to agents list
+                  self.construct_sensor(id_agent, definition, decdep = decdep)
+                  new_agent = Agent(self, id_agent, id_motivation, params)
+                  self._AGENTS[id_agent]=new_agent
+                  ServiceWorld(service).add_agent(id_agent)
+                  return new_agent
+            else:
+                  return None
 
       ## Update the experiment state and output a summary of decisions
       def update_state(self):
-            id_dec=self.nid('decision')
-            #reset the decision state variable
-            self.set_state(id_dec,[])
+            id_dec = 'decision'
+            self.set_state(id_dec, [])
             #prepare empty dictionary for agent messages
             messages={}
             
@@ -347,17 +433,14 @@ class Experiment(object):
             # - if id of an agent, then form a decision and append to id_dec
             # - if id of a measurable, update its value
             for mid in (tmp_id for tmp_id in self._MID if self.dep(tmp_id)):
-                  try:
-                        midc=self.comp(mid)
-                        agentQ=mid in self._AGENTS or midc in self._AGENTS
-                  except:
-                        agentQ=False
+                  midc = name_comp(mid)
+                  agentQ = mid in self._AGENTS or midc in self._AGENTS
                         
                   if agentQ:
                         if mid in self._AGENTS: # if mid is an agent...
                               ## agent activity set to current reading
-                              agent=self._AGENTS[mid]
-                              agent.active=self.this_state(mid)
+                              agent = self._AGENTS[mid]
+                              agent.active = self.this_state(mid)
                               
                               # agent analyzes outcomes of preceding decision
                               # cycle; if the prediction is too broad, add a
@@ -382,11 +465,8 @@ class Experiment(object):
             # At this point, there is a complete decision vector
             action_signal=self.this_state(id_dec)
             for mid in self._MID:
-                  try:
-                        agentQ=mid in self._AGENTS or self.comp(mid) in self._AGENTS
-                  except:
-                        agentQ=False
-
+                  midc = name_comp(mid)
+                  agentQ = mid in self._AGENTS or midc in self._AGENTS
                   depQ=self.dep(mid)
                   
                   if agentQ: # if mid is an agent (or its star)...
@@ -404,10 +484,10 @@ class Experiment(object):
 
                         
             #aggregate and output the messages
-            message_all=""
-            ordered_agents=[mid for mid in self._MID if mid in self._AGENTS]
+            message_all = ""
+            ordered_agents = [mid for mid in self._MID if mid in self._AGENTS]
             for mid in ordered_agents:
-                  name=self.din(mid)
+                  name = mid
                   outp='\t'+(name if self.this_state(mid) else name_comp(name))+' : '+messages[mid]+'\n'
                   message_all+=outp
 
@@ -420,7 +500,7 @@ class Agent(object):
       def __init__(self, experiment, id_agent, id_motivation, params):
             # a string naming the agent/action
             self._MID=id_agent
-            self.id_agentc=experiment.comp(id_agent)
+            self.id_agentc=name_comp(id_agent)
             self._MOTIVATION=id_motivation
             # the experiment serving as the agent's environment
             self._EXPERIMENT=experiment
@@ -457,6 +537,7 @@ class Agent(object):
             
             ## Calling the wrapper in charge of communication with CUDA side
             self.active = False
+            self._base_sensor_size = 0
 
       ## Activate the agent when the initial definitions stage is completed
       def init(self):
@@ -464,7 +545,6 @@ class Agent(object):
             agent = ServiceAgent(self._MID, service)
             snapshot_plus = agent.add_snapshot('plus')
             snapshot_minus = agent.add_snapshot('minus')
-            [[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)]
             snapshot_plus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
             snapshot_minus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
 
@@ -479,8 +559,8 @@ class Agent(object):
             agent = ServiceAgent(self._MID, service)
             snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
             snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
-            snapshot_plus.validate()
-            snapshot_minus.validate()
+            snapshot_plus.validate(self._base_sensor_size)
+            snapshot_minus.validate(self._base_sensor_size)
 
       def collect_observation(self):
             self._OBSERVE=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS])
@@ -497,15 +577,17 @@ class Agent(object):
       ### - intended ONLY to be called by $experiment.new_sensor$
       ### - assumes the measurable $name$ and its complement are present
       ###   in the parent experiment
-      def add_sensor(self,mid,is_initial):
+      def add_sensor(self,mid,is_initial, is_base_sensor):
             #verify proper registration of $mid$
             try:
-                  midc=self._EXPERIMENT.comp(mid)
+                  midc = name_comp(mid)
             except:
                   raise Exception('Sensor id not properly registered.')
             ## Extending the sensor lists
             if mid not in self._SENSORS:
                   self._SIZE+=2
+                  if is_base_sensor:
+                        self._base_sensor_size += 1
                   self._SENSORS.extend([mid,midc])
                   ## update observed signal
                   self._OBSERVE.extend(np.array([self._EXPERIMENT.this_state(mid),self._EXPERIMENT.this_state(midc)],dtype=bool))
@@ -551,8 +633,8 @@ class Agent(object):
       def decide(self):
             dist={}
             id_agent=self._MID
-            id_agentc=self._EXPERIMENT.comp(id_agent)
-            id_dec=self._EXPERIMENT.nid('decision')
+            id_agentc=name_comp(id_agent)
+            id_dec = 'decision'
 
             # mapping agent activity
             activity={'plus':self.active,'minus':not(self.active)}
@@ -630,14 +712,14 @@ class Agent(object):
                         #construct the new sensor
                         self._EXPERIMENT.construct_sensor(new_mid,new_def)
                         #add the new sensor to this agent as non-initial
-                        self.add_sensor(new_mid,False)
+                        self.add_sensor(new_mid,False, False)
                         new_signals.append(signal)
                   except: #if the sensor was registered
                         new_mid=self._EXPERIMENT.nid(new_name)
                         if new_mid in self._SENSORS:
                               pass
                         else:
-                              self.add_sensor(new_mid,False)
+                              self.add_sensor(new_mid,False, Fals)
                               new_signals.append(signal)
             if new_signals:
                   self.brain.amper(new_signals)
@@ -658,8 +740,8 @@ class Agent(object):
                   #transform signal into a list of mids
                   mid_list=self.select(signal)
                   #new name as a means of verifying redundancy (CHANGE THIS!!)
-                  new_name=name_delay(name_ampersand([self._EXPERIMENT.din(mid) for mid in mid_list]))
-                  #print new_name
+                  new_mid = name_delay(name_ampersand(mid_list))
+                  new_midc = name_comp(new_mid)
                   #construct definition for new sensor
                   #def new_def(state):
                   #      return all([state[mid][1] for mid in mid_list])
@@ -667,25 +749,17 @@ class Agent(object):
                   #determine dependency on initial decisions
                   new_dep=any([self._EXPERIMENT._ID_TO_DEP[mid] for mid in mid_list])
                   #register/construct/assign new sensor to self
-                  try: #in case the sensor is not even registered...
-                        #register the new sensor
-                        new_mid,new_midc=self._EXPERIMENT.register_sensor(new_name,new_dep)
+                  if new_mid not in self._EXPERIMENT._ID: #in case the sensor is not even registered...
                         #construct the new sensor
-                        self._EXPERIMENT.construct_sensor(new_mid,new_def)
+                        self._EXPERIMENT.construct_sensor(new_mid, new_def)
                         #add the new sensor to this agent as non-initial
-                        self.add_sensor(new_mid,False)
+                        self.add_sensor(new_mid, False, False)
                         new_signals.append(signal)
                         new_uuids.append([new_mid, new_midc])
-                  except Exception ,e: #if the sensor was registered
-                        print str(e)
-                        exit()
-                        new_mid=self._EXPERIMENT.nid(new_name)
-                        if new_mid in self._SENSORS:
-                              pass
-                        else:
-                              self.add_sensor(new_mid,False)
-                              new_signals.append(signal)
-                              new_uuids.append([new_mid, new_midc])
+                  else: #if the sensor was registered
+                        self.add_sensor(new_mid,False, False)
+                        new_signals.append(signal)
+                        new_uuids.append([new_mid, new_midc])
             if new_signals:
                   agent = ServiceAgent(self._MID, service)
                   snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)

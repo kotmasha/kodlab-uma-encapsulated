@@ -49,10 +49,13 @@ protected:
 protected:
 	string get_string_input(json::value &data, string_t &name, http_request &request);
 	string get_string_input(map<string_t, string_t> &query, string_t &name, http_request &request);
+	int get_int_input(json::value &data, string_t &name, http_request &request);
+	int get_int_input(map<string_t, string_t> &query, string_t &name, http_request &request);
 	double get_double_input(json::value &data, string_t &name, http_request &request);
 	double get_double_input(map<string_t, string_t> &query, string_t &name, http_request &request);
 	bool get_bool_input(json::value &data, string_t &name, http_request &request);
 	bool get_bool_input(map<string_t, string_t> &query, string_t &name, http_request &request);
+	vector<int> get_int1d_input(json::value &data, string_t &name, http_request &request);
 	vector<bool> get_bool1d_input(json::value &data, string_t &name, http_request &request);
 	vector<vector<bool> > get_bool2d_input(json::value &data, string_t &name, http_request &request);
 	vector<string> get_string1d_input(json::value &data, string_t &name, http_request &request);

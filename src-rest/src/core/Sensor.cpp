@@ -74,6 +74,17 @@ void Sensor::setAmperList(Sensor *sensor){
 }
 
 /*
+This is setting the amper list with a whole new amper list
+Input: new amper list
+*/
+void Sensor::setAmperList(vector<int> &amper_list) {
+	_amper.clear();
+	for (int i = 0; i < amper_list.size(); ++i) {
+		_amper.push_back(amper_list[i]);
+	}
+}
+
+/*
 This is copying amper list into the amper array
 Input: the ampers array pointer
 */
@@ -186,6 +197,12 @@ void Sensor::save_sensor(ofstream &file){
 	}
 	_m->save_measurable(file);
 	_cm->save_measurable(file);
+}
+
+void Sensor::copy_data(Sensor *s) {
+	//note the amper list is not set in the copy function, as it need upper level(snapshot) info, so it is done in snapshot
+	_m->copy_data(s->_m);
+	_cm->copy_data(s->_cm);
 }
 
 /*

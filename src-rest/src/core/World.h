@@ -12,7 +12,7 @@ This is the world class, it maintains all the agent object
 */
 class World{
 protected:
-	std::map<string, Agent*> _agents;
+	std::map<string, Agent*> _agents, _load_agents;
 	string _log_path;
 	logManager *_log;
 public:
@@ -21,6 +21,7 @@ public:
 	Agent *getAgent(const string agent_id);
 	void save_world(string &name);
 	void load_world(string &name);
+	void merge_test();
 	~World();
 };
 

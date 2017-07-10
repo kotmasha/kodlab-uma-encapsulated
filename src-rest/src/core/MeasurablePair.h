@@ -31,13 +31,14 @@ private:
 
 public:
 	MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j);
-	MeasurablePair(Measurable *_m_i, Measurable *_m_j);
+	MeasurablePair(Measurable *_m_i, Measurable *_m_j, double w, bool d);
 	void pointers_to_null();
 	void pointers_to_values();
 	void values_to_pointers();
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);
 	void save_measurable_pair(ofstream &file);
+	void copy_data(MeasurablePair *mp);
 	~MeasurablePair();
 };
 

@@ -48,9 +48,28 @@ void World::load_world(string &name) {
 	file.read((char *)(&agent_size), sizeof(int));
 	for (int i = 0; i < agent_size; ++i) {
 		Agent *agent = new Agent(file);
-		_agents[agent->_uuid] = agent;
+		_load_agents[agent->_uuid] = agent;
 	}
 	file.close();
+}
+
+void World::merge_test() {
+	_log->info() << "start merging old test agent data with new test";
+	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
+		string agent_id = it->first;
+		Agent *agent = it->second;
+		if (_load_agents.find(agent_id) != _load_agents.end()) {
+			//if find the 'same' agent
+			Agent *c_agent = _load_agents[agent_id];
+			agent->copy_test_data(c_agent);
+			_log->info() << "Agent(" + agent_id + ") data merged";
+		}
+		else {
+			_log->info() << "Cannot find agent(" + agent_id + ") data in old test, this should be a new agent";
+		}
+	}
+	_log->info() << "finish merging all data";
+	//TBD delete load_agent data
 }
 
 

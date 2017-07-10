@@ -41,6 +41,7 @@ public:
 	void setStatusPointers(bool *status);
 	void setIdx(int idx);
 	void save_measurable(ofstream &file);
+	void copy_data(Measurable *m);
 	~Measurable();
 };
 

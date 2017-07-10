@@ -11,5 +11,18 @@ class ServiceSensor:
         result = self._service.get('/UMA/object/sensor', {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensor_id': self._sensor_id})
         if not result:
             return None
-        result = result['data']
+        result = result['data']['amper_list']
+        return result
+
+    def getAmperListID(self):
+        result = self._service.get('/UMA/object/sensor', {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensor_id': self._sensor_id})
+        if not result:
+            return None
+        result = result['data']['amper_list_id']
+        return result
+
+    def setAmperList(self, amper_list):
+        result = self._service.post('/UMA/object/sensor', {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensor_id': self._sensor_id, 'amper_list': amper_list})
+        if not result:
+            return None
         return result

@@ -31,6 +31,7 @@ public:
 	vector<vector<bool>> getPrediction();
 	vector<vector<bool>> getTarget();
 	void save_agent(ofstream &file);
+	void copy_test_data(Agent *agent);
 	~Agent();
 };
 
