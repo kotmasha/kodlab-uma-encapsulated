@@ -103,50 +103,54 @@ def name_ampersand(name_list):
 ###
 
 class Signal(object):
-      def __init__(self,value):
-            if len(value)%2==0:
-                  self._VAL=np.array(value,dtype=bool)
+      def __init__(self, value):
+            if len(value) % 2 == 0:
+                  self._VAL = np.array(value, dtype=bool)
             else:
                   raise Exception('Objects of class Signal must have even length -- Aborting!\n')
 
       def __repr__(self):
             print self._VAL
 
-      # set the signal
-      def set(self,ind,value):
-            self._VAL[ind]=value
+      def len(self):
+            return len(self._VAL)
 
-      #inspect the signal
-      def value(self,ind):
+      # set the signal
+      def set(self, ind, value):
+            self._VAL[ind] = value
+
+      # inspect the signal
+      def value(self, ind):
             return self._VAL[ind]
-      
-      #report the signal
+
+      # report the signal
       def value_all(self):
             return self._VAL
 
-      #extend the signal
-      def extend(self,value):
-            self._VAL=np.concatenate((self._VAL,value))
+      # extend the signal
+      def extend(self, value):
+            self._VAL = np.concatenate((self._VAL, value))
 
-                  
       ### negating a partial signal
       def star(self):
-            return Signal([(self._VAL[i+1] if i%2==0 else self._VAL[i-1]) for i in xrange(len(self._VAL))])
-      
+            return Signal([(self._VAL[i + 1] if i % 2 == 0 else self._VAL[i - 1]) for i in xrange(len(self._VAL))])
+
       ### full complement of a signal
       def negate(self):
             return Signal(negate(self._VAL))
 
       ### subtracting Signal "other" from Signal "self"
-      def subtract(self,other):
-            return Signal(conjunction(self._VAL,negate(other._VAL)))
+      def subtract(self, other):
+            return Signal(conjunction(self._VAL, negate(other._VAL)))
 
-      def add(self,other):
-            return Signal(disjunction(self._VAL,other._VAL))
+      def add(self, other):
+            return Signal(disjunction(self._VAL, other._VAL))
 
-      def intersect(self,other):
-            return Signal(conjunction(self._VAL,other._VAL))
+      def intersect(self, other):
+            return Signal(conjunction(self._VAL, other._VAL))
 
+
+ALL_FALSE = lambda agent: Signal(allfalse(agent._SIZE))
 
 ### Data type maintaining the "environment" state and its interactions
 ### with the agents
@@ -423,7 +427,7 @@ class Experiment(object):
                   return None
 
       ## Update the experiment state and output a summary of decisions
-      def update_state(self):
+      def update_state(self, instruction='decide'):
             id_dec = 'decision'
             self.set_state(id_dec, [])
             #prepare empty dictionary for agent messages
@@ -435,31 +439,53 @@ class Experiment(object):
             for mid in (tmp_id for tmp_id in self._MID if self.dep(tmp_id)):
                   midc = name_comp(mid)
                   agentQ = mid in self._AGENTS or midc in self._AGENTS
-                        
+
                   if agentQ:
-                        if mid in self._AGENTS: # if mid is an agent...
+                        if mid in self._AGENTS:  # if mid is an agent...
                               ## agent activity set to current reading
                               agent = self._AGENTS[mid]
                               agent.active = self.this_state(mid)
-                              
+
+                              ## ENRICHMENT
                               # agent analyzes outcomes of preceding decision
                               # cycle; if the prediction is too broad, add a
-                              # sensor:
-                              #print "in"
-                              #if sum(agent.report_current().subtract(agent.report_predicted()).value_all()):
-                                    #agent.delay([(agent.report_last().intersect(agent.report_target())).intersect(agent._INITMASK)])
-                                    #agent.delay([agent.report_last().intersect(agent._INITMASK)])
-                              #agent.pruning()
-                              #print "out"
-                              ## agent makes a decision 
-                              messages[mid]=agent.decide()
+                              # sensor corresponding to the episode last observed
+                              # and acknowledged by the active snapshot of the agent:
+                              if sum(agent.report_current().subtract(agent.report_predicted()).value_all()) > 0:
+                                    new_sensor_signals = [agent.report_last().intersect(agent._INITMASK)]
+                              else:
+                                    new_sensor_signals = []
 
-                        else: # if midc is an agent, decision already reached
+                              ## PRUNING
+                              # sensors_to_be_removed=empty_sig()
+
+                              # - gather the negligible delayed sensors, cluster them, and abduce;
+
+                              #
+                              # - for each initial sensor, gather the delayed sensors implying it,
+                              #   cluster them and abduce;
+                              #
+                              # - add new sensors
+                              agent.delay(new_sensor_signals)
+
+                              # - remove all old sensors involved in this process
+                              # agent.prune(ALL_FALSE(agent))
+
+                              ## agent makes a decision
+                              messages[mid] = agent.decide()
+                              if instruction != 'decide' and (mid in instruction or midc in instruction):
+                                    # append override information to message
+                                    messages[mid] += '\tINSTRUCTION OVERRIDE: EXECUTING ' + mid if mid in instruction else midc
+                                    # replace last decision with provided instruction
+                                    self.this_state(id_dec).pop()
+                                    self.this_state(id_dec).append(mid if mid in instruction else midc)
+
+                        else:  # if midc is an agent, decision already reached
                               pass
-                  else: # neither mid nor midc is an agent, perform update
-                        try: # attempt update using definition
-                              self.set_state(mid,self._DEFS[mid](self._STATE))
-                        except: # if no definition available, do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
+                  else:  # neither mid nor midc is an agent, perform update
+                        try:  # attempt update using definition
+                              self.set_state(mid, self._DEFS[mid](self._STATE))
+                        except:  # if no definition available, do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                               pass
 
             # At this point, there is a complete decision vector
@@ -473,7 +499,7 @@ class Experiment(object):
                         try: # try evaluating the definition for the agent
                               self.set_state(mid,(self._DEFS[mid](self._STATE)))
                               if mid in self._AGENTS and self.this_state(mid)!=(mid in action_signal): # if initial decision was changed
-                                    messages[mid]+=', override by other (was '+(self.din(mid) if mid in action_signal else name_comp(self.din(mid)))+')'
+                                    messages[mid]+=', override by other (was '+(mid if mid in action_signal else name_comp(mid))+')'
                         except: # if no definition, set the value according to $action_signal$
                               self.set_state(mid,(mid in action_signal))
                   else:
@@ -757,9 +783,10 @@ class Agent(object):
                         new_signals.append(signal)
                         new_uuids.append([new_mid, new_midc])
                   else: #if the sensor was registered
-                        self.add_sensor(new_mid,False, False)
-                        new_signals.append(signal)
-                        new_uuids.append([new_mid, new_midc])
+                        if new_mid not in self._SENSORS:
+                              self.add_sensor(new_mid,False, False)
+                              new_signals.append(signal)
+                              new_uuids.append([new_mid, new_midc])
             if new_signals:
                   agent = ServiceAgent(self._MID, service)
                   snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
