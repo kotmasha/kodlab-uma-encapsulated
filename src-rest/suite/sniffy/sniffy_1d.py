@@ -9,7 +9,7 @@ from som_platform import *
 def start_experiment(stdscr,agent_to_examine):
     NODELAY=1
     # grid definitions
-    X_BOUND=4 #length
+    X_BOUND=6 #length
     THRESHOLD=1./(1.+2*pow(X_BOUND,2))
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
@@ -38,27 +38,27 @@ def start_experiment(stdscr,agent_to_examine):
     id_lookat = agent_to_examine
 
     # introduce arbitration
-    id_arbiter = 'ar'
+    id_arbiter = EX.register('ar')
     def arbiter(state):
         return bool(rnd(2))
     EX.construct_measurable(id_arbiter,arbiter,[bool(rnd(2))],0, decdep=True)
 
-    id_rt = 'rt'
-    id_lt = 'lt'
-    id_distM = 'distM'
+    id_rt, id_rtc = EX.register_sensor('rt')
+    id_lt, id_ltc = EX.register_sensor('lt')
+    id_distM = EX.register('distM')
 
-    id_toRT = 'toR'
+    id_toRT, id_toRTc = EX.register_sensor('toR')
     def intention_RT(state):
         return id_rt in state[id_dec][0]
     EX.construct_sensor(id_toRT,intention_RT, decdep=True)
 
-    id_toLT = 'toL'
+    id_toLT, id_toLTc = EX.register_sensor('toL')
     def intention_LT(state):
         return id_lt in state[id_dec][0]
     EX.construct_sensor(id_toLT,intention_LT, decdep=True)
 
     # failure mode for action $lt^rt$
-    id_toF = 'toF'
+    id_toF, id_toFc = EX.register_sensor('toF')
     def about_to_enter_failure_mode(state):
         return state[id_toLT][0] and state[id_toRT][0]
     EX.construct_sensor(id_toF,about_to_enter_failure_mode, decdep=True)
@@ -70,7 +70,7 @@ def start_experiment(stdscr,agent_to_examine):
             return state[id_arbiter][0]
         else:
             return rt_decided
-    RT = EX.construct_agent('rt', id_distM, action_RT, True, MOTION_PARAMS)
+    RT = EX.construct_agent(id_rt, id_distM, action_RT, True, MOTION_PARAMS)
 
     def action_LT(state):
         lt_decided=(id_lt in state[id_dec][0])
@@ -82,7 +82,7 @@ def start_experiment(stdscr,agent_to_examine):
     LT = EX.construct_agent(id_lt, id_distM, action_LT, True, MOTION_PARAMS)
 
     # effect of motion on position
-    id_pos = 'pos'
+    id_pos = EX.register('pos')
     def motion(state):
         triggers={id_rt:1,id_lt:-1}
         diff=0
@@ -99,11 +99,11 @@ def start_experiment(stdscr,agent_to_examine):
     def xsensor(m): # along x-axis
         return lambda state: state[id_pos][0]<m+1
     for ind in xrange(X_BOUND):
-        id_tmp = 'x' + str(ind)
+        id_tmp, id_tmpc = EX.register_sensor('x' + str(ind))
         EX.construct_sensor(id_tmp, xsensor(ind)) #constructs the measurables associated with the sensor
         EX.assign_sensor(id_tmp, True, True, [id_rt, id_lt]) #assigns the sensor to all agents
 
-    id_count = 'count'
+    id_count = EX.register('count')
     def ex_counter(state):
         return 1+state[id_count][0]
     EX.construct_measurable(id_count,ex_counter,[0])
@@ -120,7 +120,7 @@ def start_experiment(stdscr,agent_to_examine):
     INIT=1+X_BOUND-dist(START,TARGET)
     EX.construct_measurable(id_distM,distM,[INIT,INIT])
 
-    id_navM = 'navM'
+    id_navM, id_navMc = EX.register_sensor('navM')
     def navM(state):
         return state[id_distM][0]-state[id_distM][1]>0
     EX.construct_sensor(id_navM,navM)

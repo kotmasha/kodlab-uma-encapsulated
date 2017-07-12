@@ -29,27 +29,25 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     
     # register basic motion agents;
     # - $True$ tag means they will be marked as dependent (on other agents)
-    id_rt = 'rt'
-    cid_rt = 'rt*'
-    id_lt = 'lt'
-    cid_lt = 'lt*'
+    id_rt, cid_rt = EX.register_sensor('rt')
+    id_lt, cid_lt = EX.register_sensor('lt')
 
     # register motivation for motion agents
     # - this one is NOT dependent on agents except through the position, so
     #   it carries the default False tag.
-    id_dist='dist'
-    id_sig='sig'
-    id_nav='nav'
+    id_dist=EX.register('dist')
+    id_sig=EX.register('sig')
+    id_nav, id_navc=EX.register_sensor('nav')
 
     # agent to be visualized
     id_lookat = agent_to_examine
     
     # register arbiter variable whose purpose is provide a hard-wired response to a conflict
     # between agents 'lt' and 'rt'.
-    id_arbiter='ar'
+    id_arbiter=EX.register('ar')
 
     # add a counter
-    id_count='count'
+    id_count=EX.register('count')
     def ex_counter(state):
         return 1+state[id_count][0]
     EX.construct_measurable(id_count,ex_counter,[0])
@@ -64,18 +62,18 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     EX.construct_measurable(id_arbiter,arbiter,[bool(rnd(2))],0, decdep=True)
 
     # intention sensors
-    id_toRT='toR'
+    id_toRT, id_toRTc=EX.register_sensor('toR')
     def intention_RT(state):
         return id_rt in state[id_dec][0]
     EX.construct_sensor(id_toRT,intention_RT, decdep=True)
     
-    id_toLT='toL'
+    id_toLT, id_toLTc=EX.register_sensor('toL')
     def intention_LT(state):
         return id_lt in state[id_dec][0]
     EX.construct_sensor(id_toLT,intention_LT, decdep=True)
 
     # failure mode for action $lt^rt$
-    id_toF='toF'
+    id_toF, id_toFc=EX.register_sensor('toF')
     def about_to_enter_failure_mode(state):
         return state[id_toLT][0] and state[id_toRT][0]
     EX.construct_sensor(id_toF,about_to_enter_failure_mode, decdep=True)
@@ -109,7 +107,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     START=rnd(X_BOUND+1)
 
     # effect of motion on position
-    id_pos='pos'
+    id_pos=EX.register('pos')
     def motion(state):
         triggers={id_rt:1,id_lt:-1}
         diff=0
@@ -132,7 +130,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         return lambda state: state[id_pos][0]<m+1
 
     for ind in xrange(X_BOUND):
-        tmp_name='x'+str(ind)
+        tmp_name = 'x'+str(ind)
         id_tmp,id_tmpc=EX.register_sensor(tmp_name) #registers the sensor pairs
         EX.construct_sensor(id_tmp,xsensor(ind)) #constructs the measurables associated with the sensor
         EX.assign_sensor(id_tmp,True,True,[id_rt,id_lt]) #assigns the sensor to all agents

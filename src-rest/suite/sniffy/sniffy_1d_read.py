@@ -9,7 +9,7 @@ from som_platform import *
 def start_experiment(stdscr, agent_to_examine):
     NODELAY = 1
     # grid definitions
-    X_BOUND = 8  # length
+    X_BOUND = 6  # length
     THRESHOLD = 1. / (1. + 2 * pow(X_BOUND, 2))
 
     def in_bounds(pos):
@@ -40,94 +40,112 @@ def start_experiment(stdscr, agent_to_examine):
     # agent to be visualized
     id_lookat = agent_to_examine
 
-    id_arbiter = 'ar'
+    # introduce arbitration
+    id_arbiter = EX.register('ar')
+
     def arbiter(state):
         return bool(rnd(2))
-    EX.construct_measurable(id_arbiter,arbiter,[bool(rnd(2))],0, decdep=True)
 
-    id_rt = 'rt'
-    id_lt = 'lt'
-    id_distM = 'distM'
+    EX.construct_measurable(id_arbiter, arbiter, [bool(rnd(2))], 0, decdep=True)
 
-    id_toRT = 'toR'
+    id_rt, id_rtc = EX.register_sensor('rt')
+    id_lt, id_ltc = EX.register_sensor('lt')
+    id_distM = EX.register('distM')
+
+    id_toRT, id_toRTc = EX.register_sensor('toR')
+
     def intention_RT(state):
         return id_rt in state[id_dec][0]
-    EX.construct_sensor(id_toRT,intention_RT, decdep=True)
 
-    id_toLT = 'toL'
+    EX.construct_sensor(id_toRT, intention_RT, decdep=True)
+
+    id_toLT, id_toLTc = EX.register_sensor('toL')
+
     def intention_LT(state):
         return id_lt in state[id_dec][0]
-    EX.construct_sensor(id_toLT,intention_LT, decdep=True)
+
+    EX.construct_sensor(id_toLT, intention_LT, decdep=True)
 
     # failure mode for action $lt^rt$
-    id_toF = 'toF'
+    id_toF, id_toFc = EX.register_sensor('toF')
+
     def about_to_enter_failure_mode(state):
         return state[id_toLT][0] and state[id_toRT][0]
-    EX.construct_sensor(id_toF,about_to_enter_failure_mode, decdep=True)
+
+    EX.construct_sensor(id_toF, about_to_enter_failure_mode, decdep=True)
 
     def action_RT(state):
-        rt_decided=(id_rt in state[id_dec][0])
+        rt_decided = (id_rt in state[id_dec][0])
         if state[id_toF][0]:
-            #return not(rt_decided) if state[id_arbiter][0] else rt_decided
+            # return not(rt_decided) if state[id_arbiter][0] else rt_decided
             return state[id_arbiter][0]
         else:
             return rt_decided
-    RT = EX.construct_agent('rt', id_distM, action_RT, True, MOTION_PARAMS)
+
+    RT = EX.construct_agent(id_rt, id_distM, action_RT, True, MOTION_PARAMS)
 
     def action_LT(state):
-        lt_decided=(id_lt in state[id_dec][0])
+        lt_decided = (id_lt in state[id_dec][0])
         if state[id_toF][0]:
-            #return lt_decided if state[id_arbiter][0] else not(lt_decided)
-            return not(state[id_arbiter][0])
+            # return lt_decided if state[id_arbiter][0] else not(lt_decided)
+            return not (state[id_arbiter][0])
         else:
             return lt_decided
+
     LT = EX.construct_agent(id_lt, id_distM, action_LT, True, MOTION_PARAMS)
 
     # effect of motion on position
-    id_pos = 'pos'
+    id_pos = EX.register('pos')
+
     def motion(state):
-        triggers={id_rt:1,id_lt:-1}
-        diff=0
+        triggers = {id_rt: 1, id_lt: -1}
+        diff = 0
         for t in triggers:
-            diff+=triggers[t]*int(state[t][0])
-        newpos=state[id_pos][0]+diff
+            diff += triggers[t] * int(state[t][0])
+        newpos = state[id_pos][0] + diff
         if in_bounds(newpos):
             return newpos
         else:
             return state[id_pos][0]
-    EX.construct_measurable(id_pos,motion,[START,START])
+
+    EX.construct_measurable(id_pos, motion, [START, START])
 
     # set up position sensors
-    def xsensor(m): # along x-axis
-        return lambda state: state[id_pos][0]<m+1
-    for ind in xrange(X_BOUND):
-        id_tmp = 'x' + str(ind)
-        EX.construct_sensor(id_tmp, xsensor(ind)) #constructs the measurables associated with the sensor
-        EX.assign_sensor(id_tmp, True, True, [id_rt, id_lt]) #assigns the sensor to all agents
+    def xsensor(m):  # along x-axis
+        return lambda state: state[id_pos][0] < m + 1
 
-    id_count = 'count'
+    for ind in xrange(X_BOUND):
+        id_tmp, id_tmpc = EX.register_sensor('x' + str(ind))
+        EX.construct_sensor(id_tmp, xsensor(ind))  # constructs the measurables associated with the sensor
+        EX.assign_sensor(id_tmp, True, True, [id_rt, id_lt])  # assigns the sensor to all agents
+
+    id_count = EX.register('count')
+
     def ex_counter(state):
-        return 1+state[id_count][0]
-    EX.construct_measurable(id_count,ex_counter,[0])
+        return 1 + state[id_count][0]
+
+    EX.construct_measurable(id_count, ex_counter, [0])
 
     def distM(state):
-        if state[id_pos][0]==TARGET and state[id_pos][1]==TARGET:
-            return state[id_distM][0]+1
+        if state[id_pos][0] == TARGET and state[id_pos][1] == TARGET:
+            return state[id_distM][0] + 1
         else:
-            #sharp (near-logarithmic) spike at the target
-            #return 1.-np.log((1.+dist(state[id_pos][0],TARGET))/(X_BOUND+2))
-            #linear peak at the target
-            return 1+X_BOUND-dist(state[id_pos][0],TARGET)
+            # sharp (near-logarithmic) spike at the target
+            # return 1.-np.log((1.+dist(state[id_pos][0],TARGET))/(X_BOUND+2))
+            # linear peak at the target
+            return 1 + X_BOUND - dist(state[id_pos][0], TARGET)
 
-    INIT=1+X_BOUND-dist(START,TARGET)
-    EX.construct_measurable(id_distM,distM,[INIT,INIT])
+    INIT = 1 + X_BOUND - dist(START, TARGET)
+    EX.construct_measurable(id_distM, distM, [INIT, INIT])
 
-    id_navM = 'navM'
+    id_navM, id_navMc = EX.register_sensor('navM')
+
     def navM(state):
-        return state[id_distM][0]-state[id_distM][1]>0
-    EX.construct_sensor(id_navM,navM)
-    EX.assign_sensor(id_navM,True, True, [id_rt,id_lt]) #assigns the sensor to all agents
-    #-------------------------------------init--------------------------------------------
+        return state[id_distM][0] - state[id_distM][1] > 0
+
+    EX.construct_sensor(id_navM, navM)
+    EX.assign_sensor(id_navM, True, True, [id_rt, id_lt])  # assigns the sensor to all agents
+    # -------------------------------------init--------------------------------------------
 
     EX.reconstruct()
 
