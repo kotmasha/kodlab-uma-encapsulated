@@ -75,6 +75,9 @@ class ServiceSnapshot:
     def setTarget(self, target_list):
         return self._service.put('/UMA/data/target', {'target_list': target_list}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
+    def setCalTarget(self, cal_target):
+        return self._service.put('/UMA/object/snapshot', {'cal_target': cal_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+
     def get_sensor_count(self):
         return
 
