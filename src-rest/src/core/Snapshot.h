@@ -157,6 +157,7 @@ public:
 	virtual void calculate_total(bool active);
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
+	virtual float divergence(bool *d1, bool *d2);
 
 	void up_GPU(vector<bool> signal, bool is_stable);
 	void halucinate_GPU();
