@@ -117,15 +117,13 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
-	return distance(dev_d1, dev_d2);
+	return divergence(dev_d1, dev_d2);
 }
 
 bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
