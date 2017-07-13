@@ -29,7 +29,6 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	_total_ = 1.0;
 	_q = 0.9;
 	_threshold = 0.125;
-	_cal_target = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -68,7 +67,6 @@ Snapshot::Snapshot(string uuid, string log_dir){
 	_total_ = 1.0;
 	_q = 0.9;
 	_threshold = 0.125;
-	_cal_target = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -119,15 +117,13 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
-	return distance(dev_d1, dev_d2);
+	return divergence(dev_d1, dev_d2);
 }
 
 bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
@@ -776,10 +772,6 @@ void Snapshot::setTarget(vector<bool> &signal){
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Snapshot::setCalTarget(bool cal_target) {
-	_cal_target = cal_target;
-}
-
 /*
 This function set observe signal from python side
 */
@@ -1280,7 +1272,7 @@ void Snapshot::update_state_GPU(bool activity){//true for decide
 
 	//SIQI:here I have intervened to disconnect the automatic computation of a target. Instead, I will be setting the target externally (from the Python side) at the beginning of each state-update cycle.
 	// compute the target state:
-	if(_cal_target) calculate_target();
+	if(cal_target) calculate_target();
 
 	cudaMemcpy(dev_signal, dev_observe, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemset(dev_load, false, _measurable_size * sizeof(bool));

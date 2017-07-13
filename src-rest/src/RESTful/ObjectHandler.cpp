@@ -9,7 +9,6 @@ ObjectHandler::ObjectHandler(logManager *log_access) :AdminHandler(log_access) {
 	UMA_BASE_SENSOR_SIZE = L"base_sensor_size";
 	UMA_THRESHOLD = L"threshold";
 	UMA_Q = L"q";
-	UMA_CAL_TARGET = L"cal_target";
 	UMA_C_SID = L"c_sid";
 	UMA_AMPER_LIST = L"amper_list";
 }
@@ -257,20 +256,6 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
 			json::value message;
 			message[MESSAGE] = json::value::string(L"snapshot threshold changed to " + to_wstring(threshold));
-			request.reply(status_codes::OK, message);
-		}
-		catch (exception &e) {
-			cout << e.what() << endl;
-		}
-		return;
-	}
-	else if (check_field(data, UMA_CAL_TARGET, request, false)) {
-		try {
-			bool cal_target = get_bool_input(data, UMA_CAL_TARGET, request);
-			snapshot->setCalTarget(cal_target);
-			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
-			json::value message;
-			message[MESSAGE] = json::value::string(L"snapshot cal_target changed to " + to_wstring(cal_target));
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {

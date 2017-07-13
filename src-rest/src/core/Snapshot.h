@@ -117,7 +117,7 @@ protected:
 	int _sensor_num;
 	//record current sensor num in the current Snapshot
 	int t;
-	bool _cal_target;
+	bool cal_target;
 	logManager *_log;
 	string _log_dir;
 	friend class Agent;
@@ -157,6 +157,7 @@ public:
 	virtual void calculate_total(bool active);
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
+	virtual float divergence(bool *d1, bool *d2);
 
 	void up_GPU(vector<bool> signal, bool is_stable);
 	void halucinate_GPU();
@@ -200,7 +201,6 @@ public:
 	void setQ(double &q);
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
-	void setCalTarget(bool calTarget);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/
