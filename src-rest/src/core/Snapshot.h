@@ -117,7 +117,7 @@ protected:
 	int _sensor_num;
 	//record current sensor num in the current Snapshot
 	int t;
-	bool cal_target;
+	bool _cal_target;
 	logManager *_log;
 	string _log_dir;
 	friend class Agent;
@@ -201,6 +201,7 @@ public:
 	void setQ(double &q);
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
+	void setAutoTarget(bool &auto_targ);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/
