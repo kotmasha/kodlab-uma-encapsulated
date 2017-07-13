@@ -267,7 +267,7 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 	else if (check_field(data, UMA_CAL_TARGET, request, false)) {
 		try {
 			bool cal_target = get_bool_input(data, UMA_CAL_TARGET, request);
-			snapshot->setCalTarget(cal_target);
+			snapshot->setAutoTarget(cal_target);
 			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
 			json::value message;
 			message[MESSAGE] = json::value::string(L"snapshot cal_target changed to " + to_wstring(cal_target));
