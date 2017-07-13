@@ -774,7 +774,7 @@ void Snapshot::setTarget(vector<bool> &signal){
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Snapshot::setCalTarget(bool cal_target) {
+void Snapshot::setAutoTarget(bool &cal_target) {
 	_cal_target = cal_target;
 }
 
