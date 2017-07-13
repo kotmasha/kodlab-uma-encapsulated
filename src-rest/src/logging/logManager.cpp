@@ -8,6 +8,7 @@ logManager::logManager(int sim_level, string path, string filename, string class
 	_filename = filename;
 	_classname = classname;
 
+	
 	_mkdir(path.c_str());
 	_log = logging(path + "/" + filename, classname);
 }
