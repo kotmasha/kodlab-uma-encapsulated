@@ -7,7 +7,7 @@ from som_platform import *
 
 
 def start_experiment(stdscr,agent_to_examine):
-    NODELAY=1
+    NODELAY=0
     # grid definitions
     X_BOUND=6 #length
     THRESHOLD=1./(1.+2*pow(X_BOUND,2))
@@ -19,7 +19,7 @@ def start_experiment(stdscr,agent_to_examine):
         return abs(p-q) 
 
     # agent discount parameters
-    MOTION_PARAMS=tuple([1.-pow(2,-6), False])
+    MOTION_PARAMS=tuple([1.-pow(2,-6), True])
     #ARBITRATION_PARAMS=tuple([1.-pow(2,-2)])
     #ARBITRATION_PEAK=2
     
@@ -177,13 +177,13 @@ def start_experiment(stdscr,agent_to_examine):
     FG=curses.color_pair(3) | curses.A_BOLD
     
     WIN=curses.newwin(9,2*X_BOUND+3,5,7)
-    WINs=curses.newwin(9,140,16,7)
+    #WINs=curses.newwin(9,140,16,7)
     stdscr.nodelay(NODELAY)
 
     WIN.bkgdset(ord('.'),REG_BG)
     
     WIN.overlay(stdscr)
-    WINs.overlay(stdscr)
+    #WINs.overlay(stdscr)
 
     def print_state(text,id_agent):
         stdscr.clear()
@@ -241,50 +241,49 @@ def start_experiment(stdscr,agent_to_examine):
         WIN.addch(4,1+2*EX.this_state(id_pos,1),ord('S'),FG)
         
         ## Unpacking extra information
-        WINs.clear()
-        WINs.addstr(0,0,'Observation:')
-        WINs.addstr(4,0,'Chosen signed signal:')
+        #WINs.clear()
+        #WINs.addstr(0,0,'Observation:')
+        #WINs.addstr(4,0,'Chosen signed signal:')
         #
-        tok_BG={'plus':POS_BG,'minus':NEG_BG}
-        vpos={'plus':6,'minus':8}
-        hpos=lambda x: 0 if x==0 else 2+len('  '.join(namelist[:x]))
-        
+        #tok_BG={'plus':POS_BG,'minus':NEG_BG}
+        ##vpos={'plus':6,'minus':8}
+        ##
         # CURRENT OBSERVATION
-        OBS=agent._OBSERVE
+        #OBS=agent._OBSERVE
         #OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
 
         #SIGNED SIGNAL TO WATCH:
         #SIG=agent._CURRENT
         
-        sig=agent.generate_signal(['x0'])
+        #sig=agent.generate_signal(['x0'])
         #sig = Signal([True,False,False,True])
         #sig=agent.generate_signal([EX.nid('{x0*;x2}')])
         #sig=agent.generate_signal([EX.nid('#x2')])
         #sig=agent.generate_signal([EX.nid('#x0*')])
         #SIG=agent.brain.up(sig,False)
 
-        SIG = {}
-        for token in ['plus', 'minus']:
-            snapshot = ServiceSnapshot(agent._MID, token, service)
-            res = snapshot.make_up(sig.value_all().tolist())
-            SIG[token] = Signal(res)
-            #print sig.value_all().tolist()
-            #print SIG[token]._VAL
+        #SIG = {}
+        #for token in ['plus', 'minus']:
+        #    snapshot = ServiceSnapshot(agent._MID, token, service)
+        #    res = snapshot.make_up(sig.value_all().tolist())
+        #    SIG[token] = Signal(res)
+        #    #print sig.value_all().tolist()
+        #    #print SIG[token]._VAL
 
         #
-        namelist = agent._SENSORS
+        #namelist = agent._SENSORS
         #
-        for x,mid in enumerate(agent._SENSORS):
-            this_BG=OBS_BG if OBS.value(x) else REG_BG
-            WINs.addstr(2,hpos(x),namelist[x],this_BG)
-            for token in ['plus','minus']:
-                this_BG=tok_BG[token] if SIG[token].value(x) else REG_BG
-                WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
+        #for x,mid in enumerate(agent._SENSORS):
+        #    this_BG=OBS_BG if OBS.value(x) else REG_BG
+        #    WINs.addstr(2,hpos(x),namelist[x],this_BG)
+        #    for token in ['plus','minus']:
+        #        this_BG=tok_BG[token] if SIG[token].value(x) else REG_BG
+        #        WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
         
         # refresh the window
         WIN.overlay(stdscr)
         WIN.noutrefresh()
-        WINs.noutrefresh()
+        #WINs.noutrefresh()
         curses.doupdate()
 
 
