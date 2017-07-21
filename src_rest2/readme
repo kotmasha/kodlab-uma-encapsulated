@@ -1,0 +1,4 @@
+Snapshots may now have different lengths, though still the same initsize.
+Observation update and Delay/Pruning are now separate for + and - snapshots
+Some changes/additions to som_platform (now called som2.py) -- Is my usage of ServiceSnapshot and ServiceAgent correct?
+What causes the 10048 error in the sniffy_1d.py run?
