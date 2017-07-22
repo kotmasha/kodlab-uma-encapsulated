@@ -7,8 +7,13 @@ logManager::logManager(int sim_level, string path, string filename, string class
 	_sim_level = sim_level;
 	_filename = filename;
 	_classname = classname;
-
+	
+#if defined(_WIN64)
 	_mkdir(path.c_str());
+#else 
+	mkdir(path.c_str(), 0777);
+#endif
+
 	_log = logging(path + "/" + filename, classname);
 }
 

@@ -17,16 +17,16 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	_world = new World();
 	_log_server->info() << "A new world is created";
 	// support CRUD operation
-	m_listener.support(methods::GET, std::tr1::bind(&listener::handle_get, this, std::tr1::placeholders::_1));
+	m_listener.support(methods::GET, std::bind(&listener::handle_get, this, std::placeholders::_1));
 	_log_server->info() << "Init Get request success";
 
-	m_listener.support(methods::PUT, std::tr1::bind(&listener::handle_put, this, std::tr1::placeholders::_1));
+	m_listener.support(methods::PUT, std::bind(&listener::handle_put, this, std::placeholders::_1));
 	_log_server->info() << "Init Put request success";
 
-	m_listener.support(methods::POST, std::tr1::bind(&listener::handle_post, this, std::tr1::placeholders::_1));
+	m_listener.support(methods::POST, std::bind(&listener::handle_post, this, std::placeholders::_1));
 	_log_server->info() << "Init Post request success";
 
-	m_listener.support(methods::DEL, std::tr1::bind(&listener::handle_delete, this, std::tr1::placeholders::_1));
+	m_listener.support(methods::DEL, std::bind(&listener::handle_delete, this, std::placeholders::_1));
 	_log_server->info() << "Init Delete request success";
 	//create data handler
 
@@ -44,13 +44,13 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 }
 
 void listener::handle_get(http_request request){
-	vector<string_t> &paths = uri::split_path(request.request_uri().path());
+	vector<string_t> paths = uri::split_path(request.request_uri().path());
 
 	AdminHandler *handler = find_handler(paths);
 	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
 		return;
 	}
@@ -59,14 +59,14 @@ void listener::handle_get(http_request request){
 }
 
 void listener::handle_put(http_request request){
-	vector<string_t> &paths = uri::split_path(request.request_uri().path());
+	vector<string_t> paths = uri::split_path(request.request_uri().path());
 
 	AdminHandler *handler = find_handler(paths);
 	// if no handlers can be found
 	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
 		return;
 	}
@@ -75,14 +75,14 @@ void listener::handle_put(http_request request){
 }
 
 void listener::handle_post(http_request request){
-	vector<string_t> &paths = uri::split_path(request.request_uri().path());
+	vector<string_t> paths = uri::split_path(request.request_uri().path());
 
 	AdminHandler *handler = find_handler(paths);
 	// if no handlers can be found
 	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[L"message"] = json::value::string(L"cannot find coresponding handler!");
+		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
 		return;
 	}
@@ -95,23 +95,23 @@ void listener::handle_delete(http_request request){
 }
 
 AdminHandler *listener::find_handler(vector<string_t> &paths) {
-	if (paths[0] != L"UMA" || paths.size() < 2) {
+	if (paths[0] != U("UMA") || paths.size() < 2) {
 		return NULL;
 	}
 	paths.erase(paths.begin());
-	if (paths[0] == L"data") {
+	if (paths[0] == U("data")) {
 		paths.erase(paths.begin());
 		return _data_handler;
 	}
-	else if (paths[0] == L"object") {
+	else if (paths[0] == U("object")) {
 		paths.erase(paths.begin());
 		return _object_handler;
 	}
-	else if (paths[0] == L"simulation") {
+	else if (paths[0] == U("simulation")) {
 		paths.erase(paths.begin());
 		return _simulation_handler;
 	}
-	else if (paths[0] == L"validation") {
+	else if (paths[0] == U("validation")) {
 		paths.erase(paths.begin());
 		return  _data_validation_handler;
 	}

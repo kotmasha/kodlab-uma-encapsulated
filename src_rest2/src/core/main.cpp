@@ -2,11 +2,12 @@
 #include "listener.h"
 #include "World.h"
 
-#include <stdio.h>
+//#include <stdio.h>
 using namespace std;
 
 int main() {
-	listener listener(L"http://localhost:8000");
+	string_t url = U("http://localhost:8000");
+	listener listener(url);
 	try
 	{
 		listener.m_listener.open().wait();

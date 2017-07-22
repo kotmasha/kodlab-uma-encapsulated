@@ -17,9 +17,8 @@ public:
 	virtual void handle_read(World *world, vector<string_t> &paths, http_request &request);
 	virtual void handle_delete(World *world, vector<string_t> &paths, http_request &request);
 	~ObjectHandler();
-
 protected:
-	string_t UMA_INITIAL_SIZE, UMA_THRESHOLD, UMA_Q, UMA_CAL_TARGET;
+	string_t UMA_THRESHOLD, UMA_Q, UMA_AUTO_TARGET;
 	string_t UMA_C_SID;
 	string_t UMA_AMPER_LIST;
 	void create_agent(World *world, json::value &data, http_request &request);

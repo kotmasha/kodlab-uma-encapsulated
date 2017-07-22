@@ -6,16 +6,15 @@
 #include "logManager.h"
 
 ObjectHandler::ObjectHandler(logManager *log_access) :AdminHandler(log_access) {
-	UMA_INITIAL_SIZE = L"initial_size";
-	UMA_THRESHOLD = L"threshold";
-	UMA_Q = L"q";
-	UMA_CAL_TARGET = L"cal_target";
-	UMA_C_SID = L"c_sid";
-	UMA_AMPER_LIST = L"amper_list";
+	UMA_THRESHOLD = U("threshold");
+	UMA_Q = U("q");
+	UMA_AUTO_TARGET = U("auto_target");
+	UMA_C_SID = U("c_sid");
+	UMA_AMPER_LIST = U("amper_list");
 }
 
 void ObjectHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
-	json::value &data = request.extract_json().get();
+	json::value data = request.extract_json().get();
 	if (paths[0] == UMA_AGENT) {
 		create_agent(world, data, request);
 		return;
@@ -29,14 +28,14 @@ void ObjectHandler::handle_create(World *world, vector<string_t> &paths, http_re
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	message[MESSAGE] = json::value::string(U("cannot handle ") + paths[0] + U(" object"));
 	request.reply(status_codes::BadRequest, message);
 }
 
 void ObjectHandler::handle_update(World *world, vector<string_t> &paths, http_request &request) {
-	json::value &data = request.extract_json().get();
+	json::value data = request.extract_json().get();
 	if (paths[0] == UMA_AGENT) {
 		update_agent(world, data, request);
 		return;
@@ -50,14 +49,14 @@ void ObjectHandler::handle_update(World *world, vector<string_t> &paths, http_re
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	message[MESSAGE] = json::value::string(U("cannot handle ") + paths[0] + U(" object"));
 	request.reply(status_codes::BadRequest, message);
 }
 
 void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_request &request) {
-	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
 	if (paths[0] == UMA_SENSOR) {
 		string agent_id, snapshot_id, sensor_id;
 		try {
@@ -80,9 +79,9 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 			amper_list_id = snapshot->getAmperListID(sensor_id);
 		}
 		catch (exception &e) {
-			_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 404";
+			_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 404");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"cannot find sensor id");
+			message[MESSAGE] = json::value::string(U("cannot find sensor id"));
 			request.reply(status_codes::BadRequest, message);
 			return;
 		}
@@ -92,20 +91,20 @@ void ObjectHandler::handle_read(World *world, vector<string_t> &paths, http_requ
 		json::value return_data;
 		json::value return_lists = json::value::array(json_amper_list);
 		json::value return_ids = json::value::array(json_amper_list_id);
-		return_data[L"amper_list"] = return_lists;
-		return_data[L"amper_list_id"] = return_ids;
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 200";
+		return_data[U("amper_list")] = return_lists;
+		return_data[U("amper_list_id")] = return_ids;
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 200");
 
 		json::value message;
-		message[MESSAGE] = json::value::string(L"get amper list value");
-		message[L"data"] = return_data;
+		message[MESSAGE] = json::value::string(U("get amper list value"));
+		message[U("data")] = return_data;
 		request.reply(status_codes::OK, message);
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	message[MESSAGE] = json::value::string(U("cannot handle ") + paths[0] + U(" object"));
 	request.reply(status_codes::BadRequest, message);
 }
 
@@ -125,15 +124,15 @@ void ObjectHandler::create_agent(World *world, json::value &data, http_request &
 
 	bool status = world->add_agent(uuid);
 	if (status) {
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Agent created");
+		message[MESSAGE] = json::value::string(U("Agent created"));
 		request.reply(status_codes::Created, message);
 	}
 	else {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot create agent!");
+		message[MESSAGE] = json::value::string(U("Cannot create agent!"));
 		request.reply(status_codes::BadRequest, message);
 	}
 }
@@ -153,15 +152,15 @@ void ObjectHandler::create_snapshot(World *world, json::value &data, http_reques
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;
 	bool status = agent->add_snapshot_stationary(uuid);
 	if (status) {
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Snapshot created");
+		message[MESSAGE] = json::value::string(U("Snapshot created"));
 		request.reply(status_codes::Created, message);
 	}
 	else {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot create snapshot");
+		message[MESSAGE] = json::value::string(U("Cannot create snapshot"));
 		request.reply(status_codes::BadRequest, message);
 	}
 }
@@ -186,21 +185,21 @@ void ObjectHandler::create_sensor(World *world, json::value &data, http_request 
 	std::pair<string, string> id_pair(uuid, c_sid);
 	bool status = snapshot->add_sensor(id_pair);
 	if (status) {
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Sensor created");
+		message[MESSAGE] = json::value::string(U("Sensor created"));
 		request.reply(status_codes::Created, message);
 	}
 	else {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot create sensor");
+		message[MESSAGE] = json::value::string(U("Cannot create sensor"));
 		request.reply(status_codes::BadRequest, message);
 	}
 }
 
 void ObjectHandler::update_agent(World *world, json::value &data, http_request &request) {
-	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
 	string agent_id;
 	try {
 		agent_id = get_string_input(query, UMA_AGENT_ID, request);
@@ -213,14 +212,14 @@ void ObjectHandler::update_agent(World *world, json::value &data, http_request &
 	Agent *agent = NULL;
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"not a valid field to update!");
+	message[MESSAGE] = json::value::string(U("not a valid field to update!"));
 	request.reply(status_codes::BadRequest, message);
 }
 
 void ObjectHandler::update_snapshot(World *world, json::value &data, http_request &request) {
-	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
 	string agent_id, snapshot_id;
 	try {
 		agent_id = get_string_input(query, UMA_AGENT_ID, request);
@@ -240,9 +239,9 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 		try {
 			double q = get_double_input(data, UMA_Q, request);
 			snapshot->setQ(q);
-			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"snapshot q changed to " + to_wstring(q));
+			message[MESSAGE] = json::value::string(U("snapshot q changed to "));
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {
@@ -254,9 +253,9 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 		try {
 			double threshold = get_double_input(data, UMA_THRESHOLD, request);
 			snapshot->setThreshold(threshold);
-			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"snapshot threshold changed to " + to_wstring(threshold));
+			message[MESSAGE] = json::value::string(U("snapshot threshold changed to "));
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {
@@ -264,13 +263,13 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 		}
 		return;
 	}
-	else if (check_field(data, UMA_CAL_TARGET, request, false)) {
+	else if (check_field(data, UMA_AUTO_TARGET, request, false)) {
 		try {
-			bool cal_target = get_bool_input(data, UMA_CAL_TARGET, request);
+			bool cal_target = get_bool_input(data, UMA_AUTO_TARGET, request);
 			snapshot->setAutoTarget(cal_target);
-			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"snapshot cal_target changed to " + to_wstring(cal_target));
+			message[MESSAGE] = json::value::string(U("snapshot cal_target changed to "));
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {
@@ -279,14 +278,14 @@ void ObjectHandler::update_snapshot(World *world, json::value &data, http_reques
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"not a valid field to update!");
+	message[MESSAGE] = json::value::string(U("not a valid field to update!"));
 	request.reply(status_codes::BadRequest, message);
 }
 
 void ObjectHandler::update_sensor(World *world, json::value &data, http_request &request) {
-	std::map<string_t, string_t> &query = uri::split_query(request.request_uri().query());
+	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
 	string agent_id, snapshot_id, sensor_id;
 	try {
 		agent_id = get_string_input(query, UMA_AGENT_ID, request);
@@ -309,9 +308,9 @@ void ObjectHandler::update_sensor(World *world, json::value &data, http_request 
 		try {
 			vector<int> amper_list = get_int1d_input(data, UMA_AMPER_LIST, request);
 			sensor->setAmperList(amper_list);
-			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+			_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"sensor amper list changed");
+			message[MESSAGE] = json::value::string(U("sensor amper list changed"));
 			request.reply(status_codes::OK, message);
 		}
 		catch (exception &e) {
@@ -320,9 +319,9 @@ void ObjectHandler::update_sensor(World *world, json::value &data, http_request 
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"not a valid field to update!");
+	message[MESSAGE] = json::value::string(U("not a valid field to update!"));
 	request.reply(status_codes::BadRequest, message);
 }
 

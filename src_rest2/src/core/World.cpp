@@ -4,8 +4,12 @@
 #include "logManager.h"
 
 World::World(){
-	_rmdir("log");
+	//_rmdir("log");
+#if defined(_WIN64)
 	_mkdir("log");
+#else 
+	mkdir("log", 0777);
+#endif
 	_log_path = "log";
 	_log = new logManager(logging::VERBOSE, _log_path, "world.txt", typeid(*this).name());
 	_log->info() << "A new world is created";

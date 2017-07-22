@@ -29,7 +29,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	_total_ = 1.0;
 	_q = 0.9;
 	_threshold = 0.125;
-	_cal_target = false;
+	_auto_target = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -68,7 +68,7 @@ Snapshot::Snapshot(string uuid, string log_dir){
 	_total_ = 1.0;
 	_q = 0.9;
 	_threshold = 0.125;
-	_cal_target = false;
+	_auto_target = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -119,13 +119,15 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
+	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
+	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
-        return divergence(dev_d1, dev_d2);
+	return distance(dev_d1, dev_d2);
 }
 
 bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
@@ -153,13 +155,13 @@ bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 /*
 This function is doing validation after adding sensors
 */
-bool Snapshot::validate(int initial_size) {
+bool Snapshot::validate(int base_sensor_size) {
 	_log->info() << "start data validation";
 	free_all_parameters();
 	init_size(_sensor_num);
 
-	_initial_size = initial_size;
-	_log->info() << "initial size is: " + to_string(_initial_size);
+	_base_sensor_size = base_sensor_size;
+	_log->info() << "base sensor size is: " + to_string(_base_sensor_size);
 
 	gen_weight();
 	gen_direction();
@@ -774,8 +776,8 @@ void Snapshot::setTarget(vector<bool> &signal){
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Snapshot::setAutoTarget(bool &cal_target) {
-	_cal_target = cal_target;
+void Snapshot::setAutoTarget(bool auto_target) {
+	_auto_target = auto_target;
 }
 
 /*
@@ -1032,8 +1034,8 @@ Measurable *Snapshot::getMeasurable(int idx){
 }
 
 SensorPair *Snapshot::getSensorPair(Sensor *sensor1, Sensor *sensor2) {
-	int idx1 = max(sensor1->_idx, sensor2->_idx);
-	int idx2 = min(sensor1->_idx, sensor2->_idx);
+	int idx1 = sensor1->_idx > sensor2->_idx ? sensor1->_idx : sensor2->_idx;
+	int idx2 = sensor1->_idx > sensor2->_idx ? sensor2->_idx : sensor1->_idx;
 	return _sensor_pairs[ind(idx1, idx2)];
 }
 
@@ -1278,7 +1280,7 @@ void Snapshot::update_state_GPU(bool activity){//true for decide
 
 	//SIQI:here I have intervened to disconnect the automatic computation of a target. Instead, I will be setting the target externally (from the Python side) at the beginning of each state-update cycle.
 	// compute the target state:
-	if(_cal_target) calculate_target();
+	if(_auto_target) calculate_target();
 
 	cudaMemcpy(dev_signal, dev_observe, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemset(dev_load, false, _measurable_size * sizeof(bool));

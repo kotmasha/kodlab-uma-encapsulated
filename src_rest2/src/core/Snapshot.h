@@ -76,7 +76,7 @@ protected:
 	*/
 	int _type;
 	//current Snapshot type
-	int _initial_size;
+	int _base_sensor_size;
 	//the base sensor size, base sensor is the basic sensor without amper/delay, the value is initiated 
 	int _sensor_size;
 	//the current sensor size, this value is changable during the test due to amper/delay/pruning
@@ -117,7 +117,7 @@ protected:
 	int _sensor_num;
 	//record current sensor num in the current Snapshot
 	int t;
-	bool _cal_target;
+	bool _auto_target;
 	logManager *_log;
 	string _log_dir;
 	friend class Agent;
@@ -132,14 +132,14 @@ protected:
 	vector<bool> convert_signal_to_sensor(vector<bool> &signal);
 
 public:
-	//Snapshot(int type, int initial_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
+	//Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
 	Snapshot(ifstream &file, string &log_dir);
 	Snapshot(string uuid, string log_dir);
 
 	virtual float decide(vector<bool> &signal, double phi, bool active);
 
 	bool add_sensor(std::pair<string, string> &id_pair);
-	bool validate(int initial_size);
+	bool validate(int base_sensor_size);
 
 	void init_size(int sensor_size);
 	void init_sensors();
@@ -157,7 +157,7 @@ public:
 	virtual void calculate_total(bool active);
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
-	virtual float divergence(bool *d1, bool *d2);
+	//virtual float divergence(bool *d1, bool *d2);
 
 	void up_GPU(vector<bool> signal, bool is_stable);
 	void halucinate_GPU();
@@ -201,7 +201,7 @@ public:
 	void setQ(double &q);
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
-	void setAutoTarget(bool &auto_targ);
+	void setAutoTarget(bool auto_target);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/

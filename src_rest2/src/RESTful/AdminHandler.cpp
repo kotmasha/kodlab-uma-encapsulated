@@ -5,27 +5,27 @@
 #include "Snapshot.h"
 
 bool to_bool(string_t &s) {
-	return s == L"true" || s == L"True";
+	return s == U("true") || s == U("True");
 }
 
 AdminHandler::AdminHandler() {
-	UUID = L"uuid";
-	UMA_AGENT = L"agent";
-	UMA_SNAPSHOT = L"snapshot";
-	UMA_SENSOR = L"sensor";
-	UMA_SENSOR_PAIR = L"sensor_pair";
-	UMA_MEASURABLE = L"measurable";
-	UMA_MEASURABLE_PAIR = L"measurable_pair";
-	UMA_AGENT_ID = L"agent_id";
-	UMA_SNAPSHOT_ID = L"snapshot_id";
-	UMA_SENSOR_ID = L"sensor_id";
+	UUID = U("uuid");
+	UMA_AGENT = U("agent");
+	UMA_SNAPSHOT = U("snapshot");
+	UMA_SENSOR = U("sensor");
+	UMA_SENSOR_PAIR = U("sensor_pair");
+	UMA_MEASURABLE = U("measurable");
+	UMA_MEASURABLE_PAIR = U("measurable_pair");
+	UMA_AGENT_ID = U("agent_id");
+	UMA_SNAPSHOT_ID = U("snapshot_id");
+	UMA_SENSOR_ID = U("sensor_id");
 
-	GET = L" GET ";
-	PUT = L" PUT ";
-	POST = L" POST ";
-	DELETE = L" DELETE ";
+	GET = U(" GET ");
+	PUT = U(" PUT ");
+	POST = U(" POST ");
+	DELETE = U(" DELETE ");
 
-	MESSAGE = L"message";
+	MESSAGE = U("message");
 }
 
 AdminHandler::AdminHandler(logManager *log_access):AdminHandler() {
@@ -35,9 +35,9 @@ AdminHandler::AdminHandler(logManager *log_access):AdminHandler() {
 bool AdminHandler::check_field(json::value &data, string_t &s, http_request &request, bool hard_check) {
 	if (!data.has_field(s)) {
 		if (hard_check) {
-			_log_access->error() << request.absolute_uri().to_string() + L" 400";
+			_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"Field \'" + s + L"\' must be specified");
+			message[MESSAGE] = json::value::string(U("Field \'") + s + U("\' must be specified"));
 			request.reply(status_codes::BadRequest, message);
 		}
 		return false;
@@ -48,9 +48,9 @@ bool AdminHandler::check_field(json::value &data, string_t &s, http_request &req
 bool AdminHandler::check_field(map<string_t, string_t> &query, string_t &s, http_request &request, bool hard_check) {
 	if (query.find(s) == query.end()) {
 		if (hard_check) {
-			_log_access->error() << request.absolute_uri().to_string() + L" 400";
+			_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 			json::value message;
-			message[MESSAGE] = json::value::string(L"Field \'" + s + L"\' must be specified");
+			message[MESSAGE] = json::value::string(U("Field \'") + s + U("\' must be specified"));
 			request.reply(status_codes::BadRequest, message);
 		}
 		return false;
@@ -74,9 +74,9 @@ void AdminHandler::vector_string_to_array(std::vector<string> &list, std::vector
 bool AdminHandler::get_agent_by_id(World *world, string agent_id, Agent *&agent, http_request &request) {
 	agent = world->getAgent(agent_id);
 	if (agent == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
+		_log_access->info() << request.absolute_uri().to_string() + U(" 404");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot find the agent id!");
+		message[MESSAGE] = json::value::string(U("Cannot find the agent id!"));
 		request.reply(status_codes::NotFound, message);
 		return false;
 	}
@@ -86,9 +86,9 @@ bool AdminHandler::get_agent_by_id(World *world, string agent_id, Agent *&agent,
 bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot *&snapshot, http_request &request) {
 	snapshot = agent->getSnapshot(snapshot_id);
 	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
+		_log_access->info() << request.absolute_uri().to_string() + U(" 404");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot find the snapshot id!");
+		message[MESSAGE] = json::value::string(U("Cannot find the snapshot id!"));
 		request.reply(status_codes::NotFound, message);
 		return false;
 	}
@@ -98,9 +98,9 @@ bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot
 bool AdminHandler::get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request) {
 	sensor = snapshot->getSensor(sensor_id);
 	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + L" 404";
+		_log_access->info() << request.absolute_uri().to_string() + U(" 404");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot find the snapshot id!");
+		message[MESSAGE] = json::value::string(U("Cannot find the snapshot id!"));
 		request.reply(status_codes::NotFound, message);
 		return false;
 	}
@@ -328,9 +328,9 @@ vector<std::pair<string, string> > AdminHandler::get_string_pair1d_input(json::v
 }
 
 void AdminHandler::parsing_error(http_request &request) {
-	_log_access->error() << request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"error parsing the input!");
+	message[MESSAGE] = json::value::string(U("error parsing the input!"));
 	request.reply(status_codes::BadRequest, message);
 }
 

@@ -6,19 +6,19 @@
 
 DataValidationHandler::DataValidationHandler(logManager *log_access):AdminHandler(log_access) {
 	_log_access = log_access;
-	UMA_INITIAL_SIZE = L"initial_size";
+	UMA_INITIAL_SENSOR_SIZE = U("initial_sensor_size");
 }
 
 void DataValidationHandler::handle_create(World *world, vector<string_t> &paths, http_request &request) {
-	json::value &data = request.extract_json().get();
+	json::value data = request.extract_json().get();
 	if (paths[0] == UMA_SNAPSHOT) {
 		validate_snapshot(world, data, request);
 		return;
 	}
 
-	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 	json::value message;
-	message[MESSAGE] = json::value::string(L"cannot handle " + paths[0] + L" object");
+	message[MESSAGE] = json::value::string(U("cannot handle ") + paths[0] + U(" object"));
 	request.reply(status_codes::BadRequest, message);
 }
 
@@ -36,11 +36,11 @@ void DataValidationHandler::handle_delete(World *world, vector<string_t> &paths,
 
 void DataValidationHandler::validate_snapshot(World *world, json::value &data, http_request &request) {
 	string agent_id, snapshot_id;
-	int initial_size;
+	int base_sensor_size;
 	try {
 		agent_id = get_string_input(data, UMA_AGENT_ID, request);
 		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
-		initial_size = get_int_input(data, UMA_INITIAL_SIZE, request);
+		base_sensor_size = get_int_input(data, UMA_INITIAL_SENSOR_SIZE, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
@@ -51,17 +51,17 @@ void DataValidationHandler::validate_snapshot(World *world, json::value &data, h
 	Snapshot *snapshot = NULL;
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;
 	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	bool status = snapshot->validate(initial_size);
+	bool status = snapshot->validate(base_sensor_size);
 	if (status) {
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + L" 201";
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Snapshot validation succeed");
+		message[MESSAGE] = json::value::string(U("Snapshot validation succeed"));
 		request.reply(status_codes::Created, message);
 	}
 	else {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + L" 400";
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
-		message[MESSAGE] = json::value::string(L"Cannot validate the snapshot");
+		message[MESSAGE] = json::value::string(U("Cannot validate the snapshot"));
 		request.reply(status_codes::BadRequest, message);
 	}
 }

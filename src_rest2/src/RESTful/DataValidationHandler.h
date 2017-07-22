@@ -18,7 +18,7 @@ public:
 
 protected:
 	logManager *_log_access;
-	string_t UMA_INITIAL_SIZE;
+	string_t UMA_INITIAL_SENSOR_SIZE;
 	void validate_snapshot(World *world, json::value &data, http_request &request);
 };
 

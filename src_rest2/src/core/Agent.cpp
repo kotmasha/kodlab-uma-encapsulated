@@ -16,7 +16,8 @@ Agent::Agent(ifstream &file) {
 	file.read((char *)(&snapshot_size), sizeof(int));
 	
 	for (int i = 0; i < snapshot_size; ++i) {
-		Snapshot_Stationary *snapshot = new Snapshot_Stationary(file, _log_dir + "/Snapshot_");
+		string log_dir = _log_dir + "/Snapshot_";
+		Snapshot_Stationary *snapshot = new Snapshot_Stationary(file, log_dir);
 		_snapshots[snapshot->_uuid] = snapshot;
 	}
 
@@ -35,7 +36,8 @@ bool Agent::add_snapshot_stationary(string uuid){
 		_log->error() << "Cannot create a duplicate snapshot!";
 		return false;
 	}
-	_snapshots[uuid] = new Snapshot_Stationary(uuid, _log_dir + "/Snapshot_" + uuid);
+	string log_dir = _log_dir + "/Snapshot_" + uuid;
+	_snapshots[uuid] = new Snapshot_Stationary(uuid, log_dir);
 	_log->info() << "A Snapshot Stationary " + uuid + " is created";
 	return true;
 }
@@ -49,10 +51,10 @@ Snapshot *Agent::getSnapshot(string snapshot_id) {
 	return NULL;
 }
 
-vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active) {
+vector<float> Agent::decide(vector<bool> &signal, double phi, bool active) {
 	vector<float> result;
-	result.push_back(_snapshots["plus"]->decide(obs_plus, phi, active));
-	result.push_back(_snapshots["minus"]->decide(obs_minus, phi, !active));
+	result.push_back(_snapshots["plus"]->decide(signal, phi, active));
+	result.push_back(_snapshots["minus"]->decide(signal, phi, !active));
 	return result;
 }
 

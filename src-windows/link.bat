@@ -1,1 +1,0 @@
-swig -c++ -python -o UMA_NEW_wrap.cpp UMA_NEW.i
