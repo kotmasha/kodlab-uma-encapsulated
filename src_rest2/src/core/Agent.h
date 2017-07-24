@@ -26,7 +26,7 @@ public:
 	Agent(string uuid);
 	bool add_snapshot_stationary(string uuid);
 	Snapshot *getSnapshot(string snapshot_id);
-	vector<float> decide(vector<bool> &signal, double phi, bool active);
+	vector<float> decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active);
 	vector<vector<bool>> getCurrent();
 	vector<vector<bool>> getPrediction();
 	vector<vector<bool>> getTarget();

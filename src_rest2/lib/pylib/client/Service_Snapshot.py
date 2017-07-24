@@ -16,8 +16,8 @@ class ServiceSnapshot:
         else:
             return ServiceSensor(self._agent_id, self._snapshot_id, sensor_id, self._service)
 
-    def validate(self, initial_size):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_size': initial_size}
+    def validate(self, initial_sensor_size):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_sensor_size': initial_sensor_size}
         result = self._service.post('/UMA/validation/snapshot', data)
         if not result:
             return False

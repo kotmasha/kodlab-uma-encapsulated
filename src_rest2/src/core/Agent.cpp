@@ -51,10 +51,10 @@ Snapshot *Agent::getSnapshot(string snapshot_id) {
 	return NULL;
 }
 
-vector<float> Agent::decide(vector<bool> &signal, double phi, bool active) {
+vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active) {
 	vector<float> result;
-	result.push_back(_snapshots["plus"]->decide(signal, phi, active));
-	result.push_back(_snapshots["minus"]->decide(signal, phi, !active));
+	result.push_back(_snapshots["plus"]->decide(obs_plus, phi, active));
+	result.push_back(_snapshots["minus"]->decide(obs_minus, phi, !active));
 	return result;
 }
 

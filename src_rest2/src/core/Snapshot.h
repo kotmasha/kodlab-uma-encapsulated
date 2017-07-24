@@ -76,7 +76,7 @@ protected:
 	*/
 	int _type;
 	//current Snapshot type
-	int _base_sensor_size;
+	int _initial_size;
 	//the base sensor size, base sensor is the basic sensor without amper/delay, the value is initiated 
 	int _sensor_size;
 	//the current sensor size, this value is changable during the test due to amper/delay/pruning
@@ -157,7 +157,7 @@ public:
 	virtual void calculate_total(bool active);
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
-	//virtual float divergence(bool *d1, bool *d2);
+	virtual float divergence(bool *d1, bool *d2);
 
 	void up_GPU(vector<bool> signal, bool is_stable);
 	void halucinate_GPU();
@@ -201,7 +201,7 @@ public:
 	void setQ(double &q);
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
-	void setAutoTarget(bool auto_target);
+	void setAutoTarget(bool &auto_target);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/

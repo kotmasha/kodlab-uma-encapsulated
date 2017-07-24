@@ -17,6 +17,9 @@ SimulationHandler::SimulationHandler(logManager *log_access): AdminHandler(log_a
 	UMA_DELAY_LIST = U("delay_list");
 	UMA_UUID_LIST = U("uuid_list");
 
+	UMA_OBSPLUS = U("obs_plus");
+	UMA_OBSMINUS = U("obs_minus");
+
 	UMA_SAVING = U("saving");
 	UMA_LOADING = U("loading");
 
@@ -136,12 +139,14 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 	string agent_id;
 	double phi;
 	bool active;
-	vector<bool> signals;
+	vector<bool> obs_plus;
+	vector<bool> obs_minus;
 	try {
 		agent_id = get_string_input(data, UMA_AGENT_ID, request);
 		phi = get_double_input(data, UMA_PHI, request);
 		active = get_bool_input(data, UMA_ACTIVE, request);
-		signals = get_bool1d_input(data, UMA_SIGNALS, request);
+		obs_plus = get_bool1d_input(data, UMA_OBSPLUS, request);
+		obs_minus = get_bool1d_input(data, UMA_OBSMINUS, request);
 	}
 	catch (exception &e) {
 		cout << e.what() << endl;
@@ -151,7 +156,7 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 	Agent *agent = NULL;
 	Snapshot *snapshot = NULL;
 	if (!get_agent_by_id(world, agent_id, agent, request)) return;
-	vector<float> res = agent->decide(signals, phi, active);
+	vector<float> res = agent->decide(obs_plus, obs_minus, phi, active);
 	try {
 		vector<vector<bool>> current = agent->getCurrent();
 		vector<json::value> json_current_plus, json_current_minus;

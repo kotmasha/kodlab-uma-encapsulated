@@ -634,7 +634,7 @@ class Agent(object):
             for token in ['plus','minus']:
                 snap_service[token]=agent_service.add_snapshot(token)
                 snap_service[token].setQ(self._PARAMS[0])
-                snap_service[token].setCalTarget(self._PARAMS[1])
+                snap_service[token].setAutoTarget(self._PARAMS[1])
                 snap_service[token].init_with_sensors([[self._SENSORS[token][2 * i], self._SENSORS[token][2 * i + 1]] for i in xrange(self._INITIAL_SIZE)])
 
       def validate(self):

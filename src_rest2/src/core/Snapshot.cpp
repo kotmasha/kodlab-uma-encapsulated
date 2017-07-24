@@ -119,15 +119,13 @@ void Snapshot::init_pointers(){
 float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
 	_phi = phi;
 	setObserve(signal);
-	if(t<200) active = true;
 	update_state_GPU(active);
 	halucinate_GPU();
 	t++;
-	if(t<200) return 0;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
-	return distance(dev_d1, dev_d2);
+	return divergence(dev_d1, dev_d2);
 }
 
 bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
@@ -155,13 +153,13 @@ bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 /*
 This function is doing validation after adding sensors
 */
-bool Snapshot::validate(int base_sensor_size) {
+bool Snapshot::validate(int initial_size) {
 	_log->info() << "start data validation";
 	free_all_parameters();
 	init_size(_sensor_num);
 
-	_base_sensor_size = base_sensor_size;
-	_log->info() << "base sensor size is: " + to_string(_base_sensor_size);
+	_initial_size = initial_size;
+	_log->info() << "initial sensor size is: " + to_string(_initial_size);
 
 	gen_weight();
 	gen_direction();
@@ -776,7 +774,7 @@ void Snapshot::setTarget(vector<bool> &signal){
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-void Snapshot::setAutoTarget(bool auto_target) {
+void Snapshot::setAutoTarget(bool &auto_target) {
 	_auto_target = auto_target;
 }
 

@@ -524,7 +524,6 @@ void Snapshot::propagate_GPU(bool *signal, bool *load){//propagate
 	//cudaMemcpy(h_load, load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 }
 
-/* OLD DISTANCE, DEPRECATED
 float Snapshot::distance(bool *signal1, bool *signal2){
 	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
 	propagate_GPU(signal1, dev_load);
@@ -538,77 +537,6 @@ float Snapshot::distance(bool *signal1, bool *signal2){
 	cudaMemcpy(h_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	int sum = 0;
 	for(int i = 0; i < _measurable_size; ++i) sum += h_signal[i];
-	return sum;
-}
-*/
-
-float Snapshot::distance(bool *signal1, bool *signal2) {
-	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal1, dev_load);
-	cudaMemcpy(signal1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-
-	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal2, dev_load);
-	cudaMemcpy(signal2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-
-	conjunction_star_kernel << <(_measurable_size + 255) / 256, 256 >> >(signal1, signal2, _measurable_size);
-	//apply weights to the computed distance signal and output the result:
-	/*
-	float *tmp_result = new float[1];
-	tmp_result[0] = 0.0f;
-	float *dev_result;
-	cudaMalloc(&dev_result, sizeof(float));
-	cudaMemcpy(dev_result, tmp_result, sizeof(float), cudaMemcpyHostToDevice);
-	*/
-	//weights are w_{xx}-w_{x*x*}:
-	/*
-	delta_weight_sum_kernel << <(_measurable_size + 255) / 256, 256 >> > (dev_diag, signal1, dev_result, _measurable_size);
-	cudaMemcpy(tmp_result, dev_result, sizeof(float), cudaMemcpyDeviceToHost);
-	float result = tmp_result[0];
-	delete[] tmp_result;
-	cudaFree(dev_result);
-	return result;
-	*/
-	//weights are all 1:
-
-	cudaMemcpy(h_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	int sum = 0;
-	for (int i = 0; i < _measurable_size; ++i) sum += h_signal[i];
-	return sum;
-}
-
-float Snapshot::divergence(bool *signal1, bool *signal2) {
-	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal1, dev_load);
-	cudaMemcpy(signal1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-
-	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal2, dev_load);
-	cudaMemcpy(signal2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-
-	subtraction_kernel << <(_measurable_size + 255) / 256, 256 >> >(signal1, signal2, _measurable_size);
-	//apply weights to the computed divergence signal and output the result:
-	/*
-	float *tmp_result = new float[1];
-	tmp_result[0] = 0.0f;
-	float *dev_result;
-	cudaMalloc(&dev_result, sizeof(float));
-	cudaMemcpy(dev_result, tmp_result, sizeof(float), cudaMemcpyHostToDevice);
-	*/
-	//weights are w_{xx}-w_{x*x*}:
-	/*
-	delta_weight_sum_kernel << <(_measurable_size + 255) / 256, 256 >> > (dev_diag, signal1, dev_result, _measurable_size);
-	cudaMemcpy(tmp_result, dev_result, sizeof(float), cudaMemcpyDeviceToHost);
-	float result = tmp_result[0];
-	delete[] tmp_result;
-	cudaFree(dev_result);
-	return result;
-	*/
-	//weights are all 1:
-
-	cudaMemcpy(h_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	int sum = 0;
-	for (int i = 0; i < _measurable_size; ++i) sum += h_signal[i];
 	return sum;
 }
 

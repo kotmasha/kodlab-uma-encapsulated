@@ -13,6 +13,9 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	_log_path = "log";
 	_log_access = new logManager(logging::VERBOSE, _log_path, "UMAC_access.txt", typeid(*this).name());
 	_log_server = new logManager(logging::VERBOSE, _log_path, "UMA_server.txt", typeid(*this).name());
+
+	_log_server->info() << U("Listening on the url ") + url.to_string();
+
 	// every test will only have a unique world object
 	_world = new World();
 	_log_server->info() << "A new world is created";
