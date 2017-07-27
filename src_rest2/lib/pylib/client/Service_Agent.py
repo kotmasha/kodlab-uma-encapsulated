@@ -15,10 +15,7 @@ class ServiceAgent:
         else:
             return ServiceSnapshot(self._agent_id, snapshot_id, self._service)
 
-    def make_decision(self, signals, phi, active):
-        #translate observation signals to a pair of Boolean arrays:
-        obs_plus=signals['plus']._VAL.tolist()
-        obs_minus=signals['minus']._VAL.tolist()
+    def make_decision(self, obs_plus, obs_minus, phi, active):
         #post to service:
         data =  {'agent_id': self._agent_id, 'phi': phi, 'active': active, 'obs_plus': obs_plus, 'obs_minus': obs_minus}
         result = self._service.post('/UMA/simulation/decision', data)

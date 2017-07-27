@@ -16,8 +16,8 @@ class ServiceSnapshot:
         else:
             return ServiceSensor(self._agent_id, self._snapshot_id, sensor_id, self._service)
 
-    def validate(self, initial_sensor_size):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_sensor_size': initial_sensor_size}
+    def validate(self, initial_size):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_size': initial_size}
         result = self._service.post('/UMA/validation/snapshot', data)
         if not result:
             return False
@@ -28,7 +28,7 @@ class ServiceSnapshot:
             self.add_sensor(sensor[0], sensor[1])
 
     def make_up(self, signal):
-        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal._VAL.tolist()}
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal}
         result = self._service.post('/UMA/simulation/up', data)
         if not result:
             return None
@@ -44,14 +44,16 @@ class ServiceSnapshot:
     #    return float(result['res']), result['current'], result['prediction'], result['target']
 
     def delay(self, delay_list, uuid_list):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_list': [signal._VAL.tolist() for signal in delay_list], 'uuid_list': uuid_list}
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_list': delay_list, 'uuid_list': uuid_list}
+        #data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_list': [signal._VAL.tolist() for signal in delay_list], 'uuid_list': uuid_list}
         result = self._service.post('/UMA/simulation/delay', data)
         if not result:
             return False
         return True
 
     def pruning(self, signal):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal._VAL.tolist()}
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal}
+        #data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal._VAL.tolist()}
         result = self._service.post('/UMA/simulation/pruning', data)
         if not result:
             return False
@@ -75,8 +77,8 @@ class ServiceSnapshot:
     def setTarget(self, target_list):
         return self._service.put('/UMA/data/target', {'target_list': target_list}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
-    def setAutoTarget(self, auto_target):
-        return self._service.put('/UMA/object/snapshot', {'auto_target': auto_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+    def setCalTarget(self, cal_target):
+        return self._service.put('/UMA/object/snapshot', {'cal_target': cal_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
     def get_sensor_count(self):
         return
