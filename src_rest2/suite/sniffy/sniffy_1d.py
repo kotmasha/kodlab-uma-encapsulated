@@ -12,7 +12,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     # Number of decision cycles for burn-in period:
     BURN_IN=burn_in
     # experiment parameters and definitions
-    X_BOUND=8 #length
+    X_BOUND=4 #length
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
 
@@ -187,7 +187,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     ## SET ARTIFICIAL TARGET ONCE AND FOR ALL
     #for agent in [RT,LT]:
     #    for token in ['plus','minus']:
-    #        tmp_target=agent.generate_signal([id_nav]).value_all().tolist()
+    #        tmp_target=agent.generate_signal([id_nav]).value().tolist()
     #        #agent.brain._snapshots[token].setTarget(tmp_target)
     #        service_snapshot = ServiceSnapshot(agent._ID, token, service)
     #        service_snapshot.setTarget(tmp_target)
@@ -270,13 +270,13 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
             bounds={'plus':[0,X_BOUND],'minus':[0,X_BOUND]}
             for token in ['plus','minus']:
                 for x in xrange(0,X_BOUND):
-                    if lookat[token].value(gps_list[token][2*x]):
+                    if lookat[token].out(gps_list[token][2*x]):
                         bounds[token][1]=x #pushing down the upper bound
                         break
                     else:
                         continue
                 for x in xrange(X_BOUND-1,-1,-1):
-                    if lookat[token].value(gps_list[token][2*x+1]):
+                    if lookat[token].out(gps_list[token][2*x+1]):
                         bounds[token][0]=x+1 #pushing up the lower bound
                         break
                     else:
@@ -289,7 +289,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
                 min_pos=bounds[token][0]
                 max_pos=bounds[token][1]
                 for x in xrange(0,X_BOUND):
-                    ori=ord('<') if lookat[token].value(gps_list[token][2*x]) else (ord('>') if lookat[token].value(gps_list[token][2*x+1]) else ord('*'))
+                    ori=ord('<') if lookat[token].out(gps_list[token][2*x]) else (ord('>') if lookat[token].out(gps_list[token][2*x+1]) else ord('*'))
                     this_BG=tok_BG[token] if (x>=min_pos and x<max_pos) else BG
                     WIN.addch(tok_line[token],2+2*x,ori,this_BG)
 
@@ -335,19 +335,19 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         #SIG = {}
         #for token in ['plus', 'minus']:
         #    snapshot = ServiceSnapshot(agent._ID, token, service)
-        #    res = snapshot.make_up(sig.value_all().tolist())
+        #    res = snapshot.make_up(sig.value().tolist())
         #    SIG[token] = Signal(res)
-        #    #print sig.value_all().tolist()
+        #    #print sig.value().tolist()
         #    #print SIG[token]._VAL
 
         #
         #namelist = agent._SENSORS
         #
         #for x,mid in enumerate(agent._SENSORS):
-        #    this_BG=OBS_BG if OBS.value(x) else REG_BG
+        #    this_BG=OBS_BG if OBS.out(x) else REG_BG
         #    WINs.addstr(2,hpos(x),namelist[x],this_BG)
         #    for token in ['plus','minus']:
-        #        this_BG=tok_BG[token] if SIG[token].value(x) else REG_BG
+        #        this_BG=tok_BG[token] if SIG[token].out(x) else REG_BG
         #        WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
         
         # refresh the window
@@ -380,6 +380,6 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         print "data saved"
         raise Exception('Aborting at your request...\n\n')
         
-curses.wrapper(start_experiment,200,'rt','nodelay')
+curses.wrapper(start_experiment,50,'rt','nodelay')
 exit(0)
 
