@@ -121,7 +121,6 @@ float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the deci
 	setObserve(signal);
 	update_state_GPU(active);
 	halucinate_GPU();
-	t++;
 	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	_log->debug() << "finished the " + to_string(t) + " decision";
