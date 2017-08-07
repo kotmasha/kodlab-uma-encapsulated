@@ -28,6 +28,7 @@ public:
 	bool check_field(json::value &data, string_t &s, http_request &request, bool hard_check = true);
 	bool check_field(map<string_t, string_t> &query, string_t &s, http_request &request, bool hard_check = true);
 	void parsing_error(http_request &request);
+	void vector_int_to_array(std::vector<int> &list, std::vector<json::value> &json_list);
 	void vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list);
 	void vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list);
 	bool get_agent_by_id(World *world, string agent_id, Agent *&agent, http_request &request);

@@ -37,6 +37,8 @@ protected:
 	//threshold matrix, every pair of sensor has a threshold
 	bool *h_mask_amper, *dev_mask_amper;//amper value collection for mask
 	//mask_amper matrix, every sensor has a mask amper, but the construction is all other measurables
+	int *h_npdirs, *dev_npdirs;
+	//n power of dir matrix, computed using floyd algorithm
 
 	bool *h_observe, *dev_observe;
 	//observe array, dealing with the observation from python
@@ -160,6 +162,7 @@ public:
 	virtual float divergence(bool *d1, bool *d2);
 
 	void up_GPU(vector<bool> signal, bool is_stable);
+	void floyd_GPU();
 	void halucinate_GPU();
 	void gen_mask();
 
@@ -171,11 +174,13 @@ public:
 	vector<bool> getTarget();
 	vector<vector<double> > getWeight2D();
 	vector<vector<bool> > getDir2D();
+	vector<vector<int> > getNPDir2D();
 	vector<vector<double> > getThreshold2D();
 	vector<vector<bool> > getMask_amper2D();
 	vector<bool> getMask_amper();
 	vector<double> getWeight();
 	vector<bool> getDir();
+	vector<int> getNPDir();
 	vector<double> getThreshold();
 	vector<bool> getObserve();
 	vector<bool> getObserveOld();
@@ -229,6 +234,8 @@ public:
 	void amperand(int mid1, int mid2, bool merge, std::pair<string, string> &id_pair);
 	void pruning(vector<bool> signal);
 
+	void create_implication(string &sensor1, string &sensor2);
+
 	void init_direction();
 	void init_weight();
 	void init_thresholds();
@@ -240,6 +247,7 @@ public:
 	void gen_weight();
 	void gen_thresholds();
 	void gen_mask_amper();
+	void gen_np_direction();
 	void gen_other_parameters();
 
 	void save_snapshot(ofstream &file);

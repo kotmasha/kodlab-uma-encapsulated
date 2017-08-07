@@ -58,6 +58,12 @@ bool AdminHandler::check_field(map<string_t, string_t> &query, string_t &s, http
 	return true;
 }
 
+void AdminHandler::vector_int_to_array(std::vector<int> &list, std::vector<json::value> &json_list) {
+	for (int i = 0; i < list.size(); ++i) {
+		json_list.push_back(json::value::number(list[i]));
+	}
+}
+
 void AdminHandler::vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list) {
 	for (int i = 0; i < list.size(); ++i) {
 		json_list.push_back(json::value::boolean(list[i]));

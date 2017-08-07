@@ -16,6 +16,9 @@ SimulationHandler::SimulationHandler(logManager *log_access): AdminHandler(log_a
 	UMA_AMPER_LIST = U("amper_list");
 	UMA_DELAY_LIST = U("delay_list");
 	UMA_UUID_LIST = U("uuid_list");
+	UMA_IMPLICATION = U("implication");
+	UMA_NPDIRS = U("npdirs");
+	UMA_SENSORS = U("sensors");
 
 	UMA_OBSPLUS = U("obs_plus");
 	UMA_OBSMINUS = U("obs_minus");
@@ -60,6 +63,12 @@ void SimulationHandler::handle_create(World *world, vector<string_t> &paths, htt
 	}
 	else if (paths[0] == UMA_MERGE) {
 		create_merging(world, data, request);
+	}
+	else if (paths[0] == UMA_NPDIRS) {
+		create_npdirs(world, data, request);
+	}
+	else if (paths[0] == UMA_IMPLICATION) {
+		create_implication(world, data, request);
 	}
 
 	_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
@@ -300,6 +309,43 @@ void SimulationHandler::create_up(World *world, json::value &data, http_request 
 	}
 }
 
+void SimulationHandler::create_npdirs(World *world, json::value &data, http_request &request) {
+	string agent_id, snapshot_id;
+	try {
+		agent_id = get_string_input(data, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
+
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+	try {
+		snapshot->floyd_GPU();
+		vector<int> npdirs = snapshot->getNPDir();
+		vector<json::value> json_npdirs;
+		vector_int_to_array(npdirs, json_npdirs);
+		json::value return_data = json::value::array(json_npdirs);
+		json::value message;
+
+		message[MESSAGE] = json::value::string(U("npdirs made successful"));
+		message[U("data")] = return_data;
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
+		request.reply(status_codes::Created, message);
+		return;
+	}
+	catch (exception &e) {
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
+		json::value message;
+		message[MESSAGE] = json::value::string(U("npdirs made error!"));
+		request.reply(status_codes::BadRequest, message);
+	}
+}
+
 void SimulationHandler::create_saving(World *world, json::value &data, http_request &request) {
 	string name;
 	try {
@@ -398,6 +444,40 @@ void SimulationHandler::create_merging(World *world, json::value &data, http_req
 		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
 		message[MESSAGE] = json::value::string(U("test data merged error!"));
+		request.reply(status_codes::BadRequest, message);
+	}
+}
+
+void SimulationHandler::create_implication(World *world, json::value &data, http_request &request) {
+	string agent_id, snapshot_id;
+	vector<string> sensors;
+	try {
+		agent_id = get_string_input(data, UMA_AGENT_ID, request);
+		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
+		sensors = get_string1d_input(data, UMA_SENSORS, request);
+	}
+	catch (exception &e) {
+		cout << e.what() << endl;
+		return;
+	}
+
+	Agent *agent = NULL;
+	Snapshot *snapshot = NULL;
+	if (!get_agent_by_id(world, agent_id, agent, request)) return;
+	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+	try {
+		snapshot->create_implication(sensors[0], sensors[1]);
+		json::value message;
+
+		message[MESSAGE] = json::value::string(U("implication made successful"));
+		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
+		request.reply(status_codes::Created, message);
+		return;
+	}
+	catch (exception &e) {
+		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
+		json::value message;
+		message[MESSAGE] = json::value::string(U("implication made error!"));
 		request.reply(status_codes::BadRequest, message);
 	}
 }

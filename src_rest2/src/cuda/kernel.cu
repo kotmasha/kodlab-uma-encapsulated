@@ -40,6 +40,11 @@ using namespace std;
 ----------------------HOST DEVICE---------------------
 */
 
+__host__ __device__ int compi(int x) {
+	if (x % 2 == 0) return x + 1;
+	else return x - 1;
+}
+
 /*
 This function is for extracting the 1d index from a triangelized 2d structure
 The function requires that the 'row' has to be not small than the 'col'
@@ -47,13 +52,12 @@ The function requires that the 'row' has to be not small than the 'col'
 __host__ __device__ int ind(int row, int col){
 	if(row >= col)
 		return row * (row + 1) / 2 + col;
-	else
+	else if (col == row + 1) {
 		return col * (col + 1) / 2 + row;
-}
-
-__host__ __device__ int compi(int x){
-	if(x % 2 == 0) return x + 1;
-	else return x - 1;
+	}
+	else {
+		return compi(col) * (compi(col) + 1) / 2 + compi(row);
+	}
 }
 
 /*
@@ -63,6 +67,14 @@ __host__ __device__ int compi(int x){
 /*
 ---------------------HELPER FUNCTION-----------------------
 */
+
+__global__ void bool2int(bool *b, int *i, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		if (b[index]) i[index] = 1;
+		else i[index] = 0;
+	}
+}
 
 /*
 This function does the conjunction for two lists
@@ -407,6 +419,28 @@ __global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_
 	}
 }
 
+__global__ void floyd_kernel(int *dir, int measurable_size) {
+	int indexX = threadIdx.x;
+	int indexY = threadIdx.y;
+	for (int i = 0; i < measurable_size; ++i) {
+		int x = indexX, y = indexY;
+		while (y < measurable_size) {
+			if (y < x) {
+				y += 32;
+				x = indexX;
+				continue;
+			}
+			int value = dir[ind(y, i)] + dir[ind(i, x)];
+			if (dir[ind(y, i)] == 0 || dir[ind(i, x)] == 0) value = 0;
+			int origin = dir[ind(y, x)];
+			if (value > 0 && origin > 0) dir[ind(y, x)] = min(value, origin);
+			else dir[ind(y, x)] = max(value, origin);
+			x += 32;
+		}
+		__syncthreads();
+	}
+}
+
 /*
 This function is the GPU version of python function mask, it is designed to get mask signal
 Deprecated in new version
@@ -490,6 +524,17 @@ void Snapshot::up_GPU(vector<bool> signal, bool is_stable){
 	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(dev_signal, dev_dirs, dev_thresholds, is_stable, 1 - _q, _measurable_size);
 
 	cudaMemcpy(h_up, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+
+	cudaCheckErrors("kernel fails");
+}
+
+void Snapshot::floyd_GPU() {
+	cudaMemcpy(dev_npdirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	dim3 dimGrid(1, 1);
+	dim3 dimBlock(32, 32);
+	bool2int << <(_measurable2d_size + 255) / 256, 256 >> >(dev_dirs, dev_npdirs, _measurable2d_size);
+	floyd_kernel<<<dimGrid, dimBlock>>>(dev_npdirs, _measurable_size);
+	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(int), cudaMemcpyDeviceToHost);
 
 	cudaCheckErrors("kernel fails");
 }

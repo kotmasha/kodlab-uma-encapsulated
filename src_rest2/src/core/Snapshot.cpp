@@ -85,6 +85,7 @@ void Snapshot::init_pointers(){
 	h_weights = NULL;
 	h_thresholds = NULL;
 	h_mask_amper = NULL;
+	h_npdirs = NULL;
 	h_observe = NULL;
 	h_signal = NULL;
 	h_load = NULL;
@@ -101,6 +102,7 @@ void Snapshot::init_pointers(){
 	dev_weights = NULL;
 	dev_thresholds = NULL;
 	dev_mask_amper = NULL;
+	dev_npdirs = NULL;
 	dev_observe = NULL;
 	dev_observe_ = NULL;
 	dev_signal = NULL;
@@ -164,6 +166,7 @@ bool Snapshot::validate(int initial_size) {
 	gen_direction();
 	gen_thresholds();
 	gen_mask_amper();
+	gen_np_direction();
 
 	gen_other_parameters();
 	init_other_parameter();
@@ -667,6 +670,21 @@ void Snapshot::gen_mask_amper(){
 }
 
 /*
+This function is generating n power of dir matrix both on host and device
+*/
+void Snapshot::gen_np_direction() {
+	//malloc the space
+	h_npdirs = new int[_measurable2d_size_max];
+	cudaMalloc(&dev_npdirs, _measurable2d_size_max * sizeof(int));
+
+	//fill in all 0
+	memset(h_npdirs, 0, _measurable2d_size_max * sizeof(int));
+	cudaMemset(dev_npdirs, 0, _measurable2d_size_max * sizeof(int));
+
+	_log->debug() << "NPDir matrix generated with size " + to_string(_measurable2d_size_max);
+}
+
+/*
 This function generate other parameter
 */
 void Snapshot::gen_other_parameters() {
@@ -860,6 +878,22 @@ vector<vector<bool> > Snapshot::getDir2D(){
 }
 
 /*
+The function is getting the n power of dir matrix in 2-dimensional form
+*/
+vector<vector<int> > Snapshot::getNPDir2D() {
+	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(int), cudaMemcpyDeviceToHost);
+	vector<vector<int> > result;
+	int n = 0;
+	for (int i = 0; i < _measurable_size; ++i) {
+		vector<int> tmp;
+		for (int j = 0; j <= i; ++j)
+			tmp.push_back(h_npdirs[n++]);
+		result.push_back(tmp);
+	}
+	return result;
+}
+
+/*
 The function is getting the threshold matrix in 2-dimensional form
 */
 vector<vector<double> > Snapshot::getThreshold2D(){
@@ -923,6 +957,18 @@ vector<bool> Snapshot::getDir(){
 	vector<bool> results;
 	for(int i = 0; i < tmp.size(); ++i){
 		for(int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
+	}
+	return results;
+}
+
+/*
+The function is getting the n power of dir matrix as a list
+*/
+vector<int> Snapshot::getNPDir() {
+	vector<vector<int> > tmp = this->getNPDir2D();
+	vector<int> results;
+	for (int i = 0; i < tmp.size(); ++i) {
+		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
 	return results;
 }
@@ -1084,6 +1130,22 @@ Sensor *Snapshot::getSensor(string &sensor_id) {
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
+
+void Snapshot::create_implication(string &sensor1, string &sensor2) {
+	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor1;
+		throw CORE_EXCEPTION::CORE_FATAL;
+	}
+	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor2;
+		throw CORE_EXCEPTION::CORE_FATAL;
+	}
+	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
+	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
+	h_dirs[ind(idx1, idx2)] = true;
+	cudaMemcpy(dev_dirs, h_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyHostToDevice);
+	_log->info() << "Implication success from " + sensor1 + " to " + sensor2;
+}
 
 /*
 This is the amper and function, used in amper and delay
