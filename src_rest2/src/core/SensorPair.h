@@ -41,6 +41,7 @@ public:
 	MeasurablePair *getMeasurablePair(bool isOriginPure_i, bool isOriginPure_j);
 	void save_sensor_pair(ofstream &file);
 	void copy_data(SensorPair *sp);
+	double getThreshold();
 	~SensorPair();
 };
 

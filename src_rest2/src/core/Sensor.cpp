@@ -47,6 +47,14 @@ void Sensor::init_amper_list(bool *ampers){
 	setAmperList(ampers, start, end);
 }
 
+vector<int> Sensor::getAmperList() {
+	return _amper;
+}
+
+int Sensor::getIdx() {
+	return _idx;
+}
+
 /*
 This is setting the amper list, used when the ampers to be copied is temporary
 Input: ampers, the amper list, start and end of the index
@@ -161,7 +169,7 @@ bool Sensor::amper_and_signals(bool *observe){
 This function is checking whether the current sensor is active or not
 */
 bool Sensor::isSensorActive(){
-	return *(_m->_status);
+	return _m->getStatus();
 }
 
 /*

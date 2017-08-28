@@ -2,6 +2,7 @@
 #include "Agent.h"
 #include "logging.h"
 #include "logManager.h"
+#include "UMAException.h"
 
 World::World(){
 	//_rmdir("log");
@@ -15,23 +16,31 @@ World::World(){
 	_log->info() << "A new world is created";
 }
 
-bool World::add_agent(string uuid){
-	if (_agents.find(uuid) != _agents.end()) {
-		_log->error() << "Cannot create a duplicate agent " + uuid;
-		return false;
+void World::add_agent(string &agent_id){
+	if (_agents.find(agent_id) != _agents.end()) {
+		_log->error() << "Cannot create a duplicate agent " + agent_id;
+		throw CoreException("Cannot create a duplicate agent " + agent_id, CoreException::ERROR, status_codes::Conflict);
 	}
-	_agents[uuid] = new Agent(uuid);
-	_log->info() << "An agent " + uuid + " is created";
-	return true;
+	_agents[agent_id] = new Agent(agent_id);
+	_log->info() << "An agent " + agent_id + " is created";
 }
 
-Agent *World::getAgent(const string agent_id) {
+Agent *World::getAgent(const string &agent_id) {
 	if (_agents.find(agent_id) != _agents.end()) {
-		_log->debug() << "Agent " + agent_id + " is found";
 		return _agents[agent_id];
 	}
 	_log->warn() << "No agent " + agent_id + " is found";
-	return NULL;
+	throw CoreException("Cannot find the agent id!", CoreException::ERROR, status_codes::NotFound);
+}
+
+void World::delete_agent(string &agent_id) {
+	if (_agents.find(agent_id) == _agents.end()) {
+		throw CoreException("Cannot find the agent to delete " + agent_id, CoreException::ERROR, status_codes::NotFound);
+	}
+	delete _agents[agent_id];
+	_agents[agent_id] = NULL;
+	_agents.erase(agent_id);
+	_log->info() << "Agent deleted";
 }
 
 void World::save_world(string &name) {

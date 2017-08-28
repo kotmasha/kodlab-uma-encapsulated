@@ -75,6 +75,22 @@ void MeasurablePair::copy_data(MeasurablePair *mp) {
 	v_w = mp->v_w;
 }
 
+double MeasurablePair::getW() {
+	return v_w;
+}
+
+bool MeasurablePair::getD() {
+	return v_d;
+}
+
+void MeasurablePair::setW(double &w) {
+	v_w = w;
+}
+
+void MeasurablePair::setD(bool &d) {
+	v_d = d;
+}
+
 MeasurablePair::~MeasurablePair(){
 	pointers_to_null();
 }

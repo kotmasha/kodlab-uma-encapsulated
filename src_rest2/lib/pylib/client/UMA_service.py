@@ -25,11 +25,17 @@ class UMA_service:
 
     def get(self, uri, query):
         uri = self._url + uri
-        try:
-            r = requests.get(uri, params = query, headers = self._headers)
-        except:
-            self._log.write("Errors while doing get request " + uri + '\n')
-            return None
+        retry = 0
+        while retry < 5:
+            try:
+                r = requests.get(uri, params = query, headers = self._headers)
+                break
+            except:
+                self._log.write("Errors while doing get request " + uri + '\n')
+                retry += 1
+                if retry == 5:
+                    return None
+                
         if r.status_code >= 400 and r.status_code < 500:
             self._log.write("Client Error(" + str(r.status_code) + "): " + str(r.json()['message'] + '\n'))
             return None

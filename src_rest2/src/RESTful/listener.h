@@ -13,7 +13,10 @@ using namespace std;
 class World;
 class AdminHandler;
 class DataHandler;
-class ObjectHandler;
+class AgentHandler;
+class SnapshotHandler;
+class SensorHandler;
+class MeasurableHandler;
 class DataValidationHandler;
 class SimulationHandler;
 class logging;
@@ -28,18 +31,25 @@ public:
 protected:
 	World *_world;
 	DataHandler *_data_handler;
-	ObjectHandler *_object_handler;
+	AgentHandler *_agent_handler;
+	SnapshotHandler *_snapshot_handler;
+	SensorHandler *_sensor_handler;
+	MeasurableHandler *_measurable_handler;
 	DataValidationHandler *_data_validation_handler;
 	SimulationHandler *_simulation_handler;
 	string _log_path;
 	logManager *_log_access, *_log_server;
+	std::map<string_t, AdminHandler*> _handler_factory;
+	std::map<string_t, string_t> _path_to_handler;
 
 private:
-	void handle_get(http_request request);
-	void handle_put(http_request request);
-	void handle_post(http_request request);
-	void handle_delete(http_request request);
-	AdminHandler *find_handler(vector<string_t> &paths);
+	void init_restmap();
+	void register_handler_factory();
+	void handle_get(http_request &request);
+	void handle_put(http_request &request);
+	void handle_post(http_request &request);
+	void handle_delete(http_request &request);
+	AdminHandler *find_handler(http_request &request);
 };
 
 #endif

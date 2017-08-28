@@ -140,10 +140,12 @@ public:
 
 	virtual float decide(vector<bool> &signal, double phi, bool active);
 
-	bool add_sensor(std::pair<string, string> &id_pair);
-	bool validate(int base_sensor_size);
+	void add_sensor(std::pair<string, string> &id_pair);
+	void delete_sensor(string &sensor_id);
+	void init(int initial_sensor_size);
+	bool stabilize(int initial_sensor_size);
 
-	void init_size(int sensor_size);
+	void init_size(int sensor_size, bool change_max);
 	void init_sensors();
 	void init_sensor_pairs();
 
@@ -181,7 +183,7 @@ public:
 	vector<double> getWeight();
 	vector<bool> getDir();
 	vector<int> getNPDir();
-	vector<double> getThreshold();
+	vector<double> getThresholds();
 	vector<bool> getObserve();
 	vector<bool> getObserveOld();
 	vector<double> getDiag();
@@ -191,10 +193,19 @@ public:
 	vector<bool> getDown();
 	SensorPair *getSensorPair(Sensor *sensor1, Sensor *sensor2);
 	Measurable *getMeasurable(int idx);
+	Measurable *getMeasurable(string &measurable_id);
 	MeasurablePair *getMeasurablePair(int m_idx1, int m_idx2);
+	MeasurablePair *getMeasurablePair(string &mid1, string &mid2);
 	vector<bool> getAmperList(string &sensor_id);
 	vector<string> getAmperListID(string &sensor_id);
 	Sensor *getSensor(string &sensor_id);
+
+	double getQ();
+	double getThreshold();
+	bool getAutoTarget();
+
+	vector<std::pair<int, pair<string, string> > > getSensorInfo();
+	std::map<string, int> getSizeInfo();
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -232,9 +243,11 @@ public:
 	void amper(vector<int> &list, std::pair<string, string> &uuid);
 	void delays(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs);
 	void amperand(int mid1, int mid2, bool merge, std::pair<string, string> &id_pair);
-	void pruning(vector<bool> signal);
+	void pruning(vector<bool> &signal);
 
+	bool get_implication(string &sensor1, string &sensor2);
 	void create_implication(string &sensor1, string &sensor2);
+	void delete_implication(string &sensor1, string &sensor2);
 
 	void init_direction();
 	void init_weight();

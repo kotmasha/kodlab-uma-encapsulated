@@ -39,6 +39,11 @@ public:
 	void setDirPointers(bool *dirs);
 	void save_measurable_pair(ofstream &file);
 	void copy_data(MeasurablePair *mp);
+
+	double getW();
+	bool getD();
+	void setW(double &w);
+	void setD(bool &d);
 	~MeasurablePair();
 };
 

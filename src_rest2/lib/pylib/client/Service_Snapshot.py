@@ -34,6 +34,20 @@ class ServiceSnapshot:
             return None
         return list(result['data'])
 
+    def make_npdirs(self):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
+        result = self._service.post('/UMA/simulation/npdirs', data)
+        if not result:
+            return None
+        return list(result['data'])
+
+    def add_implication(self, from_sensor, to_sensor):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensors': [from_sensor, to_sensor]}
+        result = self._service.post('/UMA/simulation/implication', data)
+        if not result:
+            False
+        return True
+
     #def make_decision(self, signals, phi, active):
     #    data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'phi': phi, 'active': active, 'signals': signals}
     #    #print signals

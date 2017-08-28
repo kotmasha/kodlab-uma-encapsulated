@@ -1,11 +1,14 @@
 #include "listener.h"
 #include "World.h"
 #include "DataHandler.h"
-#include "ObjectHandler.h"
-#include "DataValidationHandler.h"
+#include "AgentHandler.h"
 #include "SimulationHandler.h"
 #include "AdminHandler.h"
+#include "SnapshotHandler.h"
+#include "SensorHandler.h"
+#include "MeasurableHandler.h"
 #include "logManager.h"
+#include "UMAException.h"
 #include <cpprest/json.h>
 
 listener::listener(const http::uri& url) : m_listener(http_listener(url)){
@@ -33,90 +36,292 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	_log_server->info() << "Init Delete request success";
 	//create data handler
 
-	_data_handler = new DataHandler(_log_access);
+	try {
+		init_restmap();
+		register_handler_factory();
+	}
+	catch (ServerException &e) {
+		_log_server->error() << e.getErrorMessage();
+		exit(0);
+	}
+}
+
+void listener::register_handler_factory() {
+	_data_handler = new DataHandler("data", _log_access);
+	_handler_factory[U("data")] = _data_handler;
 	_log_server->info() << "A data handler is created";
 
-	_object_handler = new ObjectHandler(_log_access);
-	_log_server->info() << "A object handler is created";
+	_agent_handler = new AgentHandler("agent", _log_access);
+	_handler_factory[U("agent")] = _agent_handler;
+	_log_server->info() << "An agent handler is created";
 
-	_data_validation_handler = new DataValidationHandler(_log_access);
-	_log_server->info() << "A data validation handler is created";
+	_snapshot_handler = new SnapshotHandler("snapshot", _log_access);
+	_handler_factory[U("snapshot")] = _snapshot_handler;
+	_log_server->info() << "A snapshot handler is created";
 
-	_simulation_handler = new SimulationHandler(_log_access);
+	_sensor_handler = new SensorHandler("sensor", _log_access);
+	_handler_factory[U("sensor")] = _sensor_handler;
+	_log_server->info() << "A sensor handler is created";
+
+	_measurable_handler = new MeasurableHandler("measurable", _log_access);
+	_handler_factory[U("measurable")] = _measurable_handler;
+	_log_server->info() << "A measurable handler is created";
+
+	//_data_validation_handler = new DataValidationHandler("validation", _log_access);
+	//_handler_factory[U("validation")] = _data_validation_handler;
+	//_log_server->info() << "A data validation handler is created";
+
+	_simulation_handler = new SimulationHandler("simulation", _log_access);
+	_handler_factory[U("simulation")] = _simulation_handler;
 	_log_server->info() << "A simulation handler is created";
 }
 
-void listener::handle_get(http_request request){
-	vector<string_t> paths = uri::split_path(request.request_uri().path());
 
-	AdminHandler *handler = find_handler(paths);
-	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
-		request.reply(status_codes::BadRequest, message);
-		return;
-	}
-	handler->REQUEST_MODE = handler->GET;
-	handler->handle_read(_world, paths, request);
-}
-
-void listener::handle_put(http_request request){
-	vector<string_t> paths = uri::split_path(request.request_uri().path());
-
-	AdminHandler *handler = find_handler(paths);
+void listener::handle_get(http_request &request){
+	string_t path = request.request_uri().path();
+	AdminHandler *handler = find_handler(request);
 	// if no handlers can be found
 	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
+		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
 		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
 		return;
 	}
-	handler->REQUEST_MODE = handler->PUT;
-	handler->handle_update(_world, paths, request);
+	//handler->REQUEST_MODE = handler->POST;
+	http_response response;
+	try {
+		handler->handle_read(_world, path, request, response);
+		status_code code = response.status_code();
+		_log_access->info() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
+		request.reply(response);
+	}
+	catch (ClientException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (ServerException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (CoreException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+
+		if (e.getErrorLevel() == CoreException::FATAL) {
+			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
+			exit(0);
+		}
+	}
 }
 
-void listener::handle_post(http_request request){
-	vector<string_t> paths = uri::split_path(request.request_uri().path());
-
-	AdminHandler *handler = find_handler(paths);
+void listener::handle_put(http_request &request) {
+	string_t path = request.request_uri().path();
+	AdminHandler *handler = find_handler(request);
 	// if no handlers can be found
 	if (handler == NULL) {
-		_log_access->error() << request.absolute_uri().to_string() + U(" 400");
+		_log_access->error() << U("POST") + request.absolute_uri().to_string() + U(" 400");
 		json::value message;
 		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
 		return;
 	}
-	handler->REQUEST_MODE = handler->POST;
-	handler->handle_create(_world, paths, request);
+	//handler->REQUEST_MODE = handler->POST;
+	http_response response;
+	try {
+		handler->handle_update(_world, path, request, response);
+		status_code code = response.status_code();
+		_log_access->info() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
+		request.reply(response);
+	}
+	catch (ClientException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (ServerException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (CoreException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+
+		if (e.getErrorLevel() == CoreException::FATAL) {
+			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
+			exit(0);
+		}
+	}
 }
 
-void listener::handle_delete(http_request request){
-	request.reply(status_codes::NotFound);
+void listener::handle_post(http_request &request){
+	string_t path = request.request_uri().path();
+	AdminHandler *handler = find_handler(request);
+	// if no handlers can be found
+	if (handler == NULL) {
+		_log_access->error() << U("POST") + request.absolute_uri().to_string() + U(" 400");
+		json::value message;
+		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
+		request.reply(status_codes::BadRequest, message);
+		return;
+	}
+	//handler->REQUEST_MODE = handler->POST;
+	http_response response;
+	try {
+		handler->handle_create(_world, path, request, response);
+		status_code code = response.status_code();
+		_log_access->info()<< U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
+		request.reply(response);
+	}
+	catch (ClientException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")]= json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (ServerException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (CoreException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+
+		if (e.getErrorLevel() == CoreException::FATAL) {
+			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
+			exit(0);
+		}
+	}
 }
 
-AdminHandler *listener::find_handler(vector<string_t> &paths) {
-	if (paths[0] != U("UMA") || paths.size() < 2) {
+void listener::handle_delete(http_request &request){
+	string_t path = request.request_uri().path();
+	AdminHandler *handler = find_handler(request);
+	// if no handlers can be found
+	if (handler == NULL) {
+		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + U(" 400");
+		json::value message;
+		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
+		request.reply(status_codes::BadRequest, message);
+		return;
+	}
+	//handler->REQUEST_MODE = handler->POST;
+	http_response response;
+	try {
+		handler->handle_delete(_world, path, request, response);
+		status_code code = response.status_code();
+		_log_access->info() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
+		request.reply(response);
+	}
+	catch (ClientException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (ServerException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+	}
+	catch (CoreException &e) {
+		status_code error_code = e.getErrorCode();
+		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(e.getErrorMessage());
+		response.set_body(message);
+		request.reply(response);
+
+		if (e.getErrorLevel() == CoreException::FATAL) {
+			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
+			exit(0);
+		}
+	}
+}
+
+void listener::init_restmap() {
+	try {
+		ifstream ini_file("ini/restmap.ini");
+		string s;
+		string current_factory = "";
+		while (std::getline(ini_file, s)) {
+			if (s.front() == '#' || s.length() == 0) continue;
+			else if (s.front() == '[' && s.back() == ']') {//get a factory
+				s.erase(s.begin());
+				s.erase(s.end() - 1);
+				current_factory = s;
+			}
+			else {
+				string_t ss(s.begin(), s.end());
+				string_t s_current_factory(current_factory.begin(), current_factory.end());
+				_path_to_handler[ss] = s_current_factory;
+				_log_server->info() << "add mapping from " + s + " to \"" + current_factory + "\"";
+			}
+		}
+	}
+	catch (exception &e) {
+		throw ServerException("Having some problem reading restmap.ini file!", ServerException::FATAL);
+	}
+}
+
+AdminHandler *listener::find_handler(http_request &request) {
+	string_t path = request.request_uri().path();
+	try {
+		string_t factory = _path_to_handler[path];
+		AdminHandler *handler = _handler_factory[factory];
+		return handler;
+	}
+	catch (UMAException &e) {
 		return NULL;
 	}
-	paths.erase(paths.begin());
-	if (paths[0] == U("data")) {
-		paths.erase(paths.begin());
-		return _data_handler;
-	}
-	else if (paths[0] == U("object")) {
-		paths.erase(paths.begin());
-		return _object_handler;
-	}
-	else if (paths[0] == U("simulation")) {
-		paths.erase(paths.begin());
-		return _simulation_handler;
-	}
-	else if (paths[0] == U("validation")) {
-		paths.erase(paths.begin());
-		return  _data_validation_handler;
-	}
-	return NULL;
 }

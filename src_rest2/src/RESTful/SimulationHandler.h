@@ -8,11 +8,11 @@ using namespace std;
 
 class SimulationHandler: public AdminHandler {
 public:
-	SimulationHandler(logManager *log_access);
-	virtual void handle_create(World *world, vector<string_t> &paths, http_request &request);
-	virtual void handle_update(World *world, vector<string_t> &paths, http_request &request);
-	virtual void handle_read(World *world, vector<string_t> &paths, http_request &request);
-	virtual void handle_delete(World *world, vector<string_t> &paths, http_request &request);
+	SimulationHandler(string handler_factory, logManager *log_access);
+	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
+	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response);
+	virtual void handle_read(World *world, string_t &path, http_request &request, http_response &response);
+	virtual void handle_delete(World *world, string_t &path, http_request &request, http_response &response);
 	~SimulationHandler();
 
 protected:
@@ -23,15 +23,15 @@ protected:
 	string_t UMA_FILE_NAME;
 	string_t UMA_MERGE;
 	string_t UMA_SENSORS;
-	void create_decision(World *world, json::value &data, http_request &request);
-	void create_amper(World *world, json::value &data, http_request &request);
-	void create_delay(World *world, json::value &data, http_request &request);
+	void create_decision(World *world, json::value &data, http_request &request, http_response &response);
+	void create_amper(World *world, http_request &request, http_response &response);
+	void create_delay(World *world, http_request &request, http_response &response);
 	void create_up(World *world, json::value &data, http_request &request);
 	void create_npdirs(World *world, json::value &data, http_request &request);
 	void create_implication(World *world, json::value &data, http_request &request);
 	void create_saving(World *world, json::value &data, http_request &request);
 	void create_loading(World *world, json::value &data, http_request &request);
-	void create_pruning(World *world, json::value &data, http_request &request);
+	void create_pruning(World *world, http_request &request, http_response &response);
 	void create_merging(World *world, json::value &data, http_request &request);
 };
 

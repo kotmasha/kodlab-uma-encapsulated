@@ -4,6 +4,7 @@
 #include "Measurable.h"
 #include "MeasurablePair.h"
 #include "logManager.h"
+#include "UMAException.h"
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -77,7 +78,21 @@ Snapshot::Snapshot(string uuid, string log_dir){
 
 
 Snapshot::~Snapshot(){
-
+	try {
+		for (int i = 0; i < _sensors.size(); ++i) {
+			delete _sensors[i];
+			_sensors[i] = NULL;
+		}
+		for (int i = 0; i < _sensor_pairs.size(); ++i) {
+			delete _sensor_pairs[i];
+			_sensor_pairs[i] = NULL;
+		}
+	}
+	catch (exception &e) {
+		_log->error() << "Fatal error when trying to delete snapshot: " + _uuid;
+		throw CoreException("Fatal error in Snapshot destruction function", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
+	_log->info() << "Deleted the snapshot: " + _uuid;
 }
 
 void Snapshot::init_pointers(){
@@ -129,10 +144,10 @@ float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the deci
 	return divergence(dev_d1, dev_d2);
 }
 
-bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
+void Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		_log->error() << "Cannot create a duplicate sensor!";
-		return false;
+		throw CoreException("Cannot create a duplicate sensor!", CoreException::ERROR, status_codes::Conflict);
 	}
 	Sensor *sensor = new Sensor(id_pair, _sensor_num++);
 	_sensor_idx[id_pair.first] = sensor;
@@ -146,83 +161,29 @@ bool Snapshot::add_sensor(std::pair<string, string> &id_pair) {
 		_sensor_pairs.push_back(sensor_pair);
 	}
 	_log->info() << to_string(_sensor_num) + " Sensor Pairs are created, total is " + to_string(ind(_sensor_num, 0));
-
 	//TBD, resize after add sensor
-	return true;
 }
 
 /*
 This function is doing validation after adding sensors
 */
-bool Snapshot::validate(int initial_size) {
-	_log->info() << "start data validation";
-	free_all_parameters();
-	init_size(_sensor_num);
+void Snapshot::init(int initial_sensor_size) {
+	_log->info() << "start data stabilization";
 
-	_initial_size = initial_size;
+	_initial_size = initial_sensor_size;
 	_log->info() << "initial sensor size is: " + to_string(_initial_size);
 
-	gen_weight();
-	gen_direction();
-	gen_thresholds();
-	gen_mask_amper();
-	gen_np_direction();
-
-	gen_other_parameters();
-	init_other_parameter();
+	reallocate_memory(_sensor_num);
 
 	create_sensors_to_arrays_index(0, _sensor_num);
 	create_sensor_pairs_to_arrays_index(0, _sensor_num);
 	copy_sensors_to_arrays(0, _sensor_num);
 	copy_sensor_pairs_to_arrays(0, _sensor_num);
 
-	try {
-		init_sensors();
-		init_sensor_pairs();
-	}
-	catch (exception &e) {
-		_log->error() << "Errors init sensors " + string(e.what());
-		return false;
-	}
 	_log->info() << "Snapshot data validation succeed";
-	return true;
 }
 
-void Snapshot::init_sensors(){
-	for(int i = 0; i < _sensor_size; ++i){
-		try{
-			Sensor *sensor = _sensors[i];
-			sensor->setMeasurableDiagPointers(h_diag, h_diag_);
-			sensor->setMeasurableStatusPointers(h_current);
-		}
-		catch(exception &e){
-			cout<<e.what()<<endl;
-			throw CORE_EXCEPTION::CORE_FATAL;
-			//this is propabaly because the sensor name vector is not long enough, regard as fatal error and will abort test
-		}
-		//store the sensor pointer
-	}
-}
-
-void Snapshot::init_sensor_pairs(){
-	for(int i = 0; i < _sensor_size; ++i){
-		for(int j = 0; j <= i; ++j){
-			try{
-				SensorPair *sensor_pair = _sensor_pairs[ind(i, j)];
-				sensor_pair->setWeightPointers(h_weights);
-				sensor_pair->setDirPointers(h_dirs);
-				sensor_pair->setThresholdPointers(h_thresholds);
-			}
-			catch(exception &e){
-				cout<<e.what()<<endl;
-				throw CORE_EXCEPTION::CORE_FATAL;
-				//probably because sensors is not init correctly, regarded as fatal error
-			}
-		}
-	}
-}
-
-void Snapshot::init_size(int sensor_size){
+void Snapshot::init_size(int sensor_size, bool change_max=true){
 	_sensor_size = sensor_size;
 	_measurable_size = 2 * _sensor_size;
 	_sensor2d_size = _sensor_size * (_sensor_size + 1) / 2;
@@ -235,30 +196,49 @@ void Snapshot::init_size(int sensor_size){
 	_log->debug() << "Setting measurable size 2D to " + to_string(_measurable2d_size);
 	_log->debug() << "Setting mask amper size to " + to_string(_mask_amper_size);
 
-	_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
-	_measurable_size_max = 2 * _sensor_size_max;
-	_sensor2d_size_max = _sensor_size_max * (_sensor_size_max + 1) / 2;
-	_measurable2d_size_max = _measurable_size_max * (_measurable_size_max + 1) / 2;
-	_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
+	if (change_max) {
+		_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
+		_measurable_size_max = 2 * _sensor_size_max;
+		_sensor2d_size_max = _sensor_size_max * (_sensor_size_max + 1) / 2;
+		_measurable2d_size_max = _measurable_size_max * (_measurable_size_max + 1) / 2;
+		_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
 
-	_log->debug() << "Setting max sensor size to " + to_string(_sensor_size_max);
-	_log->debug() << "Setting max measurable size to " + to_string(_measurable_size_max);
-	_log->debug() << "Setting max sensor size 2D to " + to_string(_sensor2d_size_max);
-	_log->debug() << "Setting max measurable size 2D to " + to_string(_measurable2d_size_max);
-	_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
+		_log->debug() << "Setting max sensor size to " + to_string(_sensor_size_max);
+		_log->debug() << "Setting max measurable size to " + to_string(_measurable_size_max);
+		_log->debug() << "Setting max sensor size 2D to " + to_string(_sensor2d_size_max);
+		_log->debug() << "Setting max measurable size 2D to " + to_string(_measurable2d_size_max);
+		_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
+	}
+	else _log->info() << "All size max value remain the same";
 }
 
 void Snapshot::reallocate_memory(int sensor_size){
+	_log->info() << "Starting reallocating memory";
 	free_all_parameters();
 
 	init_size(sensor_size);
-	gen_weight();
-	gen_direction();
-	gen_thresholds();
-	gen_mask_amper();
 
-	gen_other_parameters();
-	init_other_parameter();
+	try {
+		gen_weight();
+		gen_direction();
+		gen_thresholds();
+		gen_mask_amper();
+		gen_np_direction();
+		gen_other_parameters();
+	}
+	catch (CoreException &e) {
+		_log->error() << "Fatal error in reallocate_memory when doing memory allocation";
+		throw CoreException("Fatal error in reallocate_memory when doing memory allocation", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
+
+	try {
+		init_other_parameter();
+	}
+	catch (CoreException &e) {
+		_log->error() << "Fatal error in reallocate_memory when doing parameters init";
+		throw CoreException("Fatal error in reallocate_memory when doing parameters ini", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
+	_log->info() << "Memory reallocated!";
 }
 
 /*
@@ -335,12 +315,19 @@ void Snapshot::copy_test_data(Snapshot *snapshot) {
 */
 void Snapshot::copy_arrays_to_sensors(int start_idx, int end_idx) {
 	//copy necessary info back from cpu array to GPU array first
+	cudaMemcpy(h_current + start_idx, dev_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_diag + start_idx, dev_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_diag_ + start_idx, dev_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays";
 	for (int i = start_idx; i < end_idx; ++i) {
 		//bring all sensor and measurable info into the object
-		_sensors[i]->pointers_to_values();
+		try {
+			_sensors[i]->pointers_to_values();
+		}
+		catch (CoreException &e) {
+			_log->error() << "Fatal error while doing copy_arrays_to_sensors";
+			throw CoreException("Fatal error in function copy_arrays_to_sensors", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from cpu arrays to sensor";
 	_log->info() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied back from arrays";
@@ -349,12 +336,19 @@ void Snapshot::copy_arrays_to_sensors(int start_idx, int end_idx) {
 void Snapshot::copy_sensors_to_arrays(int start_idx, int end_idx) {
 	//copy necessary info from sensor object to cpu arrays
 	for (int i = start_idx; i < end_idx; ++i) {
-		_sensors[i]->copyAmperList(h_mask_amper);
-		_sensors[i]->values_to_pointers();
+		try {
+			_sensors[i]->copyAmperList(h_mask_amper);
+			_sensors[i]->values_to_pointers();
+		}
+		catch (exception &e) {
+			_log->error() << "Fatal error while doing copy_sensors_to_arrays";
+			throw CoreException("Fatal error in function copy_sensors_to_arrays", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays";
 	//copy data from cpu array to GPU array
 	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_current + start_idx, h_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays";
@@ -364,8 +358,14 @@ void Snapshot::copy_sensors_to_arrays(int start_idx, int end_idx) {
 void Snapshot::create_sensors_to_arrays_index(int start_idx, int end_idx) {
 	//create idx for diag and current
 	for (int i = start_idx; i < end_idx; ++i) {
-		_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
-		_sensors[i]->setMeasurableStatusPointers(h_current);
+		try {
+			_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
+			_sensors[i]->setMeasurableStatusPointers(h_current);
+		}
+		catch (exception &e) {
+			_log->error() << "Fatal error while doing create_sensor_to_arrays_index";
+			throw CoreException("Fatal error happen in create_sensors_to_arrays_index", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " have created idx to arrays";
 }
@@ -379,7 +379,13 @@ void Snapshot::create_sensors_to_arrays_index(int start_idx, int end_idx) {
 void Snapshot::copy_sensor_pairs_to_arrays(int start_idx, int end_idx){
 	//copy data from sensor pair object to CPU arrays
 	for(int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i){
-		_sensor_pairs[i]->values_to_pointers();
+		try {
+			_sensor_pairs[i]->values_to_pointers();
+		}
+		catch (exception &e) {
+			_log->error() << "Fatal error while doing copy_sensor_pairs_to_arrays";
+			throw CoreException("Fatal error in function copy_sensor_pairs_to_arrays", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays";
 	//copy data from CPU arrays to GPU arrays
@@ -399,7 +405,13 @@ void Snapshot::copy_arrays_to_sensor_pairs(int start_idx, int end_idx) {
 	//copy data from CPU arrays to sensor pairs
 	for (int i = 0; i < _sensor_pairs.size(); ++i) {
 		//bring all sensor pair info into the object
-		_sensor_pairs[i]->pointers_to_values();
+		try {
+			_sensor_pairs[i]->pointers_to_values();
+		}
+		catch (exception &e) {
+			_log->error() << "Fatal error while doing copy_arrays_to_sensor_pairs";
+			throw CoreException("Fatal error in function copy_arrays_to_sensor_pairs", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to sensor pairs";
 	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied back from arrays";
@@ -407,7 +419,13 @@ void Snapshot::copy_arrays_to_sensor_pairs(int start_idx, int end_idx) {
 
 void Snapshot::create_sensor_pairs_to_arrays_index(int start_idx, int end_idx) {
 	for (int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i) {
-		_sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
+		try {
+			_sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
+		}
+		catch (exception &e) {
+			_log->error() << "Fatal error while doing create_sensor_pairs_to_arrays_index";
+			throw CoreException("Fatal error happen in create_sensor_pairs_to_arrays_index", CoreException::FATAL, status_codes::ServiceUnavailable);
+		}
 	}
 	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " have created idx to arrays";
 }
@@ -424,7 +442,7 @@ void Snapshot::copy_mask(vector<bool> mask){
 The function is pruning the sensor and sensor pair list, also adjust their corresponding idx
 Input: the signal of all measurable
 */
-void Snapshot::pruning(vector<bool> signal){
+void Snapshot::pruning(vector<bool> &signal){
 	copy_arrays_to_sensors(0, _sensor_num);
 	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	//get converted sensor list, from measurable signal
@@ -435,6 +453,8 @@ void Snapshot::pruning(vector<bool> signal){
 	for(int i = 0; i < _sensors.size(); ++i){
 		if(sensor_list[i]){
 			//delete the sensor if necessary
+			_sensor_idx.erase(_sensors[i]->_m->_uuid);
+			_sensor_idx.erase(_sensors[i]->_cm->_uuid);
 			delete _sensors[i];
 			_sensors[i] = NULL;
 			row_escape++;
@@ -507,11 +527,18 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
+		if (list.size() < 2) {
+			_log->warn() << "The amper vector size is less than 2, will abort this amper operation, list id: " + to_string(i);
+			continue;
+		}
 		amper(list, id_pairs[i]);
 		success_amper++;
 	}
 
+	_log->info() << to_string(success_amper) + " out of " + to_string(lists.size()) + " amper successfully done";
+
 	if(_sensor_num > _sensor_size_max){
+		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
 		reallocate_memory(_sensor_num);
 		//copy every sensor back, since the memory is new
@@ -522,11 +549,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	}
 	else{
 		//else just update the actual size
-		_sensor_size = _sensor_num;
-		_measurable_size = 2 * _sensor_size;
-		_sensor2d_size = _sensor_size * (_sensor_size + 1) / 2;
-		_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
-		_mask_amper_size = _sensor_size * (_sensor_size + 1);
+		init_size(_sensor_num, false);
 		//copy just the new added sensors and sensor pairs
 		create_sensors_to_arrays_index(_sensor_num - success_amper, _sensor_num);
 		create_sensor_pairs_to_arrays_index(_sensor_num - success_amper, _sensor_num);
@@ -535,8 +558,11 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	}
 }
 
+//the input list size should be larger than 2
 void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
-	if(list.size() < 2) return;
+	if (list.size() < 2) {
+		_log->warn() << "Amper list size is smaller than 2, will not continue";
+	}
 	try{
 		amperand(list[1], list[0], true, uuid);
 		_sensor_num++;
@@ -544,9 +570,8 @@ void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 			amperand(_sensors.back()->_m->_idx, list[j], false, uuid);
 		}
 	}
-	catch(exception &e){
-		cout<<e.what()<<endl;
-		throw CORE_EXCEPTION::CORE_ERROR;
+	catch(CoreException &e){
+		throw CoreException("Fatal error while doing amper and", CoreException::FATAL, status_codes::ServiceUnavailable);
 	}
 }
 
@@ -557,35 +582,40 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 	//record how many delay are successful
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
-		amper(list, id_pairs[i]);
-		if(list.size() == 0) continue;
+		if (list.size() < 1) {
+			_log->warn() << "The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i);
+			continue;
+		}
 		if(list.size() == 1){
-			try{
+			try {
+				cout << "@" << endl;
 				generate_delayed_weights(list[0], true, id_pairs[i]);
-				_sensor_num++;
-				success_delay++;
 			}
-			catch(exception &e){
-				cout<<e.what()<<endl;
-				throw CORE_EXCEPTION::CORE_ERROR;
+			catch (CoreException &e) {
+				throw CoreException("Fatal error in generate_delayed_weights", CoreException::FATAL, status_codes::ServiceUnavailable);
 			}
+			_sensor_num++;
 		}
 		else{
-			try{
+			amper(list, id_pairs[i]);
+			try {
 				generate_delayed_weights(_sensors.back()->_m->_idx, false, id_pairs[i]);
-				success_delay++;
 			}
-			catch(exception &e){
-				cout<<e.what()<<endl;
-				throw CORE_EXCEPTION::CORE_ERROR;
+			catch (CoreException &e) {
+				throw CoreException("Fatal error in generate_delayed_weights", CoreException::FATAL, status_codes::ServiceUnavailable);
 			}
 		}
+		success_delay++;
 		_log->info() << "A delayed sensor is generated " + id_pairs[i].first;
 		string delay_list="";
 		for(int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
 		_log->verbose() << "The delayed sensor generated from " + delay_list;
 	}
+
+	_log->info() << to_string(success_delay) + " out of " + to_string(lists.size()) + " delay successfully done";
+
 	if(_sensor_num > _sensor_size_max){
+		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
 		reallocate_memory(_sensor_num);
 		//copy every sensor back, since the memory is new
@@ -595,12 +625,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 		copy_sensor_pairs_to_arrays(0, _sensor_num);
 	}
 	else{
-		//else just update the actual size
-		_sensor_size = _sensor_num;
-		_measurable_size = 2 * _sensor_size;
-		_sensor2d_size = _sensor_size * (_sensor_size + 1) / 2;
-		_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
-		_mask_amper_size = _sensor_size * (_sensor_size + 1);
+		init_size(_sensor_num, false);
 		//copy just the new added sensors and sensor pairs
 		create_sensors_to_arrays_index(_sensor_num - success_delay, _sensor_num);
 		create_sensor_pairs_to_arrays_index(_sensor_num - success_delay, _sensor_num);
@@ -976,7 +1001,7 @@ vector<int> Snapshot::getNPDir() {
 /*
 The function is getting the threshold matrix as a list
 */
-vector<double> Snapshot::getThreshold(){
+vector<double> Snapshot::getThresholds(){
 	vector<vector<double> > tmp = getThreshold2D();
 	vector<double> results;
 	for(int i = 0; i < tmp.size(); ++i){
@@ -1068,12 +1093,22 @@ this function is getting the measurable, from the sensor list
 */
 Measurable *Snapshot::getMeasurable(int idx){
 	int s_idx = idx / 2;
+	if (s_idx >= _sensor_num || s_idx <0) {
+		throw CoreException("the input measurable index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), CoreException::ERROR, status_codes::BadRequest);
+	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
 	}
 	else{
 		return _sensors[s_idx]->_cm;
 	}
+}
+
+Measurable *Snapshot::getMeasurable(string &measurable_id) {
+	Sensor *sensor = getSensor(measurable_id);
+	if (measurable_id == sensor->_m->_uuid) return sensor->_m;
+	else if(measurable_id == sensor->_cm->_uuid) return sensor->_cm;
+	throw CoreException("Cannot find the measurable id " + measurable_id, CoreException::FATAL, status_codes::ServiceUnavailable);
 }
 
 SensorPair *Snapshot::getSensorPair(Sensor *sensor1, Sensor *sensor2) {
@@ -1091,12 +1126,18 @@ MeasurablePair *Snapshot::getMeasurablePair(int m_idx1, int m_idx2){
 	int s_idx2 = m_idx2 / 2;
 	Measurable *m1 = getMeasurable(m_idx1);
 	Measurable *m2 = getMeasurable(m_idx2);
-	return _sensor_pairs[ind(s_idx1, s_idx2)]->getMeasurablePair(m2->_isOriginPure, m1->_isOriginPure);
+	return _sensor_pairs[ind(s_idx1, s_idx2)]->getMeasurablePair(m1->_isOriginPure, m2->_isOriginPure);
+}
+
+MeasurablePair *Snapshot::getMeasurablePair(string &mid1, string &mid2) {
+	int idx1 = getMeasurable(mid1)->_idx > getMeasurable(mid2)->_idx ? getMeasurable(mid1)->_idx : getMeasurable(mid2)->_idx;
+	int idx2 = getMeasurable(mid1)->_idx > getMeasurable(mid2)->_idx ? getMeasurable(mid2)->_idx : getMeasurable(mid1)->_idx;
+	return getMeasurablePair(idx1, idx2);
 }
 
 vector<bool> Snapshot::getAmperList(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<bool> result(_measurable_size, false);
@@ -1108,7 +1149,7 @@ vector<bool> Snapshot::getAmperList(string &sensor_id) {
 
 vector<string> Snapshot::getAmperListID(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<string> result;
@@ -1123,10 +1164,52 @@ vector<string> Snapshot::getAmperListID(string &sensor_id) {
 
 Sensor *Snapshot::getSensor(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CLIENT_EXCEPTION::CLIENT_ERROR;
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
 	}
 	return _sensor_idx[sensor_id];
 }
+
+vector<std::pair<int, pair<string, string> > > Snapshot::getSensorInfo() {
+	vector<std::pair<int, pair<string, string> > > results;
+	for (int i = 0; i < _sensors.size(); ++i) {
+		Sensor *sensor = _sensors[i];
+		std::pair<string, string> sensor_pair(_sensors[i]->_m->_uuid, _sensors[i]->_cm->_uuid);
+		results.push_back(std::pair<int, pair<string, string> >(sensor->_idx, sensor_pair));
+	}
+	return results;
+}
+
+std::map<string, int> Snapshot::getSizeInfo() {
+	std::map<string, int> s;
+	s["sensor_count"] = _sensor_num;
+	s["sensor_pair_count"] = _sensor_pairs.size();
+
+	s["_sensor_size"] = _sensor_size;
+	s["_sensor_size_max"] = _sensor_size_max;
+	s["_sensor2d_size"] = _sensor2d_size;
+	s["_sensor2d_size_max"] = _sensor2d_size_max;
+	s["_measurable_size"] = _measurable_size;
+	s["_measurable_size_max"] = _measurable_size_max;
+	s["_measurable2d_size"] = _measurable2d_size;
+	s["_measurable2d_size_max"] = _measurable2d_size_max;
+	s["_mask_amper_size"] = _mask_amper_size;
+	s["_mask_amper_size_max"] = _mask_amper_size_max;
+
+	return s;
+}
+
+double Snapshot::getQ() {
+	return _q;
+}
+
+double Snapshot::getThreshold() {
+	return _threshold;
+}
+
+bool Snapshot::getAutoTarget() {
+	return _auto_target;
+}
+
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
@@ -1134,17 +1217,63 @@ Sensor *Snapshot::getSensor(string &sensor_id) {
 void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor1;
-		throw CORE_EXCEPTION::CORE_FATAL;
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor2;
-		throw CORE_EXCEPTION::CORE_FATAL;
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
 	h_dirs[ind(idx1, idx2)] = true;
 	cudaMemcpy(dev_dirs, h_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyHostToDevice);
 	_log->info() << "Implication success from " + sensor1 + " to " + sensor2;
+}
+
+void Snapshot::delete_implication(string &sensor1, string &sensor2) {
+	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor1;
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
+	}
+	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor2;
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
+	}
+	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
+	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
+	h_dirs[ind(idx1, idx2)] = false;
+	cudaMemcpy(dev_dirs, h_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyHostToDevice);
+	_log->info() << "Implication delete success from " + sensor1 + " to " + sensor2;
+}
+
+bool Snapshot::get_implication(string &sensor1, string &sensor2) {
+	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor1;
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
+	}
+	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor2;
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
+	}
+	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
+	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
+	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	return h_dirs[ind(idx1, idx2)];
+}
+
+void Snapshot::delete_sensor(string &sensor_id) {
+	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
+		_log->error() << "Cannot find the sensor " + sensor_id;
+		throw CoreException("Cannot find the sensor " + sensor_id, CoreException::ERROR, status_codes::BadRequest);
+	}
+
+	int sensor_idx = _sensor_idx[sensor_id]->_idx;
+	vector<bool> pruning_list;
+	for (int i = 0; i < _measurable_size; ++i) {
+		pruning_list.push_back(i == 2 * sensor_idx);
+	}
+	pruning(pruning_list);
+	_log->info() << "Sensor " + sensor_id + " deleted";
 }
 
 /*
@@ -1158,45 +1287,42 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, st
 	_sensor_idx[id_pair.second] = amper_and_sensor;
 
 	double f = 1.0;
-	if(_total > 0 && _total < 1e-5)
+	if(_total > 1e-5)
 		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
 	for(int i = 0; i < _sensors.size(); ++i){
 		SensorPair *sensor_pair = NULL;
 		sensor_pair = new SensorPair(amper_and_sensor, _sensors[i], _threshold, _total);
 		Measurable *m1 = _sensors[i]->_m;
 		Measurable *m2 = _sensors[i]->_cm;
-		//mij
-		if(_sensors[i]->_m->_idx == m_idx1 || _sensors[i]->_m->_idx == m_idx2){
+
+		if (_sensors[i]->_m->_idx == m_idx1 || _sensors[i]->_m->_idx == m_idx2) {
 			sensor_pair->mij->v_w = getMeasurablePair(m_idx1, m_idx2)->v_w;
-		}
-		else{
-			sensor_pair->mij->v_w = f * getMeasurablePair(m1->_idx, m1->_idx)->v_w;
-		}
-		//mi_j
-		if(_sensors[i]->_cm->_idx == m_idx1 || _sensors[i]->_cm->_idx == m_idx2){
 			sensor_pair->mi_j->v_w = 0.0;
+			if (_sensors[i]->_m->_idx == m_idx1) {
+				sensor_pair->m_ij->v_w = getMeasurablePair(m_idx1, compi(m_idx2))->v_w;
+				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx1), compi(m_idx1))->v_w;
+			}
+			else {
+				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx1), m_idx2)->v_w;
+				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx2), compi(m_idx2))->v_w;
+			}
 		}
-		else{
+		else if (_sensors[i]->_cm->_idx == m_idx1 || _sensors[i]->_cm->_idx == m_idx2) {
+			sensor_pair->mi_j->v_w = getMeasurablePair(m_idx1, m_idx2)->v_w;
+			sensor_pair->mij->v_w = 0.0;
+			if (_sensors[i]->_cm->_idx == m_idx1) {
+				sensor_pair->m_i_j->v_w = getMeasurablePair(m_idx1, compi(m_idx2))->v_w;
+				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx1), compi(m_idx1))->v_w;
+			}
+			else {
+				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx1), m_idx2)->v_w;
+				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx2), compi(m_idx2))->v_w;
+			}
+		}
+		else {
+			sensor_pair->mij->v_w = f * getMeasurablePair(m1->_idx, m1->_idx)->v_w;
 			sensor_pair->mi_j->v_w = f * getMeasurablePair(m2->_idx, m2->_idx)->v_w;
-		}
-		//m_ij
-		if(_sensors[i]->_m->_idx == m_idx1){
-			sensor_pair->m_ij->v_w = getMeasurablePair(m_idx1, compi(m_idx2))->v_w;
-		}
-		else if(_sensors[i]->_m->_idx == m_idx2){
-			sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx1), m_idx2)->v_w;
-		}
-		else{
 			sensor_pair->m_ij->v_w = (1.0 - f) * getMeasurablePair(m1->_idx, m1->_idx)->v_w;
-		}
-		//m_i_j
-		if(_sensors[i]->_cm->_idx == m_idx1){
-			sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx1), compi(m_idx1))->v_w;
-		}
-		else if(_sensors[i]->_cm->_idx == m_idx2){
-			sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx2), compi(m_idx2))->v_w;
-		}
-		else{
 			sensor_pair->m_i_j->v_w = (1.0 - f) * getMeasurablePair(m2->_idx, m2->_idx)->v_w;
 		}
 		amper_and_sensor_pairs.push_back(sensor_pair);
@@ -1212,7 +1338,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, st
 		//restore the old sensor amper list
 		amper_and_sensor->setAmperList(old_sensor);
 		//also append the m_idx2 as the new amper list value
-		amper_and_sensor->setAmperList(m_idx2);
+		amper_and_sensor->setAmperList(m_idx1);
 		//take the idx of the old one, copy it to the new one 
 		amper_and_sensor->setIdx(old_sensor->_idx);
 		//delete the old one
@@ -1256,6 +1382,7 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, s
 	bool is_sensor_active;
 	if(merge){
 		//if need to merge, means just a single sensor delay
+		cudaMemcpy(h_observe, dev_observe_, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 		is_sensor_active = _sensors[sid]->isSensorActive();
 	}
 	else{
@@ -1263,6 +1390,10 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, s
 		cudaMemcpy(h_observe, dev_observe_, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 		is_sensor_active = _sensors[sid]->amper_and_signals(h_observe);
 	}
+	//reverse for compi
+	if (mid % 2 == 1) is_sensor_active = !is_sensor_active;
+	cout << is_sensor_active <<","<<mid<< endl;
+	cout << _sensors[sid]->isSensorActive() << endl;
 
 	for(int i = 0; i < _sensor_num + 1; ++i){
 		SensorPair *sensor_pair = NULL;
@@ -1374,41 +1505,53 @@ Input: None
 Output: None
 */
 void Snapshot::free_all_parameters(){//free data in case of memory leak
-	delete[] h_dirs;
-	delete[] h_weights;
-	delete[] h_thresholds;
-	delete[] h_mask_amper;
-	delete[] h_observe;
-	delete[] h_signal;
-	delete[] h_load;
-	delete[] h_mask;
-	delete[] h_current;
-	delete[] h_target;
-	delete[] h_diag;
-	delete[] h_diag_;
-	delete[] h_prediction;
-	delete[] h_up;
-	delete[] h_down;
+	_log->info() << "Starting releasing memory";
+	try {
+		delete[] h_dirs;
+		delete[] h_weights;
+		delete[] h_thresholds;
+		delete[] h_mask_amper;
+		delete[] h_observe;
+		delete[] h_signal;
+		delete[] h_load;
+		delete[] h_mask;
+		delete[] h_current;
+		delete[] h_target;
+		delete[] h_diag;
+		delete[] h_diag_;
+		delete[] h_prediction;
+		delete[] h_up;
+		delete[] h_down;
+	}
+	catch (CoreException &e) {
+		_log->error() << "Fatal error in free_all_parameters, when doing cpu array release";
+		throw CoreException("Fatal error in free_all_parameters, when doing cpu array release", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
 
-	cudaFree(dev_dirs);
-	cudaFree(dev_weights);
-	cudaFree(dev_thresholds);
-	cudaFree(dev_mask_amper);
+	try {
+		cudaFree(dev_dirs);
+		cudaFree(dev_weights);
+		cudaFree(dev_thresholds);
+		cudaFree(dev_mask_amper);
 
-	cudaFree(dev_mask);
-	cudaFree(dev_current);
-	cudaFree(dev_target);
+		cudaFree(dev_mask);
+		cudaFree(dev_current);
+		cudaFree(dev_target);
 
-	cudaFree(dev_observe);
-	cudaFree(dev_observe_);
-	cudaFree(dev_signal);
-	cudaFree(dev_load);
+		cudaFree(dev_observe);
+		cudaFree(dev_observe_);
+		cudaFree(dev_signal);
+		cudaFree(dev_load);
 
-	cudaFree(dev_d1);
-	cudaFree(dev_d2);
-	cudaFree(dev_diag);
-	cudaFree(dev_diag_);
-
+		cudaFree(dev_d1);
+		cudaFree(dev_d2);
+		cudaFree(dev_diag);
+		cudaFree(dev_diag_);
+	}
+	catch (CoreException &e) {
+		_log->error() << "Fatal error in free_all_parameters, when doing gpu array release";
+		throw CoreException("Fatal error in free_all_parameters, when doing gpu array release", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
 	_log->info() << "All memory released";
 }
 
