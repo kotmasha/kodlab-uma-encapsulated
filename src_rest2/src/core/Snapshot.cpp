@@ -70,6 +70,7 @@ Snapshot::Snapshot(string uuid, string log_dir){
 	_q = 0.9;
 	_threshold = 0.125;
 	_auto_target = false;
+	_is_stabilized = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -179,6 +180,7 @@ void Snapshot::init(int initial_sensor_size) {
 	create_sensor_pairs_to_arrays_index(0, _sensor_num);
 	copy_sensors_to_arrays(0, _sensor_num);
 	copy_sensor_pairs_to_arrays(0, _sensor_num);
+	_is_stabilized = true;
 
 	_log->info() << "Snapshot data validation succeed";
 }
@@ -360,7 +362,7 @@ void Snapshot::create_sensors_to_arrays_index(int start_idx, int end_idx) {
 	for (int i = start_idx; i < end_idx; ++i) {
 		try {
 			_sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
-			_sensors[i]->setMeasurableStatusPointers(h_current);
+			_sensors[i]->setMeasurableStatusPointers(h_observe);
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing create_sensor_to_arrays_index";
@@ -443,6 +445,9 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all measurable
 */
 void Snapshot::pruning(vector<bool> &signal){
+	if (!_is_stabilized) {
+		throw CoreException("This snapshot data is not stabilized, abort operation", CoreException::ERROR, status_codes::Forbidden);
+	}
 	copy_arrays_to_sensors(0, _sensor_num);
 	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	//get converted sensor list, from measurable signal
@@ -520,6 +525,9 @@ vector<int> Snapshot::convert_list(vector<bool> &list){
 }
 
 void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs){
+	if (!_is_stabilized) {
+		throw CoreException("This snapshot data is not stabilized, abort operation", CoreException::ERROR, status_codes::Forbidden);
+	}
 	copy_arrays_to_sensors(0, _sensor_num);
 	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	int success_amper = 0;
@@ -576,6 +584,9 @@ void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 }
 
 void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, string> > &id_pairs) {
+	if (!_is_stabilized) {
+		throw CoreException("This snapshot data is not stabilized, abort operation", CoreException::ERROR, status_codes::Forbidden);
+	}
 	copy_arrays_to_sensors(0, _sensor_num);
 	copy_arrays_to_sensor_pairs(0, _sensor_num);
 	int success_delay = 0;
@@ -588,7 +599,6 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 		}
 		if(list.size() == 1){
 			try {
-				cout << "@" << endl;
 				generate_delayed_weights(list[0], true, id_pairs[i]);
 			}
 			catch (CoreException &e) {
@@ -699,12 +709,12 @@ This function is generating n power of dir matrix both on host and device
 */
 void Snapshot::gen_np_direction() {
 	//malloc the space
-	h_npdirs = new int[_measurable2d_size_max];
-	cudaMalloc(&dev_npdirs, _measurable2d_size_max * sizeof(int));
+	h_npdirs = new bool[_measurable2d_size_max];
+	cudaMalloc(&dev_npdirs, _measurable2d_size_max * sizeof(bool));
 
 	//fill in all 0
-	memset(h_npdirs, 0, _measurable2d_size_max * sizeof(int));
-	cudaMemset(dev_npdirs, 0, _measurable2d_size_max * sizeof(int));
+	memset(h_npdirs, 0, _measurable2d_size_max * sizeof(bool));
+	cudaMemset(dev_npdirs, 0, _measurable2d_size_max * sizeof(bool));
 
 	_log->debug() << "NPDir matrix generated with size " + to_string(_measurable2d_size_max);
 }
@@ -820,6 +830,20 @@ void Snapshot::setAutoTarget(bool &auto_target) {
 	_auto_target = auto_target;
 }
 
+void Snapshot::setSignal(vector<bool> &signal) {
+	for (int i = 0; i < _measurable_size; ++i) {
+		h_signal[i] = signal[i];
+	}
+	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+}
+
+void Snapshot::setLoad(vector<bool> &load) {
+	for (int i = 0; i < _measurable_size; ++i) {
+		h_load[i] = load[i];
+	}
+	cudaMemcpy(dev_load, h_load, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+}
+
 /*
 This function set observe signal from python side
 */
@@ -905,12 +929,12 @@ vector<vector<bool> > Snapshot::getDir2D(){
 /*
 The function is getting the n power of dir matrix in 2-dimensional form
 */
-vector<vector<int> > Snapshot::getNPDir2D() {
-	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(int), cudaMemcpyDeviceToHost);
-	vector<vector<int> > result;
+vector<vector<bool> > Snapshot::getNPDir2D() {
+	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	vector<vector<bool> > result;
 	int n = 0;
 	for (int i = 0; i < _measurable_size; ++i) {
-		vector<int> tmp;
+		vector<bool> tmp;
 		for (int j = 0; j <= i; ++j)
 			tmp.push_back(h_npdirs[n++]);
 		result.push_back(tmp);
@@ -989,9 +1013,9 @@ vector<bool> Snapshot::getDir(){
 /*
 The function is getting the n power of dir matrix as a list
 */
-vector<int> Snapshot::getNPDir() {
-	vector<vector<int> > tmp = this->getNPDir2D();
-	vector<int> results;
+vector<bool> Snapshot::getNPDir() {
+	vector<vector<bool> > tmp = this->getNPDir2D();
+	vector<bool> results;
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
@@ -1061,6 +1085,13 @@ vector<bool> Snapshot::getObserveOld(){
 	vector<bool> result;
 	cudaMemcpy(h_observe, dev_observe_, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	for(int i = 0; i < _measurable_size; ++i) result.push_back(h_observe[i]);
+	return result;
+}
+
+vector<bool> Snapshot::getLoad() {
+	vector<bool> result;
+	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _measurable_size; ++i) result.push_back(h_load[i]);
 	return result;
 }
 
@@ -1136,8 +1167,13 @@ MeasurablePair *Snapshot::getMeasurablePair(string &mid1, string &mid2) {
 }
 
 vector<bool> Snapshot::getAmperList(string &sensor_id) {
+	if (!_is_stabilized) {
+		_log->warn() << "The snapshot is not stabilized, deny any get operation on snapshot";
+		vector<bool> result;
+		return result;
+	}
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR);
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<bool> result(_measurable_size, false);
@@ -1148,8 +1184,13 @@ vector<bool> Snapshot::getAmperList(string &sensor_id) {
 }
 
 vector<string> Snapshot::getAmperListID(string &sensor_id) {
+	if (!_is_stabilized) {
+		_log->warn() << "The snapshot is not stabilized, deny any get operation on snapshot";
+		vector<string> result;
+		return result;
+	}
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR);
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<string> result;
@@ -1338,7 +1379,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, st
 		//restore the old sensor amper list
 		amper_and_sensor->setAmperList(old_sensor);
 		//also append the m_idx2 as the new amper list value
-		amper_and_sensor->setAmperList(m_idx1);
+		amper_and_sensor->setAmperList(m_idx2);
 		//take the idx of the old one, copy it to the new one 
 		amper_and_sensor->setIdx(old_sensor->_idx);
 		//delete the old one
@@ -1392,8 +1433,6 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, s
 	}
 	//reverse for compi
 	if (mid % 2 == 1) is_sensor_active = !is_sensor_active;
-	cout << is_sensor_active <<","<<mid<< endl;
-	cout << _sensors[sid]->isSensorActive() << endl;
 
 	for(int i = 0; i < _sensor_num + 1; ++i){
 		SensorPair *sensor_pair = NULL;
@@ -1474,7 +1513,7 @@ void Snapshot::update_state_GPU(bool activity){//true for decide
 
 	cudaMemcpy(dev_signal, dev_observe, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemset(dev_load, false, _measurable_size * sizeof(bool));
-	propagate_GPU(dev_signal, dev_load);
+	propagate_GPU();
 
 	cudaMemcpy(h_current, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	cudaMemcpy(dev_current, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
@@ -1493,7 +1532,7 @@ void Snapshot::halucinate_GPU(){
 
 	cudaMemcpy(dev_signal, dev_mask, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 	cudaMemset(dev_load, false, _measurable_size * sizeof(bool));
-	propagate_GPU(dev_signal, dev_load);
+	propagate_GPU();
 	//cudaMemcpy(Gload, dev_load, measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_prediction, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 }

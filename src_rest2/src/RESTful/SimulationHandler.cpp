@@ -33,7 +33,11 @@ SimulationHandler::SimulationHandler(string handler_factory, logManager *log_acc
 }
 
 void SimulationHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
-	if (path == U("/UMA/simulation/amper")) {
+	if (path == U("/UMA/simulation/decision")) {
+		create_decision(world, request, response);
+		return;
+	}
+	else if (path == U("/UMA/simulation/amper")) {
 		create_amper(world, request, response);
 		return;
 	}
@@ -116,7 +120,8 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 
 */
 
-void SimulationHandler::create_decision(World *world, json::value &data, http_request &request, http_response &response) {
+void SimulationHandler::create_decision(World *world, http_request &request, http_response &response) {
+	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
 	double phi = get_double_input(data, UMA_PHI);
 	bool active = get_bool_input(data, UMA_ACTIVE);
@@ -196,82 +201,6 @@ void SimulationHandler::create_delay(World *world, http_request &request, http_r
 }
 
 /*
-void SimulationHandler::create_up(World *world, json::value &data, http_request &request) {
-	string agent_id, snapshot_id;
-	vector<bool> signals;
-	try {
-		agent_id = get_string_input(data, UMA_AGENT_ID, request);
-		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
-		signals = get_bool1d_input(data, UMA_SIGNALS, request);
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		return;
-	}
-
-	Agent *agent = NULL;
-	Snapshot *snapshot = NULL;
-	if (!get_agent_by_id(world, agent_id, agent, request)) return;
-	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	try {
-		snapshot->up_GPU(signals, false);
-		vector<bool> up = snapshot->getUp();
-		vector<json::value> json_up;
-		vector_bool_to_array(up, json_up);
-		json::value return_data = json::value::array(json_up);
-		json::value message;
-
-		message[MESSAGE] = json::value::string(U("up made successful"));
-		message[U("data")] = return_data;
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
-		request.reply(status_codes::Created, message);
-		return;
-	}
-	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("up made error!"));
-		request.reply(status_codes::BadRequest, message);
-	}
-}
-
-void SimulationHandler::create_npdirs(World *world, json::value &data, http_request &request) {
-	string agent_id, snapshot_id;
-	try {
-		agent_id = get_string_input(data, UMA_AGENT_ID, request);
-		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		return;
-	}
-
-	Agent *agent = NULL;
-	Snapshot *snapshot = NULL;
-	if (!get_agent_by_id(world, agent_id, agent, request)) return;
-	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	try {
-		snapshot->floyd_GPU();
-		vector<int> npdirs = snapshot->getNPDir();
-		vector<json::value> json_npdirs;
-		vector_int_to_array(npdirs, json_npdirs);
-		json::value return_data = json::value::array(json_npdirs);
-		json::value message;
-
-		message[MESSAGE] = json::value::string(U("npdirs made successful"));
-		message[U("data")] = return_data;
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
-		request.reply(status_codes::Created, message);
-		return;
-	}
-	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("npdirs made error!"));
-		request.reply(status_codes::BadRequest, message);
-	}
-}
-
 void SimulationHandler::create_saving(World *world, json::value &data, http_request &request) {
 	string name;
 	try {
@@ -323,6 +252,61 @@ void SimulationHandler::create_loading(World *world, json::value &data, http_req
 }
 */
 
+/*
+void SimulationHandler::create_merging(World *world, json::value &data, http_request &request) {
+try {
+world->merge_test();
+json::value message;
+
+message[MESSAGE] = json::value::string(U("test data merged successfully"));
+_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
+request.reply(status_codes::Created, message);
+return;
+}
+catch (exception &e) {
+_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
+json::value message;
+message[MESSAGE] = json::value::string(U("test data merged error!"));
+request.reply(status_codes::BadRequest, message);
+}
+}
+
+void SimulationHandler::create_implication(World *world, json::value &data, http_request &request) {
+string agent_id, snapshot_id;
+vector<string> sensors;
+try {
+agent_id = get_string_input(data, UMA_AGENT_ID, request);
+snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
+sensors = get_string1d_input(data, UMA_SENSORS, request);
+}
+catch (exception &e) {
+cout << e.what() << endl;
+return;
+}
+
+Agent *agent = NULL;
+Snapshot *snapshot = NULL;
+if (!get_agent_by_id(world, agent_id, agent, request)) return;
+if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
+try {
+snapshot->create_implication(sensors[0], sensors[1]);
+json::value message;
+
+message[MESSAGE] = json::value::string(U("implication made successful"));
+_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
+request.reply(status_codes::Created, message);
+return;
+}
+catch (exception &e) {
+_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
+json::value message;
+message[MESSAGE] = json::value::string(U("implication made error!"));
+request.reply(status_codes::BadRequest, message);
+}
+}
+
+*/
+
 void SimulationHandler::create_pruning(World *world, http_request &request, http_response &response) {
 	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
@@ -337,61 +321,5 @@ void SimulationHandler::create_pruning(World *world, http_request &request, http
 	message[MESSAGE] = json::value::string(U("Pruning made succeed"));
 	response.set_body(message);
 }
-
-
-/*
-void SimulationHandler::create_merging(World *world, json::value &data, http_request &request) {
-	try {
-		world->merge_test();
-		json::value message;
-
-		message[MESSAGE] = json::value::string(U("test data merged successfully"));
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
-		request.reply(status_codes::Created, message);
-		return;
-	}
-	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("test data merged error!"));
-		request.reply(status_codes::BadRequest, message);
-	}
-}
-
-void SimulationHandler::create_implication(World *world, json::value &data, http_request &request) {
-	string agent_id, snapshot_id;
-	vector<string> sensors;
-	try {
-		agent_id = get_string_input(data, UMA_AGENT_ID, request);
-		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
-		sensors = get_string1d_input(data, UMA_SENSORS, request);
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		return;
-	}
-
-	Agent *agent = NULL;
-	Snapshot *snapshot = NULL;
-	if (!get_agent_by_id(world, agent_id, agent, request)) return;
-	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	try {
-		snapshot->create_implication(sensors[0], sensors[1]);
-		json::value message;
-
-		message[MESSAGE] = json::value::string(U("implication made successful"));
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
-		request.reply(status_codes::Created, message);
-		return;
-	}
-	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("implication made error!"));
-		request.reply(status_codes::BadRequest, message);
-	}
-}
-
-*/
 
 SimulationHandler::~SimulationHandler() {}

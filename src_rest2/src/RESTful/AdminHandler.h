@@ -28,6 +28,7 @@ public:
 	bool check_field(map<string_t, string_t> &query, string_t &s, bool hard_check = true);
 	void vector_int_to_array(std::vector<int> &list, std::vector<json::value> &json_list);
 	void vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list);
+	void vector_bool2d_to_array(std::vector<vector<bool> > &lists, std::vector<json::value> &json_lists);
 	void vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list);
 	Agent *get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response);
 	bool get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot *&snapshot, http_request &request);
@@ -43,7 +44,7 @@ protected:
 	string_t UUID;
 	string_t UMA_AGENT, UMA_SNAPSHOT, UMA_SENSOR, UMA_SENSOR_PAIR, UMA_MEASURABLE, UMA_MEASURABLE_PAIR;
 	string_t UMA_AGENT_ID, UMA_SNAPSHOT_ID, UMA_SENSOR_ID, UMA_MEASURABLE_ID;
-	string_t UMA_SENSORS;
+	string_t UMA_SENSORS, UMA_SIGNAL, UMA_SIGNALS, UMA_LOAD;
 	string_t DATA;
 	logManager *_log_access;
 

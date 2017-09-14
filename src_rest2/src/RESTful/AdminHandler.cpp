@@ -23,6 +23,9 @@ AdminHandler::AdminHandler(string handler_factory, logManager *log_access):_hand
 	UMA_MEASURABLE_ID = U("measurable_id");
 
 	UMA_SENSORS = U("sensors");
+	UMA_SIGNAL = U("signal");
+	UMA_SIGNALS = U("signals");
+	UMA_LOAD = U("load");
 
 	DATA = U("data");
 
@@ -66,6 +69,14 @@ void AdminHandler::vector_int_to_array(std::vector<int> &list, std::vector<json:
 void AdminHandler::vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list) {
 	for (int i = 0; i < list.size(); ++i) {
 		json_list.push_back(json::value::boolean(list[i]));
+	}
+}
+
+void AdminHandler::vector_bool2d_to_array(std::vector<vector<bool> > &lists, std::vector<json::value> &json_lists) {
+	for (int i = 0; i < lists.size(); ++i) {
+		vector<json::value> value;
+		vector_bool_to_array(lists[i], value);
+		json_lists.push_back(json::value::array(value));
 	}
 }
 

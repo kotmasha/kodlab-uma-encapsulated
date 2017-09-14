@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include "UMAutil.h"
 
+using namespace std;
+
 class UMAException: public std::runtime_error {
 public:
 	enum {ERROR, FATAL};

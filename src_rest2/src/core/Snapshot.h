@@ -37,7 +37,7 @@ protected:
 	//threshold matrix, every pair of sensor has a threshold
 	bool *h_mask_amper, *dev_mask_amper;//amper value collection for mask
 	//mask_amper matrix, every sensor has a mask amper, but the construction is all other measurables
-	int *h_npdirs, *dev_npdirs;
+	bool *h_npdirs, *dev_npdirs;
 	//n power of dir matrix, computed using floyd algorithm
 
 	bool *h_observe, *dev_observe;
@@ -67,6 +67,7 @@ protected:
 	//down array used for separate propagationm have no corresponding device value
 	bool *dev_d1, *dev_d2;
 	//input used for distance function, no host value
+	bool _is_stabilized;
 	/*
 	-----------------variables used in kernel.cu--------------------------
 	*/
@@ -146,8 +147,6 @@ public:
 	bool stabilize(int initial_sensor_size);
 
 	void init_size(int sensor_size, bool change_max);
-	void init_sensors();
-	void init_sensor_pairs();
 
 	void free_all_parameters();
 	void init_pointers();
@@ -157,13 +156,14 @@ public:
 	virtual void update_weights(bool active);
 	virtual void orient_all();
 	virtual void update_thresholds();
-	virtual void propagate_GPU(bool *signal, bool *load);
+	virtual void propagate_GPU();
 	virtual void calculate_total(bool active);
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
 	virtual float divergence(bool *d1, bool *d2);
 
-	void up_GPU(vector<bool> signal, bool is_stable);
+	void up_GPU(vector<bool> &signal, bool is_stable);
+	vector<vector<bool> > ups_GPU(vector<vector<bool> > &signals);
 	void floyd_GPU();
 	void halucinate_GPU();
 	void gen_mask();
@@ -176,13 +176,13 @@ public:
 	vector<bool> getTarget();
 	vector<vector<double> > getWeight2D();
 	vector<vector<bool> > getDir2D();
-	vector<vector<int> > getNPDir2D();
+	vector<vector<bool> > getNPDir2D();
 	vector<vector<double> > getThreshold2D();
 	vector<vector<bool> > getMask_amper2D();
 	vector<bool> getMask_amper();
 	vector<double> getWeight();
 	vector<bool> getDir();
-	vector<int> getNPDir();
+	vector<bool> getNPDir();
 	vector<double> getThresholds();
 	vector<bool> getObserve();
 	vector<bool> getObserveOld();
@@ -199,6 +199,7 @@ public:
 	vector<bool> getAmperList(string &sensor_id);
 	vector<string> getAmperListID(string &sensor_id);
 	Sensor *getSensor(string &sensor_id);
+	vector<bool> getLoad();
 
 	double getQ();
 	double getThreshold();
@@ -218,6 +219,8 @@ public:
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
 	void setAutoTarget(bool &auto_target);
+	void setSignal(vector<bool> &signal);
+	void setLoad(vector<bool> &load);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/

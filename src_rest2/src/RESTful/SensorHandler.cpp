@@ -61,16 +61,28 @@ void SensorHandler::get_sensor(World *world, http_request &request, http_respons
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	Sensor *sensor = snapshot->getSensor(sensor_id);
-	vector<int> amper_list = sensor->getAmperList();
+
 	int idx = sensor->getIdx();
+
+	vector<int> amper_list_idx = sensor->getAmperList();
+	vector<json::value> json_amper_list_idx;
+	vector_int_to_array(amper_list_idx, json_amper_list_idx);
+
+	vector<bool> amper_list = snapshot->getAmperList(sensor_id);
 	vector<json::value> json_amper_list;
-	vector_int_to_array(amper_list, json_amper_list);
+	vector_bool_to_array(amper_list, json_amper_list);
+
+	vector<string> amper_list_ids = snapshot->getAmperListID(sensor_id);
+	vector<json::value> json_amper_list_ids;
+	vector_string_to_array(amper_list_ids, json_amper_list_ids);
 
 	response.set_status_code(status_codes::OK);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Sensor info get"));
 	message[DATA] = json::value();
+	message[DATA][U("amper_list_idx")] = json::value::array(json_amper_list_idx);
 	message[DATA][U("amper_list")] = json::value::array(json_amper_list);
+	message[DATA][U("amper_list_ids")] = json::value::array(json_amper_list_ids);
 	message[DATA][U("idx")] = json::value(idx);
 	response.set_body(message);
 }

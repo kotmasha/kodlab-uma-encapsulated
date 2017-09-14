@@ -47,6 +47,11 @@ public:
 	double getOldDiag();
 	bool getStatus();
 	bool getIsOriginPure();
+
+	void setDiag(double &diag);
+	void setOldDiag(double &diag_);
+	void setStatus(bool &status);
+	void setIsOriginPure(bool &isOriginPure);
 	~Measurable();
 };
 

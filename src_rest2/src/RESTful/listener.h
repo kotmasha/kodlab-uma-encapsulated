@@ -19,6 +19,7 @@ class SensorHandler;
 class MeasurableHandler;
 class DataValidationHandler;
 class SimulationHandler;
+class MatrixHandler;
 class logging;
 class logManager;
 
@@ -37,6 +38,7 @@ protected:
 	MeasurableHandler *_measurable_handler;
 	DataValidationHandler *_data_validation_handler;
 	SimulationHandler *_simulation_handler;
+	MatrixHandler *_matrix_handler;
 	string _log_path;
 	logManager *_log_access, *_log_server;
 	std::map<string_t, AdminHandler*> _handler_factory;

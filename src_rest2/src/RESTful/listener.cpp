@@ -7,6 +7,7 @@
 #include "SnapshotHandler.h"
 #include "SensorHandler.h"
 #include "MeasurableHandler.h"
+#include "MatrixHandler.h"
 #include "logManager.h"
 #include "UMAException.h"
 #include <cpprest/json.h>
@@ -67,13 +68,13 @@ void listener::register_handler_factory() {
 	_handler_factory[U("measurable")] = _measurable_handler;
 	_log_server->info() << "A measurable handler is created";
 
-	//_data_validation_handler = new DataValidationHandler("validation", _log_access);
-	//_handler_factory[U("validation")] = _data_validation_handler;
-	//_log_server->info() << "A data validation handler is created";
-
 	_simulation_handler = new SimulationHandler("simulation", _log_access);
 	_handler_factory[U("simulation")] = _simulation_handler;
 	_log_server->info() << "A simulation handler is created";
+
+	_matrix_handler = new MatrixHandler("matrix", _log_access);
+	_handler_factory[U("matrix")] = _matrix_handler;
+	_log_server->info() << "A matrix handler is created";
 }
 
 

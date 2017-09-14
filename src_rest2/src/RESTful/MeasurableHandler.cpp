@@ -13,6 +13,8 @@ MeasurableHandler::MeasurableHandler(string handler_factory, logManager *log_acc
 	UMA_MEASURABLE2 = U("measurable2");
 	UMA_W = U("w");
 	UMA_D = U("d");
+	UMA_DIAG = U("diag");
+	UMA_OLD_DIAG = U("old_diag");
 }
 
 void MeasurableHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
@@ -23,7 +25,7 @@ void MeasurableHandler::handle_create(World *world, string_t &path, http_request
 void MeasurableHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
 	//only for test purpose
 	if (path == U("/UMA/object/measurable")) {
-		//get_measurable(world, request, response);
+		update_measurable(world, request, response);
 		return;
 	}
 	else if (path == U("/UMA/object/measurable_pair")) {
@@ -74,6 +76,41 @@ void MeasurableHandler::get_measurable(World *world, http_request &request, http
 	message[DATA][U("status")] = json::value(status);
 	message[DATA][U("isOriginPure")] = json::value(isOriginPure);
 	response.set_body(message);
+}
+
+void MeasurableHandler::update_measurable(World *world, http_request &request, http_response &response) {
+	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
+	json::value data = request.extract_json().get();
+	string agent_id = get_string_input(query, UMA_AGENT_ID);
+	string snapshot_id = get_string_input(query, UMA_SNAPSHOT_ID);
+	string measurable_id = get_string_input(query, UMA_MEASURABLE_ID);
+
+	Agent *agent = world->getAgent(agent_id);
+	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Measurable *measurable = snapshot->getMeasurable(measurable_id);
+
+	if (check_field(data, UMA_DIAG, false)) {
+		double diag = get_double_input(data, UMA_DIAG);
+		measurable->setDiag(diag);
+
+		response.set_status_code(status_codes::OK);
+		json::value message;
+		message[MESSAGE] = json::value::string(U("Diag updated"));
+		response.set_body(message);
+		return;
+	}
+	else if (check_field(data, UMA_OLD_DIAG, false)) {
+		double old_diag = get_double_input(data, UMA_OLD_DIAG);
+		measurable->setOldDiag(old_diag);
+
+		response.set_status_code(status_codes::OK);
+		json::value message;
+		message[MESSAGE] = json::value::string(U("Old diag updated"));
+		response.set_body(message);
+		return;
+	}
+
+	throw ClientException("The coming put request has nothing to update", ClientException::ERROR, status_codes::NotAcceptable);
 }
 
 void MeasurableHandler::get_measurable_pair(World *world, http_request &request, http_response &response) {

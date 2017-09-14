@@ -112,6 +112,22 @@ bool Measurable::getIsOriginPure() {
 	return _isOriginPure;
 }
 
+void Measurable::setDiag(double &diag) {
+	_vdiag = diag;
+}
+
+void Measurable::setOldDiag(double &diag_) {
+	_vdiag_ = diag_;
+}
+
+void Measurable::setStatus(bool &status) {
+	_vstatus = status;
+}
+
+void Measurable::setIsOriginPure(bool &isOriginPure) {
+	_isOriginPure = isOriginPure;
+}
+
 Measurable::~Measurable(){
 	pointers_to_null();
 }
