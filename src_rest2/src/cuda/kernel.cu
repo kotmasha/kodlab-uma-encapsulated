@@ -40,6 +40,11 @@ using namespace std;
 ----------------------HOST DEVICE---------------------
 */
 
+__host__ __device__ int compi(int x) {
+	if (x % 2 == 0) return x + 1;
+	else return x - 1;
+}
+
 /*
 This function is for extracting the 1d index from a triangelized 2d structure
 The function requires that the 'row' has to be not small than the 'col'
@@ -47,13 +52,12 @@ The function requires that the 'row' has to be not small than the 'col'
 __host__ __device__ int ind(int row, int col){
 	if(row >= col)
 		return row * (row + 1) / 2 + col;
-	else
+	else if (col == row + 1) {
 		return col * (col + 1) / 2 + row;
-}
-
-__host__ __device__ int compi(int x){
-	if(x % 2 == 0) return x + 1;
-	else return x - 1;
+	}
+	else {
+		return compi(col) * (compi(col) + 1) / 2 + compi(row);
+	}
 }
 
 /*
@@ -63,6 +67,14 @@ __host__ __device__ int compi(int x){
 /*
 ---------------------HELPER FUNCTION-----------------------
 */
+
+__global__ void bool2int(bool *b, int *i, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		if (b[index]) i[index] = 1;
+		else i[index] = 0;
+	}
+}
 
 /*
 This function does the conjunction for two lists
@@ -407,6 +419,68 @@ __global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_
 	}
 }
 
+__global__ void floyd_kernel(bool *dir, int measurable_size) {
+	int indexX = threadIdx.x;
+	int indexY = threadIdx.y;
+	for (int i = 0; i < measurable_size; ++i) {
+		int x = indexX, y = indexY;
+		while (y < measurable_size) {
+			if (y < x) {
+				y += 32;
+				x = indexX;
+				continue;
+			}
+			dir[ind(y, x)] = dir[ind(y, x)] || (dir[ind(y, i)] && dir[ind(i, x)]);
+			x += 32;
+		}
+		__syncthreads();
+	}
+}
+
+/*
+__global__ void dioid_square_GPU(bool* Md, bool *Nd, int Width, int Height) {
+	const int TILE_WIDTH = 16;
+	__shared__ bool Mds[TILE_WIDTH][TILE_WIDTH];
+	__shared__ bool Nds[TILE_WIDTH][TILE_WIDTH];
+
+	int bx = blockIdx.x, by = blockIdx.y;
+	int tx = threadIdx.x, ty = threadIdx.y;
+
+	int Row = by * TILE_WIDTH + ty;
+	int Col = bx * TILE_WIDTH + tx;
+
+	bool Pvalue = false;
+	if (Row < Width && Col < Height) {
+		Pvalue = Nd[Col * Width + Row];
+	}
+	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
+		if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
+			int y = Row;
+			int x = i * TILE_WIDTH + tx;
+			if (y >= x) Mds[ty][tx] = Md[ind(y, x)];
+			else Mds[ty][tx] = Md[ind(compi(x), compi(y))];
+		}
+		if (i * TILE_WIDTH + ty < Width && Col < Height) {
+			//Nds[ty][tx] = Nd[Col + (i * TILE_WIDTH + ty) * Width];
+			Nds[ty][tx] = Nd[Col * Width + i * TILE_WIDTH + ty];
+		}
+		__syncthreads();
+		
+		if (Row < Width && Col < Height) {//to prevent array index error, the cell does not exist
+			for (int k = 0; k < TILE_WIDTH; ++k) {
+				if (i * TILE_WIDTH + k >= Width) break; //cell exist, but index overflow
+				Pvalue = Pvalue || (Mds[ty][k] && Nds[k][tx]);
+			}
+		}
+		
+		__syncthreads();
+	}
+	if (Row < Width && Col < Height) {
+		Nd[Col * Width + Row] = Pvalue;
+	}
+}
+*/
+
 /*
 This function is the GPU version of python function mask, it is designed to get mask signal
 Deprecated in new version
@@ -483,13 +557,45 @@ It only use signal to do dfs, result is stored in Gsignal after using the functi
 Input: signal to be dfsed
 Output: None
 */
-void Snapshot::up_GPU(vector<bool> signal, bool is_stable){
+void Snapshot::up_GPU(vector<bool> &signal, bool is_stable){
 	for(int i = 0; i < _measurable_size; ++i) h_signal[i] = signal[i];
 	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 	
 	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(dev_signal, dev_dirs, dev_thresholds, is_stable, 1 - _q, _measurable_size);
 
 	cudaMemcpy(h_up, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+
+	cudaCheckErrors("kernel fails");
+}
+
+vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
+	vector<vector<bool> > results;
+	int n = signals.size();
+	int m = signals[0].size();
+	if (m != _measurable_size) {
+		//throw UMAException("Input signals size is not the same as core measurable size", UMAException::ERROR, status_codes::BadRequest);
+	}
+	
+	for (int i = 0; i < n; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < m; ++j) h_signal[j] = signals[i][j];
+		cudaMemcpy(dev_signal, h_signal, m * sizeof(bool), cudaMemcpyHostToDevice);
+		multiply_kernel<< <1, 512, 2 * _measurable_size * sizeof(bool) >> >(dev_signal, dev_npdirs, dev_thresholds, false, 0, _measurable_size);
+		cudaMemcpy(h_signal, dev_signal, m * sizeof(bool), cudaMemcpyDeviceToHost);
+		for (int j = 0; j < m; ++j) tmp.push_back(h_signal[j]);
+		results.push_back(tmp);
+	}
+
+	return results;
+}
+
+void Snapshot::floyd_GPU() {
+	dim3 dimGrid(1, 1);
+	dim3 dimBlock(32, 32);
+	cudaMemcpy(dev_npdirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	floyd_kernel<<<dimGrid, dimBlock>>>(dev_npdirs, _measurable_size);
+	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
 
 	cudaCheckErrors("kernel fails");
 }
@@ -513,24 +619,26 @@ Ask Kotomasha for mathematic questions
 Input: signal and load
 Output: None
 */
-void Snapshot::propagate_GPU(bool *signal, bool *load){//propagate
-	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(load, dev_dirs, dev_thresholds, false, 0, _measurable_size);
-	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(signal, dev_dirs, dev_thresholds, false, 0, _measurable_size);
+void Snapshot::propagate_GPU(){//propagate
+	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(dev_load, dev_dirs, dev_thresholds, false, 0, _measurable_size);
+	multiply_kernel<<<1, 512, 2 * _measurable_size * sizeof(bool)>>>(dev_signal, dev_dirs, dev_thresholds, false, 0, _measurable_size);
 
 	// standard operations
-	disjunction_kernel<<<(_measurable_size + 255) / 256, 256>>>(load, signal, _measurable_size);
-	negate_conjunction_star_kernel<<<(_measurable_size + 255) / 256, 256>>>(load, signal, _measurable_size);
+	disjunction_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, _measurable_size);
+	negate_conjunction_star_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, _measurable_size);
 	
-	//cudaMemcpy(h_load, load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 }
 
 float Snapshot::distance(bool *signal1, bool *signal2) {
 	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal1, dev_load);
+	cudaMemcpy(dev_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU();
 	cudaMemcpy(signal1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal2, dev_load);
+	cudaMemcpy(dev_signal, signal2, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU();
 	cudaMemcpy(signal2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	conjunction_star_kernel << <(_measurable_size + 255) / 256, 256 >> >(signal1, signal2, _measurable_size);
@@ -562,11 +670,13 @@ float Snapshot::distance(bool *signal1, bool *signal2) {
 
 float Snapshot::divergence(bool *signal1, bool *signal2) {
 	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal1, dev_load);
+	cudaMemcpy(dev_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU();
 	cudaMemcpy(signal1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
-	propagate_GPU(signal2, dev_load);
+	cudaMemcpy(dev_signal, signal2, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU();
 	cudaMemcpy(signal2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
 
 	subtraction_kernel << <(_measurable_size + 255) / 256, 256 >> >(signal1, signal2, _measurable_size);

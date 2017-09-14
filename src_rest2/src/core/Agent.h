@@ -24,14 +24,17 @@ protected:
 public:
 	Agent(ifstream &file);
 	Agent(string uuid);
-	bool add_snapshot_stationary(string uuid);
-	Snapshot *getSnapshot(string snapshot_id);
+	void add_snapshot_stationary(string &uuid);
+	Snapshot *getSnapshot(string &snapshot_id);
+	void delete_snapshot(string &snapshot_id);
 	vector<float> decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active);
 	vector<vector<bool>> getCurrent();
 	vector<vector<bool>> getPrediction();
 	vector<vector<bool>> getTarget();
 	void save_agent(ofstream &file);
 	void copy_test_data(Agent *agent);
+
+	vector<string> getSnapshotInfo();
 	~Agent();
 };
 

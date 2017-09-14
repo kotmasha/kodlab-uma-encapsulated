@@ -24,7 +24,7 @@ protected:
 	//_vdiag_ is the value of the pointer _diag_
 	double _vdiag, _vdiag_;
 	//_status is the status of the measurable, turn on or not
-	bool *_status;
+	bool *_status, _vstatus;
 	//indicate if the measurable is originally a pure
 	bool _isOriginPure;
 	friend class Snapshot;
@@ -42,6 +42,16 @@ public:
 	void setIdx(int idx);
 	void save_measurable(ofstream &file);
 	void copy_data(Measurable *m);
+
+	double getDiag();
+	double getOldDiag();
+	bool getStatus();
+	bool getIsOriginPure();
+
+	void setDiag(double &diag);
+	void setOldDiag(double &diag_);
+	void setStatus(bool &status);
+	void setIsOriginPure(bool &isOriginPure);
 	~Measurable();
 };
 

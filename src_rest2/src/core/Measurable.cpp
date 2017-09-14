@@ -21,6 +21,9 @@ Measurable::Measurable(string uuid, int idx, bool isOriginPure){
 	_idx = idx;
 	_isOriginPure = isOriginPure;
 	pointers_to_null();
+	_vdiag = 0.0;
+	_vdiag_ = 0.0;
+	_vstatus = false;
 }
 
 /*
@@ -38,6 +41,7 @@ The function is copying the pointer value to values in the object
 void Measurable::pointers_to_values(){
 	_vdiag = *_diag;
 	_vdiag_ = *_diag_;
+	_vstatus = *_status;
 }
 
 /*
@@ -46,6 +50,7 @@ The function is copying values to pointer in the object
 void Measurable::values_to_pointers(){
 	*_diag = _vdiag;
 	*_diag_ = _vdiag_;
+	*_status = _vstatus;
 }
 
 /*
@@ -89,6 +94,38 @@ void Measurable::copy_data(Measurable *m) {
 	_isOriginPure = m->_isOriginPure;
 	_vdiag = m->_vdiag;
 	_vdiag_ = m->_vdiag_;
+}
+
+double Measurable::getDiag() {
+	return _vdiag;
+}
+
+double Measurable::getOldDiag() {
+	return _vdiag_;
+}
+
+bool Measurable::getStatus() {
+	return _vstatus;
+}
+
+bool Measurable::getIsOriginPure() {
+	return _isOriginPure;
+}
+
+void Measurable::setDiag(double &diag) {
+	_vdiag = diag;
+}
+
+void Measurable::setOldDiag(double &diag_) {
+	_vdiag_ = diag_;
+}
+
+void Measurable::setStatus(bool &status) {
+	_vstatus = status;
+}
+
+void Measurable::setIsOriginPure(bool &isOriginPure) {
+	_isOriginPure = isOriginPure;
 }
 
 Measurable::~Measurable(){

@@ -39,6 +39,8 @@ public:
 	void setAmperList(Sensor *sensor);
 	void setAmperList(vector<int> &amper_list);
 	void setIdx(int idx);
+	int getIdx();
+	vector<int> getAmperList();
 	void copyAmperList(bool *ampers);
 	bool amper_and_signals(bool *observe);
 	bool isSensorActive();

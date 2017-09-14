@@ -5,14 +5,14 @@ class ServiceWorld:
     def __init__(self, service):
         self._service = service
 
-    def add_agent(self, uuid):
-        data = {'uuid': uuid}
+    def add_agent(self, agent_id):
+        data = {'agent_id': agent_id}
         result = self._service.post('/UMA/object/agent', data)
         if not result:
             print "add agent failed!"
             return None
         else:
-            return ServiceAgent(uuid, self._service)
+            return ServiceAgent(agent_id, self._service)
 
     def save(self, filename):
         data = {'filename': filename}
