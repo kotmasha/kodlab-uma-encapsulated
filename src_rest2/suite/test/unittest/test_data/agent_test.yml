@@ -1,0 +1,98 @@
+#This is the test script for testing existing agent endpoint
+#Test CRUD functionality
+
+create agent without agent_id:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 400
+  message: Coming request is missing necessary fields
+
+create agent with invalid id:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 400
+  message: Cannot parsing the field
+  data:
+    agent_id: 123.45
+
+create an agent:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 201
+  data:
+    agent_id: test_agent
+
+create an agent duplicate:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 409
+  message: Cannot create a duplicate agent
+  data:
+    agent_id: test_agent
+
+create snapshot:
+  method: POST
+  url: /UMA/object/snapshot
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+
+get agent without id:
+  method: GET
+  url: /UMA/object/agent
+  status_code: 400
+
+get agent:
+  method: GET
+  url: /UMA/object/agent
+  status_code: 200
+  message: Get agent info
+  query:
+    agent_id: test_agent
+  kwargs:
+    snapshot_ids:
+      - test_snapshot
+    snapshot_count: 1
+
+delete agent without agent_id:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 400
+  message: Coming request is missing necessary fields
+
+delete agent with invlid agent_id:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 404
+  message: Cannot find the agent to delete
+  data:
+    agent_id: test_agent1
+
+delete agent:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 200
+  data:
+    agent_id: test_agent
+
+get agent after delete:
+  method: GET
+  url: /UMA/object/agent
+  status_code: 404
+  query:
+    agent_id: test_agent
+  messaage: Cannot find the agent id
+
+tests:
+  - create agent without agent_id
+  - create agent with invalid id
+  - create an agent
+  - create an agent duplicate
+  - create snapshot
+  - get agent without id
+  - get agent
+  - delete agent without agent_id
+  - delete agent with invlid agent_id
+  - delete agent
+  - get agent after delete

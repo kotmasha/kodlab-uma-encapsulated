@@ -1,15 +1,13 @@
 #from multiprocessing import Pool
 from collections import deque
-from itertools import *
-from numpy.random import randint as rnd
-import numpy as np
-
 from Service_World import *
 from Service_Agent import *
 from Service_Snapshot import *
 from Service_Sensor import *
+import numpy as np
 import uuid
 import time
+from numpy.random import randint as rnd
 import json
 
 N_CORES=8
@@ -117,22 +115,16 @@ class Signal(object):
       def len(self):
             return len(self._VAL)
 
-      def weight(self):
-            return self._VAL.sum()
-
       # set the signal
       def set(self, ind, value):
             self._VAL[ind] = value
 
       # inspect the signal
-      def out(self, ind=None):
-            if ind is None:
-                return self._VAL.tolist()
-            else:
-                return self._VAL[ind]
+      def value(self, ind):
+            return self._VAL[ind]
 
       # report the signal
-      def value(self):
+      def value_all(self):
             return self._VAL
 
       # extend the signal
@@ -157,9 +149,8 @@ class Signal(object):
       def intersect(self, other):
             return Signal(conjunction(self._VAL, other._VAL))
 
-      def contained_in(self, other):
-            return self.subtract(other).weight()==0
 
+ALL_FALSE = lambda agent: Signal(allfalse(agent._SIZE))
 
 ### Data type maintaining the "environment" state and its interactions
 ### with the agents
@@ -263,7 +254,7 @@ class Experiment(object):
                                     data['is_basic'] = existing_sensors[pure_id]
                               else:
                                     # it is a pure measurable
-                                    amper_list_id = ServiceSensor(tmp_agent._ID, 'plus', id, service).getAmperListID()
+                                    amper_list_id = ServiceSensor(tmp_agent._MID, 'plus', id, service).getAmperListID()
                                     data['amper_list'] = amper_list_id
                                     if len(amper_list_id) == 0:
                                           # indicating if it is basic sensor or not
@@ -309,8 +300,6 @@ class Experiment(object):
                         if data['pure_id'] in self._ID:
                               self.register(id)
                               self.construct_measurable(id, func_not(data['pure_id']), init_value = [False, False])
-                              # DG: try to fix this?
-                              # SIQI: PLEASE CHECK THE NEW DEF OF assign_sensor:
                               self.assign_sensor(id, False, False, ['rt', 'lt'])
 
       # The register function, just do id register.
@@ -382,10 +371,11 @@ class Experiment(object):
             :return: nothing
             """
             # check mid first
-            #        construction requires prior registration
             if mid not in self._ID:
                   raise Exception("the mid " + mid + " is not registered!")
 
+            ## SIQI: let's completely separate registration from construction;
+            #        construction assumes registration
 
             # add the mid into the MID list, ID_TO_DEP, and DEFS
             self._MID.append(mid)
@@ -415,17 +405,26 @@ class Experiment(object):
             midc = name_comp(mid)
             # check mid/midc first
             if mid not in self._ID or midc not in self._ID:
-                  raise Exception("the mid $" + mid + "$ is not registered!")
+                  raise Exception("the mid " + mid + " is not registered!")
 
             #compute initial value of sensor
-            if definition is None: # this is an action sensor, init value WILL be defaulted to False...
+            if definition==None: # this is an action sensor, init value WILL be defaulted to None...
                   self.construct_measurable(mid, None, [False for ind in xrange(depth + 1)], depth, decdep)
                   self.construct_measurable(midc, None, [True for ind in xrange(depth + 1)], depth, decdep)
             else:
                   self.construct_measurable(mid, definition, init_value, depth, decdep)
-                  self.construct_measurable(midc, func_not(definition), negate(init_value) if init_value is not None else None, depth, decdep)
+                  self.construct_measurable(midc, func_not(definition), negate(init_value) if init_value else None, depth, decdep)
             return None
 
+
+      # Add the indicated sensor to the listed agents (by mid)
+      def assign_sensor(self, mid, is_initial, is_base_sensor, agent_id_list):
+            for id_agent in agent_id_list:
+                  try:
+                        self._AGENTS[id_agent].add_sensor(mid, is_initial, is_base_sensor)
+                  except:
+                        raise Exception('Attempted sensor assignment to unregistered agent.')
+            return None
 
       def construct_agent(self, id_agent, id_motivation, definition, decdep, params):
             """
@@ -466,49 +465,44 @@ class Experiment(object):
                         if mid in self._AGENTS:  # if mid is an agent...
                               ## agent activity set to current reading
                               agent = self._AGENTS[mid]
-                              agent._ACTIVE = self.this_state(mid)
-                              activity='plus' if agent._ACTIVE else 'minus'
+                              agent.active = self.this_state(mid)
 
                               ## ENRICHMENT
                               # agent analyzes outcomes of preceding decision
                               # cycle; if the prediction is too broad, add a
                               # sensor corresponding to the episode last observed
                               # and acknowledged by the active snapshot of the agent:
-                              if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
-                                  new_episode=agent.report_last().intersect(agent.report_initmask())
-                                  sensors_to_be_added = [new_episode]
+                              if sum(agent.report_current().subtract(agent.report_predicted()).value_all()) > 0:
+                                    new_sensor_signals = [agent.report_last().intersect(agent._INITMASK)]
                               else:
-                                  sensors_to_be_added = []
+                                    new_sensor_signals = []
 
-                              sensors_to_be_removed=agent.ALL_FALSE()
-                              sensors_not_to_be_removed=agent.ALL_FALSE()
+                              #
+                              # - add new sensors
+                              #agent.delay(new_sensor_signals)
 
-                              for sid in agent.report_initial():
-                                  # obtain the non-initial sensors implying $sid$:
-                                  sid_down=agent.close_downwards(agent.generate_signal([sid])).subtract(agent.report_initmask())
-                                  # obtain ids and coherent closures of delay masks for sensors mentioned in sid_down:
-                                  delay_masks=[(ssid,agent.propagate(sig).intersect(agent.report_initmask())) for ssid,sig in agent.report_masks(sid_down)]
-                                  # perform abduction from the delay masks
-                                  abducted_mask=agent.sig_product([sig for ssid,sig in delay_masks])
-                                  # mark the sensor ids to be removed
-                                  sensors_to_be_removed.add(agent.generate_signal([ssid for ssid,mask in delay_masks if abducted_mask.contained_in(mask)]))
-                                  sensors_not_to_be_removed.add(agent.generate_signal([ssid for ssid,mask in delay_masks if mask==abducted_mask]))
-                                  sensors_to_be_added.append(abducted_mask)
-
-                              sensors_to_be_removed=sensors_to_be_removed.subtract(sensors_not_to_be_removed)
-                              agent.delay(sensors_to_be_added)
                               ## PRUNING
-                              agent.pad_signal(sensors_to_be_removed)
-                              agent.prune(sensors_to_be_removed)
-                              
+                              #sensors_to_be_removed=ALL_FALSE(agent)
 
-                              # - add the new sensors
+                              # - gather the negligible delayed sensors, cluster them, and abduce;
+                              #   NOT YET IMPLEMENTED
+                              # - for each initial sensor $x$:
+                              #   1. Gather the mask vectors of delayed sensors implying $x$ in the active
+                              #      snapshot;
+                              #   2. abduce to form $s_x$;
+                              #   3. 
+                              #service_active=ServiceSnapshot(agent._MID,'plus' if agent.active else 'minus',service)
+                              #for ind,mid in enumerate(agent._SENSORS) if agent._INITMASK.value(ind):
+                              #    sig=agent.generate_signal(mid)
+                              #    sig_active=Signal(service_active.make_up(sig.star())).star().intersect(agent._INITMASK.negate())
+                                  
+                                  #STOPPED HERE
+
                               # - remove all old sensors involved in this process
+                              #agent.prune(sensors_to_be_removed)
 
-                              ## agent enters observation-deliberation-decision stage
+                              ## agent makes a decision
                               messages[mid] = agent.decide()
-
-                              ## possible overriding instruction is considered
                               if instruction != 'decide' and (mid in instruction or midc in instruction):
                                     # append override information to message
                                     messages[mid] += '\tINSTRUCTION OVERRIDE: EXECUTING ' + mid if mid in instruction else midc
@@ -560,39 +554,23 @@ class Experiment(object):
 class Agent(object):
       ### initialize an "empty" agent with prescribed learning parameters
       def __init__(self, experiment, id_agent, id_motivation, params):
-            # Agent's ID and complementary ID:
-            self._ID = id_agent
-            self._CID = name_comp(id_agent)
-            # Agent's initialization parameters
-            self._PARAMS = params
-            # The experiment serving as the agent's environment
-            self._EXPERIMENT = experiment
-            # Agent's motivational signal:
-            self._MOTIVATION = id_motivation
-
-            # Flag denoting readiness state of the agent:
-            # - $False$ means initial sensors may still be added, only Python side is activated;
-            # - $True$ means agent has been constructed on CPP/GPU side, no initial sensors may be
-            #          added beyond this point.
-            self._READY = False
-
-            # initial size will be updated (+=2) with each added sensor prior to validation:
-            self._INITIAL_SIZE = 0
-            
-            # Snapshot sizes are always even (will be updated with +=2 as sensors are added to
-            # the agent's snapshots)
-            self._SIZE={'plus':0,'minus':0}
-            
-            # ordered list of the Boolean measurables used by each snapshot:
-            self._SENSORS={'plus':[],'minus':[]}
+            # a string naming the agent/action
+            self._MID=id_agent
+            self.id_agentc=name_comp(id_agent)
+            self._MOTIVATION=id_motivation
+            # the experiment serving as the agent's environment
+            self._EXPERIMENT=experiment
+            # the agent's parameters
+            self._PARAMS=params
+            # snapshot size is always even
+            self._SIZE=0
+            # ordered list of the Boolean measurables used by the agent:
+            self._SENSORS=[]
 
             ## Boolean vectors ordered according to self._SENSORS
 
             # raw observation:
-            self._OBSERVE={
-                'plus':Signal(np.array([],dtype=np.bool)),
-                'minus':Signal(np.array([],dtype=np.bool))
-            }
+            self._OBSERVE=Signal(np.array([],dtype=np.bool))
             # previous state representation:
             self._LAST={
                   'plus':Signal(np.array([],dtype=np.bool)),
@@ -609,189 +587,130 @@ class Agent(object):
                   'plus':Signal(np.array([],dtype=np.bool)),
                   'minus':Signal(np.array([],dtype=np.bool))
             }
+
             # target representation:
             self._TARGET={
                   'plus':Signal(np.array([],dtype=np.bool)),
                   'minus':Signal(np.array([],dtype=np.bool))
             }
-            # initial sensors mask:
-            self._INITMASK={
-                  'plus':Signal(np.array([],dtype=np.bool)),
-                  'minus':Signal(np.array([],dtype=np.bool))
-            }
-            # agent is initialized as idle:
-            self._ACTIVE = False
-
-      # report the size (length) of a legitimate signal
-      def report_size(self,token=None):
-          token=('plus' if self._ACTIVE else 'minus') if token is None else token
-          return self._SIZE[token]
-
-      # pad a short signal with $False$ values
-      def pad_signal(self,sig,token=None):
-          token=('plus' if self._ACTIVE else 'minus') if token is None else token
-          L=self._SIZE[token]-sig.len()
-          if L>0:
-              sig.extend(allfalse(L))
-          elif L<0:
-              raise Exception('\nSignal length mismatch: signal too long.\n')
-          else:
-              pass
-          #return sig
+            self._INITMASK=Signal(np.array([]))
+            
+            ## Calling the wrapper in charge of communication with CUDA side
+            self.active = False
+            self._base_sensor_size = 0
 
       ## Activate the agent when the initial definitions stage is completed
       def init(self):
-            # switch to work mode (no more initial sensors added)
-            self._READY=True
-            # make first observation
             self.collect_observation()
-            # initialize structures
-            agent_service = ServiceAgent(self._ID, service)
-            snap_service={}
-            for token in ['plus','minus']:
-                snap_service[token]=agent_service.add_snapshot(token)
-                snap_service[token].setQ(self._PARAMS[0])
-                snap_service[token].setAutoTarget(self._PARAMS[1])
-                snap_service[token].init_with_sensors([[self._SENSORS[token][2 * i], self._SENSORS[token][2 * i + 1]] for i in xrange(self._INITIAL_SIZE)])
+            agent = ServiceAgent(self._MID, service)
+            snapshot_plus = agent.add_snapshot('plus')
+            snapshot_minus = agent.add_snapshot('minus')
+            snapshot_plus.setQ(self._PARAMS[0])
+            snapshot_plus.setAutoTarget(self._PARAMS[1])
+            snapshot_minus.setQ(self._PARAMS[0])
+            snapshot_minus.setAutoTarget(self._PARAMS[1])
+            snapshot_plus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
+            snapshot_minus.init_with_sensors([[self._SENSORS[2 * i], self._SENSORS[2 * i + 1]] for i in range(self._SIZE / 2)])
+
+      def prune(self,midsig):
+            #SIQI: is this line really necessary? -->
+            #agent = ServiceAgent(self._MID, service)
+
+            snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+            snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
+            # SIQI: I've made a change here....
+            #       Can you make it so that I am able to just input a signal?
+            snapshot_plus.pruning(midsig._VAL.tolist())
+            snapshot_minus.pruning(midsig._VAL.tolist())
 
       def validate(self):
-            snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
-            snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
-            snapshot_plus.validate(self._INITIAL_SIZE)
-            snapshot_minus.validate(self._INITIAL_SIZE)
+            #SIQI: is this line really necessary? -->
+            #agent = ServiceAgent(self._MID, service)
 
-      def ALL_FALSE(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return Signal(allfalse(self._SIZE[token]))
+            snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+            snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
+            snapshot_plus.validate(self._base_sensor_size)
+            snapshot_minus.validate(self._base_sensor_size)
 
-      def sig_product(self,siglist,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self.ALL_FALSE(token) if siglist==[] else Signal(np.array([sig._VAL for sig in siglist]).all(0))
-
-      ## Make an observation of the current state
       def collect_observation(self):
-            for token in ['plus','minus']:
-                self._OBSERVE[token]=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS[token]])
+            self._OBSERVE=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS])
+            #for ind,mid in enumerate(self._SENSORS):
+            #      try:
+            #            value=self._EXPERIMENT.this_state(mid)
+            #      except:
+            #            #raise Exception('\nAHA!!!\n')
+            #            value=False
+            #self._OBSERVE.set(ind,value)
             return None
-                       
-      ## Report list od sensors
-      def report_sensors(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._SENSORS[token]            
-                 
-      ## Report the currently observed state
-      def report_observed(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._OBSERVE[token]
+                              
+      ### Adding a sensor to the agent
+      ### - intended ONLY to be called by $experiment.new_sensor$
+      ### - assumes the measurable $name$ and its complement are present
+      ###   in the parent experiment
+      def add_sensor(self,mid,is_initial, is_base_sensor):
+            #verify proper registration of $mid$
+            try:
+                  midc = name_comp(mid)
+            except:
+                  raise Exception('Sensor id not properly registered.')
+            ## Extending the sensor lists
+            if mid not in self._SENSORS:
+                  self._SIZE+=2
+                  if is_base_sensor:
+                        self._base_sensor_size += 1
+                  self._SENSORS.extend([mid,midc])
+                  ## update observed signal
+                  self._OBSERVE.extend(np.array([self._EXPERIMENT.this_state(mid),self._EXPERIMENT.this_state(midc)],dtype=bool))
+                  ## expand maintained signals
+                  for token in ['plus','minus']:
+                        self._CURRENT[token].extend(np.array([False,False],dtype=bool))
+                        self._TARGET[token].extend(np.array([False,False],dtype=bool))
+                        self._PREDICTED[token].extend(np.array([False,False],dtype=bool))
+                        self._LAST[token].extend(np.array([False,False],dtype=bool))
+                  self._INITMASK.extend(np.array([is_initial,is_initial],dtype=bool))
+
 
       ## Report the last state
       def report_last(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._LAST[token]
+            try:
+                  return self._LAST[token]
+            except:
+                  return self._LAST['plus' if self.active else 'minus']
+
       
       ## Report the current state for snapshot $token$, else for
       #  the active snapshot
       def report_current(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._CURRENT[token]
+            try:
+                  return self._CURRENT[token]
+            except:
+                  #print "@"
+                  return self._CURRENT['plus' if self.active else 'minus']
 
       ## Report the target state for snapshot $token$, else for
       #  the active snapshot
       def report_target(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._TARGET[token]
+            try:
+                  return self._TARGET[token]
+            except:
+                  return self._TARGET['plus' if self.active else 'minus']
 
       ## Report the current state for snapshot $token$, else for
       #  the active snapshot
       def report_predicted(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._PREDICTED[token]
+            try:
+                  return self._PREDICTED[token]
+            except:
+                  return self._PREDICTED['plus' if self.active else 'minus']
 
-      ## Report the current state for snapshot $token$, else for
-      #  the active snapshot
-      def report_initmask(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return self._INITMASK[token]      
-      
-      ## Return an iterator containing the mids of initial sensors
-      def report_initial(self,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return (sid for ind,sid in enumerate(self._SENSORS[token]) if self._INITMASK[token].out(ind))
-
-      ## Report the delay masks (in the prescribed snapshot) for each of the sensors indicated in the input signal
-      def report_masks(self,signal,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return [(mid,Signal(ServiceSensor(self._ID,token,mid,service).getAmperList())) for ind,mid in enumerate(self._SENSORS[token]) if signal.out(ind)]
-
-      def close_upwards(self, sig, token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            snap=ServiceSnapshot(self._ID,token,service)
-            return Signal(snap.make_up(sig.out()))
-        
-      def close_downwards(self, sig, token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            snap=ServiceSnapshot(self._ID,token,service)
-            return Signal(snap.make_up(sig.star().out())).star()
-        
-      def propagate(self, sig, load=None, token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            if sig is None:
-                return self.ALL_FALSE(token)
-            else:
-                snap=ServiceSnapshot(self._ID,token,service)
-                if load is None:
-                    up_sig=Signal(snap.make_up(sig.out()))
-                    return up_sig.subtract(up_sig.star())
-                else:
-                    return Signal(snap.make_up(sig.add(load).out())).subtract(Signal(snap.make_up(sig.out())))
-
-            
-      ### Adding a sensor to the $token$ snapshot
-      ### - assumes the sensors $mid$ and its complement are present
-      ###   in the parent experiment
-      def add_sensor(self,mid,token=None):
-          token=('plus' if self._ACTIVE else 'minus') if token==None else token
-          midc = name_comp(mid)
-          if not self._READY:
-              ## During initialization stage, add an initial sensor to both snapshots unless it is 
-              #  already present in the prescribed (and hence in both) snapshots
-              if mid not in self._SENSORS[token]:
-                self._INITIAL_SIZE += 1
-                self._SIZE['plus'] += 2
-                self._SIZE['minus'] += 2
-                for tok in ['plus','minus']:
-                  self._SENSORS[tok].extend([mid,midc]) 
-                  self._OBSERVE[tok].extend(np.array([self._EXPERIMENT.this_state(mid),self._EXPERIMENT.this_state(midc)],dtype=bool))
-                  self._CURRENT[tok].extend(np.array([False,False],dtype=bool))
-                  self._TARGET[tok].extend(np.array([False,False],dtype=bool))
-                  self._PREDICTED[tok].extend(np.array([False,False],dtype=bool))
-                  self._LAST[tok].extend(np.array([False,False],dtype=bool))
-                  self._INITMASK[tok].extend(np.array([True,True],dtype=bool))
-          else:
-              ## after initialization, sensors are only added to the prescribed snapshot, or to the
-              #  active snapshot, if the snapshot is omitted.
-              if mid not in self._SENSORS[token]:
-                  self._SIZE[token] += 2
-                  self._SENSORS[token].extend([mid,midc])
-                  self._OBSERVE[token].extend(np.array([self._EXPERIMENT.this_state(mid),self._EXPERIMENT.this_state(midc)],dtype=bool))
-                  self._CURRENT[token].extend(np.array([False,False],dtype=bool))
-                  self._TARGET[token].extend(np.array([False,False],dtype=bool))
-                  self._PREDICTED[token].extend(np.array([False,False],dtype=bool))
-                  self._LAST[token].extend(np.array([False,False],dtype=bool))
-                  self._INITMASK[token].extend(np.array([False,False],dtype=bool))
-
-      ## Remove the sensors specified in $sig$ from the $token$ snapshot
-      def prune(self,sig,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            affected_snapshot = ServiceSnapshot(self._ID, token, service)
-            affected_snapshot.pruning(sig.out())
-
-      ## Decide whether to act or not to act and write the decision into the experiment state
       def decide(self):
             dist={}
+            id_agent=self._MID
+            id_agentc=name_comp(id_agent)
+            id_dec = 'decision'
 
             # mapping agent activity
-            activity={'plus':self._ACTIVE,'minus':not(self._ACTIVE)}
+            activity={'plus':self.active,'minus':not(self.active)}
 
             # acquire a new observation
             self.collect_observation()
@@ -800,13 +719,8 @@ class Agent(object):
             for token in ['plus','minus']:
                 self._LAST[token]=self.report_current(token)
 
-            agent_service = ServiceAgent(self._ID, service)
-            res=agent_service.make_decision(
-                self._OBSERVE['plus'].out(),
-                self._OBSERVE['minus'].out(),
-                self._EXPERIMENT.this_state(self._MOTIVATION),
-                self._ACTIVE
-                )
+            agent = ServiceAgent(self._MID, service)
+            res = agent.make_decision(self._OBSERVE._VAL.tolist(), self._EXPERIMENT.this_state(self._MOTIVATION), activity['plus'])
             for token in ['plus','minus']:
                   dist[token] = res[token]['res']
                   self._TARGET[token]=Signal(res[token]['target'])
@@ -814,41 +728,35 @@ class Agent(object):
                   self._PREDICTED[token]=Signal(res[token]['prediction'])
 
             # make a decision
-            token,qualityQ=rlessthan((dist['plus'],'plus'),(dist['minus'],'minus'))
+            token,quality=rlessthan((dist['plus'],'plus'),(dist['minus'],'minus'))
 
             # Update the decision vector:
             # - only the decision vector gets updated -- not the activity
             #   status of the agent -- because the latter might be altered
             #   by other agents in the process of updating the experiment
-            self._EXPERIMENT.this_state('decision').append(self._ID if token=='plus' else self._CID)
+            self._EXPERIMENT.this_state(id_dec).append(id_agent if token=='plus' else id_agentc)
             
             # return comment
-            return 'deliberate' if qualityQ else 'random'
+            return 'deliberate' if quality else 'random'
 
             
             
       ## PICK OUT SENSORS CORRESPONDING TO A SIGNAL
-      #  - returns a list of mids corresponding to the signal
-      #  - signal must match $token$ snapshot  
-      def select(self,signal,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token==None else token            
-            return [mid for indicator,mid in zip(signal.value().tolist(),self._SENSORS[token]) if indicator]
-      
-      ## Provide signal encoding a list of sensors in the $token$ snapshot
-      #  - listed sensors that are absent from the snapshot will not contribute anything to the signal
-      def generate_signal(self,mid_list,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return Signal([(tmp_mid in mid_list) for tmp_mid in self._SENSORS[token]])
+      #  - returns a list of mids corresponding to the signal  
+      def select(self,signal):
+            return [mid for indicator,mid in zip(signal.value_all().tolist(),self._SENSORS) if indicator]
+
+      def generate_signal(self,mid_list):
+            return Signal([(tmp_mid in mid_list) for tmp_mid in self._SENSORS])
       
       ### FORM NEW CONJUNCTIONS
       ### - $signals$ is a list of signals, each describing a conjunction
       ###   that needs to be added to the snapshot
-      def amper(self,signals,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token==None else token
+      def amper(self,signals):
             new_signals=[]
             for signal in signals:
                   #if signal is trivial (1 or no sensors), skip it
-                  if sum(signal.value()) < 2: 
+                  if sum(signal.value_all()) < 2: 
                         continue
                   #transform signal into a list of mids
                   mid_list=self.select(signal)
@@ -865,14 +773,14 @@ class Agent(object):
                         #construct the new sensor
                         self._EXPERIMENT.construct_sensor(new_mid,new_def)
                         #add the new sensor to this agent as non-initial
-                        self.add_sensor(new_mid,token)
+                        self.add_sensor(new_mid,False, False)
                         new_signals.append(signal)
                   except: #if the sensor was registered
                         new_mid=self._EXPERIMENT.nid(new_name)
                         if new_mid in self._SENSORS:
                               pass
                         else:
-                              self.add_sensor(new_mid,token)
+                              self.add_sensor(new_mid,False, Fals)
                               new_signals.append(signal)
             if new_signals:
                   self.brain.amper(new_signals)
@@ -882,14 +790,13 @@ class Agent(object):
      
       ### Form a delayed sensor
       ### - $signals$ is a list of signals, each describing a delayed 
-      ###   conjunction which must be added to the agent's snapshot $token$ / currently active snapshot
-      def delay(self,signals,token=None):
-            token=('plus' if self._ACTIVE else 'minus') if token==None else token
+      ###   conjunction which must be added to the agent's snapshots
+      def delay(self,signals):
             new_signals=[]
             new_uuids = []
             for signal in signals:
                   #if signal is trivial (no sensors), skip it
-                  if signal.weight() < 1: 
+                  if sum(signal.value_all()) < 1: 
                         continue
                   #transform signal into a list of mids
                   mid_list=self.select(signal)
@@ -897,6 +804,8 @@ class Agent(object):
                   new_mid = name_delay(name_ampersand(mid_list))
                   new_midc = name_comp(new_mid)
                   #construct definition for new sensor
+                  #def new_def(state):
+                  #      return all([state[mid][1] for mid in mid_list])
                   new_def=func_delay(mid_list)
                   #determine dependency on initial decisions
                   new_dep=any([self._EXPERIMENT._ID_TO_DEP[mid] for mid in mid_list])
@@ -906,17 +815,20 @@ class Agent(object):
                         self._EXPERIMENT.register_sensor(new_mid)
                         self._EXPERIMENT.construct_sensor(new_mid, new_def, decdep=new_dep)
                         #add the new sensor to this agent as non-initial
-                        self.add_sensor(new_mid, token)
-                        new_signals.append(signal.out())
+                        self.add_sensor(new_mid, False, False)
+                        new_signals.append(signal)
                         new_uuids.append([new_mid, new_midc])
                   else: #if the sensor was registered
-                        if new_mid not in self._SENSORS[token]:
-                              self.add_sensor(new_mid, token)
-                              new_signals.append(signal.out())
+                        if new_mid not in self._SENSORS:
+                              self.add_sensor(new_mid,False, False)
+                              new_signals.append(signal)
                               new_uuids.append([new_mid, new_midc])
             if new_signals:
-                  affected_snapshot=ServiceSnapshot(self._ID, token, service)
-                  affected_snapshot.delay(new_signals, new_uuids)
+                  agent = ServiceAgent(self._MID, service)
+                  snapshot_plus = ServiceSnapshot(self._MID, 'plus', service)
+                  snapshot_minus = ServiceSnapshot(self._MID, 'minus', service)
+                  snapshot_plus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
+                  snapshot_minus.delay([signal._VAL.tolist() for signal in new_signals], new_uuids)
             else:
                   pass
             return None

@@ -2,6 +2,7 @@
 #include "Snapshot.h"
 #include "logManager.h"
 #include "logging.h"
+#include "UMAException.h"
 
 Agent::Agent(ifstream &file) {
 	int uuid_length = -1;
@@ -31,24 +32,22 @@ Agent::Agent(string uuid){
 	_log->info() << "An agent " + uuid + " is created";
 }
 
-bool Agent::add_snapshot_stationary(string uuid){
+void Agent::add_snapshot_stationary(string &uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		_log->error() << "Cannot create a duplicate snapshot!";
-		return false;
+		throw CoreException("Cannot create a duplicate snapshot!", CoreException::ERROR, status_codes::Conflict);
 	}
 	string log_dir = _log_dir + "/Snapshot_" + uuid;
 	_snapshots[uuid] = new Snapshot_Stationary(uuid, log_dir);
 	_log->info() << "A Snapshot Stationary " + uuid + " is created";
-	return true;
 }
 
-Snapshot *Agent::getSnapshot(string snapshot_id) {
+Snapshot *Agent::getSnapshot(string &snapshot_id) {
 	if (_snapshots.find(snapshot_id) != _snapshots.end()) {
-		_log->debug() << "Snapshot " + snapshot_id + " is found";
 		return _snapshots[snapshot_id];
 	}
 	_log->warn() << "No snapshot " + snapshot_id + " is found";
-	return NULL;
+	throw CoreException("Cannot find the snapshot id!", CoreException::ERROR, status_codes::NotFound);
 }
 
 vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active) {
@@ -107,4 +106,34 @@ void Agent::copy_test_data(Agent *agent) {
 	}
 }
 
-Agent::~Agent(){}
+vector<string> Agent::getSnapshotInfo() {
+	vector<string> results;
+	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
+		results.push_back(it->first);
+	}
+	return results;
+}
+
+void Agent::delete_snapshot(string &snapshot_id) {
+	if (_snapshots.find(snapshot_id) == _snapshots.end()) {
+		throw CoreException("Cannot find the agent to delete " + snapshot_id, CoreException::ERROR, status_codes::NotFound);
+	}
+	delete _snapshots[snapshot_id];
+	_snapshots[snapshot_id] = NULL;
+	_snapshots.erase(snapshot_id);
+	_log->info() << "Snapshot deleted";
+}
+
+Agent::~Agent(){
+	try {
+		for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
+			delete it->second;
+			_snapshots[it->first] = NULL;
+		}
+	}
+	catch (exception &e) {
+		_log->error() << "Fatal error while trying to delete agent: " + _uuid;
+		throw CoreException("Fatal error in Agent destruction function", CoreException::FATAL, status_codes::ServiceUnavailable);
+	}
+	_log->info() << "Deleted the agent " + _uuid;
+}

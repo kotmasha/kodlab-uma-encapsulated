@@ -7,7 +7,7 @@ class ServiceAgent:
         self._service = service
 
     def add_snapshot(self, snapshot_id):
-        data = {'uuid': snapshot_id, 'agent_id': self._agent_id}
+        data = {'snapshot_id': snapshot_id, 'agent_id': self._agent_id}
         result = self._service.post('/UMA/object/snapshot', data)
         if not result:
             print "add snapshot failed!"

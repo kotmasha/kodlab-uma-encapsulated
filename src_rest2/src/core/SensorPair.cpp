@@ -136,6 +136,10 @@ void SensorPair::copy_data(SensorPair *sp) {
 	m_i_j->copy_data(sp->m_i_j);
 }
 
+double SensorPair::getThreshold() {
+	return vthreshold;
+}
+
 /*
 destruct sensorpair, sensor destruction is a different process
 */

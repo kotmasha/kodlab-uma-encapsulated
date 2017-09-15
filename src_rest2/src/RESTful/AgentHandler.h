@@ -1,29 +1,23 @@
-#ifndef _DATAHANDLER_
-#define _DATAHANDLER_
+#ifndef _AGENTHANDLER_
+#define _AGENTHANDLER_
 
 #include "Global.h"
 #include "AdminHandler.h"
-#include "UMAException.h"
 
-using namespace std;
+class World;
+class Agent;
 
-/*
-The class will handle all incoming and outcoming request for access data unit
-*/
-class DataHandler: public AdminHandler {
+class AgentHandler: public AdminHandler {
 public:
-	DataHandler(string handler_factory, logManager *log_access);
+	AgentHandler(string handler_factory, logManager *log_access);
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_read(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_delete(World *world, string_t &path, http_request &request, http_response &response);
-
-	void update_signals(World *world, http_request &request, http_response &response);
-	~DataHandler();
-
-protected:
-	string_t UMA_CURRENT, UMA_PREDICTION, UMA_TARGET;
-	string_t UMA_TARGET_LIST, UMA_SIGNALS;
+	void create_agent(World *world, http_request &request, http_response &response);
+	void get_agent(World *world, http_request &request, http_response &response);
+	void delete_agent(World *world, http_request &request, http_response &response);
+	virtual ~AgentHandler();
 };
 
 #endif

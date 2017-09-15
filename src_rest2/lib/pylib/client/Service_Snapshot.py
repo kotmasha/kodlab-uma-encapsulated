@@ -8,7 +8,7 @@ class ServiceSnapshot:
         self._service = service
 
     def add_sensor(self, sensor_id, c_sensor_id):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'uuid': sensor_id, 'c_sid': c_sensor_id}
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensor_id': sensor_id, 'c_sid': c_sensor_id}
         result =  self._service.post('/UMA/object/sensor', data)
         if not result:
             print "add sensor failed!"
@@ -16,9 +16,9 @@ class ServiceSnapshot:
         else:
             return ServiceSensor(self._agent_id, self._snapshot_id, sensor_id, self._service)
 
-    def validate(self, initial_size):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_size': initial_size}
-        result = self._service.post('/UMA/validation/snapshot', data)
+    def validate(self, initial_sensor_size):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'initial_sensor_size': initial_sensor_size}
+        result = self._service.post('/UMA/object/snapshot/init', data)
         if not result:
             return False
         return True
@@ -28,11 +28,25 @@ class ServiceSnapshot:
             self.add_sensor(sensor[0], sensor[1])
 
     def make_up(self, signal):
-        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signal}
-        result = self._service.post('/UMA/simulation/up', data)
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signal': signal}
+        result = self._service.post('/UMA/matrix/up', data)
         if not result:
             return None
-        return list(result['data'])
+        return list(result['data']['signal'])
+
+    def make_npdirs(self):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
+        result = self._service.post('/UMA/matrix/npdirs', data)
+        if not result:
+            return None
+        return list(result['data']['npdirs'])
+
+    def add_implication(self, from_sensor, to_sensor):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'sensors': [from_sensor, to_sensor]}
+        result = self._service.post('/UMA/object/snapshot/implication', data)
+        if not result:
+            False
+        return True
 
     #def make_decision(self, signals, phi, active):
     #    data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'phi': phi, 'active': active, 'signals': signals}
@@ -77,8 +91,8 @@ class ServiceSnapshot:
     def setTarget(self, target_list):
         return self._service.put('/UMA/data/target', {'target_list': target_list}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
-    def setCalTarget(self, cal_target):
-        return self._service.put('/UMA/object/snapshot', {'cal_target': cal_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+    def setAutoTarget(self, auto_target):
+        return self._service.put('/UMA/object/snapshot', {'auto_target': auto_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
     def get_sensor_count(self):
         return
