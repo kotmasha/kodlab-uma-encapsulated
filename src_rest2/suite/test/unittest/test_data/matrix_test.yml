@@ -836,6 +836,18 @@ ups:
       - [False, False, False, False, True, False, True, False, True, False]
       - [True, False, True, False, True, False, True, False, True, False]
 
+propagation 04:
+  method: POST
+  url: /UMA/matrix/propagation
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    signal: [True, False, False, False, False, False, False, False, True, False]
+    load: [False, False, False, False, False, False, False, False, False, False]
+  kwargs:
+    signal: [True, False, True, False, True, False, True, False, True, False]
+
 delete agent:
   method: DELETE
   url: /UMA/object/agent
@@ -915,4 +927,5 @@ tests:
   - up 04
   - npdirs
   - ups
+  - propagation 04
   - delete agent
