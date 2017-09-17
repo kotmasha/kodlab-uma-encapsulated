@@ -437,7 +437,7 @@ __global__ void floyd_kernel(bool *dir, int measurable_size) {
 	}
 }
 
-/*
+
 __global__ void dioid_square_GPU(bool* Md, bool *Nd, int Width, int Height) {
 	const int TILE_WIDTH = 16;
 	__shared__ bool Mds[TILE_WIDTH][TILE_WIDTH];
@@ -455,8 +455,10 @@ __global__ void dioid_square_GPU(bool* Md, bool *Nd, int Width, int Height) {
 	}
 	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
 		if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
-			int y = Row;
-			int x = i * TILE_WIDTH + tx;
+			//int y = Row;
+			//int x = i * TILE_WIDTH + tx;
+			int y = i * TILE_WIDTH + tx;
+			int x = Row;
 			if (y >= x) Mds[ty][tx] = Md[ind(y, x)];
 			else Mds[ty][tx] = Md[ind(compi(x), compi(y))];
 		}
@@ -479,7 +481,7 @@ __global__ void dioid_square_GPU(bool* Md, bool *Nd, int Width, int Height) {
 		Nd[Col * Width + Row] = Pvalue;
 	}
 }
-*/
+
 
 /*
 This function is the GPU version of python function mask, it is designed to get mask signal
@@ -568,6 +570,7 @@ void Snapshot::up_GPU(vector<bool> &signal, bool is_stable){
 	cudaCheckErrors("kernel fails");
 }
 
+/*
 vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
 	vector<vector<bool> > results;
 	int n = signals.size();
@@ -586,6 +589,41 @@ vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
 		results.push_back(tmp);
 	}
 
+	return results;
+}
+*/
+
+vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
+	vector<vector<bool> > results;
+	int n = signals.size();
+	int m = signals[0].size();
+	if (m != _measurable_size) {
+		//throw UMAException("Input signals size is not the same as core measurable size", UMAException::ERROR, status_codes::BadRequest);
+	}
+
+	bool *h_ups, *dev_ups;
+	h_ups = new bool[m * n];
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < m; ++j) {
+			h_ups[i * m + j] = signals[i][j];
+		}
+	}
+	cudaMalloc(&dev_ups, m * n * sizeof(bool));
+	cudaMemcpy(dev_ups, h_ups, m * n * sizeof(bool), cudaMemcpyHostToDevice);
+
+	dim3 dimGrid((n + 15) / 16, (m + 15) / 16);
+	dim3 dimBlock(16, 16);
+	dioid_square_GPU<<<dimGrid, dimBlock>>>(dev_npdirs, dev_ups, m, n);
+	
+	cudaMemcpy(h_ups, dev_ups, m * n * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < n; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < m; ++j) tmp.push_back(h_ups[i * m + j]);
+		results.push_back(tmp);
+	}
+
+	delete[] h_ups;
+	cudaFree(dev_ups);
 	return results;
 }
 
