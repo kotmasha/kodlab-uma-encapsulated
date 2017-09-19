@@ -120,12 +120,10 @@ Output: None
 __global__ void negate_conjunction_star_kernel(bool *b1, bool *b2, int size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if(index < size){
-		if(index%2 == 0){
-			b1[index] = b1[index] && !b2[index+1];
-		}
-		else{
-			b1[index] = b1[index] && !b2[index-1];
-		}
+		bool m1 = b1[2 * index];
+		bool m2 = b1[2 * index + 1];
+		b1[2 * index] = m1 && !b2[2 * index + 1];
+		b1[2 * index + 1] = m2 && !b2[2 * index];
 	}
 }
 
@@ -438,7 +436,51 @@ __global__ void floyd_kernel(bool *dir, int measurable_size) {
 }
 
 
-__global__ void dioid_square_GPU(bool* Md, bool *Nd, int Width, int Height) {
+__global__ void dioid_square_GPU(int* Md, int Width) {
+	const int TILE_WIDTH = 16;
+	__shared__ int Mds[TILE_WIDTH][TILE_WIDTH];
+	__shared__ int Nds[TILE_WIDTH][TILE_WIDTH];
+
+	int bx = blockIdx.x, by = blockIdx.y;
+	int tx = threadIdx.x, ty = threadIdx.y;
+
+	int Row = by * TILE_WIDTH + ty;
+	int Col = bx * TILE_WIDTH + tx;
+
+	int Pvalue = 0;
+	if (Row < Width && Col < Width) {
+		Pvalue = Md[Row * Width + Col];
+	}
+	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
+		if (Row < Width && Col < Width) {//to prevent array index error, the cell does not exist
+			if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
+				int y = Row;
+				int x = i * TILE_WIDTH + tx;
+				Mds[ty][tx] = Md[y * Width + x];
+			}
+			if (Col < Width && i * TILE_WIDTH + ty < Width) {//check if Tile cell index overflow
+				int y = i * TILE_WIDTH + ty;
+				int x = Col;
+				Nds[ty][tx] = Md[y * Width + x];
+			}
+		}
+		__syncthreads();
+
+		if (Row < Width && Col < Width) {//to prevent array index error, the cell does not exist
+			for (int k = 0; k < TILE_WIDTH; ++k) {
+				if (i * TILE_WIDTH + k >= Width) break; //cell exist, but index overflow
+				Pvalue = min(Pvalue, max(Mds[ty][k], Nds[k][tx]));
+			}
+		}
+		__syncthreads();
+	}
+	if (Row < Width && Col < Width) {
+		Md[Row * Width + Col] = Pvalue;
+	}
+}
+
+
+__global__ void transpose_multiply_GPU(bool* Md, bool *Nd, int Width, int Height) {
 	const int TILE_WIDTH = 16;
 	__shared__ bool Mds[TILE_WIDTH][TILE_WIDTH];
 	__shared__ bool Nds[TILE_WIDTH][TILE_WIDTH];
@@ -517,6 +559,35 @@ __global__ void delta_weight_sum_kernel(double *measurable, bool *signal, float 
 		atomicAdd(result, signal[index] * (measurable[index] - measurable[compi(index)]));
 	}
 }
+
+__global__ void union_init_GPU(int *root, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		root[index] = index;
+	}
+}
+
+__global__ void check_dist_GPU(int *data, float delta, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		if (data[index] < delta) data[index] = 1;
+		else data[index] = 0;
+	}
+}
+
+__global__ void union_GPU(int *data, int *root, int size) {
+	int index = threadIdx.x;
+	for (int i = 0; i < size; ++i) {
+		__syncthreads();
+		if (root[i] != i) continue;
+		int j = index;
+		while (j < size) {
+			if (data[i * size + j] == 1) root[j] = i;
+			j += 512;
+		}
+	}
+}
+
 /*
 ----------------------GLOBAL--------------------
 */
@@ -613,7 +684,7 @@ vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
 
 	dim3 dimGrid((n + 15) / 16, (m + 15) / 16);
 	dim3 dimBlock(16, 16);
-	dioid_square_GPU<<<dimGrid, dimBlock>>>(dev_npdirs, dev_ups, m, n);
+	transpose_multiply_GPU<<<dimGrid, dimBlock>>>(dev_npdirs, dev_ups, m, n);
 	
 	cudaMemcpy(h_ups, dev_ups, m * n * sizeof(bool), cudaMemcpyDeviceToHost);
 	for (int i = 0; i < n; ++i) {
@@ -638,6 +709,72 @@ void Snapshot::floyd_GPU() {
 	cudaCheckErrors("kernel fails");
 }
 
+vector<vector<int> > Snapshot::blocks_GPU(vector<vector<int> > &dists, float delta) {
+	int n = dists.size();
+	int *Gdist = new int[n * n];
+	int *dev_dist;
+	cudaMalloc(&dev_dist, n * n * sizeof(int));
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			Gdist[i * n + j] = dists[i][j];
+		}
+	}
+	cudaMemcpy(dev_dist, Gdist, n * n * sizeof(int), cudaMemcpyHostToDevice);
+
+	int num = dists.size();
+	int t = floor(log(num) / log(2)) + 1;
+	dim3 dimGrid((num + 15) / 16, (num + 15) / 16);
+	dim3 dimBlock(16, 16);
+	for (int i = 0; i < t; ++i) {
+		dioid_square_GPU << <dimGrid, dimBlock >> >(dev_dist, num);
+	}
+	cudaMemcpy(Gdist, dev_dist, n * n * sizeof(int), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			cout << Gdist[i * n + j] << ",";
+		}
+		cout << endl;
+	}
+
+	int *dev_root;
+	int *root;
+	cudaMalloc(&dev_root, n * sizeof(int));
+	union_init_GPU << <(n + 255) / 256, 256 >> >(dev_root, n);
+	check_dist_GPU << <(n * n + 255) / 256, 256 >> >(dev_dist, delta, n * n);
+
+	cudaMemcpy(Gdist, dev_dist, n * n * sizeof(int), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			cout << Gdist[i * n + j] << ",";
+		}
+		cout << endl;
+	}
+
+	union_GPU << <1, 512 >> >(dev_dist, dev_root, dists.size());
+	root = new int[n];
+	cudaMemcpy(root, dev_root, n * sizeof(int), cudaMemcpyDeviceToHost);
+
+	map<int, int> m;
+	vector<vector<int> > result;
+	for (int i = 0; i < n; ++i) {
+		if (m.find(root[i]) == m.end()) {
+			m[root[i]] = result.size();
+			vector<int> tmp;
+			tmp.push_back(i);
+			result.push_back(tmp);
+		}
+		else {
+			result[m[root[i]]].push_back(i);
+		}
+	}
+
+	cudaFree(dev_dist);
+	cudaFree(dev_root);
+	delete[] Gdist;
+	delete[] root;
+	return result;
+}
+
 void Snapshot::gen_mask(){
 	init_mask_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_mask, _initial_size, _measurable_size);
 
@@ -646,6 +783,51 @@ void Snapshot::gen_mask(){
 
 	mask_kernel<<<dimGrid, dimBlock>>>(dev_mask_amper, dev_mask, dev_current, _sensor_size);
 	check_mask<<<(_sensor_size + 255) / 256, 256>>>(dev_mask, _sensor_size);
+}
+
+vector<vector<bool> > Snapshot::propagates_GPU(vector<vector<bool> > &signals, vector<bool> &load) {
+	vector<vector<bool> > results;
+	bool *h_signals, *dev_signals1, *dev_signals2;
+	int n = signals.size();
+	int m = signals[0].size();
+	h_signals = new bool[m * n];
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < m; ++j) {
+			h_signals[i * m + j] = signals[i][j];
+		}
+	}
+	for (int i = 0; i < m; ++i) h_load[i] = load[i];
+	cudaMalloc(&dev_signals1, m * n * sizeof(bool));
+	cudaMalloc(&dev_signals2, m * n * sizeof(bool));
+	cudaMemcpy(dev_signals1, h_signals, m * n * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_signals2, h_signals, m * n * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_load, h_load, m * sizeof(bool), cudaMemcpyHostToDevice);
+	
+	for (int i = 0; i < n; ++i) {
+		disjunction_kernel<<<(m + 255) / 256, 256>>>(dev_signals1 + i * m, dev_load, m);
+	}
+	
+	dim3 dimGrid((n + 15) / 16, (m + 15) / 16);
+	dim3 dimBlock(16, 16);
+
+	transpose_multiply_GPU << <dimGrid, dimBlock >> >(dev_npdirs, dev_signals1, m, n);
+	transpose_multiply_GPU << <dimGrid, dimBlock >> >(dev_npdirs, dev_signals2, m, n);
+
+	for (int i = 0; i < n; ++i) {
+		negate_conjunction_star_kernel<< <(m + 255) / 256, 256 >> >(dev_signals1 + i * m, dev_signals2 + i * m, m / 2);
+	}
+	cudaMemcpy(h_signals, dev_signals1, m * n * sizeof(bool), cudaMemcpyDeviceToHost);
+
+	for (int i = 0; i < n; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < m; ++j) tmp.push_back(h_signals[i * m + j]);
+		results.push_back(tmp);
+	}
+
+	cudaFree(dev_signals1);
+	cudaFree(dev_signals2);
+	delete[] h_signals;
+	return results;
 }
 
 /*
@@ -663,7 +845,7 @@ void Snapshot::propagate_GPU(){//propagate
 
 	// standard operations
 	disjunction_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, _measurable_size);
-	negate_conjunction_star_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, _measurable_size);
+	negate_conjunction_star_kernel<<<(_measurable_size + 255) / 256, 256>>>(dev_load, dev_signal, _sensor_size);
 	
 	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 }

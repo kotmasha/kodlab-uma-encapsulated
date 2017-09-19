@@ -41,12 +41,19 @@ class ServiceSnapshot:
             return None
         return list(result['data']['signals'])
 
-    def make_propagation(self, signal, load):
-        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signal': signal, 'load': load}
+    def make_propagation(self, signals, load):
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signals, 'load': load}
         result = self._service.post('/UMA/matrix/propagation', data)
         if not result:
             return None
-        return list(result['data']['signal'])
+        return list(result['data']['signals'])
+
+    def make_blocks(self, dists, delta):
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'dists': dists, 'delta': delta}
+        result = self._service.post('/UMA/matrix/blocks', data)
+        if not result:
+            return None
+        return list(result['data']['blocks'])
 
     def make_npdirs(self):
         data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
