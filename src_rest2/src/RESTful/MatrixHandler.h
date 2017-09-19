@@ -17,9 +17,11 @@ public:
 	void create_propagation(World *world, http_request &request, http_response &response);
 	void create_npdirs(World *world, http_request &request, http_response &response);
 	void create_ups(World *world, http_request &request, http_response &response);
+	void create_blocks(World *world, http_request &request, http_response &response);
 	~MatrixHandler();
 
 protected:
+	string_t UMA_BLOCK_DISTS, UMA_BLOCK_DT;
 };
 
 #endif

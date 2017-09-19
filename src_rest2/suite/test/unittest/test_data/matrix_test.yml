@@ -843,10 +843,158 @@ propagation 04:
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    signal: [True, False, False, False, False, False, False, False, True, False]
+    signals:
+      - [True, False, False, False, False, False, False, False, False, False]
+      - [False, False, True, False, False, False, False, False, False, False]
+      - [False, False, False, False, True, False, False, False, False, False]
+      - [False, False, False, False, False, False, True, False, False, False]
+      - [False, False, False, False, False, False, False, False, True, False]
+      - [True, False, False, False, False, False, False, False, True, False]
     load: [False, False, False, False, False, False, False, False, False, False]
   kwargs:
-    signal: [True, False, True, False, True, False, True, False, True, False]
+    signals:
+      - [True, False, True, False, True, False, True, False, True, False]
+      - [False, False, True, False, True, False, True, False, True, False]
+      - [False, False, False, False, True, False, False, False, False, False]
+      - [False, False, False, False, False, False, True, False, False, False]
+      - [False, False, False, False, True, False, True, False, True, False]
+      - [True, False, True, False, True, False, True, False, True, False]
+
+blocks case0 0.5:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 0.5
+    dists:
+      - [0, 1, 2, 3]
+      - [1, 0, 3, 2]
+      - [2, 3, 0 ,1]
+      - [3, 2, 1, 0]
+  kwargs:
+    blocks:
+      - [0]
+      - [1]
+      - [2]
+      - [3]
+
+blocks case0 1.5:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 1.5
+    dists:
+      - [0, 1, 2, 3]
+      - [1, 0, 3, 2]
+      - [2, 3, 0 ,1]
+      - [3, 2, 1, 0]
+  kwargs:
+    blocks:
+      - [0, 1]
+      - [2, 3]
+
+blocks case0 2.0:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 2.01
+    dists:
+      - [0, 1, 2, 3]
+      - [1, 0, 3, 2]
+      - [2, 3, 0 ,1]
+      - [3, 2, 1, 0]
+  kwargs:
+    blocks:
+      - [0, 1, 2, 3]
+
+blocks case1 0.7:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 0.7
+    dists:
+      - [0, 1, 3, 4, 5]
+      - [1, 0, 3, 4, 5]
+      - [3, 3, 0 ,2, 3]
+      - [4, 4, 2, 0, 4]
+      - [5, 5, 3, 4 ,0]
+  kwargs:
+    blocks:
+      - [0]
+      - [1]
+      - [2]
+      - [3]
+      - [4]
+
+blocks case1 1.5:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 1.5
+    dists:
+      - [0, 1, 3, 4, 5]
+      - [1, 0, 3, 4, 5]
+      - [3, 3, 0 ,2, 3]
+      - [4, 4, 2, 0, 4]
+      - [5, 5, 3, 4 ,0]
+  kwargs:
+    blocks:
+      - [0, 1]
+      - [2]
+      - [3]
+      - [4]
+
+blocks case1 2.2:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 1.5
+    dists:
+      - [0, 1, 3, 4, 5]
+      - [1, 0, 3, 4, 5]
+      - [3, 3, 0 ,2, 3]
+      - [4, 4, 2, 0, 4]
+      - [5, 5, 3, 4 ,0]
+  kwargs:
+    blocks:
+      - [0, 1]
+      - [2, 3]
+      - [4]
+
+blocks case1 3.1:
+  method: POST
+  url: /UMA/matrix/blocks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    delta: 1.5
+    dists:
+      - [0, 1, 3, 4, 5]
+      - [1, 0, 3, 4, 5]
+      - [3, 3, 0 ,2, 3]
+      - [4, 4, 2, 0, 4]
+      - [5, 5, 3, 4 ,0]
+  kwargs:
+    blocks:
+      - [0, 1, 2, 3, 4]
 
 delete agent:
   method: DELETE
@@ -928,4 +1076,9 @@ tests:
   - npdirs
   - ups
   - propagation 04
+  - blocks case0 0.5
+  - blocks case0 1.5
+  - blocks case0 2.0
+  - blocks case1 0.7
+  - blocks case1 1.5
   - delete agent

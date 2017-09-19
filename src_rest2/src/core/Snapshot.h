@@ -161,9 +161,12 @@ public:
 	virtual void calculate_target();
 	virtual float distance(bool *d1, bool *d2);
 	virtual float divergence(bool *d1, bool *d2);
+	
+	vector<vector<bool> > propagates_GPU(vector<vector<bool> > &signals, vector<bool> &load);
 
 	void up_GPU(vector<bool> &signal, bool is_stable);
 	vector<vector<bool> > ups_GPU(vector<vector<bool> > &signals);
+	vector<vector<int> > blocks_GPU(vector<vector<int> > &dists, float delta);
 	void floyd_GPU();
 	void halucinate_GPU();
 	void gen_mask();

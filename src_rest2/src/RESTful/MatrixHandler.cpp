@@ -5,7 +5,8 @@
 #include "Snapshot.h"
 
 MatrixHandler::MatrixHandler(string handler_factory, logManager *log_access) : AdminHandler(handler_factory, log_access) {
-	
+	UMA_BLOCK_DISTS = U("dists");
+	UMA_BLOCK_DT = U("delta");
 }
 
 void MatrixHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
@@ -35,6 +36,10 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 	}
 	else if (path == U("/UMA/matrix/ups")) {
 		create_ups(world, request, response);
+		return;
+	}
+	else if (path == U("/UMA/matrix/blocks")) {
+		create_blocks(world, request, response);
 		return;
 	}
 	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
@@ -85,23 +90,20 @@ void MatrixHandler::create_propagation(World *world, http_request &request, http
 	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
 	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
-	vector<bool> signal = get_bool1d_input(data, UMA_SIGNAL);
+	vector<vector<bool> > signals = get_bool2d_input(data, UMA_SIGNALS);
 	vector<bool> load = get_bool1d_input(data, UMA_LOAD);
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->setLoad(load);
-	snapshot->setSignal(signal);
-	snapshot->propagate_GPU();
-	vector<bool> result = snapshot->getLoad();
+	vector<vector<bool> > results = snapshot->propagates_GPU(signals, load);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Propagation created"));
 	message[DATA] = json::value();
-	vector<json::value> result_list;
-	vector_bool_to_array(result, result_list);
-	message[DATA][U("signal")] = json::value::array(result_list);
+	vector<json::value> result_lists;
+	vector_bool2d_to_array(results, result_lists);
+	message[DATA][U("signals")] = json::value::array(result_lists);
 	response.set_body(message);
 }
 
@@ -122,6 +124,27 @@ void MatrixHandler::create_npdirs(World *world, http_request &request, http_resp
 	vector<json::value> result_list;
 	vector_bool_to_array(npdirs, result_list);
 	message[DATA][U("npdirs")] = json::value::array(result_list);
+	response.set_body(message);
+}
+
+void MatrixHandler::create_blocks(World *world, http_request &request, http_response &response) {
+	json::value data = request.extract_json().get();
+	string agent_id = get_string_input(data, UMA_AGENT_ID);
+	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
+	double delta = get_double_input(data, UMA_BLOCK_DT);
+	vector<vector<int> > dists = get_int2d_input(data, UMA_BLOCK_DISTS);
+
+	Agent *agent = world->getAgent(agent_id);
+	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	vector<vector<int> > results = snapshot->blocks_GPU(dists, delta);
+
+	response.set_status_code(status_codes::Created);
+	json::value message;
+	message[MESSAGE] = json::value::string(U("block GPU created"));
+	message[DATA] = json::value();
+	vector<json::value> result_list;
+	vector_int2d_to_array(results, result_list);
+	message[DATA][U("blocks")] = json::value::array(result_list);
 	response.set_body(message);
 }
 
