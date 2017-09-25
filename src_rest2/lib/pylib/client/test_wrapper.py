@@ -60,6 +60,7 @@ class test_wrapper:
                         if type(value) is float and type(response.json()['data'][key]) is float:
                             if abs(response.json()['data'][key] - value) < 1e-6:
                                 continue
+                        print "error key: " + key
                         print value, response.json()['data'][key]
                         assert False
         elif method == "GET":
@@ -80,6 +81,7 @@ class test_wrapper:
                         if type(value) is float and type(response.json()['data'][key]) is float:
                             if abs(response.json()['data'][key] - value) < 1e-6:
                                 continue
+                        print "error key: " + key
                         print value, response.json()['data'][key]
                         assert False
         elif method == "DELETE":

@@ -15,6 +15,14 @@
 
 using namespace std;
 
+#define THREAD1D 256
+#define THREAD2D 16
+#define GRID1D(X) dim3((X + THREAD1D - 1) / THREAD1D)
+#define BLOCK1D dim3(THREAD1D)
+#define GRID2D(X, Y) dim3((X + THREAD2D - 1) / THREAD2D, (Y + THREAD2D - 1) / THREAD2D)
+#define BLOCK2D dim3(THREAD2D, THREAD2D)
+
+
 /*
 ----------------------MARCO-----------------------
 */
@@ -67,6 +75,20 @@ __host__ __device__ int ind(int row, int col){
 /*
 ---------------------HELPER FUNCTION-----------------------
 */
+
+__global__ void alltrue(bool *b, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		b[index] = true;
+	}
+}
+
+__global__ void allfalse(bool *b, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		b[index] = false;
+	}
+}
 
 __global__ void bool2int(bool *b, int *i, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
@@ -424,12 +446,12 @@ __global__ void floyd_kernel(bool *dir, int measurable_size) {
 		int x = indexX, y = indexY;
 		while (y < measurable_size) {
 			if (y < x) {
-				y += 32;
+				y += 16;
 				x = indexX;
 				continue;
 			}
 			dir[ind(y, x)] = dir[ind(y, x)] || (dir[ind(y, i)] && dir[ind(i, x)]);
-			x += 32;
+			x += 16;
 		}
 		__syncthreads();
 	}
@@ -481,7 +503,7 @@ __global__ void dioid_square_GPU(int* Md, int Width) {
 
 
 __global__ void transpose_multiply_GPU(bool* Md, bool *Nd, int Width, int Height) {
-	const int TILE_WIDTH = 16;
+	const int TILE_WIDTH = THREAD2D;
 	__shared__ bool Mds[TILE_WIDTH][TILE_WIDTH];
 	__shared__ bool Nds[TILE_WIDTH][TILE_WIDTH];
 
@@ -583,7 +605,7 @@ __global__ void union_GPU(int *data, int *root, int size) {
 		int j = index;
 		while (j < size) {
 			if (data[i * size + j] == 1) root[j] = i;
-			j += 512;
+			j += THREAD1D;
 		}
 	}
 }
@@ -611,6 +633,9 @@ void Snapshot::init_other_parameter(){
 		h_diag[i] = _total / 2.0;
 		h_diag_[i] = _total_ / 2.0;
 	}
+	for (int i = 0; i < _sensor_size_max; ++i) {
+		h_union_root[i] = 0;
+	}
 
 	cudaMemset(dev_observe, 0, _measurable_size_max * sizeof(bool));
 	cudaMemset(dev_observe_, 0, _measurable_size_max * sizeof(bool));
@@ -622,6 +647,9 @@ void Snapshot::init_other_parameter(){
 	
 	cudaMemset(dev_d1, 0, _measurable_size_max * sizeof(bool));
 	cudaMemset(dev_d2, 0, _measurable_size_max * sizeof(bool));
+
+	cudaMemset(dev_union_root, 0, _sensor_size_max * sizeof(bool));
+	//cudaMemset(dev_npdirs, 0, _measurable_size_max * sizeof(bool));
 	init_diag_kernel<<<(_measurable_size_max + 255) / 256, 256>>>(dev_diag, dev_diag_, _total, _total_, _measurable_size_max);
 }
 /*
@@ -642,136 +670,156 @@ void Snapshot::up_GPU(vector<bool> &signal, bool is_stable){
 }
 
 /*
-vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
-	vector<vector<bool> > results;
-	int n = signals.size();
-	int m = signals[0].size();
-	if (m != _measurable_size) {
-		//throw UMAException("Input signals size is not the same as core measurable size", UMAException::ERROR, status_codes::BadRequest);
-	}
-	
-	for (int i = 0; i < n; ++i) {
-		vector<bool> tmp;
-		for (int j = 0; j < m; ++j) h_signal[j] = signals[i][j];
-		cudaMemcpy(dev_signal, h_signal, m * sizeof(bool), cudaMemcpyHostToDevice);
-		multiply_kernel<< <1, 512, 2 * _measurable_size * sizeof(bool) >> >(dev_signal, dev_npdirs, dev_thresholds, false, 0, _measurable_size);
-		cudaMemcpy(h_signal, dev_signal, m * sizeof(bool), cudaMemcpyDeviceToHost);
-		for (int j = 0; j < m; ++j) tmp.push_back(h_signal[j]);
-		results.push_back(tmp);
-	}
-
-	return results;
-}
+Call this function only when dev_load is ready!
 */
-
-vector<vector<bool> > Snapshot::ups_GPU(vector<vector<bool> > &signals) {
-	vector<vector<bool> > results;
-	int n = signals.size();
-	int m = signals[0].size();
-	if (m != _measurable_size) {
-		//throw UMAException("Input signals size is not the same as core measurable size", UMAException::ERROR, status_codes::BadRequest);
-	}
-
-	bool *h_ups, *dev_ups;
-	h_ups = new bool[m * n];
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < m; ++j) {
-			h_ups[i * m + j] = signals[i][j];
+void Snapshot::setLSignals(vector<vector<bool> > &signals) {
+	int sig_count = signals.size();
+	for (int i = 0; i < sig_count; ++i) {
+		for (int j = 0; j < signals[i].size(); ++j) {
+			h_lsignals[i * _measurable_size + j] = signals[i][j];
 		}
 	}
-	cudaMalloc(&dev_ups, m * n * sizeof(bool));
-	cudaMemcpy(dev_ups, h_ups, m * n * sizeof(bool), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_lsignals, h_lsignals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	for (int i = 0; i < sig_count; ++i) {
+		disjunction_kernel<<<GRID1D(_measurable_size), BLOCK1D>>>(dev_lsignals + i * _measurable_size, dev_load, _measurable_size);
+	}
+}
 
-	dim3 dimGrid((n + 15) / 16, (m + 15) / 16);
-	dim3 dimBlock(16, 16);
-	transpose_multiply_GPU<<<dimGrid, dimBlock>>>(dev_npdirs, dev_ups, m, n);
-	
-	cudaMemcpy(h_ups, dev_ups, m * n * sizeof(bool), cudaMemcpyDeviceToHost);
-	for (int i = 0; i < n; ++i) {
-		vector<bool> tmp;
-		for (int j = 0; j < m; ++j) tmp.push_back(h_ups[i * m + j]);
-		results.push_back(tmp);
+void Snapshot::ups_GPU(int sig_count) {
+	transpose_multiply_GPU << <GRID2D(sig_count, _measurable_size), BLOCK2D >> >(dev_npdirs, dev_signals, _measurable_size, sig_count);
+}
+
+void Snapshot::propagate_mask() {
+	allfalse<<<GRID1D(_measurable_size * _sensor_size), BLOCK1D>>>(dev_npdir_mask, _sensor_size * _measurable_size);
+	for (int i = 0; i < _sensor_size; ++i) {
+		cudaMemcpy(dev_npdir_mask + _measurable_size * i, dev_mask_amper + ind(i, 0) * 2, (ind(i + 1, 0) - ind(i, 0)) * 2 * sizeof(bool), cudaMemcpyDeviceToDevice);
 	}
 
-	delete[] h_ups;
-	cudaFree(dev_ups);
-	return results;
+	transpose_multiply_GPU << <GRID2D(_sensor_size, _measurable_size), BLOCK2D>> >(dev_npdirs, dev_npdir_mask, _measurable_size, _sensor_size);
+
+	//cudaMemcpy(h_npdir_mask, dev_npdir_mask, _sensor_size * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 }
 
 void Snapshot::floyd_GPU() {
-	dim3 dimGrid(1, 1);
-	dim3 dimBlock(32, 32);
 	cudaMemcpy(dev_npdirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-
-	floyd_kernel<<<dimGrid, dimBlock>>>(dev_npdirs, _measurable_size);
+	floyd_kernel<<<GRID2D(1, 1), BLOCK2D>>>(dev_npdirs, _measurable_size);
 	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
 
 	cudaCheckErrors("kernel fails");
 }
 
-vector<vector<int> > Snapshot::blocks_GPU(vector<vector<int> > &dists, float delta) {
-	int n = dists.size();
-	int *Gdist = new int[n * n];
-	int *dev_dist;
-	cudaMalloc(&dev_dist, n * n * sizeof(int));
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
-			Gdist[i * n + j] = dists[i][j];
+vector<vector<vector<bool> > > Snapshot::abduction(vector<vector<bool> > &signals) {
+	vector<vector<vector<bool> > > results;
+	vector<vector<bool> > even_results, odd_results;
+	for (int i = 0; i < signals.size(); ++i) {
+		vector<int> even_idx, odd_idx;
+		for (int j = 0; j < signals[0].size() / 2; ++j) {
+			if (signals[i][2 * j]) even_idx.push_back(j);
+			if (signals[i][2 * j + 1]) odd_idx.push_back(j);
+		}
+		if (even_idx.empty()) {
+			vector<bool> tmp(_measurable_size, false);
+			even_results.push_back(tmp);
+		}
+		else {
+			alltrue<<<GRID1D(_measurable_size), BLOCK1D>>>(dev_signal, _measurable_size);
+			for (int j = 0; j < even_idx.size(); ++j) {
+				conjunction_kernel<<<GRID1D(_measurable_size), BLOCK1D>>>(dev_signal, dev_npdir_mask + even_idx[j] * _measurable_size, _measurable_size);
+			}
+			cudaMemcpy(h_signal, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+			vector<bool> tmp;
+			for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signal[j]);
+			even_results.push_back(tmp);
+		}
+		if (odd_idx.empty()) {
+			vector<bool> tmp(_measurable_size, false);
+			odd_results.push_back(tmp);
+		}
+		else {
+			allfalse << <GRID1D(_measurable_size), BLOCK1D >> >(dev_signal, _measurable_size);
+			for (int j = 0; j < odd_idx.size(); ++j) {
+				disjunction_kernel << <GRID1D(_measurable_size), BLOCK1D >> >(dev_signal, dev_npdir_mask + odd_idx[j] * _measurable_size, _measurable_size);
+			}
+			cudaMemcpy(dev_signals, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+			ups_GPU(1);
+			cudaMemcpy(h_signals, dev_signals, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+			vector<bool> tmp;
+			for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[j]);
+			odd_results.push_back(tmp);
 		}
 	}
-	cudaMemcpy(dev_dist, Gdist, n * n * sizeof(int), cudaMemcpyHostToDevice);
+	results.push_back(even_results);
+	results.push_back(odd_results);
+	return results;
+}
 
-	int num = dists.size();
-	int t = floor(log(num) / log(2)) + 1;
-	dim3 dimGrid((num + 15) / 16, (num + 15) / 16);
-	dim3 dimBlock(16, 16);
+/*
+vector<vector<bool> > Snapshot::abduction(vector<vector<bool> > &signals) {
+	vector<vector<bool> > results;
+	bool *res, *dev_res;
+	res = new bool[_measurable_size];
+
+	bool *npdir_mask = new bool[_sensor_size * _measurable_size];
+	cudaMemcpy(npdir_mask, dev_npdir_mask, _sensor_size * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _sensor_size; ++i) {
+		for (int j = 0; j < _measurable_size; ++j) {
+			cout << npdir_mask[i * _measurable_size + j] << ",";
+		}
+		cout << endl;
+	}
+
+	cudaMalloc(&dev_res, _measurable_size * sizeof(bool));
+	for (int i = 0; i < signals.size(); ++i) {
+		alltrue<<<(_measurable_size + 255) / 256, 256>>>(dev_res, _measurable_size);
+		for (int j = 0; j < signals[i].size() / 2; ++j) {
+			if (signals[i][2 * j] || signals[i][2 * j + 1]) {
+				conjunction_kernel << <(_measurable_size + 255) / 256, 256 >> >(dev_res, dev_npdir_mask + j * _measurable_size, _measurable_size);
+			}
+		}
+		cudaMemcpy(res, dev_res, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+		vector<bool> tmp;
+		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(res[j]);
+		results.push_back(tmp);
+	}
+
+	delete[] res;
+	cudaFree(dev_res);
+	return results;
+}
+*/
+
+vector<vector<int> > Snapshot::blocks_GPU(float delta) {
+	int t = floor(log(_sensor_size) / log(2)) + 1;
 	for (int i = 0; i < t; ++i) {
-		dioid_square_GPU << <dimGrid, dimBlock >> >(dev_dist, num);
+		dioid_square_GPU << <GRID2D(_sensor_size, _sensor_size), BLOCK2D>> >(dev_dists, _sensor_size);
 	}
-	cudaMemcpy(Gdist, dev_dist, n * n * sizeof(int), cudaMemcpyDeviceToHost);
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
-			cout << Gdist[i * n + j] << ",";
-		}
+
+	cudaMemcpy(h_dists, dev_dists, _sensor_size * _sensor_size * sizeof(int), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _sensor_size; ++i) {
+		for (int j = 0; j < _sensor_size; ++j) cout << h_dists[i * _sensor_size + j] << ",";
 		cout << endl;
 	}
 
-	int *dev_root;
-	int *root;
-	cudaMalloc(&dev_root, n * sizeof(int));
-	union_init_GPU << <(n + 255) / 256, 256 >> >(dev_root, n);
-	check_dist_GPU << <(n * n + 255) / 256, 256 >> >(dev_dist, delta, n * n);
+	union_init_GPU << <GRID1D(_sensor_size), BLOCK1D>> >(dev_union_root, _sensor_size);
+	check_dist_GPU << <GRID1D(_sensor_size * _sensor_size), BLOCK1D >> >(dev_dists, delta, _sensor_size * _sensor_size);
 
-	cudaMemcpy(Gdist, dev_dist, n * n * sizeof(int), cudaMemcpyDeviceToHost);
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
-			cout << Gdist[i * n + j] << ",";
-		}
-		cout << endl;
-	}
-
-	union_GPU << <1, 512 >> >(dev_dist, dev_root, dists.size());
-	root = new int[n];
-	cudaMemcpy(root, dev_root, n * sizeof(int), cudaMemcpyDeviceToHost);
+	union_GPU << <GRID1D(1), BLOCK1D>> >(dev_dists, dev_union_root, _sensor_size);
+	cudaMemcpy(h_union_root, dev_union_root, _sensor_size * sizeof(int), cudaMemcpyDeviceToHost);
 
 	map<int, int> m;
 	vector<vector<int> > result;
-	for (int i = 0; i < n; ++i) {
-		if (m.find(root[i]) == m.end()) {
-			m[root[i]] = result.size();
+	for (int i = 0; i < _sensor_size; ++i) {
+		if (m.find(h_union_root[i]) == m.end()) {
+			m[h_union_root[i]] = result.size();
 			vector<int> tmp;
 			tmp.push_back(i);
 			result.push_back(tmp);
 		}
 		else {
-			result[m[root[i]]].push_back(i);
+			result[m[h_union_root[i]]].push_back(i);
 		}
 	}
 
-	cudaFree(dev_dist);
-	cudaFree(dev_root);
-	delete[] Gdist;
-	delete[] root;
 	return result;
 }
 
@@ -785,6 +833,14 @@ void Snapshot::gen_mask(){
 	check_mask<<<(_sensor_size + 255) / 256, 256>>>(dev_mask, _sensor_size);
 }
 
+void Snapshot::propagates_GPU(int sig_count) {
+	transpose_multiply_GPU << <GRID2D(sig_count, _measurable_size), BLOCK2D >> >(dev_npdirs, dev_lsignals, _measurable_size, sig_count);
+	transpose_multiply_GPU << <GRID2D(sig_count, _measurable_size), BLOCK2D >> >(dev_npdirs, dev_signals, _measurable_size, sig_count);
+
+	negate_conjunction_star_kernel << <GRID1D(sig_count * _measurable_size), BLOCK1D >> >(dev_lsignals, dev_signals, _sensor_size);
+}
+
+/*
 vector<vector<bool> > Snapshot::propagates_GPU(vector<vector<bool> > &signals, vector<bool> &load) {
 	vector<vector<bool> > results;
 	bool *h_signals, *dev_signals1, *dev_signals2;
@@ -829,6 +885,7 @@ vector<vector<bool> > Snapshot::propagates_GPU(vector<vector<bool> > &signals, v
 	delete[] h_signals;
 	return results;
 }
+*/
 
 /*
 This function do propagate on GPU
@@ -942,9 +999,7 @@ void Snapshot::update_weights(bool active){
 }
 
 void Snapshot::orient_all(){
-	dim3 dimGrid1((_sensor_size + 15) / 16,(_sensor_size + 15) / 16);
-	dim3 dimBlock1(16, 16);
-	orient_all_kernel<<<dimGrid1, dimBlock1>>>(dev_dirs, dev_weights, dev_thresholds, _total, _sensor_size);
+	orient_all_kernel<<<GRID2D(_sensor_size, _sensor_size), BLOCK2D>>>(dev_dirs, dev_weights, dev_thresholds, _total, _sensor_size);
 }
 
 void Snapshot::update_thresholds() {

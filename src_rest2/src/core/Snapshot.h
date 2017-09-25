@@ -58,6 +58,15 @@ protected:
 	//diagonal value in weight matrix
 	double *h_diag_, *dev_diag_;
 	//diagonal value in weight matrix of last iteration
+	bool *h_npdir_mask, *dev_npdir_mask;
+	//mask propgated on npdir
+	bool *h_signals, *dev_signals;
+	//signals
+	bool *h_lsignals, *dev_lsignals;
+	//loaded signals
+	int *h_dists, *dev_dists;
+	//distance for block gpu
+	int *h_union_root, *dev_union_root;
 
 	bool *h_prediction;
 	//prediction array after the halucinate, have no corresponding device value
@@ -145,6 +154,8 @@ public:
 	void delete_sensor(string &sensor_id);
 	void init(int initial_sensor_size);
 	bool stabilize(int initial_sensor_size);
+	void propagate_mask();
+	vector<vector<vector<bool> > > abduction(vector<vector<bool> > &signals);
 
 	void init_size(int sensor_size, bool change_max);
 
@@ -162,11 +173,11 @@ public:
 	virtual float distance(bool *d1, bool *d2);
 	virtual float divergence(bool *d1, bool *d2);
 	
-	vector<vector<bool> > propagates_GPU(vector<vector<bool> > &signals, vector<bool> &load);
+	void propagates_GPU(int sig_count);
 
 	void up_GPU(vector<bool> &signal, bool is_stable);
-	vector<vector<bool> > ups_GPU(vector<vector<bool> > &signals);
-	vector<vector<int> > blocks_GPU(vector<vector<int> > &dists, float delta);
+	void ups_GPU(int sig_count);
+	vector<vector<int> > blocks_GPU(float delta);
 	void floyd_GPU();
 	void halucinate_GPU();
 	void gen_mask();
@@ -203,6 +214,9 @@ public:
 	vector<string> getAmperListID(string &sensor_id);
 	Sensor *getSensor(string &sensor_id);
 	vector<bool> getLoad();
+	vector < vector<bool> > getSignals(int sig_count);
+	vector < vector<bool> > getLSignals(int sig_count);
+	vector<vector<bool> > getNpdirMasks();
 
 	double getQ();
 	double getThreshold();
@@ -224,6 +238,9 @@ public:
 	void setAutoTarget(bool &auto_target);
 	void setSignal(vector<bool> &signal);
 	void setLoad(vector<bool> &load);
+	void setSignals(vector<vector<bool> > &signals);
+	void setLSignals(vector<vector<bool> > &signals);
+	void setDists(vector<vector<int> > &dists);
 	/*
 	---------------------SET FUNCTION----------------------
 	*/
@@ -267,6 +284,9 @@ public:
 	void gen_thresholds();
 	void gen_mask_amper();
 	void gen_np_direction();
+	void gen_signals();
+	void gen_npdir_mask();
+	void gen_dists();
 	void gen_other_parameters();
 
 	void save_snapshot(ofstream &file);

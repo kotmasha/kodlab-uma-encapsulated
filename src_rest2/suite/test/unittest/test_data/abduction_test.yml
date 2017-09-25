@@ -1,5 +1,4 @@
 
-
 create an agent:
   method: POST
   url: /UMA/object/agent
@@ -64,6 +63,7 @@ create sensor4:
     snapshot_id: test_snapshot
     sensor_id: sensor4
     c_sid: c_sensor4
+
 
 weight matrix 00:
   method: PUT
@@ -734,71 +734,35 @@ init snapshot:
     snapshot_id: test_snapshot
     initial_sensor_size: 4
 
-up 0:
+delay 0&2:
   method: POST
-  url: /UMA/matrix/up
+  url: /UMA/simulation/delay
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    signal: [True, False, False, False, False, False, False, False, False, False]
-  kwargs:
-    signal: [True, False, True, False, True, False, True, False, True, False]
+    delay_list: [[True, False, True, False, False, False, False, False, False, False]]
+    uuid_list: [['sensor5', 'c_sensor5']]
 
-up 1:
+delay 3&5&7:
   method: POST
-  url: /UMA/matrix/up
+  url: /UMA/simulation/delay
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    signal: [False, False, True, False, False, False, False, False, False, False]
-  kwargs:
-    signal: [False, False, True, False, True, False, True, False, True, False]
+    delay_list: [[False, False, False, True, False, True, False, True, False, False, False, False]]
+    uuid_list: [['sensor6', 'c_sensor6']]
 
-up 2:
+delay 1&5&10&13:
   method: POST
-  url: /UMA/matrix/up
+  url: /UMA/simulation/delay
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    signal: [False, False, False, False, True, False, False, False, False, False]
-  kwargs:
-    signal: [False, False, False, False, True, False, False, False, False, False]
-
-up 3:
-  method: POST
-  url: /UMA/matrix/up
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    signal: [False, False, False, False, False, False, True, False, False, False]
-  kwargs:
-    signal: [False, False, False, False, False, False, True, False, False, False]
-
-up 4:
-  method: POST
-  url: /UMA/matrix/up
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    signal: [False, False, False, False, False, False, False, False, True, False]
-  kwargs:
-    signal: [False, False, False, False, True, False, True, False, True, False]
-
-up 04:
-  method: POST
-  url: /UMA/matrix/up
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    signal: [True, False, False, False, False, False, False, False, True, False]
-  kwargs:
-    signal: [True, False, True, False, True, False, True, False, True, False]
+    delay_list: [[False, True, False, False, False, True, False, False, False, False, True, False, False, True]]
+    uuid_list: [['sensor7', 'c_sensor7']]
 
 npdirs:
   method: POST
@@ -807,229 +771,98 @@ npdirs:
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-  kwargs:
-    npdirs: [True, False, True, False, False, True, False, True, False, True, False, False, False, False, True,
-    False, True, False, True, False, True, False, False, False, False, False, False, True,
-    False, True, False, True, False, False, False, True, False, False, False, False, True, False, True, False, True,
-    False, True, False, True, False, False, False, False, False, True]
 
-ups 0 2 4 6 8:
+propagate mask:
   method: POST
-  url: /UMA/matrix/ups
+  url: /UMA/matrix/propagate_masks
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  kwargs:
+    propagated_mask:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, True, False, True, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, False, False, True, True, False, False, True, False, False]
+
+abduction even:
+  method: POST
+  url: /UMA/matrix/abduction
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
-      - [True, False, False, False, False, False, False, False, False, False]
-      - [False, False, True, False, False, False, False, False, False, False]
-      - [False, False, False, False, True, False, False, False, False, False]
-      - [False, False, False, False, False, False, True, False, False, False]
-      - [False, False, False, False, False, False, False, False, True, False]
-      #- [True, False, False, False, False, False, False, False, True, False]
-  kwargs:
-    signals:
-      - [True, False, True, False, True, False, True, False, True, False]
-      - [False, False, True, False, True, False, True, False, True, False]
-      - [False, False, False, False, True, False, False, False, False, False]
-      - [False, False, False, False, False, False, True, False, False, False]
-      - [False, False, False, False, True, False, True, False, True, False]
-      #- [True, False, True, False, True, False, True, False, True, False]
+      - [True, False, True, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, True, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False]
 
-ups 0&8:
+  kwargs:
+    abduction_even:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, True, False, True, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, False, False, True, True, False, False, True, False, False]
+    abduction_odd:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+
+abduction odd:
   method: POST
-  url: /UMA/matrix/ups
+  url: /UMA/matrix/abduction
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
-      - [True, False, False, False, False, False, False, False, True, False]
-  kwargs:
-    signals:
-      - [True, False, True, False, True, False, True, False, True, False]
+      - [False, True, False, True, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, True, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True]
 
-propagation 0 2 4 6 8:
+  kwargs:
+    abduction_even:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+    abduction_odd:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, True, False, True, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, False, False, True, True, False, False, True, False, False]
+
+abduction mix:
   method: POST
-  url: /UMA/matrix/propagation
+  url: /UMA/matrix/abduction
   status_code: 201
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
-      - [True, False, False, False, False, False, False, False, False, False]
-      - [False, False, True, False, False, False, False, False, False, False]
-      - [False, False, False, False, True, False, False, False, False, False]
-      - [False, False, False, False, False, False, True, False, False, False]
-      - [False, False, False, False, False, False, False, False, True, False]
-    load: [False, False, False, False, False, False, False, False, False, False]
+      - [True, False, False, True, False, True, False, False, False, False, True, False, False, True, False, True]
+      - [False, True, True, False, False, True, False, False, False, False, False, True, True, False, True, False]
+      - [False, False, False, False, False, False, False, False, False, False, True, False, False, True, False, True]
+      - [False, False, False, False, False, False, False, False, False, False, False, True, True, False, True, False]
   kwargs:
-    signals:
-      - [True, False, True, False, True, False, True, False, True, False]
-      - [False, False, True, False, True, False, True, False, True, False]
-      - [False, False, False, False, True, False, False, False, False, False]
-      - [False, False, False, False, False, False, True, False, False, False]
-      - [False, False, False, False, True, False, True, False, True, False]
-
-propagation 0&8:
-  method: POST
-  url: /UMA/matrix/propagation
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    signals:
-      - [True, False, False, False, False, False, False, False, True, False]
-    load: [False, False, False, False, False, False, False, False, False, False]
-  kwargs:
-    signals:
-      - [True, False, True, False, True, False, True, False, True, False]
-
-blocks case1 0.7:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 0.7
-    dists:
-      - [0, 1, 3, 4, 5]
-      - [1, 0, 3, 4, 5]
-      - [3, 3, 0 ,2, 3]
-      - [4, 4, 2, 0, 4]
-      - [5, 5, 3, 4 ,0]
-  kwargs:
-    blocks:
-      - [0]
-      - [1]
-      - [2]
-      - [3]
-      - [4]
-
-blocks case1 1.5:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 1.5
-    dists:
-      - [0, 1, 3, 4, 5]
-      - [1, 0, 3, 4, 5]
-      - [3, 3, 0 ,2, 3]
-      - [4, 4, 2, 0, 4]
-      - [5, 5, 3, 4 ,0]
-  kwargs:
-    blocks:
-      - [0, 1]
-      - [2]
-      - [3]
-      - [4]
-
-blocks case1 2.2:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 2.2
-    dists:
-      - [0, 1, 3, 4, 5]
-      - [1, 0, 3, 4, 5]
-      - [3, 3, 0 ,2, 3]
-      - [4, 4, 2, 0, 4]
-      - [5, 5, 3, 4 ,0]
-  kwargs:
-    blocks:
-      - [0, 1]
-      - [2, 3]
-      - [4]
-
-blocks case1 3.1:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 3.1
-    dists:
-      - [0, 1, 3, 4, 5]
-      - [1, 0, 3, 4, 5]
-      - [3, 3, 0 ,2, 3]
-      - [4, 4, 2, 0, 4]
-      - [5, 5, 3, 4 ,0]
-  kwargs:
-    blocks:
-      - [0, 1, 2, 3, 4]
-
-
-delete sensor4:
-  method: DELETE
-  url: /UMA/object/sensor
-  status_code: 200
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    sensor_id: sensor4
-
-blocks case0 0.5:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 0.5
-    dists:
-      - [0, 1, 2, 3]
-      - [1, 0, 3, 2]
-      - [2, 3, 0 ,1]
-      - [3, 2, 1, 0]
-  kwargs:
-    blocks:
-      - [0]
-      - [1]
-      - [2]
-      - [3]
-
-blocks case0 1.5:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 1.5
-    dists:
-      - [0, 1, 2, 3]
-      - [1, 0, 3, 2]
-      - [2, 3, 0 ,1]
-      - [3, 2, 1, 0]
-  kwargs:
-    blocks:
-      - [0, 1]
-      - [2, 3]
-
-blocks case0 2.0:
-  method: POST
-  url: /UMA/matrix/blocks
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    delta: 2.01
-    dists:
-      - [0, 1, 2, 3]
-      - [1, 0, 3, 2]
-      - [2, 3, 0 ,1]
-      - [3, 2, 1, 0]
-  kwargs:
-    blocks:
-      - [0, 1, 2, 3]
+    abduction_even:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, False, False, True, False, False, False, False, False, False]
+    abduction_odd:
+      - [False, True, False, True, False, True, False, True, False, True, True, False, False, True, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
+      - [False, True, False, True, False, True, False, True, False, True, True, False, False, True, False, False]
+      - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
 
 delete agent:
   method: DELETE
@@ -1102,23 +935,12 @@ tests:
   - weight matrix 98
   - weight matrix 99
   - init snapshot
-  #- up 0
-  #- up 1
-  #- up 2
-  #- up 3
-  #- up 4
-  #- up 04
+  - delay 0&2
+  - delay 3&5&7
+  - delay 1&5&10&13
   - npdirs
-  - ups 0 2 4 6 8
-  - ups 0&8
-  - propagation 0 2 4 6 8
-  - propagation 0&8
-  - blocks case1 0.7
-  - blocks case1 1.5
-  - blocks case1 2.2
-  - blocks case1 3.1
-  - delete sensor4
-  - blocks case0 0.5
-  - blocks case0 1.5
-  - blocks case0 2.0
+  - propagate mask
+  - abduction even
+  - abduction odd
+  - abduction mix
   - delete agent

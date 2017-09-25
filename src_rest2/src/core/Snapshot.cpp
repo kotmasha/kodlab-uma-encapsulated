@@ -113,6 +113,9 @@ void Snapshot::init_pointers(){
 	h_diag_ = NULL;
 	h_up = NULL;
 	h_down = NULL;
+	h_npdir_mask = NULL;
+	h_signals = NULL;
+	h_dists = NULL;
 
 	dev_dirs = NULL;
 	dev_weights = NULL;
@@ -130,6 +133,9 @@ void Snapshot::init_pointers(){
 	dev_diag_ = NULL;
 	dev_d1 = NULL;
 	dev_d2 = NULL;
+	dev_npdir_mask = NULL;
+	dev_signals = NULL;
+	dev_dists = NULL;
 
 	_log->debug() << "Setting all pointers to NULL";
 }
@@ -226,6 +232,9 @@ void Snapshot::reallocate_memory(int sensor_size){
 		gen_thresholds();
 		gen_mask_amper();
 		gen_np_direction();
+		gen_signals();
+		gen_npdir_mask();
+		gen_dists();
 		gen_other_parameters();
 	}
 	catch (CoreException &e) {
@@ -719,6 +728,47 @@ void Snapshot::gen_np_direction() {
 	_log->debug() << "NPDir matrix generated with size " + to_string(_measurable2d_size_max);
 }
 
+void Snapshot::gen_signals() {
+	//malloc the space
+	h_signals = new bool[_sensor_size_max * _measurable_size_max];
+	h_lsignals = new bool[_sensor_size_max * _measurable_size_max];
+	cudaMalloc(&dev_signals, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_lsignals, _sensor_size_max * _measurable_size_max * sizeof(bool));
+
+	//init with all false
+	memset(h_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	memset(h_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+
+	_log->debug() << to_string(_sensor_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
+	_log->debug() << to_string(_sensor_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
+}
+
+void Snapshot::gen_npdir_mask() {
+	//malloc the space
+	h_npdir_mask = new bool[_sensor_size_max * _measurable_size_max];
+	cudaMalloc(&dev_npdir_mask, _sensor_size_max * _measurable_size_max * sizeof(bool));
+
+	//init with all false
+	memset(h_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+
+	_log->debug() << to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
+}
+
+void Snapshot::gen_dists() {
+	//malloc the space
+	h_dists = new int[_measurable_size_max * _measurable_size_max];
+	cudaMalloc(&dev_dists, _measurable_size_max * _measurable_size_max * sizeof(int));
+
+	//init with all 0
+	memset(h_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
+	cudaMemset(dev_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
+
+	_log->debug() << to_string(_measurable_size_max) + "*" + to_string(_measurable_size_max) + "=" + to_string(_measurable_size_max * _measurable_size_max) + " num of space allocated for dists, used for block GPU";
+}
+
 /*
 This function generate other parameter
 */
@@ -734,6 +784,7 @@ void Snapshot::gen_other_parameters() {
 	h_prediction = new bool[_measurable_size_max];
 	h_up = new bool[_measurable_size_max];
 	h_down = new bool[_measurable_size_max];
+	h_union_root = new int[_sensor_size_max];
 
 	cudaMalloc(&dev_observe, _measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_observe_, _measurable_size_max * sizeof(bool));
@@ -747,6 +798,7 @@ void Snapshot::gen_other_parameters() {
 	cudaMalloc(&dev_d2, _measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
 	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
+	cudaMalloc(&dev_union_root, _sensor_size_max * sizeof(int));
 
 	_log->debug() << "Other parameter generated, with size " + to_string(_measurable_size_max);
 }
@@ -837,11 +889,37 @@ void Snapshot::setSignal(vector<bool> &signal) {
 	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
+void Snapshot::setSignals(vector<vector<bool> > &signals) {
+	int sig_count = signals.size();
+	if (sig_count > _sensor_size) {
+		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::ERROR, status_codes::BadRequest);
+	}
+	for (int i = 0; i < sig_count; ++i) {
+		for (int j = 0; j < signals[i].size(); ++j) {
+			h_signals[i * _measurable_size + j] = signals[i][j];
+		}
+	}
+	cudaMemcpy(dev_signals, h_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+}
+
 void Snapshot::setLoad(vector<bool> &load) {
+	if (load.size() != _measurable_size) {
+		throw CoreException("The input load size is not matching the measurable size!", CoreException::ERROR, status_codes::BadRequest);
+	}
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_load[i] = load[i];
 	}
 	cudaMemcpy(dev_load, h_load, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+}
+
+void Snapshot::setDists(vector<vector<int> > &dists) {
+	if (dists.size() != _sensor_size) {
+		throw CoreException("The input dists size is not matching the measurable size!", CoreException::ERROR, status_codes::BadRequest);
+	}
+	for (int i = 0; i < dists.size(); ++i) {
+		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
+	}
+	cudaMemcpy(dev_dists, h_dists, _sensor_size * _sensor_size * sizeof(int), cudaMemcpyHostToDevice);
 }
 
 /*
@@ -862,6 +940,39 @@ void Snapshot::setObserve(vector<bool> &observe){//this is where data comes in i
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
+vector<vector<bool> > Snapshot::getSignals(int sig_count) {
+	vector<vector<bool> > results;
+	cudaMemcpy(h_signals, dev_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < sig_count; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[i * _measurable_size + j]);
+		results.push_back(tmp);
+	}
+	return results;
+}
+
+vector<vector<bool> > Snapshot::getLSignals(int sig_count) {
+	vector<vector<bool> > results;
+	cudaMemcpy(h_lsignals, dev_lsignals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < sig_count; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_lsignals[i * _measurable_size + j]);
+		results.push_back(tmp);
+	}
+	return results;
+}
+
+vector<vector<bool> > Snapshot::getNpdirMasks() {
+	vector<vector<bool> > results;
+	cudaMemcpy(h_npdir_mask, dev_npdir_mask, _sensor_size * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _sensor_size; ++i) {
+		vector<bool> tmp;
+		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_npdir_mask[i * _measurable_size + j]);
+		results.push_back(tmp);
+	}
+	return results;
+}
+
 //get the current(observe value through propagation) value from GPU
 vector<bool> Snapshot::getCurrent(){
 	vector<bool> result;
@@ -1507,6 +1618,8 @@ void Snapshot::update_state_GPU(bool activity){//true for decide
 	// compute the derived orientation matrix and update the thresholds:
 	orient_all();
 
+	floyd_GPU();
+
 	//SIQI:here I have intervened to disconnect the automatic computation of a target. Instead, I will be setting the target externally (from the Python side) at the beginning of each state-update cycle.
 	// compute the target state:
 	if(_auto_target) calculate_target();
@@ -1561,6 +1674,11 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 		delete[] h_prediction;
 		delete[] h_up;
 		delete[] h_down;
+		delete[] h_npdirs;
+		delete[] h_npdir_mask;
+		delete[] h_signals;
+		delete[] h_dists;
+		delete[] h_union_root;
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in free_all_parameters, when doing cpu array release";
@@ -1586,6 +1704,12 @@ void Snapshot::free_all_parameters(){//free data in case of memory leak
 		cudaFree(dev_d2);
 		cudaFree(dev_diag);
 		cudaFree(dev_diag_);
+
+		cudaFree(dev_npdir_mask);
+		cudaFree(dev_npdirs);
+		cudaFree(dev_signals);
+		cudaFree(dev_dists);
+		cudaFree(dev_union_root);
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in free_all_parameters, when doing gpu array release";
