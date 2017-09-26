@@ -802,6 +802,7 @@ abduction even:
       - [False, False, False, False, False, False, False, False, False, False, True, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, True, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, False]
+      - [False, False, False, False, False, False, False, False, False, False, True, False, True, False, False, False]
 
   kwargs:
     abduction_even:
@@ -809,7 +810,9 @@ abduction even:
       - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
       - [False, True, False, True, False, True, False, True, False, True, False, False, False, False, False, False]
       - [False, True, False, True, False, True, False, False, False, True, True, False, False, True, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
     abduction_odd:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
@@ -827,9 +830,11 @@ abduction odd:
       - [False, False, False, False, False, False, False, False, False, False, False, True, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, True, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, True]
+      - [False, False, False, False, False, False, False, False, False, False, False, True, False, True, False, False]
 
   kwargs:
     abduction_even:
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
       - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
@@ -839,6 +844,7 @@ abduction odd:
       - [True, False, True, False, True, False, True, False, True, False, False, False, False, False, False, False]
       - [False, True, False, True, False, True, False, True, False, True, False, False, False, False, False, False]
       - [False, True, False, True, False, True, False, False, False, True, True, False, False, True, False, False]
+      - [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
 
 abduction mix:
   method: POST

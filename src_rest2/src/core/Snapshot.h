@@ -130,6 +130,7 @@ protected:
 	//record current sensor num in the current Snapshot
 	int t;
 	bool _auto_target;
+	bool _propagate_mask;
 	logManager *_log;
 	string _log_dir;
 	friend class Agent;
@@ -221,6 +222,7 @@ public:
 	double getQ();
 	double getThreshold();
 	bool getAutoTarget();
+	bool getPropagateMask();
 
 	vector<std::pair<int, pair<string, string> > > getSensorInfo();
 	std::map<string, int> getSizeInfo();
@@ -236,6 +238,7 @@ public:
 	void setTarget(vector<bool> &signal);
 	void setObserve(vector<bool> &observe);
 	void setAutoTarget(bool &auto_target);
+	void setPropagateMask(bool &propagate_mask);
 	void setSignal(vector<bool> &signal);
 	void setLoad(vector<bool> &load);
 	void setSignals(vector<vector<bool> > &signals);

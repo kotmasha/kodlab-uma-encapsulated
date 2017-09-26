@@ -741,8 +741,10 @@ vector<vector<vector<bool> > > Snapshot::abduction(vector<vector<bool> > &signal
 				disjunction_kernel << <GRID1D(_measurable_size), BLOCK1D >> >(dev_signal, dev_npdir_mask + odd_idx[j] * _measurable_size, _measurable_size);
 			}
 			cudaMemcpy(dev_signals, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
-			ups_GPU(1);
-			cudaMemcpy(h_signals, dev_signals, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+			cudaMemcpy(dev_lsignals, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+			cudaMemset(dev_load, false, _measurable_size * sizeof(bool));
+			propagates_GPU(1);
+			cudaMemcpy(h_signals, dev_lsignals, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 			vector<bool> tmp;
 			for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[j]);
 			odd_results.push_back(tmp);

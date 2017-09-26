@@ -7,7 +7,7 @@
 class SnapshotHandler : public AdminHandler {
 protected:
 	string_t UMA_INITIAL_SENSOR_SIZE;
-	string_t UMA_THRESHOLD, UMA_Q, UMA_AUTO_TARGET;
+	string_t UMA_THRESHOLD, UMA_Q, UMA_AUTO_TARGET, UMA_PROPAGATE_MASK;
 	string_t UMA_FROM_SENSOR, UMA_TO_SENSOR;
 public:
 	SnapshotHandler(string handler_factory, logManager *log_access);

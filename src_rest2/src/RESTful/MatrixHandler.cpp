@@ -34,6 +34,10 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 		create_ups(world, request, response);
 		return;
 	}
+	else if (path == U("/UMA/matrix/up")) {
+		create_up(world, request, response);
+		return;
+	}
 	else if (path == U("/UMA/matrix/blocks")) {
 		create_blocks(world, request, response);
 		return;
@@ -49,7 +53,7 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
 }
 
-/*
+
 void MatrixHandler::create_up(World *world, http_request &request, http_response &response) {
 	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
@@ -70,7 +74,7 @@ void MatrixHandler::create_up(World *world, http_request &request, http_response
 	message[DATA][U("signal")] = json::value::array(result_list);
 	response.set_body(message);
 }
-*/
+
 
 void MatrixHandler::create_ups(World *world, http_request &request, http_response &response) {
 	json::value data = request.extract_json().get();

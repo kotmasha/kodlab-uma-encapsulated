@@ -229,6 +229,16 @@ change auto target to True:
   data:
     auto_target: True
 
+change propagate mask to True:
+  method: PUT
+  url: /UMA/object/snapshot
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  data:
+    propagate_mask: True
+
 get snapshot info:
   method: GET
   url: /UMA/object/snapshot
@@ -257,6 +267,7 @@ get snapshot info:
     q: 0.123
     threshold: 1.222
     auto_target: True
+    propagate_mask: True
 
 delete snapshot without snapshot id:
   method: DELETE
@@ -338,6 +349,7 @@ tests:
   - change threshold to 1.222
   - change auto target to 2.2
   - change auto target to True
+  - change propagate mask to True
   - get snapshot info
   - delete snapshot without snapshot id
   - delete snapshot with invalid id

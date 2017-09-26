@@ -877,6 +877,7 @@ get snapshot 5 sensor:
     q: 0.9
     threshold: 0.125
     auto_target: False
+    propagate_mask: False
 
 pruning X:
   method: POST
@@ -917,6 +918,7 @@ get snapshot 4 sensor:
     q: 0.9
     threshold: 0.125
     auto_target: False
+    propagate_mask: False
 
 #0, 0=false
 set signal 1:

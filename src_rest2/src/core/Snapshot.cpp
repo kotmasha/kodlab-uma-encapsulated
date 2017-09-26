@@ -31,6 +31,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 	_q = 0.9;
 	_threshold = 0.125;
 	_auto_target = false;
+	_propagate_mask = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
 	init_pointers();
@@ -70,6 +71,7 @@ Snapshot::Snapshot(string uuid, string log_dir){
 	_q = 0.9;
 	_threshold = 0.125;
 	_auto_target = false;
+	_propagate_mask = false;
 	_is_stabilized = false;
 	_log->debug() << "Setting init total value to " + to_string(_total);
 
@@ -882,6 +884,10 @@ void Snapshot::setAutoTarget(bool &auto_target) {
 	_auto_target = auto_target;
 }
 
+void Snapshot::setPropagateMask(bool &propagate_mask) {
+	_propagate_mask = propagate_mask;
+}
+
 void Snapshot::setSignal(vector<bool> &signal) {
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_signal[i] = signal[i];
@@ -1362,6 +1368,10 @@ bool Snapshot::getAutoTarget() {
 	return _auto_target;
 }
 
+bool Snapshot::getPropagateMask() {
+	return _propagate_mask;
+}
+
 /*
 ------------------------------------GET FUNCTION------------------------------------
 */
@@ -1619,6 +1629,9 @@ void Snapshot::update_state_GPU(bool activity){//true for decide
 	orient_all();
 
 	floyd_GPU();
+
+	if(_propagate_mask)
+		propagate_mask();
 
 	//SIQI:here I have intervened to disconnect the automatic computation of a target. Instead, I will be setting the target externally (from the Python side) at the beginning of each state-update cycle.
 	// compute the target state:

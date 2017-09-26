@@ -9,6 +9,7 @@ SnapshotHandler::SnapshotHandler(string handler_factory, logManager *log_access)
 	UMA_Q = U("q");
 	UMA_THRESHOLD = U("threshold");
 	UMA_AUTO_TARGET = U("auto_target");
+	UMA_PROPAGATE_MASK = U("propagate_mask");
 	UMA_FROM_SENSOR = U("from_sensor");
 	UMA_TO_SENSOR = U("to_sensor");
 }
@@ -124,6 +125,7 @@ void SnapshotHandler::get_snapshot(World *world, http_request &request, http_res
 	double q = snapshot->getQ();
 	double threshold = snapshot->getThreshold();
 	bool auto_target = snapshot->getAutoTarget();
+	bool propagate_mask = snapshot->getPropagateMask();
 
 	response.set_status_code(status_codes::OK);
 	json::value message;
@@ -136,6 +138,7 @@ void SnapshotHandler::get_snapshot(World *world, http_request &request, http_res
 	message[DATA][U("q")] = q;
 	message[DATA][U("threshold")] = threshold;
 	message[DATA][U("auto_target")] = auto_target;
+	message[DATA][U("propagate_mask")] = propagate_mask;
 	response.set_body(message);
 }
 
@@ -220,6 +223,16 @@ void SnapshotHandler::update_snapshot(World *world, http_request &request, http_
 	else if (check_field(data, UMA_AUTO_TARGET, false)) {
 		bool auto_target = get_bool_input(data, UMA_AUTO_TARGET);
 		snapshot->setAutoTarget(auto_target);
+
+		response.set_status_code(status_codes::OK);
+		json::value message;
+		message[MESSAGE] = json::value::string(U("Auto target updated"));
+		response.set_body(message);
+		return;
+	}
+	else if (check_field(data, UMA_PROPAGATE_MASK, false)) {
+		bool propagate_mask = get_bool_input(data, UMA_PROPAGATE_MASK);
+		snapshot->setPropagateMask(propagate_mask);
 
 		response.set_status_code(status_codes::OK);
 		json::value message;

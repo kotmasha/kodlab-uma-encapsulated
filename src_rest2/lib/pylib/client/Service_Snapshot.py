@@ -34,7 +34,21 @@ class ServiceSnapshot:
             return None
         return list(result['data']['signal'])
 
-    def make_ups(self, signal):
+    def make_abduction(self, signals):
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signals}
+        result = self._service.post('/UMA/matrix/abduction', data)
+        if not result:
+            return None
+        return list(result['data']['abduction_even']), list(result['data']['abduction_odd'])
+
+    def make_propagate_masks(self):
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
+        result = self._service.post('/UMA/matrix/propagate_masks', data)
+        if not result:
+            return None
+        return list(result['data']['propagate_mask'])
+
+    def make_ups(self, signals):
         data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signals}
         result = self._service.post('/UMA/matrix/ups', data)
         if not result:
@@ -114,6 +128,9 @@ class ServiceSnapshot:
 
     def setAutoTarget(self, auto_target):
         return self._service.put('/UMA/object/snapshot', {'auto_target': auto_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+
+    def setPropagateMask(self, propagate_mask):
+        return self._service.put('/UMA/object/snapshot', {'propagate_mask': propagate_mask}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
     def get_sensor_count(self):
         return
