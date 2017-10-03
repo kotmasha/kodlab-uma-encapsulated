@@ -1,0 +1,1 @@
+swig -c++ -python -o dslhc_wrap.cpp dslhc.i
