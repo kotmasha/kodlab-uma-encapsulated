@@ -25,6 +25,9 @@ create sensor1:
     snapshot_id: test_snapshot
     sensor_id: sensor1
     c_sid: c_sensor1
+    w: []
+    d: []
+    diag: []
 
 create sensor2:
   method: POST
@@ -35,6 +38,9 @@ create sensor2:
     snapshot_id: test_snapshot
     sensor_id: sensor2
     c_sid: c_sensor2
+    w: []
+    d: []
+    diag: []
 
 create sensor3:
   method: POST
@@ -45,6 +51,9 @@ create sensor3:
     snapshot_id: test_snapshot
     sensor_id: sensor3
     c_sid: c_sensor3
+    w: []
+    d: []
+    diag: []
 
 create sensor4:
   method: POST
@@ -55,6 +64,9 @@ create sensor4:
     snapshot_id: test_snapshot
     sensor_id: sensor4
     c_sid: c_sensor4
+    w: []
+    d: []
+    diag: []
 
 create sensor5:
   method: POST
@@ -65,15 +77,9 @@ create sensor5:
     snapshot_id: test_snapshot
     sensor_id: sensor5
     c_sid: c_sensor5
-
-init snapshot:
-  method: POST
-  url: /UMA/object/snapshot/init
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    initial_sensor_size: 5
+    w: []
+    d: []
+    diag: []
 
 get measurable without mid:
   method: GET
@@ -93,8 +99,8 @@ get measurable sensor1:
     snapshot_id: test_snapshot
     measurable_id: sensor1
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: True
 
 get measurable c_sensor1:
@@ -106,8 +112,8 @@ get measurable c_sensor1:
     snapshot_id: test_snapshot
     measurable_id: c_sensor1
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: False
 
 get measurable sensor3:
@@ -119,8 +125,8 @@ get measurable sensor3:
     snapshot_id: test_snapshot
     measurable_id: sensor3
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: True
 
 get measurable c_sensor3:
@@ -132,8 +138,8 @@ get measurable c_sensor3:
     snapshot_id: test_snapshot
     measurable_id: c_sensor3
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: False
 
 get measurable sensor5:
@@ -145,8 +151,8 @@ get measurable sensor5:
     snapshot_id: test_snapshot
     measurable_id: sensor5
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: True
 
 get measurable c_sensor5:
@@ -158,8 +164,8 @@ get measurable c_sensor5:
     snapshot_id: test_snapshot
     measurable_id: c_sensor5
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: False
 
 update measurable without mid:
@@ -337,22 +343,9 @@ get measurable sensor1 after deletion:
     snapshot_id: test_snapshot
     measurable_id: sensor1
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: True
-
-get measurable c_sensor1 after deletion:
-  method: GET
-  url: /UMA/object/measurable
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable_id: c_sensor1
-  kwargs:
-    diag: 0.0
-    old_diag: 0.0
-    isOriginPure: False
 
 get measurable sensor3 after deletion:
   method: GET
@@ -364,6 +357,32 @@ get measurable sensor3 after deletion:
     snapshot_id: test_snapshot
     measurable_id: sensor3
 
+get measurable sensor5 after deletion:
+  method: GET
+  url: /UMA/object/measurable
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    measurable_id: c_sensor1
+  kwargs:
+    diag: 0.5
+    old_diag: 0.5
+    isOriginPure: False
+
+get measurable c_sensor1 after deletion:
+  method: GET
+  url: /UMA/object/measurable
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    measurable_id: c_sensor1
+  kwargs:
+    diag: 0.5
+    old_diag: 0.5
+    isOriginPure: False
+
 get measurable c_sensor3 after deletion:
   method: GET
   url: /UMA/object/measurable
@@ -374,19 +393,6 @@ get measurable c_sensor3 after deletion:
     snapshot_id: test_snapshot
     measurable_id: c_sensor3
 
-get measurable c_sensor1 after deletion:
-  method: GET
-  url: /UMA/object/measurable
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable_id: sensor5
-  kwargs:
-    diag: 0.0
-    old_diag: 0.0
-    isOriginPure: True
-
 get measurable c_sensor5 after deletion:
   method: GET
   url: /UMA/object/measurable
@@ -396,8 +402,8 @@ get measurable c_sensor5 after deletion:
     snapshot_id: test_snapshot
     measurable_id: c_sensor5
   kwargs:
-    diag: 0.0
-    old_diag: 0.0
+    diag: 0.5
+    old_diag: 0.5
     isOriginPure: False
 
 get measurable pair sensor1 sensor1 after deletion:
@@ -572,7 +578,6 @@ tests:
   - create sensor3
   - create sensor4
   - create sensor5
-  - init snapshot
   - get measurable without mid
   - get measurable sensor1
   - get measurable c_sensor1
@@ -595,8 +600,8 @@ tests:
   - get measurable pair c_sensro4 sensor5
   - delete c_sensor3
   - get measurable sensor1 after deletion
-  - get measurable c_sensor1 after deletion
   - get measurable sensor3 after deletion
+  - get measurable sensor5 after deletion
   - get measurable c_sensor3 after deletion
   - get measurable c_sensor1 after deletion
   - get measurable c_sensor5 after deletion

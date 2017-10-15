@@ -30,6 +30,7 @@ private:
 public:
 	SensorPair(ifstream &file, vector<Sensor *> &sensors);
 	SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, double total);
+	SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, vector<double> &w, vector<bool> &b);
 	//init functions
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);

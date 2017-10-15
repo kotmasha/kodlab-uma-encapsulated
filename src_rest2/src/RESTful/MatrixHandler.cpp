@@ -3,6 +3,7 @@
 #include "World.h"
 #include "Agent.h"
 #include "Snapshot.h"
+#include "DataManager.h"
 
 MatrixHandler::MatrixHandler(string handler_factory, logManager *log_access) : AdminHandler(handler_factory, log_access) {
 	UMA_BLOCK_DISTS = U("dists");
@@ -62,8 +63,9 @@ void MatrixHandler::create_up(World *world, http_request &request, http_response
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->up_GPU(signal, false);
-	vector<bool> result = snapshot->getUp();
+	DataManager *dm = snapshot->getDM();
+	dm->up_GPU(signal, snapshot->getQ(), false);
+	vector<bool> result = dm->getUp();
 	
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -84,9 +86,10 @@ void MatrixHandler::create_ups(World *world, http_request &request, http_respons
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->setSignals(signals);
-	snapshot->ups_GPU(signals.size());
-	vector<vector<bool> > results = snapshot->getSignals(signals.size());
+	DataManager *dm = snapshot->getDM();
+	dm->setSignals(signals);
+	dm->ups_GPU(signals.size());
+	vector<vector<bool> > results = dm->getSignals(signals.size());
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -107,11 +110,12 @@ void MatrixHandler::create_propagation(World *world, http_request &request, http
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->setSignals(signals);
-	snapshot->setLoad(load);
-	snapshot->setLSignals(signals);
-	snapshot->propagates_GPU(signals.size());
-	vector<vector<bool> > results = snapshot->getLSignals(signals.size());
+	DataManager *dm = snapshot->getDM();
+	dm->setSignals(signals);
+	dm->setLoad(load);
+	dm->setLSignals(signals);
+	dm->propagates_GPU(signals.size());
+	vector<vector<bool> > results = dm->getLSignals(signals.size());
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -130,8 +134,9 @@ void MatrixHandler::create_npdirs(World *world, http_request &request, http_resp
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->floyd_GPU();
-	vector<bool> npdirs = snapshot->getNPDir();
+	DataManager *dm = snapshot->getDM();
+	dm->floyd_GPU();
+	vector<bool> npdirs = dm->getNPDir();
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -152,8 +157,9 @@ void MatrixHandler::create_blocks(World *world, http_request &request, http_resp
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->setDists(dists);
-	vector<vector<int> > results = snapshot->blocks_GPU(delta);
+	DataManager *dm = snapshot->getDM();
+	dm->setDists(dists);
+	vector<vector<int> > results = dm->blocks_GPU(delta);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -173,7 +179,8 @@ void MatrixHandler::create_abduction(World *world, http_request &request, http_r
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	vector<vector<vector<bool> > > results = snapshot->abduction(signals);
+	DataManager *dm = snapshot->getDM();
+	vector<vector<vector<bool> > > results = dm->abduction(signals);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -196,8 +203,9 @@ void MatrixHandler::create_propagated_masks(World *world, http_request &request,
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->propagate_mask();
-	vector<vector<bool> > results = snapshot->getNpdirMasks();
+	DataManager *dm = snapshot->getDM();
+	dm->propagate_mask();
+	vector<vector<bool> > results = dm->getNpdirMasks();
 
 	response.set_status_code(status_codes::Created);
 	json::value message;

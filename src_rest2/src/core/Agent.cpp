@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "UMAException.h"
 
+/*
 Agent::Agent(ifstream &file) {
 	int uuid_length = -1;
 	file.read((char *)(&uuid_length), sizeof(int));
@@ -24,6 +25,7 @@ Agent::Agent(ifstream &file) {
 
 	_log->info() << "An agent " + _uuid + " is loaded";
 }
+*/
 
 Agent::Agent(string uuid){
 	_uuid = uuid;
@@ -56,7 +58,7 @@ vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, dou
 	result.push_back(_snapshots["minus"]->decide(obs_minus, phi, !active));
 	return result;
 }
-
+/*
 vector<vector<bool>> Agent::getCurrent() {
 	vector<vector<bool>> result;
 	result.push_back(_snapshots["plus"]->getCurrent());
@@ -105,7 +107,7 @@ void Agent::copy_test_data(Agent *agent) {
 		}
 	}
 }
-
+*/
 vector<string> Agent::getSnapshotInfo() {
 	vector<string> results;
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {

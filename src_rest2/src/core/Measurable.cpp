@@ -16,14 +16,15 @@ Measurable::Measurable(ifstream &file) {
 	pointers_to_null();
 }
 
-Measurable::Measurable(string uuid, int idx, bool isOriginPure){
+Measurable::Measurable(string uuid, int idx, bool isOriginPure, double diag){
 	_uuid = uuid;
 	_idx = idx;
 	_isOriginPure = isOriginPure;
 	pointers_to_null();
-	_vdiag = 0.0;
-	_vdiag_ = 0.0;
-	_vstatus = false;
+	_vdiag = diag;
+	_vdiag_ = diag;
+	_vobserve = false;
+	_vobserve_ = false;
 }
 
 /*
@@ -32,7 +33,8 @@ The function is setting all pointers to NULL
 void Measurable::pointers_to_null(){
 	_diag = NULL;
 	_diag_ = NULL;
-	_status = NULL;
+	_observe = NULL;
+	_observe_ = NULL;
 }
 
 /*
@@ -41,7 +43,6 @@ The function is copying the pointer value to values in the object
 void Measurable::pointers_to_values(){
 	_vdiag = *_diag;
 	_vdiag_ = *_diag_;
-	_vstatus = *_status;
 }
 
 /*
@@ -50,7 +51,6 @@ The function is copying values to pointer in the object
 void Measurable::values_to_pointers(){
 	*_diag = _vdiag;
 	*_diag_ = _vdiag_;
-	*_status = _vstatus;
 }
 
 /*
@@ -64,8 +64,13 @@ void Measurable::setDiagPointers(double *_diags, double *_diags_){
 /*
 This is setting the status/current value pointer
 */
-void Measurable::setStatusPointers(bool *status){
-	_status = status + _idx;
+void Measurable::setObservePointers(bool *observe, bool *observe_){
+	_observe = observe + _idx;
+	_observe_ = observe_ + _idx;
+}
+
+void Measurable::setCurrentPointers(bool *current) {
+	_current = current + _idx;
 }
 
 /*
@@ -104,12 +109,20 @@ double Measurable::getOldDiag() {
 	return _vdiag_;
 }
 
-bool Measurable::getStatus() {
-	return _vstatus;
-}
-
 bool Measurable::getIsOriginPure() {
 	return _isOriginPure;
+}
+
+bool Measurable::getObserve() {
+	return *_observe;
+}
+
+bool Measurable::getOldObserve() {
+	return *_observe_;
+}
+
+bool Measurable::getCurrent() {
+	return *_current;
 }
 
 void Measurable::setDiag(double &diag) {
@@ -118,10 +131,6 @@ void Measurable::setDiag(double &diag) {
 
 void Measurable::setOldDiag(double &diag_) {
 	_vdiag_ = diag_;
-}
-
-void Measurable::setStatus(bool &status) {
-	_vstatus = status;
 }
 
 void Measurable::setIsOriginPure(bool &isOriginPure) {

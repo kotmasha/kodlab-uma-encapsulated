@@ -43,6 +43,7 @@ void World::delete_agent(string &agent_id) {
 	_log->info() << "Agent deleted";
 }
 
+/*
 void World::save_world(string &name) {
 	ofstream file;
 	file.open(name + ".uma", ios::out | ios::binary);
@@ -53,6 +54,7 @@ void World::save_world(string &name) {
 	}
 	file.close();
 }
+*/
 
 void World::load_world(string &name) {
 	ifstream file;
@@ -60,12 +62,13 @@ void World::load_world(string &name) {
 	int agent_size = -1;
 	file.read((char *)(&agent_size), sizeof(int));
 	for (int i = 0; i < agent_size; ++i) {
-		Agent *agent = new Agent(file);
-		_load_agents[agent->_uuid] = agent;
+		//Agent *agent = new Agent(file);
+		//_load_agents[agent->_uuid] = agent;
 	}
 	file.close();
 }
 
+/*
 void World::merge_test() {
 	_log->info() << "start merging old test agent data with new test";
 	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
@@ -84,6 +87,7 @@ void World::merge_test() {
 	_log->info() << "finish merging all data";
 	//TBD delete load_agent data
 }
+*/
 
 
 World::~World(){}

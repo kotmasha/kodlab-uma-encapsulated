@@ -30,11 +30,18 @@ Sensor::Sensor(ifstream &file) {
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
-Sensor::Sensor(std::pair<string, string> &id_pair, int idx){
+Sensor::Sensor(std::pair<string, string> &id_pair, double total, int idx){
 	_uuid = id_pair.first;
 	_idx = idx;
-	_m = new Measurable(id_pair.first, 2 * idx, true);
-	_cm = new Measurable(id_pair.second, 2 * idx + 1, false);
+	_m = new Measurable(id_pair.first, 2 * idx, true, total / 2);
+	_cm = new Measurable(id_pair.second, 2 * idx + 1, false, total / 2);
+}
+
+Sensor::Sensor(std::pair<string, string> &id_pair, vector<double> &diag, int idx) {
+	_uuid = id_pair.first;
+	_idx = idx;
+	_m = new Measurable(id_pair.first, 2 * idx, true, diag[0]);
+	_cm = new Measurable(id_pair.second, 2 * idx + 1, false, diag[1]);
 }
 
 /*
@@ -120,9 +127,14 @@ void Sensor::setMeasurableDiagPointers(double *_diags, double *_diags_){
 This function is setting the status pointers of _m and _cm through the sensor object
 Input: weight matrix diagonal value of this and last iteration
 */
-void Sensor::setMeasurableStatusPointers(bool *status){
-	_m->setStatusPointers(status);
-	_cm->setStatusPointers(status);
+void Sensor::setMeasurableObservePointers(bool *observe, bool *observe_){
+	_m->setObservePointers(observe, observe_);
+	_cm->setObservePointers(observe, observe_);
+}
+
+void Sensor::setMeasurableCurrentPointers(bool *current) {
+	_m->setCurrentPointers(current);
+	_cm->setCurrentPointers(current);
 }
 
 /*
@@ -152,24 +164,10 @@ void Sensor::setIdx(int idx){
 }
 
 /*
-This function is using the amper and observe array to get the delayed sensor value
-Input: observe array
-*/
-bool Sensor::amper_and_signals(bool *observe){
-	//if(_amper.size() == 0) return observe[2 * _sid];
-	//probably need to give an warning when the amper list is empty
-	for(int i = 0; i < _amper.size(); ++i){
-		int j = _amper[i];
-		if(!observe[j]) return false;
-	}
-	return true;
-}
-
-/*
 This function is checking whether the current sensor is active or not
 */
 bool Sensor::isSensorActive(){
-	return _m->getStatus();
+	return _m->getCurrent();
 }
 
 /*
@@ -211,6 +209,14 @@ void Sensor::copy_data(Sensor *s) {
 	//note the amper list is not set in the copy function, as it need upper level(snapshot) info, so it is done in snapshot
 	_m->copy_data(s->_m);
 	_cm->copy_data(s->_cm);
+}
+
+bool Sensor::getObserve() {
+	return _m->getObserve();
+}
+
+bool Sensor::getOldObserve() {
+	return _m->getOldObserve();
 }
 
 /*

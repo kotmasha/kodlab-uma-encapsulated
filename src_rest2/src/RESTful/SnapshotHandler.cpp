@@ -5,7 +5,7 @@
 #include "Snapshot.h"
 
 SnapshotHandler::SnapshotHandler(string handler_factory, logManager *log_access): AdminHandler(handler_factory, log_access){
-	UMA_INITIAL_SENSOR_SIZE = U("initial_sensor_size");
+	UMA_INITIAL_SIZE = U("initial_size");
 	UMA_Q = U("q");
 	UMA_THRESHOLD = U("threshold");
 	UMA_AUTO_TARGET = U("auto_target");
@@ -21,10 +21,6 @@ void SnapshotHandler::handle_create(World *world, string_t &path, http_request &
 	}
 	else if (path == U("/UMA/object/snapshot/implication")) {
 		create_implication(world, request, response);
-		return;
-	}
-	else if (path == U("/UMA/object/snapshot/init")) {
-		init(world, request, response);
 		return;
 	}
 
@@ -97,22 +93,6 @@ void SnapshotHandler::create_implication(World *world, http_request &request, ht
 	response.set_body(message);
 }
 
-void SnapshotHandler::init(World *world, http_request &request, http_response &response) {
-	json::value data = request.extract_json().get();
-	string agent_id = get_string_input(data, UMA_AGENT_ID);
-	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
-	int initial_sensor_size = get_int_input(data, UMA_INITIAL_SENSOR_SIZE);
-
-	Agent *agent = world->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->init(initial_sensor_size);
-
-	response.set_status_code(status_codes::Created);
-	json::value message;
-	message[MESSAGE] = json::value::string(U("Data stabilized"));
-	response.set_body(message);
-}
-
 void SnapshotHandler::get_snapshot(World *world, http_request &request, http_response &response) {
 	std::map<string_t, string_t> query = uri::split_query(request.request_uri().query());
 	string agent_id = get_string_input(query, UMA_AGENT_ID);
@@ -121,24 +101,26 @@ void SnapshotHandler::get_snapshot(World *world, http_request &request, http_res
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 
 	vector<std::pair<int, pair<string, string> > > sensor_info = snapshot->getSensorInfo();
-	std::map<string, int> size_info = snapshot->getSizeInfo();
+	double total = snapshot->getTotal();
 	double q = snapshot->getQ();
 	double threshold = snapshot->getThreshold();
 	bool auto_target = snapshot->getAutoTarget();
 	bool propagate_mask = snapshot->getPropagateMask();
+	int initial_size = snapshot->getInitialSize();
 
 	response.set_status_code(status_codes::OK);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Get snapshot info"));
 	message[DATA] = json::value();
 	json::value converted_sensor_info = convert_sensor_info(sensor_info);
-	json::value converted_size_info = convert_size_info(size_info);
 	message[DATA][U("sensors")] = converted_sensor_info;
-	message[DATA][U("sizes")] = converted_size_info;
+
+	message[DATA][U("total")] = total;
 	message[DATA][U("q")] = q;
 	message[DATA][U("threshold")] = threshold;
 	message[DATA][U("auto_target")] = auto_target;
 	message[DATA][U("propagate_mask")] = propagate_mask;
+	message[DATA][U("initial_size")] = initial_size;
 	response.set_body(message);
 }
 
@@ -237,6 +219,16 @@ void SnapshotHandler::update_snapshot(World *world, http_request &request, http_
 		response.set_status_code(status_codes::OK);
 		json::value message;
 		message[MESSAGE] = json::value::string(U("Auto target updated"));
+		response.set_body(message);
+		return;
+	}
+	else if (check_field(data, UMA_INITIAL_SIZE, false)) {
+		int initial_size = get_int_input(data, UMA_INITIAL_SIZE);
+		snapshot->setInitialSize(initial_size);
+
+		response.set_status_code(status_codes::OK);
+		json::value message;
+		message[MESSAGE] = json::value::string(U("initial size updated"));
 		response.set_body(message);
 		return;
 	}

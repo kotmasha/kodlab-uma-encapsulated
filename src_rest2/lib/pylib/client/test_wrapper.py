@@ -46,6 +46,7 @@ class test_wrapper:
             response = requests.post(url, json.dumps(data), headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -67,6 +68,7 @@ class test_wrapper:
             response = requests.get(url, params = query, headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -88,6 +90,7 @@ class test_wrapper:
             response = requests.delete(url, data=json.dumps(data), headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -97,6 +100,7 @@ class test_wrapper:
             response = requests.put(url, data = json.dumps(data), params=query, headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:

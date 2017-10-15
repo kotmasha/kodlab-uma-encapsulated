@@ -64,7 +64,7 @@ void MeasurableHandler::get_measurable(World *world, http_request &request, http
 	Measurable *measurable = snapshot->getMeasurable(measurable_id);
 	double diag = measurable->getDiag();
 	double old_diag = measurable->getOldDiag();
-	bool status = measurable->getStatus();
+	bool current = measurable->getCurrent();
 	bool isOriginPure = measurable->getIsOriginPure();
 
 	response.set_status_code(status_codes::OK);
@@ -73,7 +73,7 @@ void MeasurableHandler::get_measurable(World *world, http_request &request, http
 	message[DATA] = json::value();
 	message[DATA][U("diag")] = json::value(diag);
 	message[DATA][U("old_diag")] = json::value(old_diag);
-	message[DATA][U("status")] = json::value(status);
+	message[DATA][U("status")] = json::value(current);
 	message[DATA][U("isOriginPure")] = json::value(isOriginPure);
 	response.set_body(message);
 }

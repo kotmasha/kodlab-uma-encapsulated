@@ -24,6 +24,8 @@ public:
 protected:
 	string_t UMA_CURRENT, UMA_PREDICTION, UMA_TARGET;
 	string_t UMA_TARGET_LIST, UMA_SIGNALS;
+	string_t UMA_DATA_SIZE;
+	string_t UMA_WEIGHTS, UMA_DIRS, UMA_THRESHOLDS;
 };
 
 #endif

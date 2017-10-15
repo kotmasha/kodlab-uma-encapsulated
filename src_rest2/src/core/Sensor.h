@@ -5,6 +5,7 @@ class Snapshot;
 class Measurable;
 class SensorPair;
 class logManager;
+class Simulation;
 
 using namespace std;
 /*
@@ -24,13 +25,16 @@ protected:
 
 	friend class SensorPair;
 	friend class Snapshot;
+	friend class Simulation;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 public:
 	Sensor(ifstream &file);
-	Sensor(std::pair<string, string> &id_pair, int idx);
+	Sensor(std::pair<string, string> &id_pair, double total, int idx);
+	Sensor(std::pair<string, string> &id_pair, vector<double> &diag, int idx);
 
 	void setMeasurableDiagPointers(double *_diags, double *_diags_);
-	void setMeasurableStatusPointers(bool *current);
+	void setMeasurableObservePointers(bool *observe, bool *observe_);
+	void setMeasurableCurrentPointers(bool *current);
 	void values_to_pointers();
 	void pointers_to_values();
 	void init_amper_list(bool *ampers);
@@ -42,11 +46,12 @@ public:
 	int getIdx();
 	vector<int> getAmperList();
 	void copyAmperList(bool *ampers);
-	bool amper_and_signals(bool *observe);
 	bool isSensorActive();
 	void pointers_to_null();
 	void save_sensor(ofstream &file);
 	void copy_data(Sensor *s);
+	bool getObserve();
+	bool getOldObserve();
 
 	~Sensor();
 };

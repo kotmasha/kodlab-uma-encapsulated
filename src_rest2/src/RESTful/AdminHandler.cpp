@@ -66,6 +66,12 @@ void AdminHandler::vector_int_to_array(std::vector<int> &list, std::vector<json:
 	}
 }
 
+void AdminHandler::vector_double_to_array(std::vector<double> &list, std::vector<json::value> &json_list) {
+	for (int i = 0; i < list.size(); ++i) {
+		json_list.push_back(json::value::number(list[i]));
+	}
+}
+
 void AdminHandler::vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list) {
 	for (int i = 0; i < list.size(); ++i) {
 		json_list.push_back(json::value::boolean(list[i]));
@@ -84,6 +90,14 @@ void AdminHandler::vector_int2d_to_array(std::vector<vector<int> > &lists, std::
 	for (int i = 0; i < lists.size(); ++i) {
 		vector<json::value> value;
 		vector_int_to_array(lists[i], value);
+		json_lists.push_back(json::value::array(value));
+	}
+}
+
+void AdminHandler::vector_double2d_to_array(std::vector<vector<double> > &lists, std::vector<json::value> &json_lists) {
+	for (int i = 0; i < lists.size(); ++i) {
+		vector<json::value> value;
+		vector_double_to_array(lists[i], value);
 		json_lists.push_back(json::value::array(value));
 	}
 }
@@ -303,6 +317,25 @@ vector<vector<bool> > AdminHandler::get_bool2d_input(json::value &data, string_t
 	return value;
 }
 
+vector<vector<double> > AdminHandler::get_double2d_input(json::value &data, string_t &name) {
+	check_field(data, name);
+	vector<vector<double> > value;
+	try {
+		auto &lists = data[name].as_array();
+		for (int i = 0; i < lists.size(); ++i) {
+			auto &list = lists[i].as_array();
+			vector<double> tmp_value;
+			for (int j = 0; j < list.size(); ++j) {
+				tmp_value.push_back(list[j].as_double());
+			}
+			value.push_back(tmp_value);
+		}
+	}
+	catch (exception &e) {
+		throw ClientException("Cannot parsing the field " + string_t_to_string(name), ClientException::ERROR, status_codes::BadRequest);
+	}
+	return value;
+}
 
 vector<vector<int> > AdminHandler::get_int2d_input(json::value &data, string_t &name) {
 	check_field(data, name);
@@ -341,6 +374,21 @@ vector<string> AdminHandler::get_string1d_input(json::value &data, string_t &nam
 	return value;
 }
 
+vector<double> AdminHandler::get_double1d_input(json::value &data, string_t &name) {
+	check_field(data, name);
+	vector<double> value;
+	try {
+		auto &list = data[name].as_array();
+		for (int i = 0; i < list.size(); ++i) {
+			double tmp = list[i].as_double();
+			value.push_back(tmp);
+		}
+	}
+	catch (exception &e) {
+		throw ClientException("Cannot parsing the field " + string_t_to_string(name), ClientException::ERROR, status_codes::BadRequest);
+	}
+	return value;
+}
 
 vector<std::pair<string, string> > AdminHandler::get_string_pair1d_input(json::value &data, string_t &name) {
 	check_field(data, name);

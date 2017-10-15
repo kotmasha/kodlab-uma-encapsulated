@@ -14,6 +14,10 @@ SensorHandler::SensorHandler(string handler_factory, logManager *log_access) :Ad
 	UMA_AMPER_LIST = U("amper_list");
 	UMA_SENSOR1 = U("sensor1");
 	UMA_SENSOR2 = U("sensor2");
+
+	UMA_W = U("w");
+	UMA_D = U("d");
+	UMA_DIAG = U("diag");
 }
 
 void SensorHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
@@ -115,11 +119,14 @@ void SensorHandler::create_sensor(World *world, http_request &request, http_resp
 	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
 	string sensor_id = get_string_input(data, UMA_SENSOR_ID);
 	string c_sid = get_string_input(data, UMA_C_SID);
+	vector<vector<double> > w = get_double2d_input(data, UMA_W);
+	vector<vector<bool> > d = get_bool2d_input(data, UMA_D);
+	vector<double> diag = get_double1d_input(data, UMA_DIAG);
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	std::pair<string, string> id_pair(sensor_id, c_sid);
-	snapshot->add_sensor(id_pair);
+	snapshot->add_sensor(id_pair, diag, w, d);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;

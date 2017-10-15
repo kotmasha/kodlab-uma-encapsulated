@@ -5,6 +5,7 @@
 class Snapshot;
 class Sensor;
 class MeasurablePair;
+class Simulation;
 
 using namespace std;
 /*
@@ -24,33 +25,38 @@ protected:
 	//_vdiag_ is the value of the pointer _diag_
 	double _vdiag, _vdiag_;
 	//_status is the status of the measurable, turn on or not
-	bool *_status, _vstatus;
+	bool *_observe, *_observe_;
+	bool _vobserve, _vobserve_;
+	bool *_current;
 	//indicate if the measurable is originally a pure
 	bool _isOriginPure;
 	friend class Snapshot;
 	friend class Sensor;
 	friend class MeasurablePair;
+	friend class Simulation;
 
 public:
 	Measurable(ifstream &file);
-	Measurable(string uuid, int idx, bool isOriginPure);
+	Measurable(string uuid, int idx, bool isOriginPure, double diag);
 	void pointers_to_null();
 	void pointers_to_values();
 	void values_to_pointers();
 	void setDiagPointers(double *_diags, double *_diags_);
-	void setStatusPointers(bool *status);
+	void setObservePointers(bool *observe, bool *observe_);
+	void setCurrentPointers(bool *current);
 	void setIdx(int idx);
 	void save_measurable(ofstream &file);
 	void copy_data(Measurable *m);
 
 	double getDiag();
 	double getOldDiag();
-	bool getStatus();
 	bool getIsOriginPure();
+	bool getObserve();
+	bool getOldObserve();
+	bool getCurrent();
 
 	void setDiag(double &diag);
 	void setOldDiag(double &diag_);
-	void setStatus(bool &status);
 	void setIsOriginPure(bool &isOriginPure);
 	~Measurable();
 };

@@ -10,6 +10,7 @@ protected:
 	string_t UMA_C_SID;
 	string_t UMA_AMPER_LIST;
 	string_t UMA_SENSOR1, UMA_SENSOR2;
+	string_t UMA_W, UMA_D, UMA_DIAG;
 public:
 	SensorHandler(string handler_factory, logManager *log_access);
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
