@@ -643,7 +643,7 @@ Input: m_idx1, m_idx2 are the measurable idx that need to be amperand, m_idx1 > 
 */
 void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, std::pair<string, string> &id_pair) {
 	vector<SensorPair*> amper_and_sensor_pairs;
-	Sensor *amper_and_sensor = new Sensor(id_pair, _sensors.size(), _total);
+	Sensor *amper_and_sensor = new Sensor(id_pair, _total, _sensors.size());
 	_sensor_idx[id_pair.first] = amper_and_sensor;
 	_sensor_idx[id_pair.second] = amper_and_sensor;
 
@@ -731,7 +731,7 @@ Input: mid of the measurable doing the delay, and whether to merge after the ope
 */
 void Snapshot::generate_delayed_weights(int mid, bool merge, std::pair<string, string> &id_pair){
 	//create a new delayed sensor
-	Sensor *delayed_sensor = new Sensor(id_pair, _sensors.size(), _total);
+	Sensor *delayed_sensor = new Sensor(id_pair, _total, _sensors.size());
 	_sensor_idx[id_pair.first] = delayed_sensor;
 	_sensor_idx[id_pair.second] = delayed_sensor;
 	vector<SensorPair *> delayed_sensor_pairs;
@@ -814,7 +814,8 @@ bool Snapshot::amper_and_signals(Sensor *sensor) {
 	vector<int> amper_list = sensor->getAmperList();
 	for (int i = 0; i < amper_list.size(); ++i) {
 		int j = amper_list[i];
-		if (!(_sensors[j]->getOldObserve())) return false;
+		Measurable *m = getMeasurable(j);
+		if (!(m->getOldObserve())) return false;
 	}
 	return true;
 }

@@ -76,233 +76,25 @@ amper 0&2:
     amper_list: [[True, False, True, False, False, False, False, False]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 0&2:
+get weights after 0&2:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.2
-
-get meaurable pair X 1 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 2 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 3 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 4 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.12
-
-get meaurable pair X 5 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.08
-
-get meaurable pair X 6 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.16
-
-get meaurable pair X 7 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.04
-
-get meaurable pair X 8 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.2
-
-get meaurable pair CX 0 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 1 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.8
-
-get meaurable pair CX 2 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.2
-
-get meaurable pair CX 3 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.6
-
-get meaurable pair CX 4 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.48
-
-get meaurable pair CX 5 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.32
-
-get meaurable pair CX 6 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.64
-
-get meaurable pair CX 7 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.16
-
-get meaurable pair CX 8 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 9 after 0&2:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.8
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0.2, 0, 0.2, 0, 0.12, 0.08, 0.16, 0.04, 0.2]
+      - [0, 0.8, 0.2, 0.6, 0.48, 0.32, 0.64, 0.16, 0, 0.8]
 
 get sensorX 0&2:
   method: GET
@@ -333,9 +125,21 @@ get snapshot 5 sensor:
       - sensor: {'m': 'sensor2', 'cm': 'c_sensor2'}
       - sensor: {'m': 'sensor3', 'cm': 'c_sensor3'}
       - sensor: {'m': 'sensorX', 'cm': 'c_sensorX'}
+    q: 0.9
+    threshold: 0.125
+    auto_target: False
+    propagate_mask: False
+    initial_size: 0
+
+get data size 5 sensor:
+  method: GET
+  url: /UMA/data/data_size
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  kwargs:
     sizes:
-      sensor_count: 5
-      sensor_pair_count: 15
       _sensor_size: 5
       _sensor_size_max: 6
       _sensor2d_size: 15
@@ -346,10 +150,6 @@ get snapshot 5 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 30
       _mask_amper_size_max: 42
-    q: 0.9
-    threshold: 0.125
-    auto_target: False
-    propagate_mask: False
 
 pruning X:
   method: POST
@@ -374,9 +174,22 @@ get snapshot 4 sensor:
       - sensor: {'m': 'sensor1', 'cm': 'c_sensor1'}
       - sensor: {'m': 'sensor2', 'cm': 'c_sensor2'}
       - sensor: {'m': 'sensor3', 'cm': 'c_sensor3'}
+    q: 0.9
+    threshold: 0.125
+    auto_target: False
+    propagate_mask: False
+    initial_size: 0
+
+get data size 4 sensor:
+  method: GET
+  url: /UMA/data/data_size
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    sensor_id: sensorX
+  kwargs:
     sizes:
-      sensor_count: 4
-      sensor_pair_count: 10
       _sensor_size: 4
       _sensor_size_max: 6
       _sensor2d_size: 10
@@ -387,10 +200,6 @@ get snapshot 4 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 20
       _mask_amper_size_max: 42
-    q: 0.9
-    threshold: 0.125
-    auto_target: False
-    propagate_mask: False
 
 #3&7
 amper 3&7:
@@ -403,233 +212,25 @@ amper 3&7:
     amper_list: [[False, False, False, True, False, False, False, True]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 3&7:
+get weights after 3&7:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.04
-
-get meaurable pair X 1 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.16
-
-get meaurable pair X 2 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 3 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 4 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.12
-
-get meaurable pair X 5 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.08
-
-get meaurable pair X 6 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 7 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 8 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.2
-
-get meaurable pair CX 0 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.16
-
-get meaurable pair CX 1 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.64
-
-get meaurable pair CX 2 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.4
-
-get meaurable pair CX 3 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.4
-
-get meaurable pair CX 4 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.48
-
-get meaurable pair CX 5 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.32
-
-get meaurable pair CX 6 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.8
-
-get meaurable pair CX 7 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 8 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 0 after 3&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.8
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0.04, 0.16, 0, 0.2, 0.12, 0.08, 0, 0.2, 0.2]
+      - [0.16, 0.64, 0.4, 0.4, 0.48, 0.32, 0.8, 0, 0, 0.8]
 
 get sensorX 3&7:
   method: GET
@@ -656,233 +257,25 @@ amper 2&5:
     amper_list: [[False, False, True, False, False, True, False, False]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 2&5:
+get weights after 2&5:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.0
-
-get meaurable pair X 1 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 2 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 3 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 4 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 5 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 6 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 7 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 8 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 0 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.2
-
-get meaurable pair CX 1 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.8
-
-get meaurable pair CX 2 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.4
-
-get meaurable pair CX 3 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.6
-
-get meaurable pair CX 4 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.6
-
-get meaurable pair CX 5 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.4
-
-get meaurable pair CX 6 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.8
-
-get meaurable pair CX 7 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.2
-
-get meaurable pair CX 8 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 9 after 2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 1.0
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0, 0, 0, 0, 0, 0, 0, 0, 0]
+      - [0.2, 0.8, 0.4, 0.6, 0.6, 0.4, 0.8, 0.2, 0, 1]
 
 get sensorX 2&5:
   method: GET
@@ -909,233 +302,25 @@ amper 1&6:
     amper_list: [[False, True, False, False, False, False, True, False]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 1&6:
+get weights after 1&6:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.0
-
-get meaurable pair X 1 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.6
-
-get meaurable pair X 2 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.24
-
-get meaurable pair X 3 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.36
-
-get meaurable pair X 4 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.36
-
-get meaurable pair X 5 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.24
-
-get meaurable pair X 6 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.6
-
-get meaurable pair X 7 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair 8 0 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.6
-
-get meaurable pair CX 0 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 1 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 2 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.16
-
-get meaurable pair X 3 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.24
-
-get meaurable pair X 4 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.24
-
-get meaurable pair X 5 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.16
-
-get meaurable pair X 6 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 7 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.2
-
-get meaurable pair X 8 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 9 after 1&6:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.4
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0, 0.6, 0.24, 0.36, 0.36, 0.24, 0.6, 0, 0.6]
+      - [0.2, 0.2, 0.16, 0.24, 0.24, 0.16, 0.2, 0.2, 0, 0.4]
 
 get sensorX 1&6:
   method: GET
@@ -1162,233 +347,25 @@ amper 0&2&4:
     amper_list: [[True, False, True, False, True, False, False, False]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 0&2&4:
+get weights after 0&2&4:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.024
-
-get meaurable pair X 1 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.096
-
-get meaurable pair X 2 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.048
-
-get meaurable pair X 3 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.072
-
-get meaurable pair X 4 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.12
-
-get meaurable pair X 5 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 6 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.096
-
-get meaurable pair X 7 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.024
-
-get meaurable pair X 8 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.12
-
-get meaurable pair CX 0 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.176
-
-get meaurable pair CX 1 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.704
-
-get meaurable pair CX 2 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.352
-
-get meaurable pair CX 3 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.528
-
-get meaurable pair CX 4 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.48
-
-get meaurable pair CX 5 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.4
-
-get meaurable pair CX 6 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.704
-
-get meaurable pair CX 7 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.176
-
-get meaurable pair CX 8 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 9 after 0&2&4:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.88
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0.024, 0.096, 0.048, 0.072, 0.12, 0, 0.096, 0.024, 0.12]
+      - [0.176, 0.704, 0.352, 0.528, 0.48, 0.4, 0.704, 0.176, 0, 0.88]
 
 get sensorX 0&2&4:
   method: GET
@@ -1415,233 +392,25 @@ amper 3&5&7:
     amper_list: [[False, False, False, True, False, True, False, True]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 3&5&7:
+get weights after 3&5&7:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.016
-
-get meaurable pair X 1 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.064
-
-get meaurable pair X 2 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.032
-
-get meaurable pair X 3 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.048
-
-get meaurable pair X 4 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.048
-
-get meaurable pair X 5 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.032
-
-get meaurable pair X 6 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 7 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.08
-
-get meaurable pair X 8 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.08
-
-get meaurable pair CX 0 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.184
-
-get meaurable pair CX 1 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.736
-
-get meaurable pair CX 2 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.368
-
-get meaurable pair CX 3 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.552
-
-get meaurable pair CX 4 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.552
-
-get meaurable pair CX 5 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.368
-
-get meaurable pair CX 6 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.8
-
-get meaurable pair CX 7 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.12
-
-get meaurable pair CX 8 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 9 after 3&5&7:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.92
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0.016, 0.064, 0.032, 0.048, 0.048, 0.032, 0, 0.08, 0.08]
+      - [0.184, 0.736, 0.368, 0.552, 0.552, 0.368, 0.8, 0.12, 0, 0.92]
 
 get sensorX 3&5&7:
   method: GET
@@ -1668,233 +437,25 @@ amper 0&2&5:
     amper_list: [[True, False, True, False, False, True, False, False]]
     uuid_list: [['sensorX', 'c_sensorX']]
 
-get meaurable pair X 0 after 0&2&5:
+get weights after 0&2&5:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/data/weights
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor0
   kwargs:
-    w: 0.016
-
-get meaurable pair X 1 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.064
-
-get meaurable pair X 2 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.032
-
-get meaurable pair X 3 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.048
-
-get meaurable pair X 4 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.0
-
-get meaurable pair X 5 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.08
-
-get meaurable pair X 6 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.064
-
-get meaurable pair X 7 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.016
-
-get meaurable pair X 0 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.08
-
-get meaurable pair CX 0 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor0
-  kwargs:
-    w: 0.184
-
-get meaurable pair CX 1 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor0
-  kwargs:
-    w: 0.736
-
-get meaurable pair CX 2 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor1
-  kwargs:
-    w: 0.368
-
-get meaurable pair CX 3 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor1
-  kwargs:
-    w: 0.552
-
-get meaurable pair CX 4 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor2
-  kwargs:
-    w: 0.6
-
-get meaurable pair CX 5 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor2
-  kwargs:
-    w: 0.32
-
-get meaurable pair CX 6 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensor3
-  kwargs:
-    w: 0.736
-
-get meaurable pair CX 7 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensor3
-  kwargs:
-    w: 0.184
-
-get meaurable pair CX 8 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: sensorX
-  kwargs:
-    w: 0.0
-
-get meaurable pair CX 9 after 0&2&5:
-  method: GET
-  url: /UMA/object/measurable_pair
-  status_code: 200
-  query:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    measurable1: c_sensorX
-    measurable2: c_sensorX
-  kwargs:
-    w: 0.92
+    weights:
+      - [0.2]
+      - [0, 0.8]
+      - [0.2, 0.2, 0.4]
+      - [0, 0.6, 0, 0.6]
+      - [0.2, 0.4, 0.4, 0.2, 0.6]
+      - [0, 0.4, 0, 0.4, 0, 0.4]
+      - [0.2, 0.6, 0.4, 0.4, 0.6, 0.2, 0.8]
+      - [0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2]
+      - [0.016, 0.064, 0.032, 0.048, 0, 0.08, 0.064, 0.016, 0.08]
+      - [0.184, 0.736, 0.368, 0.552, 0.6, 0.32, 0.736, 0.184, 0, 0.92]
 
 get sensorX 0&2&5:
   method: GET
@@ -1924,216 +485,67 @@ tests:
   - create sensor1
   - create sensor2
   - create sensor3
-  - update measurable pair sensor0 sensor0
-  - update measurable pair c_sensor0 sensor0
-  - update measurable pair c_sensor0 c_sensor0
-  - update measurable pair sensor1 sensor0
-  - update measurable pair sensor1 c_sensor0
-  - update measurable pair sensor1 sensor1
-  - update measurable pair c_sensor1 sensor0
-  - update measurable pair c_sensor1 c_sensor0
-  - update measurable pair c_sensor1 sensor0
-  - update measurable pair c_sensor1 c_sensor1
-  - update measurable pair sensor2 sensor0
-  - update measurable pair sensor2 c_sensor0
-  - update measurable pair sensor2 sensor1
-  - update measurable pair sensor2 c_sensor1
-  - update measurable pair sensor2 sensor2
-  - update measurable pair c_sensor2 sensor0
-  - update measurable pair c_sensor2 c_sensor0
-  - update measurable pair c_sensor2 sensor1
-  - update measurable pair c_sensor2 c_sensor1
-  - update measurable pair c_sensor2 sensor2
-  - update measurable pair c_sensor2 c_sensor2
-  - update measurable pair sensor3 sensor0
-  - update measurable pair sensor3 c_sensor0
-  - update measurable pair sensor3 sensor1
-  - update measurable pair sensor3 c_sensor1
-  - update measurable pair sensor3 sensor2
-  - update measurable pair sensor3 c_sensor2
-  - update measurable pair sensor3 sensor3
-  - update measurable pair c_sensor3 sensor0
-  - update measurable pair c_sensor3 c_sensor0
-  - update measurable pair c_sensor3 sensor1
-  - update measurable pair c_sensor3 c_sensor1
-  - update measurable pair c_sensor3 sensor2
-  - update measurable pair c_sensor3 c_sensor2
-  - update measurable pair c_sensor3 sensor3
-  - update measurable pair c_sensor3 c_sensor3
-  - init snapshot
 #0&2
   - amper 0&2
-  - get meaurable pair X 0 after 0&2
-  - get meaurable pair X 1 after 0&2
-  - get meaurable pair X 2 after 0&2
-  - get meaurable pair X 3 after 0&2
-  - get meaurable pair X 4 after 0&2
-  - get meaurable pair X 5 after 0&2
-  - get meaurable pair X 6 after 0&2
-  - get meaurable pair X 7 after 0&2
-  - get meaurable pair X 8 after 0&2
-  - get meaurable pair CX 0 after 0&2
-  - get meaurable pair CX 1 after 0&2
-  - get meaurable pair CX 2 after 0&2
-  - get meaurable pair CX 3 after 0&2
-  - get meaurable pair CX 4 after 0&2
-  - get meaurable pair CX 5 after 0&2
-  - get meaurable pair CX 6 after 0&2
-  - get meaurable pair CX 7 after 0&2
-  - get meaurable pair CX 8 after 0&2
-  - get meaurable pair CX 9 after 0&2
+  - get weights after 0&2
   - get sensorX 0&2
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #3&7
   - amper 3&7
-  - get meaurable pair X 0 after 3&7
-  - get meaurable pair X 1 after 3&7
-  - get meaurable pair X 2 after 3&7
-  - get meaurable pair X 3 after 3&7
-  - get meaurable pair X 4 after 3&7
-  - get meaurable pair X 5 after 3&7
-  - get meaurable pair X 6 after 3&7
-  - get meaurable pair X 7 after 3&7
-  - get meaurable pair X 8 after 3&7
-  - get meaurable pair CX 0 after 3&7
-  - get meaurable pair CX 1 after 3&7
-  - get meaurable pair CX 2 after 3&7
-  - get meaurable pair CX 3 after 3&7
-  - get meaurable pair CX 4 after 3&7
-  - get meaurable pair CX 5 after 3&7
-  - get meaurable pair CX 6 after 3&7
-  - get meaurable pair CX 7 after 3&7
-  - get meaurable pair CX 8 after 3&7
-  - get meaurable pair CX 0 after 3&7
+  - get weights after 3&7
   - get sensorX 3&7
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #2&5
   - amper 2&5
-  - get meaurable pair X 0 after 2&5
-  - get meaurable pair X 1 after 2&5
-  - get meaurable pair X 2 after 2&5
-  - get meaurable pair X 3 after 2&5
-  - get meaurable pair X 4 after 2&5
-  - get meaurable pair X 5 after 2&5
-  - get meaurable pair X 6 after 2&5
-  - get meaurable pair X 7 after 2&5
-  - get meaurable pair X 8 after 2&5
-  - get meaurable pair CX 0 after 2&5
-  - get meaurable pair CX 1 after 2&5
-  - get meaurable pair CX 2 after 2&5
-  - get meaurable pair CX 3 after 2&5
-  - get meaurable pair CX 4 after 2&5
-  - get meaurable pair CX 5 after 2&5
-  - get meaurable pair CX 6 after 2&5
-  - get meaurable pair CX 7 after 2&5
-  - get meaurable pair CX 8 after 2&5
-  - get meaurable pair CX 9 after 2&5
+  - get weights after 2&5
   - get sensorX 2&5
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #1&6
   - amper 1&6
-  - get meaurable pair X 0 after 1&6
-  - get meaurable pair X 1 after 1&6
-  - get meaurable pair X 2 after 1&6
-  - get meaurable pair X 3 after 1&6
-  - get meaurable pair X 4 after 1&6
-  - get meaurable pair X 5 after 1&6
-  - get meaurable pair X 6 after 1&6
-  - get meaurable pair X 7 after 1&6
-  - get meaurable pair 8 0 after 1&6
-  - get meaurable pair CX 0 after 1&6
-  - get meaurable pair X 1 after 1&6
-  - get meaurable pair X 2 after 1&6
-  - get meaurable pair X 3 after 1&6
-  - get meaurable pair X 4 after 1&6
-  - get meaurable pair X 5 after 1&6
-  - get meaurable pair X 6 after 1&6
-  - get meaurable pair X 7 after 1&6
-  - get meaurable pair X 8 after 1&6
-  - get meaurable pair X 9 after 1&6
+  - get weights after 1&6
   - get sensorX 1&6
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #0&2&4
   - amper 0&2&4
-  - get meaurable pair X 0 after 0&2&4
-  - get meaurable pair X 1 after 0&2&4
-  - get meaurable pair X 2 after 0&2&4
-  - get meaurable pair X 3 after 0&2&4
-  - get meaurable pair X 4 after 0&2&4
-  - get meaurable pair X 5 after 0&2&4
-  - get meaurable pair X 6 after 0&2&4
-  - get meaurable pair X 7 after 0&2&4
-  - get meaurable pair X 8 after 0&2&4
-  - get meaurable pair CX 0 after 0&2&4
-  - get meaurable pair CX 1 after 0&2&4
-  - get meaurable pair CX 2 after 0&2&4
-  - get meaurable pair CX 3 after 0&2&4
-  - get meaurable pair CX 4 after 0&2&4
-  - get meaurable pair CX 5 after 0&2&4
-  - get meaurable pair CX 6 after 0&2&4
-  - get meaurable pair CX 7 after 0&2&4
-  - get meaurable pair CX 8 after 0&2&4
-  - get meaurable pair CX 9 after 0&2&4
+  - get weights after 0&2&4
   - get sensorX 0&2&4
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #3&5&7
   - amper 3&5&7
-  - get meaurable pair X 0 after 3&5&7
-  - get meaurable pair X 1 after 3&5&7
-  - get meaurable pair X 2 after 3&5&7
-  - get meaurable pair X 3 after 3&5&7
-  - get meaurable pair X 4 after 3&5&7
-  - get meaurable pair X 5 after 3&5&7
-  - get meaurable pair X 6 after 3&5&7
-  - get meaurable pair X 7 after 3&5&7
-  - get meaurable pair X 8 after 3&5&7
-  - get meaurable pair CX 0 after 3&5&7
-  - get meaurable pair CX 1 after 3&5&7
-  - get meaurable pair CX 2 after 3&5&7
-  - get meaurable pair CX 3 after 3&5&7
-  - get meaurable pair CX 4 after 3&5&7
-  - get meaurable pair CX 5 after 3&5&7
-  - get meaurable pair CX 6 after 3&5&7
-  - get meaurable pair CX 7 after 3&5&7
-  - get meaurable pair CX 8 after 3&5&7
-  - get meaurable pair CX 9 after 3&5&7
+  - get weights after 3&5&7
   - get sensorX 3&5&7
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
 #0&2&5
   - amper 0&2&5
-  - get meaurable pair X 0 after 0&2&5
-  - get meaurable pair X 1 after 0&2&5
-  - get meaurable pair X 2 after 0&2&5
-  - get meaurable pair X 3 after 0&2&5
-  - get meaurable pair X 4 after 0&2&5
-  - get meaurable pair X 5 after 0&2&5
-  - get meaurable pair X 6 after 0&2&5
-  - get meaurable pair X 7 after 0&2&5
-  - get meaurable pair X 0 after 0&2&5
-  - get meaurable pair CX 0 after 0&2&5
-  - get meaurable pair CX 1 after 0&2&5
-  - get meaurable pair CX 2 after 0&2&5
-  - get meaurable pair CX 3 after 0&2&5
-  - get meaurable pair CX 4 after 0&2&5
-  - get meaurable pair CX 5 after 0&2&5
-  - get meaurable pair CX 6 after 0&2&5
-  - get meaurable pair CX 7 after 0&2&5
-  - get meaurable pair CX 8 after 0&2&5
-  - get meaurable pair CX 9 after 0&2&5
+  - get weights after 0&2&5
   - get sensorX 0&2&5
   - get snapshot 5 sensor
+  - get data size 5 sensor
   - pruning X
   - get snapshot 4 sensor
+  - get data size 4 sensor
   - delete agent

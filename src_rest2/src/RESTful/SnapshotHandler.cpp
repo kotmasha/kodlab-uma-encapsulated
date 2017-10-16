@@ -249,13 +249,4 @@ json::value SnapshotHandler::convert_sensor_info(const vector<std::pair<int, pai
 	return sensors;
 }
 
-json::value SnapshotHandler::convert_size_info(const std::map<string, int> &size_info) {
-	json::value size;
-	for (auto it = size_info.begin(); it != size_info.end(); ++it) {
-		string s = it->first;
-		size[string_to_string_t(s)] = json::value(it->second);
-	}
-	return size;
-}
-
 SnapshotHandler::~SnapshotHandler() {}

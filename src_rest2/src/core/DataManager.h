@@ -114,6 +114,7 @@ public:
 	void setLSignals(vector<vector<bool> > &signals);
 	void setDists(vector<vector<int> > &dists);
 	void setObserve(vector<bool> &observe);
+	void setCurrent(vector<bool> &current);
 	void setTarget(vector<bool> &signal);
 
 	vector<bool> getCurrent();

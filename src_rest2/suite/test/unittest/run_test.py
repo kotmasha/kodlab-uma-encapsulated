@@ -12,11 +12,11 @@ test = test_wrapper()
 #print "Measurable test passed"
 #test.run_test('test_data/matrix_test.yml')
 #print "Matrix test passed"
-test.run_test('test_data/amper_test.yml')
-print "Amper test passed"
+#test.run_test('test_data/amper_test.yml')
+#print "Amper test passed"
 #test.run_test('test_data/delay_test.yml')
 #print "Delay test passed"
 #test.run_test('test_data/pruning_test.yml')
 #print "Pruning test passed"
-#test.run_test('test_data/abduction_test.yml')
-#print "Abduction test passed"
+test.run_test('test_data/abduction_test.yml')
+print "Abduction test passed"

@@ -167,7 +167,7 @@ void Sensor::setIdx(int idx){
 This function is checking whether the current sensor is active or not
 */
 bool Sensor::isSensorActive(){
-	return _m->getCurrent();
+	return _m->getObserve();
 }
 
 /*

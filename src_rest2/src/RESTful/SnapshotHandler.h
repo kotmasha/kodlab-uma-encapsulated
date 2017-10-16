@@ -23,7 +23,6 @@ public:
 	void delete_implication(World *world, http_request &request, http_response &response);
 	void update_snapshot(World *world, http_request &request, http_response &response);
 	json::value convert_sensor_info(const vector<std::pair<int, pair<string, string> > > &sensor_info);
-	json::value convert_size_info(const std::map<string, int> &size_info);
 	virtual ~SnapshotHandler();
 };
 

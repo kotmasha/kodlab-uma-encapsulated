@@ -481,6 +481,14 @@ void DataManager::setObserve(vector<bool> &observe) {//this is where data comes 
 	cudaMemcpy(dev_observe, h_observe, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
+void DataManager::setCurrent(vector<bool> &current) {//this is where data comes in in every frame
+	_log->debug() << "Setting current signal for customized purpose";
+	for (int i = 0; i < current.size(); ++i) {
+		h_current[i] = current[i];
+	}
+	cudaMemcpy(dev_current, h_current, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+}
+
 void DataManager::setTarget(vector<bool> &signal) {
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_target[i] = signal[i];
