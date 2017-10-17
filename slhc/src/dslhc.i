@@ -1,11 +1,9 @@
 %module dslhc
-
-%include "std_vector.i"
 %include "std_string.i"
+%include "std_vector.i"
 %{
-#include "../../Blocks/World.h"
-#include "../../Blocks/Pair.h"
-#include "../../Blocks/DataManager.h"
+#include "Header.h"
+#include "World.h"
 %}
 
 namespace std {
@@ -21,6 +19,5 @@ namespace std {
    %template(BoolVector2D) vector<vector<bool>>;
 }
 
-%include "../../Blocks/World.h"
-%include "../../Blocks/Pair.h"
-%include "../../Blocks/DataManager.h"
+%include "Header.h"
+%include "World.h"
