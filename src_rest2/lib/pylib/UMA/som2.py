@@ -657,8 +657,8 @@ class Agent(object):
       def validate(self):
             snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
             snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
-            snapshot_plus.validate(self._INITIAL_SIZE)
-            snapshot_minus.validate(self._INITIAL_SIZE)
+            snapshot_plus.setInitialSize(self._INITIAL_SIZE)
+            snapshot_minus.setInitialSize(self._INITIAL_SIZE)
 
       def ALL_FALSE(self,token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token

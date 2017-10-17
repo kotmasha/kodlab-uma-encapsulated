@@ -3,6 +3,7 @@
 #include "logManager.h"
 #include "logging.h"
 #include "UMAException.h"
+#include "DataManager.h"
 
 /*
 Agent::Agent(ifstream &file) {
@@ -58,28 +59,29 @@ vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, dou
 	result.push_back(_snapshots["minus"]->decide(obs_minus, phi, !active));
 	return result;
 }
-/*
+
 vector<vector<bool>> Agent::getCurrent() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getCurrent());
-	result.push_back(_snapshots["minus"]->getCurrent());
+	result.push_back(_snapshots["plus"]->getDM()->getCurrent());
+	result.push_back(_snapshots["minus"]->getDM()->getCurrent());
 	return result;
 }
 
 vector<vector<bool>> Agent::getPrediction() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getPrediction());
-	result.push_back(_snapshots["minus"]->getPrediction());
+	result.push_back(_snapshots["plus"]->getDM()->getPrediction());
+	result.push_back(_snapshots["minus"]->getDM()->getPrediction());
 	return result;
 }
 
 vector<vector<bool>> Agent::getTarget() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getTarget());
-	result.push_back(_snapshots["minus"]->getTarget());
+	result.push_back(_snapshots["plus"]->getDM()->getTarget());
+	result.push_back(_snapshots["minus"]->getDM()->getTarget());
 	return result;
 }
 
+/*
 void Agent::save_agent(ofstream &file) {
 	//write uuid
 	int uuid_length = _uuid.length();

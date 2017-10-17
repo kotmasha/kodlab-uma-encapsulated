@@ -122,7 +122,6 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 
 
 void SimulationHandler::create_decision(World *world, http_request &request, http_response &response) {
-	/*
 	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
 	double phi = get_double_input(data, UMA_PHI);
@@ -167,7 +166,6 @@ void SimulationHandler::create_decision(World *world, http_request &request, htt
 		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		request.reply(status_codes::BadRequest, json::value::string(U("decision made error!")));
 	}
-	*/
 }
 
 
