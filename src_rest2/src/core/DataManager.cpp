@@ -4,6 +4,8 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 #include "logManager.h"
+#include "uma_base.cuh"
+#include "kernel_util.cuh"
 
 extern int ind(int row, int col);
 extern int compi(int x);
@@ -79,7 +81,7 @@ void DataManager::reallocate_memory(int sensor_size) {
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in reallocate_memory when doing memory allocation";
-		throw CoreException("Fatal error in reallocate_memory when doing memory allocation", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in reallocate_memory when doing memory allocation", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 
 	try {
@@ -87,7 +89,7 @@ void DataManager::reallocate_memory(int sensor_size) {
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in reallocate_memory when doing parameters init";
-		throw CoreException("Fatal error in reallocate_memory when doing parameters ini", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in reallocate_memory when doing parameters ini", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 	_log->info() << "Memory reallocated!";
 }
@@ -156,7 +158,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in free_all_parameters, when doing cpu array release";
-		throw CoreException("Fatal error in free_all_parameters, when doing cpu array release", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in free_all_parameters, when doing cpu array release", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 
 	try {
@@ -186,7 +188,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in free_all_parameters, when doing gpu array release";
-		throw CoreException("Fatal error in free_all_parameters, when doing gpu array release", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in free_all_parameters, when doing gpu array release", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 	_log->info() << "All memory released";
 }
@@ -352,7 +354,7 @@ void DataManager::create_sensors_to_arrays_index(int start_idx, int end_idx, vec
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing create_sensor_to_arrays_index";
-			throw CoreException("Fatal error happen in create_sensors_to_arrays_index", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error happen in create_sensors_to_arrays_index", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " have created idx to arrays";
@@ -365,7 +367,7 @@ void DataManager::create_sensor_pairs_to_arrays_index(int start_idx, int end_idx
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing create_sensor_pairs_to_arrays_index";
-			throw CoreException("Fatal error happen in create_sensor_pairs_to_arrays_index", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error happen in create_sensor_pairs_to_arrays_index", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " have created idx to arrays";
@@ -387,7 +389,7 @@ void DataManager::copy_arrays_to_sensors(int start_idx, int end_idx, vector<Sens
 		}
 		catch (CoreException &e) {
 			_log->error() << "Fatal error while doing copy_arrays_to_sensors";
-			throw CoreException("Fatal error in function copy_arrays_to_sensors", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error in function copy_arrays_to_sensors", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from cpu arrays to sensor";
@@ -403,7 +405,7 @@ void DataManager::copy_sensors_to_arrays(int start_idx, int end_idx, vector<Sens
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing copy_sensors_to_arrays";
-			throw CoreException("Fatal error in function copy_sensors_to_arrays", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error in function copy_sensors_to_arrays", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays";
@@ -431,7 +433,7 @@ void DataManager::copy_sensor_pairs_to_arrays(int start_idx, int end_idx, vector
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing copy_sensor_pairs_to_arrays";
-			throw CoreException("Fatal error in function copy_sensor_pairs_to_arrays", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error in function copy_sensor_pairs_to_arrays", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays";
@@ -457,14 +459,21 @@ void DataManager::copy_arrays_to_sensor_pairs(int start_idx, int end_idx, vector
 		}
 		catch (exception &e) {
 			_log->error() << "Fatal error while doing copy_arrays_to_sensor_pairs";
-			throw CoreException("Fatal error in function copy_arrays_to_sensor_pairs", CoreException::FATAL, status_codes::ServiceUnavailable);
+			throw CoreException("Fatal error in function copy_arrays_to_sensor_pairs", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
 	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to sensor pairs";
 	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied back from arrays";
 }
 
+/*
+Set the mask used in halucination, for testing purpose, usual workflow, mask is get from gen_mask
+input: mask vector, size of mask have to be the _measurable_size
+*/
 void DataManager::setMask(vector<bool> &mask) {
+	if (mask.size() != _measurable_size) {
+		throw CoreException("Input mask size not matching measurable size!", CoreException::CORE_ERROR, status_codes::BadRequest);
+	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
 	cudaMemcpy(dev_mask, h_mask, mask.size() * sizeof(bool), cudaMemcpyHostToDevice);
 }
@@ -496,20 +505,33 @@ void DataManager::setTarget(vector<bool> &signal) {
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
+/*
+set Signal
+input: list of signal in bool, input size has to be measurable size
+*/
 void DataManager::setSignal(vector<bool> &signal) {
+	if (signal.size() != _measurable_size) {
+		throw CoreException("The input signal size is not matching measurable size!", CoreException::CORE_ERROR, status_codes::BadRequest);
+	}
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_signal[i] = signal[i];
 	}
 	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
-
+/*
+set Signals
+input: 2d vector of signals, first dimension should not exceed sensor size, second one must be measurable size
+*/
 void DataManager::setSignals(vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
 	if (sig_count > _sensor_size) {
-		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < sig_count; ++i) {
+		if (signals[i].size() != _measurable_size) {
+			throw CoreException("The " + to_string(i) + "th input string size is not matching measurable size!", CoreException::CORE_ERROR, status_codes::BadRequest);
+		}
 		for (int j = 0; j < signals[i].size(); ++j) {
 			h_signals[i * _measurable_size + j] = signals[i][j];
 		}
@@ -517,9 +539,13 @@ void DataManager::setSignals(vector<vector<bool> > &signals) {
 	cudaMemcpy(dev_signals, h_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
 }
 
+/*
+set load
+input: list of load in bool, list size has to be measurable size
+*/
 void DataManager::setLoad(vector<bool> &load) {
 	if (load.size() != _measurable_size) {
-		throw CoreException("The input load size is not matching the measurable size!", CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("The input load size is not matching the measurable size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_load[i] = load[i];
@@ -529,7 +555,7 @@ void DataManager::setLoad(vector<bool> &load) {
 
 void DataManager::setDists(vector<vector<int> > &dists) {
 	if (dists.size() != _sensor_size) {
-		throw CoreException("The input dists size is not matching the measurable size!", CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("The input dists size is not matching the measurable size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
@@ -865,7 +891,9 @@ void DataManager::update_state(vector<bool> &signal, double q, double phi, doubl
 	setObserve(signal);
 
 	update_weights(q, phi, active);
-	update_diag();
+	//update_diag();
+	uma_base::get_weights_diag(dev_weights, dev_diag, dev_diag_, _measurable_size);
+
 	update_thresholds(q, phi, total_);
 
 	orient_all(total);
@@ -882,4 +910,311 @@ void DataManager::set_implication(bool value, int idx1, int idx2) {
 bool DataManager::get_implication(int idx1, int idx2) {
 	cudaMemcpy(h_dirs + ind(idx1, idx2), dev_dirs + ind(idx1, idx2), sizeof(bool), cudaMemcpyDeviceToHost);
 	return h_dirs[ind(idx1, idx2)];
+}
+
+void DataManager::init_other_parameter(double total) {
+	for (int i = 0; i < _measurable_size_max; ++i) {
+		h_observe[i] = false;
+		h_signal[i] = false;
+		h_load[i] = false;
+		h_mask[i] = false;
+		h_current[i] = false;
+		h_target[i] = false;
+		h_prediction[i] = false;
+		h_up[i] = false;
+		h_down[i] = false;
+		h_diag[i] = total / 2.0;
+		h_diag_[i] = total / 2.0;
+	}
+	for (int i = 0; i < _sensor_size_max; ++i) {
+		h_union_root[i] = 0;
+	}
+
+	cudaMemset(dev_observe, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_signal, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_load, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_mask, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_current, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_target, 0, _measurable_size_max * sizeof(bool));
+
+	cudaMemset(dev_d1, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_d2, 0, _measurable_size_max * sizeof(bool));
+
+	cudaMemset(dev_union_root, 0, _sensor_size_max * sizeof(bool));
+	cudaMemset(dev_npdirs, 0, _measurable_size_max * sizeof(bool));
+	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
+}
+
+
+/*
+This function is an independent up function on GPU
+It only use signal to do dfs, result is stored in Gsignal after using the function
+Input: signal to be dfsed
+Output: None
+*/
+void DataManager::up_GPU(vector<bool> &signal, double q, bool is_stable) {
+	for (int i = 0; i < _measurable_size; ++i) h_signal[i] = signal[i];
+	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+
+	uma_base::multiply(dev_signal, dev_dirs, dev_thresholds, q, _measurable_size);
+	
+	cudaMemcpy(h_up, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+/*
+set signals with load
+have to make sure load is set before calling this function
+input: 2d signals vector
+*/
+void DataManager::setLSignals(vector<vector<bool> > &signals) {
+	int sig_count = signals.size();
+	for (int i = 0; i < sig_count; ++i) {
+		for (int j = 0; j < signals[i].size(); ++j) {
+			h_lsignals[i * _measurable_size + j] = signals[i][j];
+		}
+	}
+	cudaMemcpy(dev_lsignals, h_lsignals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	for (int i = 0; i < sig_count; ++i) {
+		kernel_util::disjunction(dev_lsignals + i * _measurable_size, dev_load, _measurable_size);
+	}
+}
+
+
+void DataManager::ups_GPU(int sig_count) {
+	uma_base::transpose_multiply(dev_npdirs, dev_signals, _measurable_size, sig_count);
+}
+
+void DataManager::propagate_mask() {
+	kernel_util::allfalse(dev_npdir_mask, _sensor_size * _measurable_size);
+	for (int i = 0; i < _sensor_size; ++i) {
+		cudaMemcpy(dev_npdir_mask + _measurable_size * i, dev_mask_amper + ind(i, 0) * 2, (ind(i + 1, 0) - ind(i, 0)) * 2 * sizeof(bool), cudaMemcpyDeviceToDevice);
+	}
+
+	uma_base::transpose_multiply(dev_npdirs, dev_npdir_mask, _measurable_size, _sensor_size);
+
+	//cudaMemcpy(h_npdir_mask, dev_npdir_mask, _sensor_size * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+void DataManager::floyd_GPU() {
+	cudaMemcpy(dev_npdirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	uma_base::floyd(dev_npdirs, _measurable_size);
+	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+
+	cudaCheckErrors("kernel fails");
+}
+
+vector<vector<vector<bool> > > DataManager::abduction(vector<vector<bool> > &signals) {
+	vector<vector<vector<bool> > > results;
+	vector<vector<bool> > even_results, odd_results;
+	for (int i = 0; i < signals.size(); ++i) {
+		vector<int> even_idx, odd_idx;
+		for (int j = 0; j < signals[0].size() / 2; ++j) {
+			if (signals[i][2 * j]) even_idx.push_back(j);
+			if (signals[i][2 * j + 1]) odd_idx.push_back(j);
+		}
+		if (even_idx.empty()) {
+			vector<bool> tmp(_measurable_size, false);
+			even_results.push_back(tmp);
+		}
+		else {
+			kernel_util::alltrue(dev_signal, _measurable_size);
+			for (int j = 0; j < even_idx.size(); ++j) {
+				kernel_util::conjunction(dev_signal, dev_npdir_mask + even_idx[j] * _measurable_size, _measurable_size);
+			}
+			cudaMemcpy(h_signal, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+			vector<bool> tmp;
+			for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signal[j]);
+			even_results.push_back(tmp);
+		}
+		if (odd_idx.empty()) {
+			vector<bool> tmp(_measurable_size, false);
+			odd_results.push_back(tmp);
+		}
+		else {
+			kernel_util::allfalse(dev_signal, _measurable_size);
+			for (int j = 0; j < odd_idx.size(); ++j) {
+				kernel_util::disjunction(dev_signal, dev_npdir_mask + odd_idx[j] * _measurable_size, _measurable_size);
+			}
+			cudaMemcpy(dev_signals, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+			cudaMemcpy(dev_lsignals, dev_signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+			cudaMemset(dev_load, false, _measurable_size * sizeof(bool));
+			propagates_GPU(1);
+			cudaMemcpy(h_signals, dev_lsignals, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+			vector<bool> tmp;
+			for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[j]);
+			odd_results.push_back(tmp);
+		}
+	}
+	results.push_back(even_results);
+	results.push_back(odd_results);
+	return results;
+}
+
+vector<vector<int> > DataManager::blocks_GPU(float delta) {
+	int t = floor(log(_sensor_size) / log(2)) + 1;
+	for (int i = 0; i < t; ++i) {
+		uma_base::dioid_square(dev_dists, _sensor_size);
+	}
+
+	uma_base::union_init(dev_union_root, _sensor_size);
+	uma_base::check_dist(dev_dists, delta, _sensor_size * _sensor_size);
+
+	uma_base::union_GPU(dev_dists, dev_union_root, _sensor_size);
+	cudaMemcpy(h_union_root, dev_union_root, _sensor_size * sizeof(int), cudaMemcpyDeviceToHost);
+
+	map<int, int> m;
+	vector<vector<int> > result;
+	for (int i = 0; i < _sensor_size; ++i) {
+		if (m.find(h_union_root[i]) == m.end()) {
+			m[h_union_root[i]] = result.size();
+			vector<int> tmp;
+			tmp.push_back(i);
+			result.push_back(tmp);
+		}
+		else {
+			result[m[h_union_root[i]]].push_back(i);
+		}
+	}
+
+	return result;
+}
+
+void DataManager::gen_mask(int initial_size) {
+	uma_base::init_mask(dev_mask, initial_size, _measurable_size);
+
+	dim3 dimGrid((_sensor_size + 15) / 16, (_sensor_size + 15) / 16);
+	dim3 dimBlock(16, 16);
+
+	uma_base::mask(dev_mask_amper, dev_mask, dev_current, _sensor_size);
+	uma_base::check_mask(dev_mask, _sensor_size);
+}
+
+void DataManager::propagates_GPU(int sig_count) {
+	uma_base::transpose_multiply(dev_npdirs, dev_lsignals, _measurable_size, sig_count);
+	uma_base::transpose_multiply(dev_npdirs, dev_signals, _measurable_size, sig_count);
+
+	kernel_util::negate_conjunction_star(dev_lsignals, dev_signals, _sensor_size);
+}
+
+/*
+This function do propagate on GPU
+//before invoke this function make sure dev_load and dev_signal have correct data
+//the computed data will be in dev_load
+Result is stored in Gload
+Ask Kotomasha for mathematic questions
+Input: signal and load
+Output: None
+*/
+void DataManager::propagate_GPU(bool *signal) {//propagate
+	cudaMemcpy(dev_signal, signal, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	cudaMemset(dev_load, false, _measurable_size * sizeof(bool));
+
+	uma_base::multiply(dev_load, dev_dirs, dev_thresholds, 0, _measurable_size);
+	uma_base::multiply(dev_signal, dev_dirs, dev_thresholds, 0, _measurable_size);
+
+	// standard operations
+	kernel_util::disjunction(dev_load, dev_signal, _measurable_size);
+	kernel_util::negate_conjunction_star(dev_load, dev_signal, _sensor_size);
+
+	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+
+float DataManager::distance(bool *signal1, bool *signal2) {
+	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
+	cudaMemcpy(dev_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU(signal1);
+	cudaMemcpy(signal1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
+	cudaMemcpy(dev_signal, signal2, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	propagate_GPU(signal2);
+	cudaMemcpy(signal2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	kernel_util::conjunction_star(signal1, signal2, _measurable_size);
+	//apply weights to the computed distance signal and output the result:
+	/*
+	float *tmp_result = new float[1];
+	tmp_result[0] = 0.0f;
+	float *dev_result;
+	cudaMalloc(&dev_result, sizeof(float));
+	cudaMemcpy(dev_result, tmp_result, sizeof(float), cudaMemcpyHostToDevice);
+	*/
+	//weights are w_{xx}-w_{x*x*}:
+	/*
+	delta_weight_sum_kernel << <(_measurable_size + 255) / 256, 256 >> > (dev_diag, signal1, dev_result, _measurable_size);
+	cudaMemcpy(tmp_result, dev_result, sizeof(float), cudaMemcpyDeviceToHost);
+	float result = tmp_result[0];
+	delete[] tmp_result;
+	cudaFree(dev_result);
+	return result;
+	*/
+	//weights are all 1:
+
+	cudaMemcpy(h_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	int sum = 0;
+	for (int i = 0; i < _measurable_size; ++i) sum += h_signal[i];
+	return sum;
+}
+
+float DataManager::divergence() {
+	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+	cudaMemcpy(dev_d2, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
+	propagate_GPU(dev_d1);
+	cudaMemcpy(dev_d1, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	cudaMemset(dev_load, 0, _measurable_size * sizeof(bool));
+	propagate_GPU(dev_d2);
+	cudaMemcpy(dev_d2, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToDevice);
+
+	kernel_util::subtraction(dev_d1, dev_d2, _measurable_size);
+	//apply weights to the computed divergence signal and output the result:
+	float *tmp_result = new float[1];
+	tmp_result[0] = 0.0f;
+	float *dev_result;
+	cudaMalloc(&dev_result, sizeof(float));
+	cudaMemcpy(dev_result, tmp_result, sizeof(float), cudaMemcpyHostToDevice);
+	//weights are w_{xx}-w_{x*x*}:
+
+	uma_base::delta_weight_sum(dev_diag, dev_d1, dev_result, _measurable_size);
+	cudaMemcpy(tmp_result, dev_result, sizeof(float), cudaMemcpyDeviceToHost);
+	float result = tmp_result[0];
+	delete[] tmp_result;
+	cudaFree(dev_result);
+	return result;
+
+	//weights are all 1:
+	/*
+	cudaMemcpy(h_signal, signal1, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	int sum = 0;
+	for (int i = 0; i < _measurable_size; ++i) sum += h_signal[i];
+	return sum;
+	*/
+}
+
+void DataManager::update_diag() {
+	uma_base::get_weights_diag(dev_weights, dev_diag, dev_diag_, _measurable_size);
+}
+
+void DataManager::calculate_target() {
+	uma_base::calculate_target(dev_diag, dev_target, _sensor_size);
+	cudaMemcpy(h_target, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+void DataManager::update_weights(double q, double phi, bool active) {
+	dim3 dimGrid2((_measurable_size + 15) / 16, (_measurable_size + 15) / 16);
+	dim3 dimBlock2(16, 16);
+	uma_base::update_weights(dev_weights, dev_observe, _measurable_size, q, phi, active);
+}
+
+void DataManager::orient_all(double total) {
+	uma_base::orient_all(dev_dirs, dev_weights, dev_thresholds, total, _sensor_size);
+}
+
+void DataManager::update_thresholds(double q, double phi, double total_) {
+	dim3 dimGrid1((_sensor_size + 15) / 16, (_sensor_size + 15) / 16);
+	dim3 dimBlock1(16, 16);
+	uma_base::update_thresholds(dev_dirs, dev_thresholds, total_, q, phi, _sensor_size);
 }

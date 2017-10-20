@@ -107,9 +107,12 @@ protected:
 public:
 	DataManager(string &log_dir);
 
+	/*
+	Set Functions
+	*/
 	void setMask(vector<bool> &mask);
-	void setSignal(vector<bool> &signal);
 	void setLoad(vector<bool> &load);
+	void setSignal(vector<bool> &signal);
 	void setSignals(vector<vector<bool> > &signals);
 	void setLSignals(vector<vector<bool> > &signals);
 	void setDists(vector<vector<int> > &dists);

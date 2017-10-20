@@ -22,7 +22,7 @@ DataHandler::DataHandler(string handler_factory, logManager *log_access):AdminHa
 }
 
 void DataHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void DataHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
@@ -57,7 +57,7 @@ void DataHandler::handle_update(World *world, string_t &path, http_request &requ
 		return;
 	}
 
-	throw ClientException("The coming put request has nothing to update", ClientException::ERROR, status_codes::NotAcceptable);
+	throw ClientException("The coming put request has nothing to update", ClientException::CLIENT_ERROR, status_codes::NotAcceptable);
 }
 
 void DataHandler::handle_read(World *world, string_t &path, http_request &request, http_response &response) {
@@ -165,7 +165,7 @@ void DataHandler::handle_read(World *world, string_t &path, http_request &reques
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 

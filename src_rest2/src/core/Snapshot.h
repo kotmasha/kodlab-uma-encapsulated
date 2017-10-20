@@ -99,6 +99,7 @@ public:
 	void setAutoTarget(bool &auto_target);
 	void setPropagateMask(bool &propagate_mask);
 	void setInitialSize(int &initial_size);
+	void setInitialSize();
 	/*
 	---------------------SET FUNCTION----------------------
 	*/

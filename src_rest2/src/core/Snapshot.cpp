@@ -93,7 +93,7 @@ Snapshot::~Snapshot(){
 	}
 	catch (exception &e) {
 		_log->error() << "Fatal error when trying to delete snapshot: " + _uuid;
-		throw CoreException("Fatal error in Snapshot destruction function", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in Snapshot destruction function", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 	_log->info() << "Deleted the snapshot: " + _uuid;
 }
@@ -119,7 +119,7 @@ float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the deci
 void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector<bool> > &b) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		_log->error() << "Cannot create a duplicate sensor!";
-		throw CoreException("Cannot create a duplicate sensor!", CoreException::ERROR, status_codes::Conflict);
+		throw CoreException("Cannot create a duplicate sensor!", CoreException::CORE_ERROR, status_codes::Conflict);
 	}
 	Sensor *sensor = NULL;
 	if (diag.empty()) {
@@ -361,7 +361,7 @@ void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 		}
 	}
 	catch(CoreException &e){
-		throw CoreException("Fatal error while doing amper and", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error while doing amper and", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 }
 
@@ -381,7 +381,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 				generate_delayed_weights(list[0], true, id_pairs[i]);
 			}
 			catch (CoreException &e) {
-				throw CoreException("Fatal error in generate_delayed_weights", CoreException::FATAL, status_codes::ServiceUnavailable);
+				throw CoreException("Fatal error in generate_delayed_weights", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 			}
 		}
 		else{
@@ -390,7 +390,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 				generate_delayed_weights(_sensors.back()->_m->_idx, false, id_pairs[i]);
 			}
 			catch (CoreException &e) {
-				throw CoreException("Fatal error in generate_delayed_weights", CoreException::FATAL, status_codes::ServiceUnavailable);
+				throw CoreException("Fatal error in generate_delayed_weights", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 			}
 		}
 		success_delay++;
@@ -450,6 +450,10 @@ void Snapshot::setInitialSize(int &initial_size) {
 	_initial_size = initial_size;
 }
 
+void Snapshot::setInitialSize() {
+	_initial_size = _sensors.size();
+}
+
 /*
 ------------------------------------SET FUNCTION------------------------------------
 */
@@ -464,7 +468,7 @@ this function is getting the measurable, from the sensor list
 Measurable *Snapshot::getMeasurable(int idx){
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		throw CoreException("the input measurable index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("the input measurable index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
@@ -478,7 +482,7 @@ Measurable *Snapshot::getMeasurable(string &measurable_id) {
 	Sensor *sensor = getSensor(measurable_id);
 	if (measurable_id == sensor->_m->_uuid) return sensor->_m;
 	else if(measurable_id == sensor->_cm->_uuid) return sensor->_cm;
-	throw CoreException("Cannot find the measurable id " + measurable_id, CoreException::FATAL, status_codes::ServiceUnavailable);
+	throw CoreException("Cannot find the measurable id " + measurable_id, CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 }
 
 SensorPair *Snapshot::getSensorPair(Sensor *sensor1, Sensor *sensor2) {
@@ -507,7 +511,7 @@ MeasurablePair *Snapshot::getMeasurablePair(string &mid1, string &mid2) {
 
 vector<bool> Snapshot::getAmperList(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::CORE_ERROR, status_codes::NotFound);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<bool> result(_dm->_measurable_size, false);
@@ -519,7 +523,7 @@ vector<bool> Snapshot::getAmperList(string &sensor_id) {
 
 vector<string> Snapshot::getAmperListID(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::CORE_ERROR, status_codes::NotFound);
 	}
 	Sensor *sensor = _sensor_idx[sensor_id];
 	vector<string> result;
@@ -534,7 +538,7 @@ vector<string> Snapshot::getAmperListID(string &sensor_id) {
 
 Sensor *Snapshot::getSensor(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::ERROR, status_codes::NotFound);
+		throw CoreException("Cannot find the sensor id " + sensor_id, CoreException::CORE_ERROR, status_codes::NotFound);
 	}
 	return _sensor_idx[sensor_id];
 }
@@ -581,11 +585,11 @@ int Snapshot::getInitialSize() {
 void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor1;
-		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor2;
-		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
@@ -596,11 +600,11 @@ void Snapshot::create_implication(string &sensor1, string &sensor2) {
 void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor1;
-		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor2;
-		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
@@ -611,11 +615,11 @@ void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor1;
-		throw CoreException("Cannot find the sensor " + sensor1, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor2;
-		throw CoreException("Cannot find the sensor " + sensor2, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
@@ -627,7 +631,7 @@ bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 void Snapshot::delete_sensor(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
 		_log->error() << "Cannot find the sensor " + sensor_id;
-		throw CoreException("Cannot find the sensor " + sensor_id, CoreException::ERROR, status_codes::BadRequest);
+		throw CoreException("Cannot find the sensor " + sensor_id, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 
 	int sensor_idx = _sensor_idx[sensor_id]->_idx;

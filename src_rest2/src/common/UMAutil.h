@@ -1,6 +1,8 @@
 #ifndef _UMAUTIL_
 #define _UMAUTIL_
 
+#include "Global.h"
+
 #include <cpprest/http_listener.h>
 #include <string>
 using namespace web::http;

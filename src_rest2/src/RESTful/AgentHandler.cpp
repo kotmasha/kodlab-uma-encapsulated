@@ -12,7 +12,7 @@ void AgentHandler::handle_create(World *world, string_t &path, http_request &req
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void AgentHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {}
@@ -23,7 +23,7 @@ void AgentHandler::handle_read(World *world, string_t &path, http_request &reque
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void AgentHandler::handle_delete(World *world, string_t &path, http_request &request, http_response &response) {
@@ -32,7 +32,7 @@ void AgentHandler::handle_delete(World *world, string_t &path, http_request &req
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 
 }
 

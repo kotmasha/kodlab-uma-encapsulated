@@ -51,7 +51,7 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 		create_propagated_masks(world, request, response);
 		return;
 	}
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 

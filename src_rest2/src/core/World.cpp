@@ -19,7 +19,7 @@ World::World(){
 void World::add_agent(string &agent_id){
 	if (_agents.find(agent_id) != _agents.end()) {
 		_log->error() << "Cannot create a duplicate agent " + agent_id;
-		throw CoreException("Cannot create a duplicate agent " + agent_id, CoreException::ERROR, status_codes::Conflict);
+		throw CoreException("Cannot create a duplicate agent " + agent_id, CoreException::CORE_ERROR, status_codes::Conflict);
 	}
 	_agents[agent_id] = new Agent(agent_id);
 	_log->info() << "An agent " + agent_id + " is created";
@@ -30,12 +30,12 @@ Agent *World::getAgent(const string &agent_id) {
 		return _agents[agent_id];
 	}
 	_log->warn() << "No agent " + agent_id + " is found";
-	throw CoreException("Cannot find the agent id!", CoreException::ERROR, status_codes::NotFound);
+	throw CoreException("Cannot find the agent id!", CoreException::CORE_ERROR, status_codes::NotFound);
 }
 
 void World::delete_agent(string &agent_id) {
 	if (_agents.find(agent_id) == _agents.end()) {
-		throw CoreException("Cannot find the agent to delete " + agent_id, CoreException::ERROR, status_codes::NotFound);
+		throw CoreException("Cannot find the agent to delete " + agent_id, CoreException::CORE_ERROR, status_codes::NotFound);
 	}
 	delete _agents[agent_id];
 	_agents[agent_id] = NULL;

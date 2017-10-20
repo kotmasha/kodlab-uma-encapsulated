@@ -17,6 +17,7 @@ public:
 	virtual void handle_delete(World *world, string_t &path, http_request &request, http_response &response);
 	void create_snapshot(World *world, http_request &request, http_response &response);
 	void create_implication(World *world, http_request &request, http_response &response);
+	void create_init(World *world, http_request &request, http_response &response);
 	void get_snapshot(World *world, http_request &request, http_response &response);
 	void get_implication(World *world, http_request &request, http_response &response);
 	void delete_snapshot(World *world, http_request &request, http_response &response);

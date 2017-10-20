@@ -23,8 +23,12 @@ void SnapshotHandler::handle_create(World *world, string_t &path, http_request &
 		create_implication(world, request, response);
 		return;
 	}
+	else if (path == U("/UMA/object/snapshot/init")) {
+		create_init(world, request, response);
+		return;
+	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SnapshotHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
@@ -33,7 +37,7 @@ void SnapshotHandler::handle_update(World *world, string_t &path, http_request &
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SnapshotHandler::handle_read(World *world, string_t &path, http_request &request, http_response &response) {
@@ -46,7 +50,7 @@ void SnapshotHandler::handle_read(World *world, string_t &path, http_request &re
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SnapshotHandler::handle_delete(World *world, string_t &path, http_request &request, http_response &response) {
@@ -59,7 +63,7 @@ void SnapshotHandler::handle_delete(World *world, string_t &path, http_request &
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SnapshotHandler::create_snapshot(World *world, http_request &request, http_response &response) {
@@ -90,6 +94,21 @@ void SnapshotHandler::create_implication(World *world, http_request &request, ht
 	response.set_status_code(status_codes::Created);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Implication created"));
+	response.set_body(message);
+}
+
+void SnapshotHandler::create_init(World *world, http_request &request, http_response &response) {
+	json::value data = request.extract_json().get();
+	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
+	string agent_id = get_string_input(data, UMA_AGENT_ID);
+
+	Agent *agent = world->getAgent(agent_id);
+	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	snapshot->setInitialSize();
+
+	response.set_status_code(status_codes::Created);
+	json::value message;
+	message[MESSAGE] = json::value::string(U("Initial size set to sensor size"));
 	response.set_body(message);
 }
 
@@ -233,7 +252,7 @@ void SnapshotHandler::update_snapshot(World *world, http_request &request, http_
 		return;
 	}
 
-	throw ClientException("The coming put request has nothing to update", ClientException::ERROR, status_codes::NotAcceptable);
+	throw ClientException("The coming put request has nothing to update", ClientException::CLIENT_ERROR, status_codes::NotAcceptable);
 }
 
 json::value SnapshotHandler::convert_sensor_info(const vector<std::pair<int, pair<string, string> > > &sensor_info) {

@@ -26,11 +26,11 @@ void SensorHandler::handle_create(World *world, string_t &path, http_request &re
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SensorHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SensorHandler::handle_read(World *world, string_t &path, http_request &request, http_response &response) {
@@ -44,7 +44,7 @@ void SensorHandler::handle_read(World *world, string_t &path, http_request &requ
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SensorHandler::handle_delete(World *world, string_t &path, http_request &request, http_response &response) {
@@ -54,7 +54,7 @@ void SensorHandler::handle_delete(World *world, string_t &path, http_request &re
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SensorHandler::get_sensor(World *world, http_request &request, http_response &response) {

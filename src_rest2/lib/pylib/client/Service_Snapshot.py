@@ -20,6 +20,13 @@ class ServiceSnapshot:
         for sensor in sensors:
             self.add_sensor(sensor[0], sensor[1])
 
+    def init(self):
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
+        result = self._service.post('/UMA/object/snapshot/init', data)
+        if not result:
+            return None
+        return result
+
     def make_up(self, signal):
         data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signal': signal}
         result = self._service.post('/UMA/matrix/up', data)
