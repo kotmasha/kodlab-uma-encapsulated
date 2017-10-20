@@ -124,7 +124,7 @@ void listener::handle_get(http_request &request){
 		response.set_body(message);
 		request.reply(response);
 
-		if (e.getErrorLevel() == CoreException::FATAL) {
+		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
 			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
 			exit(0);
 		}
@@ -177,7 +177,7 @@ void listener::handle_put(http_request &request) {
 		response.set_body(message);
 		request.reply(response);
 
-		if (e.getErrorLevel() == CoreException::FATAL) {
+		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
 			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
 			exit(0);
 		}
@@ -230,7 +230,7 @@ void listener::handle_post(http_request &request){
 		response.set_body(message);
 		request.reply(response);
 
-		if (e.getErrorLevel() == CoreException::FATAL) {
+		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
 			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
 			exit(0);
 		}
@@ -283,7 +283,7 @@ void listener::handle_delete(http_request &request){
 		response.set_body(message);
 		request.reply(response);
 
-		if (e.getErrorLevel() == CoreException::FATAL) {
+		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
 			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
 			exit(0);
 		}
@@ -311,7 +311,7 @@ void listener::init_restmap() {
 		}
 	}
 	catch (exception &e) {
-		throw ServerException("Having some problem reading restmap.ini file!", ServerException::FATAL);
+		throw ServerException("Having some problem reading restmap.ini file!", ServerException::SERVER_FATAL);
 	}
 }
 

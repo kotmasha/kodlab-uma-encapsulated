@@ -1,0 +1,10 @@
+g++ -fPIC -std=c++11 -c World.cpp -o World.o;
+g++ -fPIC -std=c++11 -c Pair.cpp -o Pair.o;
+g++ -fPIC -std=c++11 -c DataManager.cpp -o DataManager.o;
+g++ -fPIC -std=c++11 -c logManager.cpp -o logManager.o;
+g++ -fPIC -std=c++11 -c logging.cpp -o logging.o;
+swig -c++ -python -o dslhc_wrap.cpp dslhc.i;
+gcc -fPIC -c dslhc_wrap.cpp -o dslhc_wrap.o -I/usr/include/python2.7;
+nvcc -std=c++11 -shared -Xcompiler -fPIC kernel.cu World.o Pair.o logManager.o logging.o DataManager.o dslhc_wrap.o -o _dslhc.so;
+cp ./_dslhc.so ../bin;
+cp dslhc.py ../bin;

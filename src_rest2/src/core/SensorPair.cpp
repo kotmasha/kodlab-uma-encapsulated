@@ -32,6 +32,16 @@ SensorPair::SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, d
 	this->vthreshold = threshold;
 }
 
+SensorPair::SensorPair(Sensor *_sensor_i, Sensor *_sensor_j, double threshold, vector<double> &w, vector<bool> &b):
+	_sensor_i(_sensor_i), _sensor_j(_sensor_j) {
+	mij = new MeasurablePair(_sensor_i->_m, _sensor_j->_m, w[0], b[0]);
+	mi_j = new MeasurablePair(_sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
+	m_ij = new MeasurablePair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
+	m_i_j = new MeasurablePair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
+	pointers_to_null();
+	this->vthreshold = threshold;
+}
+
 /*
 This function is setting the weight pointers
 */

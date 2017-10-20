@@ -18,12 +18,15 @@ public:
 	virtual void handle_read(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_delete(World *world, string_t &path, http_request &request, http_response &response);
 
-	void update_signals(World *world, http_request &request, http_response &response);
+	json::value convert_size_info(const std::map<string, int> &size_info);
+
 	~DataHandler();
 
 protected:
 	string_t UMA_CURRENT, UMA_PREDICTION, UMA_TARGET;
-	string_t UMA_TARGET_LIST, UMA_SIGNALS;
+	string_t UMA_TARGET_LIST, UMA_SIGNALS, UMA_OBSERVE;
+	string_t UMA_DATA_SIZE;
+	string_t UMA_WEIGHTS, UMA_DIRS, UMA_THRESHOLDS;
 };
 
 #endif

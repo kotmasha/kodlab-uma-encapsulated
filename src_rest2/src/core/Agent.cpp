@@ -3,7 +3,9 @@
 #include "logManager.h"
 #include "logging.h"
 #include "UMAException.h"
+#include "DataManager.h"
 
+/*
 Agent::Agent(ifstream &file) {
 	int uuid_length = -1;
 	file.read((char *)(&uuid_length), sizeof(int));
@@ -24,6 +26,7 @@ Agent::Agent(ifstream &file) {
 
 	_log->info() << "An agent " + _uuid + " is loaded";
 }
+*/
 
 Agent::Agent(string uuid){
 	_uuid = uuid;
@@ -35,7 +38,7 @@ Agent::Agent(string uuid){
 void Agent::add_snapshot_stationary(string &uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		_log->error() << "Cannot create a duplicate snapshot!";
-		throw CoreException("Cannot create a duplicate snapshot!", CoreException::ERROR, status_codes::Conflict);
+		throw CoreException("Cannot create a duplicate snapshot!", CoreException::CORE_ERROR, status_codes::Conflict);
 	}
 	string log_dir = _log_dir + "/Snapshot_" + uuid;
 	_snapshots[uuid] = new Snapshot_Stationary(uuid, log_dir);
@@ -47,7 +50,7 @@ Snapshot *Agent::getSnapshot(string &snapshot_id) {
 		return _snapshots[snapshot_id];
 	}
 	_log->warn() << "No snapshot " + snapshot_id + " is found";
-	throw CoreException("Cannot find the snapshot id!", CoreException::ERROR, status_codes::NotFound);
+	throw CoreException("Cannot find the snapshot id!", CoreException::CORE_ERROR, status_codes::NotFound);
 }
 
 vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active) {
@@ -59,25 +62,26 @@ vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, dou
 
 vector<vector<bool>> Agent::getCurrent() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getCurrent());
-	result.push_back(_snapshots["minus"]->getCurrent());
+	result.push_back(_snapshots["plus"]->getDM()->getCurrent());
+	result.push_back(_snapshots["minus"]->getDM()->getCurrent());
 	return result;
 }
 
 vector<vector<bool>> Agent::getPrediction() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getPrediction());
-	result.push_back(_snapshots["minus"]->getPrediction());
+	result.push_back(_snapshots["plus"]->getDM()->getPrediction());
+	result.push_back(_snapshots["minus"]->getDM()->getPrediction());
 	return result;
 }
 
 vector<vector<bool>> Agent::getTarget() {
 	vector<vector<bool>> result;
-	result.push_back(_snapshots["plus"]->getTarget());
-	result.push_back(_snapshots["minus"]->getTarget());
+	result.push_back(_snapshots["plus"]->getDM()->getTarget());
+	result.push_back(_snapshots["minus"]->getDM()->getTarget());
 	return result;
 }
 
+/*
 void Agent::save_agent(ofstream &file) {
 	//write uuid
 	int uuid_length = _uuid.length();
@@ -105,7 +109,7 @@ void Agent::copy_test_data(Agent *agent) {
 		}
 	}
 }
-
+*/
 vector<string> Agent::getSnapshotInfo() {
 	vector<string> results;
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
@@ -116,7 +120,7 @@ vector<string> Agent::getSnapshotInfo() {
 
 void Agent::delete_snapshot(string &snapshot_id) {
 	if (_snapshots.find(snapshot_id) == _snapshots.end()) {
-		throw CoreException("Cannot find the agent to delete " + snapshot_id, CoreException::ERROR, status_codes::NotFound);
+		throw CoreException("Cannot find the agent to delete " + snapshot_id, CoreException::CORE_ERROR, status_codes::NotFound);
 	}
 	delete _snapshots[snapshot_id];
 	_snapshots[snapshot_id] = NULL;
@@ -133,7 +137,7 @@ Agent::~Agent(){
 	}
 	catch (exception &e) {
 		_log->error() << "Fatal error while trying to delete agent: " + _uuid;
-		throw CoreException("Fatal error in Agent destruction function", CoreException::FATAL, status_codes::ServiceUnavailable);
+		throw CoreException("Fatal error in Agent destruction function", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 	_log->info() << "Deleted the agent " + _uuid;
 }

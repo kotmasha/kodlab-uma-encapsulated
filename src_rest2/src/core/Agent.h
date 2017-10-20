@@ -22,7 +22,7 @@ protected:
 	friend class World;
 
 public:
-	Agent(ifstream &file);
+	//Agent(ifstream &file);
 	Agent(string uuid);
 	void add_snapshot_stationary(string &uuid);
 	Snapshot *getSnapshot(string &snapshot_id);
@@ -31,8 +31,8 @@ public:
 	vector<vector<bool>> getCurrent();
 	vector<vector<bool>> getPrediction();
 	vector<vector<bool>> getTarget();
-	void save_agent(ofstream &file);
-	void copy_test_data(Agent *agent);
+	//void save_agent(ofstream &file);
+	//void copy_test_data(Agent *agent);
 
 	vector<string> getSnapshotInfo();
 	~Agent();

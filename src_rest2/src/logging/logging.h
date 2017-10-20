@@ -20,7 +20,7 @@ public:
 	string parse_class_name(string classname);
 	void operator<<(string info);
 	void operator<<(wstring info);
-	enum LOG_LEVEL{ERROR, WARN, INFO, DEBUG, VERBOSE};
+	enum {ERROR, WARN, INFO, DEBUG, VERBOSE};
 	friend class logManager;
 };
 

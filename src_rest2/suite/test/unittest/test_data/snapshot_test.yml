@@ -59,6 +59,21 @@ create snapshot duplicate:
     agent_id: test_agent
     snapshot_id: test_snapshot
 
+get snapshot info before:
+  method: GET
+  url: /UMA/object/snapshot
+  status_code: 200
+  message: Get snapshot info
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  kwargs:
+    q: 0.9
+    threshold: 0.125
+    auto_target: False
+    propagate_mask: False
+    initial_size: 0
+
 #Implication test
 create an implication, without sensors field:
   method: POST
@@ -89,6 +104,9 @@ create sensor1:
     snapshot_id: test_snapshot
     sensor_id: sensor1
     c_sid: c_sensor1
+    w: []
+    d: []
+    diag: []
 
 create sensor2:
   method: POST
@@ -99,15 +117,9 @@ create sensor2:
     snapshot_id: test_snapshot
     sensor_id: sensor2
     c_sid: c_sensor2
-
-validate snapshot:
-  method: POST
-  url: /UMA/object/snapshot/init
-  status_code: 201
-  data:
-    agent_id: test_agent
-    snapshot_id: test_snapshot
-    initial_sensor_size: 2
+    w: []
+    d: []
+    diag: []
 
 create an implication, sensor1->sensor2:
   method: POST
@@ -229,7 +241,27 @@ change auto target to True:
   data:
     auto_target: True
 
-get snapshot info:
+change propagate mask to True:
+  method: PUT
+  url: /UMA/object/snapshot
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  data:
+    propagate_mask: True
+
+change initial size to 2:
+  method: PUT
+  url: /UMA/object/snapshot
+  status_code: 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  data:
+    initial_size: 1
+
+get snapshot info after:
   method: GET
   url: /UMA/object/snapshot
   status_code: 200
@@ -241,22 +273,37 @@ get snapshot info:
     sensors:
       - sensor: {'m': 'sensor1', 'cm': 'c_sensor1'}
       - sensor: {'m': 'sensor2', 'cm': 'c_sensor2'}
-    sizes:
-      sensor_count: 2
-      sensor_pair_count: 3
-      _sensor_size: 2
-      _sensor_size_max: 3
-      _sensor2d_size: 3
-      _sensor2d_size_max: 6
-      _measurable_size: 4
-      _measurable_size_max: 6
-      _measurable2d_size: 10
-      _measurable2d_size_max: 21
-      _mask_amper_size: 6
-      _mask_amper_size_max: 12
     q: 0.123
     threshold: 1.222
     auto_target: True
+    propagate_mask: True
+    initial_size: 1
+
+snapshot init:
+  method: POST
+  url: /UMA/object/snapshot/init
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+
+get snapshot info after init:
+  method: GET
+  url: /UMA/object/snapshot
+  status_code: 200
+  message: Get snapshot info
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+  kwargs:
+    sensors:
+      - sensor: {'m': 'sensor1', 'cm': 'c_sensor1'}
+      - sensor: {'m': 'sensor2', 'cm': 'c_sensor2'}
+    q: 0.123
+    threshold: 1.222
+    auto_target: True
+    propagate_mask: True
+    initial_size: 2
 
 delete snapshot without snapshot id:
   method: DELETE
@@ -321,12 +368,12 @@ tests:
   - create an snapshot with an invalid agent_id
   - create an snapshot
   - create snapshot duplicate
+  - get snapshot info before
 #Implication test
   - create an implication, without sensors field
   - create an implication, sensor1->sensor2 error
   - create sensor1
   - create sensor2
-  - validate snapshot
   - create an implication, sensor1->sensor2
   - get implication from sensor1->sensor2
   - get implication from sensor2->sensor1
@@ -338,7 +385,11 @@ tests:
   - change threshold to 1.222
   - change auto target to 2.2
   - change auto target to True
-  - get snapshot info
+  - change propagate mask to True
+  - change initial size to 2
+  - get snapshot info after
+  - snapshot init
+  - get snapshot info after init
   - delete snapshot without snapshot id
   - delete snapshot with invalid id
   - delete snapshot

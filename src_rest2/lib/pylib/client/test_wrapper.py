@@ -46,6 +46,7 @@ class test_wrapper:
             response = requests.post(url, json.dumps(data), headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -56,16 +57,15 @@ class test_wrapper:
                     if 'data' not in response.json() or key not in response.json()['data']:
                         print "No %s fields found in return value" % key
                         assert False
-                    if not response.json()['data'][key] == value:
-                        if type(value) is float and type(response.json()['data'][key]) is float:
-                            if abs(response.json()['data'][key] - value) < 1e-6:
-                                continue
+                    if not self.compare_obj(response.json()['data'][key], value):
+                        print "error key: " + key
                         print value, response.json()['data'][key]
                         assert False
         elif method == "GET":
             response = requests.get(url, params = query, headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -76,16 +76,15 @@ class test_wrapper:
                     if 'data' not in response.json() or key not in response.json()['data']:
                         print "No %s fields found in return value" % key
                         assert False
-                    if not response.json()['data'][key] == value:
-                        if type(value) is float and type(response.json()['data'][key]) is float:
-                            if abs(response.json()['data'][key] - value) < 1e-6:
-                                continue
+                    if not self.compare_obj(response.json()['data'][key], value):
+                        print "error key: " + key
                         print value, response.json()['data'][key]
                         assert False
         elif method == "DELETE":
             response = requests.delete(url, data=json.dumps(data), headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -95,6 +94,7 @@ class test_wrapper:
             response = requests.put(url, data = json.dumps(data), params=query, headers = self._headers)
             if not response.status_code == status_code:
                 print response.status_code, status_code
+                print response.json()['message']
                 assert response.status_code == status_code
             if message is not None:
                 if message not in response.json()['message']:
@@ -103,3 +103,17 @@ class test_wrapper:
 
     def run(self, test_file):
         pass
+
+    def compare_obj(self, la, lb):
+        if type(la) is not list and type(lb) is list:
+            return False
+        if type(la) is list and type(lb) is not list:
+            return False
+        if type(la) is not list and type(lb) is not list:
+            if type(la) is float and type(lb) is float:
+                return abs(la - lb) < 1e-5
+            else:
+                return la == lb
+        if len(la) is not len(lb):
+            return False
+        return all([self.compare_obj(a, b) for (a, b) in zip(la, lb)])

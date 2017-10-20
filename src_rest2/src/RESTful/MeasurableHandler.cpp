@@ -19,7 +19,7 @@ MeasurableHandler::MeasurableHandler(string handler_factory, logManager *log_acc
 
 void MeasurableHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
 	//no post call available for measurable or measurable pair, as they are created by sensor
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void MeasurableHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
@@ -32,7 +32,7 @@ void MeasurableHandler::handle_update(World *world, string_t &path, http_request
 		update_measurable_pair(world, request, response);
 		return;
 	}
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void MeasurableHandler::handle_read(World *world, string_t &path, http_request &request, http_response &response) {
@@ -45,12 +45,12 @@ void MeasurableHandler::handle_read(World *world, string_t &path, http_request &
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void MeasurableHandler::handle_delete(World *world, string_t &path, http_request &request, http_response &response) {
 	//no delete call for measurable measurable_pair, they are handled in snesor
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void MeasurableHandler::get_measurable(World *world, http_request &request, http_response &response) {
@@ -64,7 +64,7 @@ void MeasurableHandler::get_measurable(World *world, http_request &request, http
 	Measurable *measurable = snapshot->getMeasurable(measurable_id);
 	double diag = measurable->getDiag();
 	double old_diag = measurable->getOldDiag();
-	bool status = measurable->getStatus();
+	bool current = measurable->getCurrent();
 	bool isOriginPure = measurable->getIsOriginPure();
 
 	response.set_status_code(status_codes::OK);
@@ -73,7 +73,7 @@ void MeasurableHandler::get_measurable(World *world, http_request &request, http
 	message[DATA] = json::value();
 	message[DATA][U("diag")] = json::value(diag);
 	message[DATA][U("old_diag")] = json::value(old_diag);
-	message[DATA][U("status")] = json::value(status);
+	message[DATA][U("status")] = json::value(current);
 	message[DATA][U("isOriginPure")] = json::value(isOriginPure);
 	response.set_body(message);
 }
@@ -110,7 +110,7 @@ void MeasurableHandler::update_measurable(World *world, http_request &request, h
 		return;
 	}
 
-	throw ClientException("The coming put request has nothing to update", ClientException::ERROR, status_codes::NotAcceptable);
+	throw ClientException("The coming put request has nothing to update", ClientException::CLIENT_ERROR, status_codes::NotAcceptable);
 }
 
 void MeasurableHandler::get_measurable_pair(World *world, http_request &request, http_response &response) {
@@ -168,7 +168,7 @@ void MeasurableHandler::update_measurable_pair(World *world, http_request &reque
 		return;
 	}
 
-	throw ClientException("The coming put request has nothing to update", ClientException::ERROR, status_codes::NotAcceptable);
+	throw ClientException("The coming put request has nothing to update", ClientException::CLIENT_ERROR, status_codes::NotAcceptable);
 }
 
 MeasurableHandler::~MeasurableHandler() {}

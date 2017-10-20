@@ -50,7 +50,7 @@ void SimulationHandler::handle_create(World *world, string_t &path, http_request
 		return;
 	}
 
-	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::ERROR, status_codes::BadRequest);
+	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);
 }
 
 void SimulationHandler::handle_update(World *world, string_t &path, http_request &request, http_response &response) {
@@ -119,6 +119,7 @@ void SimulationHandler::create_decision(World *world, json::value &data, http_re
 }
 
 */
+
 
 void SimulationHandler::create_decision(World *world, http_request &request, http_response &response) {
 	json::value data = request.extract_json().get();

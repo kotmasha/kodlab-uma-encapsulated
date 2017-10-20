@@ -27,9 +27,11 @@ public:
 	bool check_field(json::value &data, string_t &s, bool hard_check = true);
 	bool check_field(map<string_t, string_t> &query, string_t &s, bool hard_check = true);
 	void vector_int_to_array(std::vector<int> &list, std::vector<json::value> &json_list);
+	void vector_double_to_array(std::vector<double> &list, std::vector<json::value> &json_list);
 	void vector_bool_to_array(std::vector<bool> &list, std::vector<json::value> &json_list);
 	void vector_bool2d_to_array(std::vector<vector<bool> > &lists, std::vector<json::value> &json_lists);
 	void vector_int2d_to_array(std::vector<vector<int> > &lists, std::vector<json::value> &json_lists);
+	void vector_double2d_to_array(std::vector<vector<double> > &lists, std::vector<json::value> &json_lists);
 	void vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list);
 	Agent *get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response);
 	bool get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot *&snapshot, http_request &request);
@@ -64,7 +66,9 @@ protected:
 	vector<vector<int> > get_int2d_input(json::value &data, string_t &name);
 	vector<bool> get_bool1d_input(json::value &data, string_t &name);
 	vector<vector<bool> > get_bool2d_input(json::value &data, string_t &name);
+	vector<vector<double> > get_double2d_input(json::value &data, string_t &name);
 	vector<string> get_string1d_input(json::value &data, string_t &name);
+	vector<double> get_double1d_input(json::value &data, string_t &name);
 	vector<std::pair<string, string> > get_string_pair1d_input(json::value &data, string_t &name);
 };
 
