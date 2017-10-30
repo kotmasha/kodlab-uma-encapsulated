@@ -55,15 +55,12 @@ protected:
 	//distance for block gpu
 	int *h_union_root, *dev_union_root;
 
-	bool *h_prediction;
+	bool *h_prediction, *dev_prediction;
 	//prediction array after the halucinate, have no corresponding device value
 	bool *h_up;
 	//up array used for separate propagation, have no corresponding device value
 	bool *h_down;
 	//down array used for separate propagationm have no corresponding device value
-	bool *dev_d1, *dev_d2;
-	//input used for distance function, no host value
-	bool _is_stabilized;
 	/*
 	-----------------variables used in kernel.cu--------------------------
 	*/
@@ -107,6 +104,14 @@ protected:
 public:
 	DataManager(string &log_dir);
 
+	int *_dvar_i(int name);
+	double *_dvar_d(int name);
+	bool *_dvar_b(int name);
+
+	int *_hvar_i(int name);
+	double *_hvar_d(int name);
+	bool *_hvar_b(int name);
+
 	/*
 	Set Functions
 	*/
@@ -143,15 +148,11 @@ public:
 	vector < vector<bool> > getLSignals(int sig_count);
 	vector<vector<bool> > getNpdirMasks();
 	vector<bool> getLoad();
+	vector<int> getUnionRoot();
 	std::map<string, int> getSizeInfo();
-
-	vector<vector<vector<bool> > > abduction(vector<vector<bool> > &signals);
-	void propagates_GPU(int sig_count);
-	void up_GPU(vector<bool> &signal, double q, bool is_stable);
-	void ups_GPU(int sig_count);
-	vector<vector<int> > blocks_GPU(float delta);
-	void floyd_GPU();
-	void propagate_mask();
+	int getSensorSize();
+	int getMeasurableSize();
+	int getMeasurable2dSize();
 
 	friend class Snapshot;
 
@@ -182,21 +183,6 @@ protected:
 	void copy_sensors_to_arrays(int start_idx, int end_idx, vector<Sensor*> &sensors);
 	void copy_arrays_to_sensors(int start_idx, int end_idx, vector<Sensor*> &sensors);
 	void copy_arrays_to_sensor_pairs(int start_idx, int end_idx, vector<SensorPair*> &_sensor_pairs);
-
-	void update_weights(double q, double phi, bool active);
-	void orient_all(double total);
-	void update_thresholds(double q, double phi, double total_);
-
-	void propagate_GPU(bool *signal);
-	void propagate_observe();
-	void update_state(vector<bool> &signal, double q, double phi, double total, double total_, bool active);
-
-	void update_diag();
-	void calculate_target();
-	float distance(bool *d1, bool *d2);
-	float divergence();
-	void halucinate(int initial_size);
-	void gen_mask(int initial_size);
 };
 
 #endif

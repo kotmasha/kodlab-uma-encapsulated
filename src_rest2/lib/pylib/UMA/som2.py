@@ -471,7 +471,7 @@ class Experiment(object):
 
                               ## ENRICHMENT
                               # agent analyzes outcomes of preceding decision
-                              # cycle; if the prediction is too broad, add a
+                              # cycle; if the prediction was too broad, add a
                               # sensor corresponding to the episode last observed
                               # and acknowledged by the active snapshot of the agent:
                               if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
@@ -480,30 +480,42 @@ class Experiment(object):
                               else:
                                   sensors_to_be_added = []
 
-                              sensors_to_be_removed=agent.ALL_FALSE()
                               sensors_not_to_be_removed=agent.ALL_FALSE()
 
-                              for sid in agent.report_initial():
-                                  # obtain the non-initial sensors implying $sid$:
-                                  sid_down=agent.close_downwards(agent.generate_signal([sid])).subtract(agent.report_initmask())
-                                  # obtain ids and coherent closures of delay masks for sensors mentioned in sid_down:
-                                  delay_masks=[(ssid,agent.propagate(sig).intersect(agent.report_initmask())) for ssid,sig in agent.report_masks(sid_down)]
-                                  # perform abduction from the delay masks
-                                  abducted_mask=agent.sig_product([sig for ssid,sig in delay_masks])
-                                  # mark the sensor ids to be removed
-                                  sensors_to_be_removed.add(agent.generate_signal([ssid for ssid,mask in delay_masks if abducted_mask.contained_in(mask)]))
-                                  sensors_not_to_be_removed.add(agent.generate_signal([ssid for ssid,mask in delay_masks if mask==abducted_mask]))
-                                  sensors_to_be_added.append(abducted_mask)
-
-                              sensors_to_be_removed=sensors_to_be_removed.subtract(sensors_not_to_be_removed)
-                              agent.delay(sensors_to_be_added)
                               ## PRUNING
+                              # abduction over negligible sensors
+                              # STEP 1. gather the negligible delayed sensors;
+                              #         ($x$ is negligible if $x<x^*$)
+                              # STEP 2. cluster them;
+                              # STEP 3. perform abduction over the clusters.
+                                                            
+                              # abduction over delayed sensors implying an initial sensor
+                              # STEP 1. Gather them
+                              init_downs=agent.close_downwards([agent.generate_signal([sid]) for sid in agent.report_initial()])
+                              delayed_downs=[sig.subtract(agent.report_initmask()) for sig in init_downs]
+                              # STEP 2. Perform abduction
+                              new_masks=agent.perform_abduction(downs)                              
+                              
+                              # Restructuring 
+                              # STEP 1. Add new delayed sensors:
+                              sensors_to_be_added.extend(new_masks)
+                              agent.delay(sensors_to_be_added)
+                              # Step 2. Remove old sensors:
+                              sensors_to_be_removed=agent.ALL_FALSE()
+                              for sig in delayed_downs:
+                                  sensors_to_be_removed.add(sig)
                               agent.pad_signal(sensors_to_be_removed)
                               agent.prune(sensors_to_be_removed)
-                              
 
-                              # - add the new sensors
-                              # - remove all old sensors involved in this process
+                              # RANDOM THOUGHTS:
+                              # There needs to be a budget of delayed units, and we should merely
+                              # be rewiring them....
+                              # Increases in the budget should be prompted by a need for more units, that is:
+                              # add more units only when "pruning" ends up demanding more resources than available.
+                              #
+                              ##THIS IS WHERE IT WOULD BE NICE TO HAVE AN ALTERNATIVE ARCHITECTURE
+                              ##LEARNING THE SAME STRUCTURE OR AN APPROXIMATION THEREOF
+                                    
 
                               ## agent enters observation-deliberation-decision stage
                               messages[mid] = agent.decide()
@@ -676,7 +688,7 @@ class Agent(object):
                 self._OBSERVE[token]=Signal([self._EXPERIMENT.this_state(mid) for mid in self._SENSORS[token]])
             return None
                        
-      ## Report list od sensors
+      ## Report list of sensors
       def report_sensors(self,token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
             return self._SENSORS[token]            
@@ -703,13 +715,13 @@ class Agent(object):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
             return self._TARGET[token]
 
-      ## Report the current state for snapshot $token$, else for
+      ## Report the predicted state for snapshot $token$, else for
       #  the active snapshot
       def report_predicted(self,token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
             return self._PREDICTED[token]
 
-      ## Report the current state for snapshot $token$, else for
+      ## Report the initials mask for snapshot $token$, else for
       #  the active snapshot
       def report_initmask(self,token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
@@ -721,32 +733,60 @@ class Agent(object):
             return (sid for ind,sid in enumerate(self._SENSORS[token]) if self._INITMASK[token].out(ind))
 
       ## Report the delay masks (in the prescribed snapshot) for each of the sensors indicated in the input signal
-      def report_masks(self,signal,token=None):
+      #def report_masks(self,signal,token=None):
+      #      token=('plus' if self._ACTIVE else 'minus') if token is None else token
+      #      return [(mid,Signal(ServiceSensor(self._ID,token,mid,service).getAmperList())) for ind,mid in enumerate(self._SENSORS[token]) if signal.out(ind)]
+      
+      ## Closure operators for a batch of sinals
+      def close_upwards(self, siglist, token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            return [(mid,Signal(ServiceSensor(self._ID,token,mid,service).getAmperList())) for ind,mid in enumerate(self._SENSORS[token]) if signal.out(ind)]
+            snap=ServiceSnapshot(self._ID,token,service)
+            return [Signal(item) for item in snap.make_ups([sig.out() for sig in siglist])]
 
-      def close_upwards(self, sig, token=None):
+      def close_downwards(self, siglist, token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
             snap=ServiceSnapshot(self._ID,token,service)
-            return Signal(snap.make_up(sig.out()))
-        
-      def close_downwards(self, sig, token=None):
+            return [Signal(item).star() for item in snap.make_ups([sig.star().out() for sig in siglist])]
+
+      ## Propagation for a batch of signals (completely on GPU)
+      def propagate(self, siglist, load=None, token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            snap=ServiceSnapshot(self._ID,token,service)
-            return Signal(snap.make_up(sig.star().out())).star()
-        
-      def propagate(self, sig, load=None, token=None):
+            if siglist is []:
+                return [self.ALL_FALSE(token)]
+            else:
+                if load is None:
+                    load=self.ALL_FALSE(token)
+                snap=ServiceSnapshot(self._ID,token,service)
+                return [Signal(item) for item in snap.make_propagation([sig.out() for sig in siglist],load)]
+
+      ## Propagation for a batch of signals (closures on GPU, subtraction here)
+      #def propagate(self, siglist, load=None, token=None):
+      #      token=('plus' if self._ACTIVE else 'minus') if token is None else token
+      #      if siglist is []:
+      #          return [self.ALL_FALSE(token)]
+      #      else:
+      #          snap=ServiceSnapshot(self._ID,token,service)
+      #          if load is None:
+      #              up_sigs=[Signal(item) for item in snap.make_ups([sig.out() for sig in siglist])]
+      #              return [sig.subtract(sig.star()) for sig in up_sigs]
+      #          else:
+      #              up_sigs=[Signal(item) for item in snap.make_ups([sig.add(load).out() for sig in siglist])]
+      #              down_sigs=[Signal(item).star() for item in snap.make_ups([sig.out() for sig in siglist])]
+      #              return [sig1.subtract(sig2) for sig1,sig2 in zip(up_sigs,down_sigs)]
+      
+      ## Perform abduction on a batch of signals, each indicating the collection of
+      ## delayed queries to be generalized.
+      def perform_abduction(self,sigs,token=None):
             token=('plus' if self._ACTIVE else 'minus') if token is None else token
-            if sig is None:
-                return self.ALL_FALSE(token)
+            if sigs is []:
+                return [self.ALL_FALSE(token)]
             else:
                 snap=ServiceSnapshot(self._ID,token,service)
-                if load is None:
-                    up_sig=Signal(snap.make_up(sig.out()))
-                    return up_sig.subtract(up_sig.star())
-                else:
-                    return Signal(snap.make_up(sig.add(load).out())).subtract(Signal(snap.make_up(sig.out())))
-
+                pos,neg=snap.make_abduction([sig.out() for sig in sigs])
+                result=[]
+                for sig1,sig2 in zip(pos,neg):
+                    result.extend([Signal(sig1),Signal(sig2)])
+                return list(set(result))
             
       ### Adding a sensor to the $token$ snapshot
       ### - assumes the sensors $mid$ and its complement are present

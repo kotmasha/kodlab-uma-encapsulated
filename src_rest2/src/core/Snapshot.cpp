@@ -6,6 +6,8 @@
 #include "logManager.h"
 #include "DataManager.h"
 #include "UMAException.h"
+#include "uma_base.cuh"
+#include "data_util.h"
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -97,24 +99,6 @@ Snapshot::~Snapshot(){
 	}
 	_log->info() << "Deleted the snapshot: " + _uuid;
 }
-
-void Snapshot::update_total(double phi, bool active) {
-	_total_ = _total;
-	_total = _q * _total + (1 - _q) * phi;
-}
-
-float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
-	update_total(phi, active);
-
-	_dm->update_state(signal, _q, phi, _total, _total_, active);
-	_dm->halucinate(_initial_size);
-
-	if (_propagate_mask) _dm->propagate_mask();
-	if (_auto_target) _dm->calculate_target();
-
-	return _dm->divergence();
-}
-
 
 void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector<bool> > &b) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
@@ -244,6 +228,12 @@ void Snapshot::pruning(vector<bool> &signal){
 	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	//get converted sensor list, from measurable signal
 	vector<bool> sensor_list = convert_signal_to_sensor(signal);
+
+	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
+		throw CoreException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", CoreException::CORE_ERROR, status_codes::BadRequest);
+	}
+	_log->info() << "Will prune " + to_string(sensor_list.size()) + " sensors, range from " + to_string(sensor_list[0]) + " to " + to_string(sensor_list.back());
+
 	int row_escape = 0;
 	int total_escape = 0;
 	//destruct the corresponding sensors and sensor pairs
@@ -555,6 +545,10 @@ vector<std::pair<int, pair<string, string> > > Snapshot::getSensorInfo() {
 
 double Snapshot::getTotal() {
 	return _total;
+}
+
+double Snapshot::getOldTotal() {
+	return _total_;
 }
 
 double Snapshot::getQ() {
@@ -872,23 +866,4 @@ Snapshot_Stationary::~Snapshot_Stationary(){}
 
 /*
 ----------------Snapshot_Stationary Class-------------------
-*/
-
-
-/*
-----------------Snapshot_Forgetful Class-------------------
-*/
-/*
-Snapshot_Forgetful::Snapshot_Forgetful(string uuid, string log_dir)
-	:Snapshot(uuid, log_dir){
-}
-
-void Snapshot_Forgetful::update_total(double phi, bool active) {
-	Snapshot::calculate_total(phi, active);
-}
-
-Snapshot_Forgetful::~Snapshot_Forgetful(){}
-*/
-/*
-----------------Snapshot_Forgetful Class-------------------
 */

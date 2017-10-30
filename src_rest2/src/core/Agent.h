@@ -18,6 +18,7 @@ protected:
 	std::map<string, Snapshot_Stationary*> _snapshots;
 	string _uuid;
 	string _log_dir;
+	int _t;
 	logManager *_log;
 	friend class World;
 

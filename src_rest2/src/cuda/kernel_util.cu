@@ -6,6 +6,11 @@
 /*
 ---------------------HELPER FUNCTION-----------------------
 */
+
+/*
+set the input vector to be all true
+Input: bool array, and size of it
+*/
 __global__ void alltrue_kernel(bool *b, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
@@ -13,6 +18,10 @@ __global__ void alltrue_kernel(bool *b, int size) {
 	}
 }
 
+/*
+set the input array to be all false
+Input: bool array, and size of it
+*/
 __global__ void allfalse_kernel(bool *b, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
@@ -20,6 +29,10 @@ __global__ void allfalse_kernel(bool *b, int size) {
 	}
 }
 
+/*
+convert the input bool to int, false->0, true->1
+Input: a bool source array, and int dest array, and size of both array
+*/
 __global__ void bool2int_kernel(bool *b, int *i, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
@@ -30,7 +43,7 @@ __global__ void bool2int_kernel(bool *b, int *i, int size) {
 
 /*
 This function does the conjunction for two lists
-Input: two bool lists
+Input: two bool lists, and size of both
 Output: None
 */
 __global__ void conjunction_kernel(bool *b1, bool *b2, int size) {
@@ -79,6 +92,10 @@ __global__ void negate_conjunction_star_kernel(bool *b1, bool *b2, int size) {
 	}
 }
 
+/*
+Conjuncate the start of array, store the result in first array
+Input: two bool array, and size of both
+*/
 __global__ void conjunction_star_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
@@ -91,6 +108,10 @@ __global__ void conjunction_star_kernel(bool *b1, bool *b2, int size) {
 	}
 }
 
+/*
+Changing the signal from up to down
+Input: two bool array, and both size
+*/
 __global__ void up2down_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {

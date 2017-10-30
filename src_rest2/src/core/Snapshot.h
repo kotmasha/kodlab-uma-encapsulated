@@ -61,9 +61,6 @@ public:
 	//Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
 	//Snapshot(ifstream &file, string &log_dir);
 	Snapshot(string uuid, string log_dir);
-
-	virtual float decide(vector<bool> &signal, double phi, bool active);
-
 	void add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector< bool> > &b);
 	void delete_sensor(string &sensor_id);
 
@@ -80,6 +77,7 @@ public:
 	Sensor *getSensor(string &sensor_id);
 
 	double getTotal();
+	double getOldTotal();
 	double getQ();
 	double getThreshold();
 	bool getAutoTarget();
@@ -125,12 +123,8 @@ public:
 	void delete_implication(string &sensor1, string &sensor2);
 
 	//void save_snapshot(ofstream &file);
-
 	bool amper_and_signals(Sensor *sensor);
-
 	DataManager *getDM();
-
-	virtual void update_total(double phi, bool active);
 
 	~Snapshot();
 };
