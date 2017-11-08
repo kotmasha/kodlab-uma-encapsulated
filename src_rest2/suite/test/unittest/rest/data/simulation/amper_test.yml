@@ -150,6 +150,8 @@ get data size 5 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 30
       _mask_amper_size_max: 42
+      _npdir_size: 60
+      _npdir_size_max: 84
 
 pruning X:
   method: POST
@@ -200,6 +202,8 @@ get data size 4 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 20
       _mask_amper_size_max: 42
+      _npdir_size: 40
+      _npdir_size_max: 84
 
 #3&7
 amper 3&7:

@@ -4,6 +4,7 @@
 #include "Agent.h"
 #include "Snapshot.h"
 #include "DataManager.h"
+#include "Simulation.h"
 
 MatrixHandler::MatrixHandler(string handler_factory, logManager *log_access) : AdminHandler(handler_factory, log_access) {
 	UMA_BLOCK_DISTS = U("dists");
@@ -31,12 +32,16 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 		create_npdirs(world, request, response);
 		return;
 	}
+	else if (path == U("/UMA/matrix/up")) {
+		create_up(world, request, response);
+		return;
+	}
 	else if (path == U("/UMA/matrix/ups")) {
 		create_ups(world, request, response);
 		return;
 	}
-	else if (path == U("/UMA/matrix/up")) {
-		create_up(world, request, response);
+	else if (path == U("/UMA/matrix/downs")) {
+		create_downs(world, request, response);
 		return;
 	}
 	else if (path == U("/UMA/matrix/blocks")) {
@@ -60,40 +65,72 @@ void MatrixHandler::create_up(World *world, http_request &request, http_response
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
 	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
 	vector<bool> signal = get_bool1d_input(data, UMA_SIGNAL);
+	vector<vector<bool> > signals(1, signal);
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
-	dm->up_GPU(signal, snapshot->getQ(), false);
-	vector<bool> result = dm->getUp();
-	
+	int measurable_size = dm->getMeasurableSize();
+	dm->setSignals(signals);
+	simulation::ups_GPU(dm->_dvar_b(NPDIRS), dm->_dvar_b(SIGNALS), NULL, 1, measurable_size);
+
+	vector<vector<bool> > results = dm->getSignals(1);
+
 	response.set_status_code(status_codes::Created);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Up created"));
 	message[DATA] = json::value();
 	vector<json::value> result_list;
-	vector_bool_to_array(result, result_list);
+	vector_bool_to_array(results[0], result_list);
 	message[DATA][U("signal")] = json::value::array(result_list);
 	response.set_body(message);
 }
-
 
 void MatrixHandler::create_ups(World *world, http_request &request, http_response &response) {
 	json::value data = request.extract_json().get();
 	string agent_id = get_string_input(data, UMA_AGENT_ID);
 	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
 	vector<vector<bool> > signals = get_bool2d_input(data, UMA_SIGNALS);
+	int sig_count = signals.size();
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
+	int measurable_size = dm->getMeasurableSize();
 	dm->setSignals(signals);
-	dm->ups_GPU(signals.size());
+	simulation::ups_GPU(dm->_dvar_b(NPDIRS), dm->_dvar_b(SIGNALS), NULL, sig_count, measurable_size);
+
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Ups created"));
+	message[DATA] = json::value();
+	vector<json::value> result_lists;
+	vector_bool2d_to_array(results, result_lists);
+	message[DATA][U("signals")] = json::value::array(result_lists);
+	response.set_body(message);
+}
+
+void MatrixHandler::create_downs(World *world, http_request &request, http_response &response) {
+	json::value data = request.extract_json().get();
+	string agent_id = get_string_input(data, UMA_AGENT_ID);
+	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
+	vector<vector<bool> > signals = get_bool2d_input(data, UMA_SIGNALS);
+	int sig_count = signals.size();
+
+	Agent *agent = world->getAgent(agent_id);
+	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	DataManager *dm = snapshot->getDM();
+	int measurable_size = dm->getMeasurableSize();
+	dm->setSignals(signals);
+	simulation::downs_GPU(dm->_dvar_b(NPDIRS), dm->_dvar_b(SIGNALS), NULL, sig_count, measurable_size);
+
+	vector<vector<bool> > results = dm->getSignals(signals.size());
+
+	response.set_status_code(status_codes::Created);
+	json::value message;
+	message[MESSAGE] = json::value::string(U("Downs created"));
 	message[DATA] = json::value();
 	vector<json::value> result_lists;
 	vector_bool2d_to_array(results, result_lists);
@@ -107,14 +144,15 @@ void MatrixHandler::create_propagation(World *world, http_request &request, http
 	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
 	vector<vector<bool> > signals = get_bool2d_input(data, UMA_SIGNALS);
 	vector<bool> load = get_bool1d_input(data, UMA_LOAD);
+	int sig_count = signals.size();
 
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
+	int measurable_size = dm->getMeasurableSize();
 	dm->setSignals(signals);
 	dm->setLoad(load);
-	dm->setLSignals(signals);
-	dm->propagates_GPU(signals.size());
+	simulation::propagates(dm->_dvar_b(NPDIRS), dm->_dvar_b(LOAD), dm->_dvar_b(SIGNALS), dm->_dvar_b(LSIGNALS), NULL, sig_count, measurable_size);
 	vector<vector<bool> > results = dm->getLSignals(signals.size());
 
 	response.set_status_code(status_codes::Created);
@@ -135,7 +173,7 @@ void MatrixHandler::create_npdirs(World *world, http_request &request, http_resp
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
-	dm->floyd_GPU();
+	simulation::floyd(dm);
 	vector<bool> npdirs = dm->getNPDir();
 
 	response.set_status_code(status_codes::Created);
@@ -159,7 +197,7 @@ void MatrixHandler::create_blocks(World *world, http_request &request, http_resp
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	dm->setDists(dists);
-	vector<vector<int> > results = dm->blocks_GPU(delta);
+	vector<vector<int> > results = simulation::blocks_GPU(dm, delta);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -180,7 +218,7 @@ void MatrixHandler::create_abduction(World *world, http_request &request, http_r
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
-	vector<vector<vector<bool> > > results = dm->abduction(signals);
+	vector<vector<vector<bool> > > results = simulation::abduction(dm, signals);
 
 	response.set_status_code(status_codes::Created);
 	json::value message;
@@ -204,7 +242,7 @@ void MatrixHandler::create_propagated_masks(World *world, http_request &request,
 	Agent *agent = world->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
-	dm->propagate_mask();
+	simulation::propagate_mask(dm);
 	vector<vector<bool> > results = dm->getNpdirMasks();
 
 	response.set_status_code(status_codes::Created);

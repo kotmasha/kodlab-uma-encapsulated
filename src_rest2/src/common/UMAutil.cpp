@@ -1,4 +1,5 @@
 #include "UMAutil.h"
+#include "UMAException.h"
 
 string_t string_to_string_t(string &s) {
 	string_t ss(s.begin(), s.end());

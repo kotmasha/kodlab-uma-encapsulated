@@ -76,19 +76,19 @@ void MeasurablePair::copy_data(MeasurablePair *mp) {
 }
 
 double MeasurablePair::getW() {
-	return v_w;
+	return *_w;
 }
 
 bool MeasurablePair::getD() {
-	return v_d;
+	return *_d;
 }
 
 void MeasurablePair::setW(double &w) {
-	v_w = w;
+	*_w = w;
 }
 
 void MeasurablePair::setD(bool &d) {
-	v_d = d;
+	*_d = d;
 }
 
 MeasurablePair::~MeasurablePair(){

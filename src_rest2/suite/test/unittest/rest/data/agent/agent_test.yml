@@ -30,13 +30,29 @@ create an agent duplicate:
   data:
     agent_id: test_agent
 
-create snapshot:
+create snapshot1:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
   data:
     agent_id: test_agent
-    snapshot_id: test_snapshot
+    snapshot_id: test_snapshot1
+
+create snapshot2:
+  method: POST
+  url: /UMA/object/snapshot
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot2
+
+create snapshot3:
+  method: POST
+  url: /UMA/object/snapshot
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot3
 
 get agent without id:
   method: GET
@@ -52,8 +68,10 @@ get agent:
     agent_id: test_agent
   kwargs:
     snapshot_ids:
-      - test_snapshot
-    snapshot_count: 1
+      - test_snapshot1
+      - test_snapshot2
+      - test_snapshot3
+    snapshot_count: 3
 
 delete agent without agent_id:
   method: DELETE
@@ -89,7 +107,9 @@ tests:
   - create agent with invalid id
   - create an agent
   - create an agent duplicate
-  - create snapshot
+  - create snapshot1
+  - create snapshot2
+  - create snapshot3
   - get agent without id
   - get agent
   - delete agent without agent_id

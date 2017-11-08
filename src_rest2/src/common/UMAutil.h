@@ -16,4 +16,10 @@ string string_t_to_string(string_t &s);
 
 string_t status_code_to_string_t(status_code &s);
 
+std::map<string_t, vector<string_t>> read_restmap();
+
+std::map<string, string> read_log_level();
+
+int string_to_log_level(string &s);
+
 #endif

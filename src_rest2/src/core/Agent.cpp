@@ -4,6 +4,9 @@
 #include "logging.h"
 #include "UMAException.h"
 #include "DataManager.h"
+#include "Simulation.h"
+
+extern std::map<string, int> log_level;
 
 /*
 Agent::Agent(ifstream &file) {
@@ -31,7 +34,9 @@ Agent::Agent(ifstream &file) {
 Agent::Agent(string uuid){
 	_uuid = uuid;
 	_log_dir = "log/Agent_" + uuid;
-	_log = new logManager(logging::VERBOSE, _log_dir, "agent.txt", typeid(*this).name());
+	_t = 0;
+
+	_log = new logManager(log_level["Agent"], _log_dir, "agent.txt", "Agent");
 	_log->info() << "An agent " + uuid + " is created";
 }
 
@@ -55,8 +60,9 @@ Snapshot *Agent::getSnapshot(string &snapshot_id) {
 
 vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, double phi, bool active) {
 	vector<float> result;
-	result.push_back(_snapshots["plus"]->decide(obs_plus, phi, active));
-	result.push_back(_snapshots["minus"]->decide(obs_minus, phi, !active));
+	result.push_back(simulation::decide(_snapshots["plus"], obs_plus, phi, active));
+	result.push_back(simulation::decide(_snapshots["minus"], obs_minus, phi, active));
+	_log->info() << "Finished the " + to_string(_t++) + " th iteration";
 	return result;
 }
 

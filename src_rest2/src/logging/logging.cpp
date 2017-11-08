@@ -1,4 +1,5 @@
 #include "logging.h"
+#include "UMAutil.h"
 
 logging::logging(){}
 
@@ -6,7 +7,7 @@ logging::logging(const logging &l){}
 
 logging::logging(string filename, string classname){
 	_filename = filename;
-	_classname = parse_class_name(classname);
+	_classname = classname;
 	_output = new ofstream(filename);
 }
 

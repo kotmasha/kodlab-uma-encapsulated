@@ -6,11 +6,14 @@
 #include "logManager.h"
 #include "DataManager.h"
 #include "UMAException.h"
+#include "uma_base.cuh"
+#include "data_util.h"
 /*
 ----------------Snapshot Base Class-------------------
 */
 extern int ind(int row, int col);
 extern int compi(int x);
+extern std::map<string, int> log_level;
 
 /*
 Snapshot::Snapshot(ifstream &file, string &log_dir) {
@@ -61,7 +64,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 Snapshot::Snapshot(string uuid, string log_dir){
 	_uuid = uuid;
 	_log_dir = log_dir;
-	_log = new logManager(logging::VERBOSE, log_dir, uuid + ".txt", typeid(*this).name());
+	_log = new logManager(log_level["Snapshot"], log_dir, uuid + ".txt", "Snapshot");
 
 	//set the init value for 0.5 for now, ideally should read such value from conf file
 	_total = 1.0;
@@ -98,24 +101,6 @@ Snapshot::~Snapshot(){
 	_log->info() << "Deleted the snapshot: " + _uuid;
 }
 
-void Snapshot::update_total(double phi, bool active) {
-	_total_ = _total;
-	_total = _q * _total + (1 - _q) * phi;
-}
-
-float Snapshot::decide(vector<bool> &signal, double phi, bool active){//the decide function
-	update_total(phi, active);
-
-	_dm->update_state(signal, _q, phi, _total, _total_, active);
-	_dm->halucinate(_initial_size);
-
-	if (_propagate_mask) _dm->propagate_mask();
-	if (_auto_target) _dm->calculate_target();
-
-	return _dm->divergence();
-}
-
-
 void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector<bool> > &b) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		_log->error() << "Cannot create a duplicate sensor!";
@@ -148,7 +133,7 @@ void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &di
 	
 	if (_sensors.size() > _dm->_sensor_size_max) {
 		_log->debug() << "Need allocate more space after adding a sensor";
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
 		_dm->copy_sensors_to_arrays(0, _sensors.size(), _sensors);
@@ -244,6 +229,12 @@ void Snapshot::pruning(vector<bool> &signal){
 	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	//get converted sensor list, from measurable signal
 	vector<bool> sensor_list = convert_signal_to_sensor(signal);
+
+	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
+		throw CoreException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", CoreException::CORE_ERROR, status_codes::BadRequest);
+	}
+	_log->info() << "Will prune " + to_string(sensor_list.size()) + " sensors, range from " + to_string(sensor_list[0]) + " to " + to_string(sensor_list.back());
+
 	int row_escape = 0;
 	int total_escape = 0;
 	//destruct the corresponding sensors and sensor pairs
@@ -331,7 +322,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	if(_sensors.size() > _dm->_sensor_size_max){
 		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
@@ -405,7 +396,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 	if (_sensors.size() > _dm->_sensor_size_max) {
 		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
@@ -557,6 +548,10 @@ double Snapshot::getTotal() {
 	return _total;
 }
 
+double Snapshot::getOldTotal() {
+	return _total_;
+}
+
 double Snapshot::getQ() {
 	return _q;
 }
@@ -593,7 +588,10 @@ void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	_dm->set_implication(true, idx1, idx2);
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	bool value = true;
+	measurable_pair->setD(value);
+	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
 	_log->info() << "Implication success from " + sensor1 + " to " + sensor2;
 }
 
@@ -608,7 +606,10 @@ void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	_dm->set_implication(false, idx1, idx2);
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	bool value = false;
+	measurable_pair->setD(value);
+	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
 	_log->info() << "Implication delete success from " + sensor1 + " to " + sensor2;
 }
 
@@ -623,8 +624,9 @@ bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	bool value = _dm->get_implication(idx1, idx2);
-	return value;
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	data_util::boolD2H(_dm->_dvar_b(DIRS), _dm->_hvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
+	return measurable_pair->getD();
 }
 
 
@@ -872,23 +874,4 @@ Snapshot_Stationary::~Snapshot_Stationary(){}
 
 /*
 ----------------Snapshot_Stationary Class-------------------
-*/
-
-
-/*
-----------------Snapshot_Forgetful Class-------------------
-*/
-/*
-Snapshot_Forgetful::Snapshot_Forgetful(string uuid, string log_dir)
-	:Snapshot(uuid, log_dir){
-}
-
-void Snapshot_Forgetful::update_total(double phi, bool active) {
-	Snapshot::calculate_total(phi, active);
-}
-
-Snapshot_Forgetful::~Snapshot_Forgetful(){}
-*/
-/*
-----------------Snapshot_Forgetful Class-------------------
 */

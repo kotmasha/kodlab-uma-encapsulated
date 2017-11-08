@@ -2,6 +2,7 @@
 import requests
 import json
 import yaml
+import os
 
 class test_wrapper:
 
@@ -39,6 +40,7 @@ class test_wrapper:
             except Exception as e:
                 print "Error in " + filename + ": " + case
                 raise e
+        print "%s test passed!" % os.path.basename(filename)
 
     def T(self, method, url, status_code, data=None, query=None, message=None, kwargs=None):
         url = self._url + url

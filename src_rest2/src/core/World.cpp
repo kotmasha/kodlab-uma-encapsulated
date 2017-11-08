@@ -12,7 +12,7 @@ World::World(){
 	mkdir("log", 0777);
 #endif
 	_log_path = "log";
-	_log = new logManager(logging::VERBOSE, _log_path, "world.txt", typeid(*this).name());
+	_log = new logManager(logging::VERBOSE, _log_path, "world.txt", "World");
 	_log->info() << "A new world is created";
 }
 
@@ -89,5 +89,12 @@ void World::merge_test() {
 }
 */
 
+vector<string> World::getAgentInfo() {
+	vector<string> results;
+	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
+		results.push_back(it->first);
+	}
+	return results;
+}
 
 World::~World(){}

@@ -132,7 +132,7 @@ void DataHandler::handle_read(World *world, string_t &path, http_request &reques
 
 		response.set_status_code(status_codes::OK);
 		json::value message;
-		message[MESSAGE] = json::value::string(U("get dors value"));
+		message[MESSAGE] = json::value::string(U("get dirs value"));
 		message[DATA] = json::value();
 		message[DATA][U("dirs")] = return_data;
 		response.set_body(message);
@@ -149,6 +149,20 @@ void DataHandler::handle_read(World *world, string_t &path, http_request &reques
 		message[MESSAGE] = json::value::string(U("get thresholds value"));
 		message[DATA] = json::value();
 		message[DATA][U("thresholds")] = return_data;
+		response.set_body(message);
+		return;
+	}
+	else if (path == U("/UMA/data/negligible")) {
+		vector<bool> negligible = dm->getNegligible();
+		vector<json::value> json_negligible;
+		vector_bool_to_array(negligible, json_negligible);
+		json::value return_data = json::value::array(json_negligible);
+
+		response.set_status_code(status_codes::OK);
+		json::value message;
+		message[MESSAGE] = json::value::string(U("get negligible value"));
+		message[DATA] = json::value();
+		message[DATA][U("negligible")] = return_data;
 		response.set_body(message);
 		return;
 	}

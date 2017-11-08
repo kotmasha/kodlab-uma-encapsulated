@@ -125,6 +125,8 @@ get data size 6 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 42
       _mask_amper_size_max: 42
+      _npdir_size: 84
+      _npdir_size_max: 84
 
 pruning 4 5:
   method: POST
@@ -173,6 +175,8 @@ get data size 4 sensor:
       _measurable2d_size_max: 78
       _mask_amper_size: 20
       _mask_amper_size_max: 42
+      _npdir_size: 40
+      _npdir_size_max: 84
 
 amper 1&3&6:
   method: POST
@@ -225,6 +229,8 @@ get data size 7 sensor:
       _measurable2d_size_max: 210
       _mask_amper_size: 56
       _mask_amper_size_max: 110
+      _npdir_size: 112
+      _npdir_size_max: 220
 
 pruning 0 2 3 4 6:
   method: POST
@@ -271,6 +277,8 @@ get data size 2 sensor:
       _measurable2d_size_max: 210
       _mask_amper_size: 6
       _mask_amper_size_max: 110
+      _npdir_size: 12
+      _npdir_size_max: 220
 
 
 delete agent:

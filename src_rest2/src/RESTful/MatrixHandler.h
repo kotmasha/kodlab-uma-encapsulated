@@ -16,8 +16,9 @@ public:
 	//void create_up(World *world, http_request &request, http_response &response);
 	void create_propagation(World *world, http_request &request, http_response &response);
 	void create_npdirs(World *world, http_request &request, http_response &response);
-	void create_ups(World *world, http_request &request, http_response &response);
 	void create_up(World *world, http_request &request, http_response &response);
+	void create_ups(World *world, http_request &request, http_response &response);
+	void create_downs(World *world, http_request &request, http_response &response);
 	void create_blocks(World *world, http_request &request, http_response &response);
 	void create_abduction(World *world, http_request &request, http_response &response);
 	void create_propagated_masks(World *world, http_request &request, http_response &response);
