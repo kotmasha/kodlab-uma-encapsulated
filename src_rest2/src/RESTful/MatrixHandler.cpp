@@ -40,6 +40,10 @@ void MatrixHandler::handle_create(World *world, string_t &path, http_request &re
 		create_ups(world, request, response);
 		return;
 	}
+	else if (path == U("/UMA/matrix/downs")) {
+		create_downs(world, request, response);
+		return;
+	}
 	else if (path == U("/UMA/matrix/blocks")) {
 		create_blocks(world, request, response);
 		return;
@@ -101,6 +105,32 @@ void MatrixHandler::create_ups(World *world, http_request &request, http_respons
 	response.set_status_code(status_codes::Created);
 	json::value message;
 	message[MESSAGE] = json::value::string(U("Ups created"));
+	message[DATA] = json::value();
+	vector<json::value> result_lists;
+	vector_bool2d_to_array(results, result_lists);
+	message[DATA][U("signals")] = json::value::array(result_lists);
+	response.set_body(message);
+}
+
+void MatrixHandler::create_downs(World *world, http_request &request, http_response &response) {
+	json::value data = request.extract_json().get();
+	string agent_id = get_string_input(data, UMA_AGENT_ID);
+	string snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID);
+	vector<vector<bool> > signals = get_bool2d_input(data, UMA_SIGNALS);
+	int sig_count = signals.size();
+
+	Agent *agent = world->getAgent(agent_id);
+	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	DataManager *dm = snapshot->getDM();
+	int measurable_size = dm->getMeasurableSize();
+	dm->setSignals(signals);
+	simulation::downs_GPU(dm->_dvar_b(NPDIRS), dm->_dvar_b(SIGNALS), NULL, sig_count, measurable_size);
+
+	vector<vector<bool> > results = dm->getSignals(signals.size());
+
+	response.set_status_code(status_codes::Created);
+	json::value message;
+	message[MESSAGE] = json::value::string(U("Downs created"));
 	message[DATA] = json::value();
 	vector<json::value> result_lists;
 	vector_bool2d_to_array(results, result_lists);

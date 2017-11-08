@@ -41,6 +41,8 @@ protected:
 	//mask array, will be calculated during init_mask, which will be used in halucinate
 	bool *h_target, *dev_target;
 	//target array, used to hold the target result from calculate_target
+	bool *h_negligible, *dev_negligible;
+	//the negligible sensor
 	double *h_diag, *dev_diag;
 	//diagonal value in weight matrix
 	double *h_diag_, *dev_diag_;
@@ -92,6 +94,10 @@ protected:
 	//the mask amper size, used to hold the mask amper
 	int _mask_amper_size_max;
 	//the _mask_amper_size max value
+	int _npdir_size;
+	//the npdir matrix size, npdir_size = _measurable2d_size + sensor_size(increase value on y=2i, x=2i)
+	int _npdir_size_max;
+	//the npdir max size
 	double _memory_expansion;
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
 	int _initial_sensor_size;
@@ -144,6 +150,7 @@ public:
 	vector<bool> getMask();
 	vector<bool> getUp();
 	vector<bool> getDown();
+	vector<bool> getNegligible();
 	vector < vector<bool> > getSignals(int sig_count);
 	vector < vector<bool> > getLSignals(int sig_count);
 	vector<vector<bool> > getNpdirMasks();
@@ -158,7 +165,7 @@ public:
 
 protected:
 	void init_pointers();
-	void reallocate_memory(int sensor_size);
+	void reallocate_memory(double &total, int sensor_size);
 	void set_size(int sensor_size, bool change_max);
 	void free_all_parameters();
 
@@ -172,12 +179,10 @@ protected:
 	void gen_dists();
 	void gen_other_parameters();
 
-	void init_other_parameter(double total);
+	void init_other_parameter(double &total);
 
 	void create_sensors_to_arrays_index(int start_idx, int end_idx, vector<Sensor*> &sensors);
 	void create_sensor_pairs_to_arrays_index(int start_idx, int end_idx, vector<SensorPair*> &sensors);
-	void set_implication(bool value, int idx1, int idx2);
-	bool get_implication(int idx1, int idx2);
 
 	void copy_sensor_pairs_to_arrays(int start_idx, int end_idx, vector<SensorPair*> &_sensor_pairs);
 	void copy_sensors_to_arrays(int start_idx, int end_idx, vector<Sensor*> &sensors);

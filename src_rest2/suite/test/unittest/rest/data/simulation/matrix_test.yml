@@ -88,9 +88,9 @@ npdirs:
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
-    npdirs: [True, False, True, False, False, True, False, True, False, True, False, False, False, False, True,
-    False, True, False, True, False, True, False, False, False, False, False, False, True,
-    False, True, False, True, False, False, False, True, False, False, False, False, True, False, True, False, True,
+    npdirs: [True, False, False, True, False, False, True, False, False, True, False, True, False, False, False, False, True, False,
+    False, True, False, True, False, True, False, False, False, False, False, False, True, False,
+    False, True, False, True, False, False, False, True, False, False, False, False, True, False, True, False, True, False,
     False, True, False, True, False, False, False, False, False, True]
 
 ups 0 2 4 6 8:
@@ -106,7 +106,6 @@ ups 0 2 4 6 8:
       - [False, False, False, False, True, False, False, False, False, False]
       - [False, False, False, False, False, False, True, False, False, False]
       - [False, False, False, False, False, False, False, False, True, False]
-      #- [True, False, False, False, False, False, False, False, True, False]
   kwargs:
     signals:
       - [True, False, True, False, True, False, True, False, True, False]
@@ -114,7 +113,6 @@ ups 0 2 4 6 8:
       - [False, False, False, False, True, False, False, False, False, False]
       - [False, False, False, False, False, False, True, False, False, False]
       - [False, False, False, False, True, False, True, False, True, False]
-      #- [True, False, True, False, True, False, True, False, True, False]
 
 ups 0&8:
   method: POST
@@ -128,6 +126,40 @@ ups 0&8:
   kwargs:
     signals:
       - [True, False, True, False, True, False, True, False, True, False]
+
+downs 0 2 4 6 8:
+  method: POST
+  url: /UMA/matrix/downs
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    signals:
+      - [True, False, False, False, False, False, False, False, False, False]
+      - [False, False, True, False, False, False, False, False, False, False]
+      - [False, False, False, False, True, False, False, False, False, False]
+      - [False, False, False, False, False, False, True, False, False, False]
+      - [False, False, False, False, False, False, False, False, True, False]
+  kwargs:
+    signals:
+      - [True, False, False, False, False, False, False, False, False, False]
+      - [True, False, True, False, False, False, False, False, False, False]
+      - [True, False, True, False, True, False, False, False, True, False]
+      - [True, False, True, False, False, False, True, False, True, False]
+      - [True, False, True, False, False, False, False, False, True, False]
+
+downs 0&8:
+  method: POST
+  url: /UMA/matrix/downs
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    signals:
+      - [True, False, False, False, False, False, False, False, True, False]
+  kwargs:
+    signals:
+      - [True, False, True, False, False, False, False, False, True, False]
 
 propagation 0 2 4 6 8:
   method: POST
@@ -329,6 +361,8 @@ tests:
   - npdirs
   - ups 0 2 4 6 8
   - ups 0&8
+  - downs 0 2 4 6 8
+  - downs 0&8
   - propagation 0 2 4 6 8
   - propagation 0&8
   - blocks case1 0.7

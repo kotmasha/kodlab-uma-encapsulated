@@ -226,8 +226,9 @@ This function is dfs on GPU, using non-worker solution
 This function use shared memory and thus has only one GPU block, the default threshold number is 1024
 Input: bool list of data to be dfsed, direction matrix and measurable size
 Output: None
+****************************No long usaged in latest version, but functionality remain***************************
 */
-__global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_stable, double lowest, int size){//dfs
+__global__ void dfs_kernel(bool *x, bool *dir, double *thresholds, bool is_stable, double lowest, int size){//dfs
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	extern __shared__ bool shared[];
 	bool *xs = &shared[0];
@@ -282,19 +283,32 @@ __global__ void multiply_kernel(bool *x, bool *dir, double *thresholds, bool is_
 	}
 }
 
+__global__ void copy_npdir_kernel(bool *npdir, bool *dir, int measurable_size) {
+	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
+	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
+	if (indexX < measurable_size && indexY < measurable_size) {
+		if (indexX <= indexY) {//normal case
+			npdir[npdir_ind(indexY, indexX)] = dir[ind(indexY, indexX)];
+		}
+		else if (indexY % 2 == 0 && indexX == indexY + 1) {
+			npdir[npdir_ind(indexY, indexX)] = false;
+		}
+	}
+}
+
 __global__ void floyd_kernel(bool *dir, int measurable_size) {
 	int indexX = threadIdx.x;
 	int indexY = threadIdx.y;
 	for (int i = 0; i < measurable_size; ++i) {
 		int x = indexX, y = indexY;
 		while (y < measurable_size) {
-			if (y < x) {
-				y += 16;
+			if (y < x && (x % 2 != 0 || x != y + 1)) {
+				y += THREAD2D;
 				x = indexX;
 				continue;
 			}
-			dir[ind(y, x)] = dir[ind(y, x)] || (dir[ind(y, i)] && dir[ind(i, x)]);
-			x += 16;
+			dir[npdir_ind(y, x)] = dir[npdir_ind(y, x)] || (dir[npdir_ind(y, i)] && dir[npdir_ind(i, x)]);
+			x += THREAD2D;
 		}
 		__syncthreads();
 	}
@@ -302,7 +316,7 @@ __global__ void floyd_kernel(bool *dir, int measurable_size) {
 
 
 __global__ void dioid_square_kernel(int* Md, int Width) {
-	const int TILE_WIDTH = 16;
+	const int TILE_WIDTH = THREAD2D;
 	__shared__ int Mds[TILE_WIDTH][TILE_WIDTH];
 	__shared__ int Nds[TILE_WIDTH][TILE_WIDTH];
 
@@ -317,17 +331,15 @@ __global__ void dioid_square_kernel(int* Md, int Width) {
 		Pvalue = Md[Row * Width + Col];
 	}
 	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
-		if (Row < Width && Col < Width) {//to prevent array index error, the cell does not exist
-			if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
-				int y = Row;
-				int x = i * TILE_WIDTH + tx;
-				Mds[ty][tx] = Md[y * Width + x];
-			}
-			if (Col < Width && i * TILE_WIDTH + ty < Width) {//check if Tile cell index overflow
-				int y = i * TILE_WIDTH + ty;
-				int x = Col;
-				Nds[ty][tx] = Md[y * Width + x];
-			}
+		if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
+			int y = Row;
+			int x = i * TILE_WIDTH + tx;
+			Mds[ty][tx] = Md[y * Width + x];
+		}
+		if (Col < Width && i * TILE_WIDTH + ty < Width) {//check if Tile cell index overflow
+			int y = i * TILE_WIDTH + ty;
+			int x = Col;
+			Nds[ty][tx] = Md[y * Width + x];
 		}
 		__syncthreads();
 
@@ -344,6 +356,48 @@ __global__ void dioid_square_kernel(int* Md, int Width) {
 	}
 }
 
+__global__ void multiply_kernel(bool* Md, bool *Nd, int Width, int Height) {
+	const int TILE_WIDTH = THREAD2D;
+	__shared__ bool Mds[TILE_WIDTH][TILE_WIDTH];
+	__shared__ bool Nds[TILE_WIDTH][TILE_WIDTH];
+
+	int bx = blockIdx.x, by = blockIdx.y;
+	int tx = threadIdx.x, ty = threadIdx.y;
+
+	int Row = by * TILE_WIDTH + ty;
+	int Col = bx * TILE_WIDTH + tx;
+
+	bool Pvalue = false;
+	if (Row < Width && Col < Height) {
+		Pvalue = Nd[Col * Width + Row];
+	}
+	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
+		if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
+			int y = Row;
+			int x = i * TILE_WIDTH + tx;
+			//if (y >= x) Mds[ty][tx] = Md[ind(y, x)];
+			//else Mds[ty][tx] = Md[ind(compi(x), compi(y))];
+			Mds[ty][tx] = Md[npdir_ind(y, x)];
+		}
+		if (i * TILE_WIDTH + ty < Width && Col < Height) {
+			//Nds[ty][tx] = Nd[Col + (i * TILE_WIDTH + ty) * Width];
+			Nds[ty][tx] = Nd[Col * Width + i * TILE_WIDTH + ty];
+		}
+		__syncthreads();
+
+		if (Row < Width && Col < Height) {//to prevent array index error, the cell does not exist
+			for (int k = 0; k < TILE_WIDTH; ++k) {
+				if (i * TILE_WIDTH + k >= Width) break; //cell exist, but index overflow
+				Pvalue = Pvalue || (Mds[ty][k] && Nds[k][tx]);
+			}
+		}
+
+		__syncthreads();
+	}
+	if (Row < Width && Col < Height) {
+		Nd[Col * Width + Row] = Pvalue;
+	}
+}
 
 __global__ void transpose_multiply_kernel(bool* Md, bool *Nd, int Width, int Height) {
 	const int TILE_WIDTH = THREAD2D;
@@ -362,12 +416,11 @@ __global__ void transpose_multiply_kernel(bool* Md, bool *Nd, int Width, int Hei
 	}
 	for (int i = 0; i < Width / TILE_WIDTH + 1; ++i) {
 		if (i * TILE_WIDTH + tx < Width && Row < Width) {//check if Tile cell index overflow
-			//int y = Row;
-			//int x = i * TILE_WIDTH + tx;
 			int y = i * TILE_WIDTH + tx;
 			int x = Row;
-			if (y >= x) Mds[ty][tx] = Md[ind(y, x)];
-			else Mds[ty][tx] = Md[ind(compi(x), compi(y))];
+			//if (y >= x) Mds[ty][tx] = Md[ind(y, x)];
+			//else Mds[ty][tx] = Md[ind(compi(x), compi(y))];
+			Mds[ty][tx] = Md[npdir_ind(y, x)];
 		}
 		if (i * TILE_WIDTH + ty < Width && Col < Height) {
 			//Nds[ty][tx] = Nd[Col + (i * TILE_WIDTH + ty) * Width];
@@ -453,6 +506,16 @@ __global__ void union_GPU_kernel(int *data, int *root, int size) {
 	}
 }
 
+__global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index < sensor_size) {
+		negligible[2 * index] = false;
+		negligible[2 * index + 1] = false;
+		if (npdir[npdir_ind(2 * index, 2 * index + 1)]) negligible[2 * index] = true;
+		if (npdir[npdir_ind(2 * index + 1, 2 * index)]) negligible[2 * index + 1] = true;
+	}
+}
+
 /*
 ---------------------AGENT---------------------
 */
@@ -487,8 +550,8 @@ namespace uma_base {
 		orient_all_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
 	}
 
-	void multiply(bool *signal, bool *dirs, double *thresholds, double q, int measurable_size) {
-		multiply_kernel << <1, BLOCK1D, 2 * measurable_size * sizeof(bool) >> >(signal, dirs, thresholds, false, 1 - q, measurable_size);
+	void dfs(bool *signal, bool *dirs, double *thresholds, double q, int measurable_size) {
+		dfs_kernel << <1, BLOCK1D, 2 * measurable_size * sizeof(bool) >> >(signal, dirs, thresholds, false, 1 - q, measurable_size);
 	}
 
 	void floyd(bool *npdirs, int measurable_size) {
@@ -501,6 +564,10 @@ namespace uma_base {
 
 	void transpose_multiply(bool *npdirs, bool *signals, int measurable_size, int sig_count) {
 		transpose_multiply_kernel << <GRID2D(sig_count, measurable_size), BLOCK2D >> >(npdirs, signals, measurable_size, sig_count);
+	}
+
+	void multiply(bool *npdirs, bool *signals, int measurable_size, int sig_count) {
+		multiply_kernel << <GRID2D(sig_count, measurable_size), BLOCK2D >> >(npdirs, signals, measurable_size, sig_count);
 	}
 
 	void mask(bool *mask_amper, bool *mask, bool *current, int sensor_size){
@@ -525,5 +592,13 @@ namespace uma_base {
 
 	void union_GPU(int *dists, int *union_root, int sensor_size) {
 		union_GPU_kernel << <GRID1D(1), BLOCK1D >> > (dists, union_root, sensor_size);
+	}
+
+	void copy_npdir(bool *npdir, bool *dir, int measurable_size) {
+		copy_npdir_kernel << <GRID2D(measurable_size, measurable_size), BLOCK2D >> > (npdir, dir, measurable_size);
+	}
+
+	void negligible(bool *npdir, bool *negligible, int sensor_size) {
+		negligible_kernel << <GRID1D(sensor_size), BLOCK1D >> > (npdir, negligible, sensor_size);
 	}
 }

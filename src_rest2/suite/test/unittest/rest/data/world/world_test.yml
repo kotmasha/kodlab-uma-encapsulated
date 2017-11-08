@@ -1,0 +1,75 @@
+#This is the test script for testing existing agent endpoint
+#Test CRUD functionality
+
+create agent1:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 201
+  data:
+    agent_id: test_agent1
+
+create agent2:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 201
+  data:
+    agent_id: test_agent2
+
+create agent3:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 201
+  data:
+    agent_id: test_agent3
+
+get world:
+  method: GET
+  url: /UMA/world
+  status_code: 200
+  message: Get world info
+  kwargs:
+    agent_ids:
+      - test_agent1
+      - test_agent2
+      - test_agent3
+    agent_count: 3
+
+delete agent1:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 200
+  data:
+    agent_id: test_agent1
+
+delete agent2:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 200
+  data:
+    agent_id: test_agent2
+
+delete agent3:
+  method: DELETE
+  url: /UMA/object/agent
+  status_code: 200
+  data:
+    agent_id: test_agent3
+
+get world after delete:
+  method: GET
+  url: /UMA/world
+  status_code: 200
+  message: Get world info
+  kwargs:
+    agent_ids: []
+    agent_count: 0
+
+tests:
+  - create agent1
+  - create agent2
+  - create agent3
+  - get world
+  - delete agent1
+  - delete agent2
+  - delete agent3
+  - get world after delete

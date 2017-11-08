@@ -20,6 +20,7 @@ namespace simulation {
 	float distance(DataManager *dm);
 	float decide(Snapshot *snapshot, vector<bool> &signal, double phi, bool active);
 	void ups_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int measurable_size);
+	void downs_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int measurable_size);
 	vector<vector<vector<bool> > > abduction(DataManager *dm, vector<vector<bool> > &signals);
 	vector<vector<int> > blocks_GPU(DataManager *dm, float delta);
 }

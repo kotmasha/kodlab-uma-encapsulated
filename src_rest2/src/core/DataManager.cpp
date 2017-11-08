@@ -11,15 +11,22 @@
 
 extern int ind(int row, int col);
 extern int compi(int x);
-
+extern std::map<string, int> log_level;
+/*
+init function
+Input: DataManager's log path
+*/
 DataManager::DataManager(string &log_dir) {
 	_log_dir = log_dir;
-	_log = new logManager(logging::VERBOSE, log_dir, "DataManager.txt", typeid(*this).name());
+	_log = new logManager(log_level["DataManager"], log_dir, "DataManager.txt", "DataManager");
 
 	_memory_expansion = 0.5;
 	_log->info() << "Setting the memory expansion rate to " + to_string(_memory_expansion);
 }
 
+/*
+init all pointers, to be NULL
+*/
 void DataManager::init_pointers() {
 	h_dirs = NULL;
 	h_weights = NULL;
@@ -63,13 +70,19 @@ void DataManager::init_pointers() {
 	_log->debug() << "Setting all pointers to NULL";
 }
 
-void DataManager::reallocate_memory(int sensor_size) {
+/*
+Remalloc the memory, based on the sensor size
+Input: the sensor size
+*/
+void DataManager::reallocate_memory(double &total, int sensor_size) {
 	_log->info() << "Starting reallocating memory";
+	//free all memory first
 	free_all_parameters();
-
+	//then set the size to be new one
 	set_size(sensor_size, true);
 
 	try {
+		//then generate all matrix again
 		gen_weight();
 		gen_direction();
 		gen_thresholds();
@@ -86,7 +99,8 @@ void DataManager::reallocate_memory(int sensor_size) {
 	}
 
 	try {
-		init_other_parameter(1.0);
+		//init other parameters
+		init_other_parameter(total);
 	}
 	catch (CoreException &e) {
 		_log->error() << "Fatal error in reallocate_memory when doing parameters init";
@@ -95,19 +109,24 @@ void DataManager::reallocate_memory(int sensor_size) {
 	_log->info() << "Memory reallocated!";
 }
 
-
+/*
+Set the size
+Input: new sensor size and whether changing max of not
+*/
 void DataManager::set_size(int sensor_size, bool change_max = true) {
 	_sensor_size = sensor_size;
 	_measurable_size = 2 * _sensor_size;
 	_sensor2d_size = _sensor_size * (_sensor_size + 1) / 2;
 	_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
+	_npdir_size = _measurable2d_size + _sensor_size;
 
 	_log->info() << "Setting sensor size to " + to_string(_sensor_size);
 	_log->debug() << "Setting measurable size to " + to_string(_measurable_size);
 	_log->debug() << "Setting sensor size 2D to " + to_string(_sensor2d_size);
 	_log->debug() << "Setting measurable size 2D to " + to_string(_measurable2d_size);
 	_log->debug() << "Setting mask amper size to " + to_string(_mask_amper_size);
+	_log->debug() << "Setting npdir size to " + to_string(_npdir_size);
 
 	if (change_max) {
 		_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
@@ -115,14 +134,51 @@ void DataManager::set_size(int sensor_size, bool change_max = true) {
 		_sensor2d_size_max = _sensor_size_max * (_sensor_size_max + 1) / 2;
 		_measurable2d_size_max = _measurable_size_max * (_measurable_size_max + 1) / 2;
 		_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
+		_npdir_size_max = _measurable2d_size_max + _sensor_size_max;
 
 		_log->debug() << "Setting max sensor size to " + to_string(_sensor_size_max);
 		_log->debug() << "Setting max measurable size to " + to_string(_measurable_size_max);
 		_log->debug() << "Setting max sensor size 2D to " + to_string(_sensor2d_size_max);
 		_log->debug() << "Setting max measurable size 2D to " + to_string(_measurable2d_size_max);
 		_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
+		_log->debug() << "Setting max npdir size to " + to_string(_npdir_size_max);
 	}
 	else _log->info() << "All size max value remain the same";
+}
+
+/*
+init other parameters
+Input: total value
+*/
+void DataManager::init_other_parameter(double &total) {
+	for (int i = 0; i < _measurable_size_max; ++i) {
+		h_observe[i] = false;
+		h_signal[i] = false;
+		h_load[i] = false;
+		h_mask[i] = false;
+		h_current[i] = false;
+		h_target[i] = false;
+		h_prediction[i] = false;
+		h_up[i] = false;
+		h_down[i] = false;
+		h_diag[i] = total / 2.0;
+		h_diag_[i] = total / 2.0;
+	}
+	for (int i = 0; i < _sensor_size_max; ++i) {
+		h_union_root[i] = 0;
+	}
+
+	cudaMemset(dev_observe, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_signal, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_load, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_mask, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_current, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_target, 0, _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_prediction, 0, _measurable_size_max * sizeof(bool));
+
+	cudaMemset(dev_union_root, 0, _sensor_size_max * sizeof(bool));
+	cudaMemset(dev_npdirs, 0, _measurable_size_max * sizeof(bool));
+	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
 }
 
 
@@ -146,6 +202,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		delete[] h_mask;
 		delete[] h_current;
 		delete[] h_target;
+		delete[] h_negligible;
 		delete[] h_diag;
 		delete[] h_diag_;
 		delete[] h_prediction;
@@ -177,6 +234,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		cudaFree(dev_load);
 
 		cudaFree(dev_prediction);
+		cudaFree(dev_negligible);
 		cudaFree(dev_diag);
 		cudaFree(dev_diag_);
 
@@ -259,14 +317,14 @@ This function is generating n power of dir matrix both on host and device
 */
 void DataManager::gen_np_direction() {
 	//malloc the space
-	h_npdirs = new bool[_measurable2d_size_max];
-	cudaMalloc(&dev_npdirs, _measurable2d_size_max * sizeof(bool));
+	h_npdirs = new bool[_npdir_size_max];
+	cudaMalloc(&dev_npdirs, _npdir_size_max * sizeof(bool));
 
 	//fill in all 0
-	memset(h_npdirs, 0, _measurable2d_size_max * sizeof(bool));
-	cudaMemset(dev_npdirs, 0, _measurable2d_size_max * sizeof(bool));
+	memset(h_npdirs, 0, _npdir_size_max * sizeof(bool));
+	cudaMemset(dev_npdirs, 0, _npdir_size_max * sizeof(bool));
 
-	_log->debug() << "NPDir matrix generated with size " + to_string(_measurable2d_size_max);
+	_log->debug() << "NPDir matrix generated with size " + to_string(_npdir_size_max);
 }
 
 void DataManager::gen_signals() {
@@ -321,6 +379,7 @@ void DataManager::gen_other_parameters() {
 	h_mask = new bool[_measurable_size_max];
 	h_current = new bool[_measurable_size_max];
 	h_target = new bool[_measurable_size_max];
+	h_negligible = new bool[_measurable_size_max];
 	h_diag = new double[_measurable_size_max];
 	h_diag_ = new double[_measurable_size_max];
 	h_prediction = new bool[_measurable_size_max];
@@ -335,6 +394,7 @@ void DataManager::gen_other_parameters() {
 	cudaMalloc(&dev_current, _measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_target, _measurable_size_max * sizeof(bool));
 	cudaMalloc(&dev_prediction, _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_negligible, _measurable_size_max * sizeof(bool));
 
 	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
 	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
@@ -754,12 +814,12 @@ The function is getting the n power of dir matrix in 2-dimensional form
 Output: npdir matrix in 2d format
 */
 vector<vector<bool> > DataManager::getNPDir2D() {
-	cudaMemcpy(h_npdirs, dev_npdirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_npdirs, dev_npdirs, _npdir_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	vector<vector<bool> > result;
 	int n = 0;
 	for (int i = 0; i < _measurable_size; ++i) {
 		vector<bool> tmp;
-		for (int j = 0; j <= i; ++j)
+		for (int j = 0; j <= i + (i % 2 == 0); ++j)
 			tmp.push_back(h_npdirs[n++]);
 		result.push_back(tmp);
 	}
@@ -965,6 +1025,19 @@ vector<bool> DataManager::getDown() {
 	return result;
 }
 
+vector<bool> DataManager::getNegligible() {
+	vector<bool> result;
+	cudaMemcpy(h_negligible, dev_negligible, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < _measurable_size; ++i) {
+		result.push_back(h_negligible[i]);
+	}
+	return result;
+}
+
+/*
+The function is getting the union root in union_find
+Output: the union root vector
+*/
 vector<int> DataManager::getUnionRoot() {
 	cudaMemcpy(h_union_root, dev_union_root, _sensor_size * sizeof(int), cudaMemcpyDeviceToHost);
 	vector<int> result;
@@ -974,10 +1047,16 @@ vector<int> DataManager::getUnionRoot() {
 	return result;
 }
 
+/*
+return sensor size
+*/
 int DataManager::getSensorSize() {
 	return _sensor_size;
 }
 
+/*
+return measurable size
+*/
 int DataManager::getMeasurableSize() {
 	return _measurable_size;
 }
@@ -1007,57 +1086,10 @@ std::map<string, int> DataManager::getSizeInfo() {
 	s["_measurable2d_size_max"] = _measurable2d_size_max;
 	s["_mask_amper_size"] = _mask_amper_size;
 	s["_mask_amper_size_max"] = _mask_amper_size_max;
+	s["_npdir_size"] = _npdir_size;
+	s["_npdir_size_max"] = _npdir_size_max;
 
 	return s;
-}
-
-
-/*
-This function is halucinate on GPU
-It first generate the mask based on the initial size, then just do propagation on the mask
-The output will be stored in Gload(propagate_GPU)
-Input: the initial sensor size
-*/
-
-void DataManager::set_implication(bool value, int idx1, int idx2) {
-	h_dirs[ind(idx1, idx2)] = value;
-	cudaMemcpy(dev_dirs + ind(idx1, idx2), h_dirs + ind(idx1, idx2), sizeof(bool), cudaMemcpyHostToDevice);
-}
-
-bool DataManager::get_implication(int idx1, int idx2) {
-	cudaMemcpy(h_dirs + ind(idx1, idx2), dev_dirs + ind(idx1, idx2), sizeof(bool), cudaMemcpyDeviceToHost);
-	return h_dirs[ind(idx1, idx2)];
-}
-
-void DataManager::init_other_parameter(double total) {
-	for (int i = 0; i < _measurable_size_max; ++i) {
-		h_observe[i] = false;
-		h_signal[i] = false;
-		h_load[i] = false;
-		h_mask[i] = false;
-		h_current[i] = false;
-		h_target[i] = false;
-		h_prediction[i] = false;
-		h_up[i] = false;
-		h_down[i] = false;
-		h_diag[i] = total / 2.0;
-		h_diag_[i] = total / 2.0;
-	}
-	for (int i = 0; i < _sensor_size_max; ++i) {
-		h_union_root[i] = 0;
-	}
-
-	cudaMemset(dev_observe, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_signal, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_load, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_mask, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_current, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_target, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_prediction, 0, _measurable_size_max * sizeof(bool));
-
-	cudaMemset(dev_union_root, 0, _sensor_size_max * sizeof(bool));
-	cudaMemset(dev_npdirs, 0, _measurable_size_max * sizeof(bool));
-	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
 }
 
 int *DataManager::_dvar_i(int name) {

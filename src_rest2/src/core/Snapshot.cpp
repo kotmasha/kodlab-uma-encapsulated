@@ -13,6 +13,7 @@
 */
 extern int ind(int row, int col);
 extern int compi(int x);
+extern std::map<string, int> log_level;
 
 /*
 Snapshot::Snapshot(ifstream &file, string &log_dir) {
@@ -63,7 +64,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 Snapshot::Snapshot(string uuid, string log_dir){
 	_uuid = uuid;
 	_log_dir = log_dir;
-	_log = new logManager(logging::VERBOSE, log_dir, uuid + ".txt", typeid(*this).name());
+	_log = new logManager(log_level["Snapshot"], log_dir, uuid + ".txt", "Snapshot");
 
 	//set the init value for 0.5 for now, ideally should read such value from conf file
 	_total = 1.0;
@@ -132,7 +133,7 @@ void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &di
 	
 	if (_sensors.size() > _dm->_sensor_size_max) {
 		_log->debug() << "Need allocate more space after adding a sensor";
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
 		_dm->copy_sensors_to_arrays(0, _sensors.size(), _sensors);
@@ -321,7 +322,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	if(_sensors.size() > _dm->_sensor_size_max){
 		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
@@ -395,7 +396,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 	if (_sensors.size() > _dm->_sensor_size_max) {
 		_log->info() << "New sensor size larger than current max, will resize";
 		//if need to reallocate
-		_dm->reallocate_memory(_sensors.size());
+		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
@@ -587,7 +588,10 @@ void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	_dm->set_implication(true, idx1, idx2);
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	bool value = true;
+	measurable_pair->setD(value);
+	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
 	_log->info() << "Implication success from " + sensor1 + " to " + sensor2;
 }
 
@@ -602,7 +606,10 @@ void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	_dm->set_implication(false, idx1, idx2);
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	bool value = false;
+	measurable_pair->setD(value);
+	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
 	_log->info() << "Implication delete success from " + sensor1 + " to " + sensor2;
 }
 
@@ -617,8 +624,9 @@ bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
 	int idx2 = sensor2 == _sensor_idx[sensor2]->_m->_uuid ? _sensor_idx[sensor2]->_m->_idx : _sensor_idx[sensor2]->_cm->_idx;
-	bool value = _dm->get_implication(idx1, idx2);
-	return value;
+	MeasurablePair *measurable_pair = getMeasurablePair(idx1, idx2);
+	data_util::boolD2H(_dm->_dvar_b(DIRS), _dm->_hvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
+	return measurable_pair->getD();
 }
 
 

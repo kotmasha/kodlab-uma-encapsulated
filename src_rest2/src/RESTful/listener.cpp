@@ -1,10 +1,11 @@
 #include "listener.h"
 #include "World.h"
-#include "DataHandler.h"
+#include "WorldHandler.h"
 #include "AgentHandler.h"
 #include "SimulationHandler.h"
 #include "AdminHandler.h"
 #include "SnapshotHandler.h"
+#include "DataHandler.h"
 #include "SensorHandler.h"
 #include "MeasurableHandler.h"
 #include "MatrixHandler.h"
@@ -12,11 +13,13 @@
 #include "UMAException.h"
 #include <cpprest/json.h>
 
-listener::listener(const http::uri& url) : m_listener(http_listener(url)){
+extern std::map<string, int> log_level;
+
+listener::listener(const http::uri& url, std::map<string_t, vector<string_t>> &rest_map) : m_listener(http_listener(url)){
 	//init the UMAC_access and UMAC log
 	_log_path = "log";
-	_log_access = new logManager(logging::VERBOSE, _log_path, "UMAC_access.txt", typeid(*this).name());
-	_log_server = new logManager(logging::VERBOSE, _log_path, "UMA_server.txt", typeid(*this).name());
+	_log_access = new logManager(log_level["Server"], _log_path, "UMAC_access.txt", "listener");
+	_log_server = new logManager(log_level["Server"], _log_path, "UMA_server.txt", "listener");
 
 	_log_server->info() << U("Listening on the url ") + url.to_string();
 
@@ -38,7 +41,7 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 	//create data handler
 
 	try {
-		init_restmap();
+		init_restmap(rest_map);
 		register_handler_factory();
 	}
 	catch (ServerException &e) {
@@ -48,9 +51,9 @@ listener::listener(const http::uri& url) : m_listener(http_listener(url)){
 }
 
 void listener::register_handler_factory() {
-	_data_handler = new DataHandler("data", _log_access);
-	_handler_factory[U("data")] = _data_handler;
-	_log_server->info() << "A data handler is created";
+	_world_handler = new WorldHandler("world", _log_access);
+	_handler_factory[U("world")] = _world_handler;
+	_log_server->info() << "A world handler is created";
 
 	_agent_handler = new AgentHandler("agent", _log_access);
 	_handler_factory[U("agent")] = _agent_handler;
@@ -59,6 +62,10 @@ void listener::register_handler_factory() {
 	_snapshot_handler = new SnapshotHandler("snapshot", _log_access);
 	_handler_factory[U("snapshot")] = _snapshot_handler;
 	_log_server->info() << "A snapshot handler is created";
+
+	_data_handler = new DataHandler("data", _log_access);
+	_handler_factory[U("data")] = _data_handler;
+	_log_server->info() << "A data handler is created";
 
 	_sensor_handler = new SensorHandler("sensor", _log_access);
 	_handler_factory[U("sensor")] = _sensor_handler;
@@ -290,28 +297,19 @@ void listener::handle_delete(http_request &request){
 	}
 }
 
-void listener::init_restmap() {
+void listener::init_restmap(std::map < string_t, vector<string_t>> &rest_map) {
 	try {
-		ifstream ini_file("ini/restmap.ini");
-		string s;
-		string current_factory = "";
-		while (std::getline(ini_file, s)) {
-			if (s.front() == '#' || s.length() == 0) continue;
-			else if (s.front() == '[' && s.back() == ']') {//get a factory
-				s.erase(s.begin());
-				s.erase(s.end() - 1);
-				current_factory = s;
-			}
-			else {
-				string_t ss(s.begin(), s.end());
-				string_t s_current_factory(current_factory.begin(), current_factory.end());
-				_path_to_handler[ss] = s_current_factory;
-				_log_server->info() << "add mapping from " + s + " to \"" + current_factory + "\"";
+		for (auto it = rest_map.begin(); it != rest_map.end(); ++it) {
+			string_t s_factory = it->first;
+			for (int i = 0; i < it->second.size(); ++i) {
+				string_t s_path = it->second[i];
+				_path_to_handler[s_path] = s_factory;
+				_log_server->info() << "add mapping from " + string_t_to_string(s_path) + " to \"" + string_t_to_string(s_factory) + "\"";
 			}
 		}
 	}
 	catch (exception &e) {
-		throw ServerException("Having some problem reading restmap.ini file!", ServerException::SERVER_FATAL);
+		throw ServerException("Having some problem mapping restmap!", ServerException::SERVER_FATAL);
 	}
 }
 

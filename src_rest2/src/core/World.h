@@ -20,6 +20,7 @@ public:
 	void add_agent(string &agent_id);
 	void delete_agent(string &agent_id);
 	Agent *getAgent(const string &agent_id);
+	vector<string> getAgentInfo();
 	void save_world(string &name);
 	void load_world(string &name);
 	void merge_test();

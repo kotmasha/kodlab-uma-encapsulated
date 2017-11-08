@@ -12,12 +12,12 @@ using namespace std;
 
 class World;
 class AdminHandler;
-class DataHandler;
+class WorldHandler;
 class AgentHandler;
 class SnapshotHandler;
+class DataHandler;
 class SensorHandler;
 class MeasurableHandler;
-class DataValidationHandler;
 class SimulationHandler;
 class MatrixHandler;
 class logging;
@@ -26,17 +26,17 @@ class logManager;
 class listener
 {
 public:
-	listener(const http::uri& url);
+	listener(const http::uri& url, std::map<string_t, vector<string_t>> &rest_map);
 	http_listener m_listener;
 
 protected:
 	World *_world;
-	DataHandler *_data_handler;
+	WorldHandler *_world_handler;
 	AgentHandler *_agent_handler;
 	SnapshotHandler *_snapshot_handler;
+	DataHandler *_data_handler;
 	SensorHandler *_sensor_handler;
 	MeasurableHandler *_measurable_handler;
-	DataValidationHandler *_data_validation_handler;
 	SimulationHandler *_simulation_handler;
 	MatrixHandler *_matrix_handler;
 	string _log_path;
@@ -45,7 +45,7 @@ protected:
 	std::map<string_t, string_t> _path_to_handler;
 
 private:
-	void init_restmap();
+	void init_restmap(std::map < string_t, vector<string_t>> &rest_map);
 	void register_handler_factory();
 	void handle_get(http_request &request);
 	void handle_put(http_request &request);

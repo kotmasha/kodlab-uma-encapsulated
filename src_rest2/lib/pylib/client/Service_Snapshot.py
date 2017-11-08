@@ -55,6 +55,13 @@ class ServiceSnapshot:
             return None
         return list(result['data']['signals'])
 
+    def make_downs(self, signals):
+        data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signals}
+        result = self._service.post('/UMA/matrix/downs', data)
+        if not result:
+            return None
+        return list(result['data']['signals'])
+
     def make_propagation(self, signals, load):
         data =  {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'signals': signals, 'load': load}
         result = self._service.post('/UMA/matrix/propagation', data)
@@ -116,6 +123,9 @@ class ServiceSnapshot:
 
     def getTarget(self):
         return self._service.get('/UMA/data/target', {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+
+    def getNegligible(self):
+        return self._service.get('/UMA/data/negligible', {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})['data']['negligible']
 
     def setQ(self, q):
         return self._service.put('/UMA/object/snapshot', {'q': q}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})

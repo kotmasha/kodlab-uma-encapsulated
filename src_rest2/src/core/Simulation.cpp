@@ -1,11 +1,14 @@
 #include "Simulation.h"
 #include "Snapshot.h"
 #include "DataManager.h"
+#include "MeasurablePair.h"
+#include "logManager.h"
 #include "data_util.h"
 #include "kernel_util.cuh"
 #include "uma_base.cuh"
 
 extern int ind(int row, int col);
+logManager *sim_log;
 
 void simulation::update_total(double &total, double &total_, double &q, double &phi) {
 	total_ = total;
@@ -43,6 +46,8 @@ void simulation::update_state(DataManager *dm, double &q, double &phi, double &t
 	uma_base::orient_all(dm->_dvar_b(DIRS), dm->_dvar_d(WEIGHTS), dm->_dvar_d(WEIGHTS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
+	//negligible on npdir, store the results
+	uma_base::negligible(dm->_dvar_b(NPDIRS), dm->_dvar_b(NEGLIGIBLE), sensor_size);
 
 	//the propagation on 
 	data_util::boolD2D(dm->_dvar_b(OBSERVE), dm->_dvar_b(SIGNALS), measurable_size);
@@ -54,10 +59,11 @@ void simulation::update_state(DataManager *dm, double &q, double &phi, double &t
 void simulation::floyd(DataManager *dm) {
 	int measurable_size = dm->getMeasurableSize();
 	int measurable2d_size = dm->getMeasurable2dSize();
-	data_util::boolD2D(dm->_dvar_b(DIRS), dm->_dvar_b(NPDIRS), measurable2d_size);
+	uma_base::copy_npdir(dm->_dvar_b(NPDIRS), dm->_dvar_b(DIRS), measurable_size);
 	uma_base::floyd(dm->_dvar_b(NPDIRS), measurable_size);
 	data_util::boolD2H(dm->_hvar_b(NPDIRS), dm->_dvar_b(NPDIRS), measurable2d_size);
 	//cudaCheckErrors("kernel fails");
+	sim_log->debug() << "floyd is done";
 }
 
 void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsignals, bool *dst, int sig_count, int measurable_size) {
@@ -74,6 +80,7 @@ void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsign
 	if (dst != NULL) {
 		data_util::boolD2D(lsignals, dst, sig_count * measurable_size);
 	}
+	sim_log->debug() << "Propagation is done for " + to_string(sig_count) + " sensors";
 }
 
 void simulation::halucinate(DataManager *dm, int &initial_size) {
@@ -85,6 +92,7 @@ void simulation::halucinate(DataManager *dm, int &initial_size) {
 	kernel_util::allfalse(dm->_dvar_b(LOAD), measurable_size);
 	simulation::propagates(dm->_dvar_b(NPDIRS), dm->_dvar_b(LOAD), dm->_dvar_b(SIGNALS), dm->_dvar_b(LSIGNALS), dm->_dvar_b(PREDICTION), 1, measurable_size);
 	data_util::boolD2H(dm->_dvar_b(PREDICTION), dm->_hvar_b(PREDICTION), measurable_size);
+	sim_log->debug() << "Halucniate is done";
 }
 
 void simulation::gen_mask(DataManager *dm,  int &initial_size) {
@@ -94,6 +102,7 @@ void simulation::gen_mask(DataManager *dm,  int &initial_size) {
 
 	uma_base::mask(dm->_dvar_b(MASK_AMPER), dm->_dvar_b(MASK), dm->_dvar_b(CURRENT), sensor_size);
 	uma_base::check_mask(dm->_dvar_b(MASK), sensor_size);
+	sim_log->debug() << "Mask is generated";
 }
 
 void simulation::propagate_mask(DataManager *dm) {
@@ -162,6 +171,13 @@ float simulation::distance(DataManager *dm) {
 
 void simulation::ups_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int measurable_size) {
 	uma_base::transpose_multiply(npdirs, signals, measurable_size, sig_count);
+	if (dst != NULL) {
+		data_util::boolD2D(signals, dst, sig_count * measurable_size);
+	}
+}
+
+void simulation::downs_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int measurable_size) {
+	uma_base::multiply(npdirs, signals, measurable_size, sig_count);
 	if (dst != NULL) {
 		data_util::boolD2D(signals, dst, sig_count * measurable_size);
 	}
