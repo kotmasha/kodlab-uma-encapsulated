@@ -5,7 +5,6 @@
 using namespace std;
 
 class Agent;
-class logManager;
 
 /*
 This is the world class, it maintains all the agent object
@@ -13,8 +12,6 @@ This is the world class, it maintains all the agent object
 class World{
 protected:
 	std::map<string, Agent*> _agents, _load_agents;
-	string _log_path;
-	logManager *_log;
 public:
 	World();
 	void add_agent(string &agent_id);

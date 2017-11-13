@@ -13,11 +13,10 @@ class World;
 class Agent;
 class Snapshot;
 class Sensor;
-class logManager;
 
 class AdminHandler {
 public:
-	AdminHandler(string handler_factor, logManager *log_access);
+	AdminHandler(string handler_factor);
 
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response) = 0;
 	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response) = 0;
@@ -34,8 +33,6 @@ public:
 	void vector_double2d_to_array(std::vector<vector<double> > &lists, std::vector<json::value> &json_lists);
 	void vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list);
 	Agent *get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response);
-	bool get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot *&snapshot, http_request &request);
-	bool get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request);
 
 	string_t MESSAGE;
 	string_t REQUEST_MODE;
@@ -49,7 +46,6 @@ protected:
 	string_t UMA_AGENT_ID, UMA_SNAPSHOT_ID, UMA_SENSOR_ID, UMA_MEASURABLE_ID;
 	string_t UMA_SENSORS, UMA_SIGNAL, UMA_SIGNALS, UMA_LOAD;
 	string_t DATA;
-	logManager *_log_access;
 
 	string _handler_factory;
 

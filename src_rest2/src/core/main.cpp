@@ -1,22 +1,11 @@
 #include "Global.h"
 #include "listener.h"
 #include "World.h"
-#include "logManager.h"
+#include "LogManager.h"
 
 using namespace std;
 
 #include<sstream>
-
-std::map<string, int> log_level;
-extern logManager *sim_log;
-
-int string_to_log_level(string &s) {
-	if (s == "ERROR") return 0;
-	if (s == "WARN") return 1;
-	if (s == "INFO") return 2;
-	if (s == "DEBUG") return 3;
-	if (s == "VERBOSE") return 4;
-}
 
 string_t convert_string(string s) {
 	string_t ss(s.begin(), s.end());
@@ -71,28 +60,27 @@ std::map<string_t, vector<string_t>> read_restmap() {
 	}
 }
 
-void read_log_level() {
+std::map<string, std::map<string, string>> read_log_configure() {
+	std::map<string, std::map<string, string>> results;
 	try {
 		ifstream ini_file("ini/log.ini");
 		string s;
+		string current_component;
 		while (std::getline(ini_file, s)) {
 			if (s.front() == '#' || s.length() == 0) continue;
 			else if (s.front() == '[' && s.back() == ']') {//get a factory
-														   //for now escape, it is only [log_level] for now
+				s.erase(s.begin());
+				s.erase(s.end() - 1);
+				results[s] = std::map<string, string>();
+				current_component = s;
 			}
 			else {
-				string obj = s.substr(0, s.find("="));
-				string level = s.substr(s.find("=") + 1);
-				log_level[obj] = string_to_log_level(level);
+				string key = s.substr(0, s.find("="));
+				string value = s.substr(s.find("=") + 1);
+				results[current_component][key] = value;
 			}
 		}
-		//hack if for now
-		if (log_level.find("Server") == log_level.end()) log_level["Server"] = 2;
-		if (log_level.find("World") == log_level.end()) log_level["World"] = 2;
-		if (log_level.find("Agent") == log_level.end()) log_level["Agent"] = 2;
-		if (log_level.find("Snapshot") == log_level.end()) log_level["Snapshot"] = 2;
-		if (log_level.find("DataManager") == log_level.end()) log_level["DataManager"] = 2;
-		if (log_level.find("Simulation") == log_level.end()) log_level["Simulation"] = 2;
+		return results;
 	}
 	catch (exception &e) {
 		//throw ServerException("Having some problem reading restmap.ini file!", ServerException::SERVER_FATAL);
@@ -105,9 +93,9 @@ int main() {
 	uri url = uri(U("http://") + host + U(":") + port);
 
 	std::map<string_t, vector<string_t>> rest_map = read_restmap();
-	read_log_level();
+	std::map<string, std::map<string, string>> log_cfg = read_log_configure();
 
-	sim_log = new logManager(log_level["Simulation"], "log", "simulation.txt", "Simulation");
+	LogManager *logManager = new LogManager(log_cfg);
 
 	listener listener(url, rest_map);
 	try

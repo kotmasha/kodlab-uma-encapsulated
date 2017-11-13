@@ -39,8 +39,6 @@ protected:
 	MeasurableHandler *_measurable_handler;
 	SimulationHandler *_simulation_handler;
 	MatrixHandler *_matrix_handler;
-	string _log_path;
-	logManager *_log_access, *_log_server;
 	std::map<string_t, AdminHandler*> _handler_factory;
 	std::map<string_t, string_t> _path_to_handler;
 
@@ -51,6 +49,7 @@ private:
 	void handle_put(http_request &request);
 	void handle_post(http_request &request);
 	void handle_delete(http_request &request);
+	void handle(http_request &request, string request_type);
 	AdminHandler *find_handler(http_request &request);
 };
 

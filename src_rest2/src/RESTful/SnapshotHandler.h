@@ -10,7 +10,7 @@ protected:
 	string_t UMA_THRESHOLD, UMA_Q, UMA_AUTO_TARGET, UMA_PROPAGATE_MASK;
 	string_t UMA_FROM_SENSOR, UMA_TO_SENSOR;
 public:
-	SnapshotHandler(string handler_factory, logManager *log_access);
+	SnapshotHandler(string handler_factory);
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_read(World *world, string_t &path, http_request &request, http_response &response);

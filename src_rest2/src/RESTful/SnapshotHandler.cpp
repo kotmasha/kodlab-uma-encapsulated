@@ -4,7 +4,7 @@
 #include "Agent.h"
 #include "Snapshot.h"
 
-SnapshotHandler::SnapshotHandler(string handler_factory, logManager *log_access): AdminHandler(handler_factory, log_access){
+SnapshotHandler::SnapshotHandler(string handler_factory): AdminHandler(handler_factory){
 	UMA_INITIAL_SIZE = U("initial_size");
 	UMA_Q = U("q");
 	UMA_THRESHOLD = U("threshold");

@@ -6,7 +6,7 @@
 #include "DataManager.h"
 #include "Simulation.h"
 
-MatrixHandler::MatrixHandler(string handler_factory, logManager *log_access) : AdminHandler(handler_factory, log_access) {
+MatrixHandler::MatrixHandler(string handler_factory) : AdminHandler(handler_factory) {
 	UMA_BLOCK_DISTS = U("dists");
 	UMA_BLOCK_DT = U("delta");
 }

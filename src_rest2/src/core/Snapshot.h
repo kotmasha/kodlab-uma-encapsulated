@@ -10,7 +10,6 @@ class Measurable;
 class Sensor;
 class MeasurablePair;
 class SensorPair;
-class logManager;
 class Agent;
 class DataManager;
 /*
@@ -43,9 +42,8 @@ protected:
 	int t;
 	bool _auto_target;
 	bool _propagate_mask;
-	logManager *_log;
-	string _log_dir;
 	DataManager *_dm;
+	string _dependency;
 	friend class Agent;
 
 public:
@@ -60,7 +58,7 @@ protected:
 public:
 	//Snapshot(int type, int base_sensor_size, double threshold, string name, vector<string> sensor_ids, vector<string> sensor_names, bool cal_target, string log_type);
 	//Snapshot(ifstream &file, string &log_dir);
-	Snapshot(string uuid, string log_dir);
+	Snapshot(string uuid, string dependency);
 	void add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector< bool> > &b);
 	void delete_sensor(string &sensor_id);
 
@@ -135,7 +133,7 @@ Stationary Snapshot is not throwing away information when it is not active
 class Snapshot_Stationary: public Snapshot{
 public:
 	//Snapshot_Stationary(ifstream &file, string &log_dir);
-	Snapshot_Stationary(string uuid, string log_dir);
+	Snapshot_Stationary(string uuid, string dependency);
 	virtual ~Snapshot_Stationary();
 	//virtual void update_weights(bool active);
 	//virtual void update_thresholds();

@@ -12,7 +12,7 @@ protected:
 	string_t UMA_SENSOR1, UMA_SENSOR2;
 	string_t UMA_W, UMA_D, UMA_DIAG;
 public:
-	SensorHandler(string handler_factory, logManager *log_access);
+	SensorHandler(string handler_factory);
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_read(World *world, string_t &path, http_request &request, http_response &response);

@@ -2,7 +2,7 @@
 #include "World.h"
 #include "Agent.h"
 
-WorldHandler::WorldHandler(string handler_factory, logManager *log_access) :AdminHandler(handler_factory, log_access) {}
+WorldHandler::WorldHandler(string handler_factory) :AdminHandler(handler_factory) {}
 
 void WorldHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
 	throw ClientException("Cannot handle " + string_t_to_string(path), ClientException::CLIENT_ERROR, status_codes::BadRequest);

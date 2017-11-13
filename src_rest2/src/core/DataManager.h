@@ -5,7 +5,6 @@
 
 class Sensor;
 class SensorPair;
-class logManager;
 
 using namespace std;
 
@@ -102,13 +101,10 @@ protected:
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
 	int _initial_sensor_size;
 	//initial sensor size for the whole test
-	
-protected:
-	logManager *_log;
-	string _log_dir;
+	string _dependency;
 
 public:
-	DataManager(string &log_dir);
+	DataManager(string dependency);
 
 	int *_dvar_i(int name);
 	double *_dvar_d(int name);

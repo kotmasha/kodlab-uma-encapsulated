@@ -6,7 +6,6 @@ using namespace std;
 class Snapshot;
 class Snapshot_Stationary;
 class Snapshot_Forgetful;
-class logManager;
 class World;
 
 /*
@@ -17,14 +16,13 @@ protected:
 	//the snapshot map, from name to pointer
 	std::map<string, Snapshot_Stationary*> _snapshots;
 	string _uuid;
-	string _log_dir;
+	string _dependency;
 	int _t;
-	logManager *_log;
 	friend class World;
 
 public:
 	//Agent(ifstream &file);
-	Agent(string uuid);
+	Agent(string uuid, string dependency);
 	void add_snapshot_stationary(string &uuid);
 	Snapshot *getSnapshot(string &snapshot_id);
 	void delete_snapshot(string &snapshot_id);

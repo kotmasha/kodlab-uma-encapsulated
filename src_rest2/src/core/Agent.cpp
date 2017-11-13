@@ -1,12 +1,11 @@
 #include "Agent.h"
 #include "Snapshot.h"
-#include "logManager.h"
-#include "logging.h"
+#include "Logger.h"
 #include "UMAException.h"
 #include "DataManager.h"
 #include "Simulation.h"
 
-extern std::map<string, int> log_level;
+extern Logger agentLogger;
 
 /*
 Agent::Agent(ifstream &file) {
@@ -31,30 +30,28 @@ Agent::Agent(ifstream &file) {
 }
 */
 
-Agent::Agent(string uuid){
+Agent::Agent(string uuid, string dependency){
 	_uuid = uuid;
-	_log_dir = "log/Agent_" + uuid;
+	_dependency = dependency + ":" + _uuid;
 	_t = 0;
 
-	_log = new logManager(log_level["Agent"], _log_dir, "agent.txt", "Agent");
-	_log->info() << "An agent " + uuid + " is created";
+	agentLogger.info("An agent " + uuid + " is created");
 }
 
 void Agent::add_snapshot_stationary(string &uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		_log->error() << "Cannot create a duplicate snapshot!";
+		agentLogger.error("Cannot create a duplicate snapshot!");
 		throw CoreException("Cannot create a duplicate snapshot!", CoreException::CORE_ERROR, status_codes::Conflict);
 	}
-	string log_dir = _log_dir + "/Snapshot_" + uuid;
-	_snapshots[uuid] = new Snapshot_Stationary(uuid, log_dir);
-	_log->info() << "A Snapshot Stationary " + uuid + " is created";
+	_snapshots[uuid] = new Snapshot_Stationary(uuid, _dependency);
+	agentLogger.info("A Snapshot Stationary " + uuid + " is created");
 }
 
 Snapshot *Agent::getSnapshot(string &snapshot_id) {
 	if (_snapshots.find(snapshot_id) != _snapshots.end()) {
 		return _snapshots[snapshot_id];
 	}
-	_log->warn() << "No snapshot " + snapshot_id + " is found";
+	agentLogger.warn("No snapshot " + snapshot_id + " is found");
 	throw CoreException("Cannot find the snapshot id!", CoreException::CORE_ERROR, status_codes::NotFound);
 }
 
@@ -62,7 +59,7 @@ vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, dou
 	vector<float> result;
 	result.push_back(simulation::decide(_snapshots["plus"], obs_plus, phi, active));
 	result.push_back(simulation::decide(_snapshots["minus"], obs_minus, phi, active));
-	_log->info() << "Finished the " + to_string(_t++) + " th iteration";
+	agentLogger.info("Finished the " + to_string(_t++) + " th iteration");
 	return result;
 }
 
@@ -131,7 +128,7 @@ void Agent::delete_snapshot(string &snapshot_id) {
 	delete _snapshots[snapshot_id];
 	_snapshots[snapshot_id] = NULL;
 	_snapshots.erase(snapshot_id);
-	_log->info() << "Snapshot deleted";
+	agentLogger.info("Snapshot deleted");
 }
 
 Agent::~Agent(){
@@ -142,8 +139,8 @@ Agent::~Agent(){
 		}
 	}
 	catch (exception &e) {
-		_log->error() << "Fatal error while trying to delete agent: " + _uuid;
+		agentLogger.error("Fatal error while trying to delete agent: " + _uuid);
 		throw CoreException("Fatal error in Agent destruction function", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
-	_log->info() << "Deleted the agent " + _uuid;
+	agentLogger.info("Deleted the agent " + _uuid);
 }

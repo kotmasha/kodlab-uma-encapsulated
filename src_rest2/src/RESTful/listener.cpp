@@ -9,35 +9,33 @@
 #include "SensorHandler.h"
 #include "MeasurableHandler.h"
 #include "MatrixHandler.h"
-#include "logManager.h"
 #include "UMAException.h"
+#include "Logger.h"
 #include <cpprest/json.h>
 
-extern std::map<string, int> log_level;
+extern Logger accessLogger;
+extern Logger serverLogger;
 
 listener::listener(const http::uri& url, std::map<string_t, vector<string_t>> &rest_map) : m_listener(http_listener(url)){
 	//init the UMAC_access and UMAC log
-	_log_path = "log";
-	_log_access = new logManager(log_level["Server"], _log_path, "UMAC_access.txt", "listener");
-	_log_server = new logManager(log_level["Server"], _log_path, "UMA_server.txt", "listener");
 
-	_log_server->info() << U("Listening on the url ") + url.to_string();
+	serverLogger.info("Listening on the url" + string_t_to_string(url.to_string()));
 
 	// every test will only have a unique world object
 	_world = new World();
-	_log_server->info() << "A new world is created";
+	serverLogger.info("A new world is created");
 	// support CRUD operation
 	m_listener.support(methods::GET, std::bind(&listener::handle_get, this, std::placeholders::_1));
-	_log_server->info() << "Init Get request success";
+	serverLogger.info("Init Get request success");
 
 	m_listener.support(methods::PUT, std::bind(&listener::handle_put, this, std::placeholders::_1));
-	_log_server->info() << "Init Put request success";
+	serverLogger.info("Init Put request success");
 
 	m_listener.support(methods::POST, std::bind(&listener::handle_post, this, std::placeholders::_1));
-	_log_server->info() << "Init Post request success";
+	serverLogger.info("Init Post request success");
 
 	m_listener.support(methods::DEL, std::bind(&listener::handle_delete, this, std::placeholders::_1));
-	_log_server->info() << "Init Delete request success";
+	serverLogger.info("Init Delete request success");
 	//create data handler
 
 	try {
@@ -45,52 +43,51 @@ listener::listener(const http::uri& url, std::map<string_t, vector<string_t>> &r
 		register_handler_factory();
 	}
 	catch (ServerException &e) {
-		_log_server->error() << e.getErrorMessage();
+		serverLogger.error(e.getErrorMessage());
 		exit(0);
 	}
 }
 
 void listener::register_handler_factory() {
-	_world_handler = new WorldHandler("world", _log_access);
+	_world_handler = new WorldHandler("world");
 	_handler_factory[U("world")] = _world_handler;
-	_log_server->info() << "A world handler is created";
+	serverLogger.info("A world handler is created");
 
-	_agent_handler = new AgentHandler("agent", _log_access);
+	_agent_handler = new AgentHandler("agent");
 	_handler_factory[U("agent")] = _agent_handler;
-	_log_server->info() << "An agent handler is created";
+	serverLogger.info("An agent handler is created");
 
-	_snapshot_handler = new SnapshotHandler("snapshot", _log_access);
+	_snapshot_handler = new SnapshotHandler("snapshot");
 	_handler_factory[U("snapshot")] = _snapshot_handler;
-	_log_server->info() << "A snapshot handler is created";
+	serverLogger.info("A snapshot handler is created");
 
-	_data_handler = new DataHandler("data", _log_access);
+	_data_handler = new DataHandler("data");
 	_handler_factory[U("data")] = _data_handler;
-	_log_server->info() << "A data handler is created";
+	serverLogger.info("A data handler is created");
 
-	_sensor_handler = new SensorHandler("sensor", _log_access);
+	_sensor_handler = new SensorHandler("sensor");
 	_handler_factory[U("sensor")] = _sensor_handler;
-	_log_server->info() << "A sensor handler is created";
+	serverLogger.info("A sensor handler is created");
 
-	_measurable_handler = new MeasurableHandler("measurable", _log_access);
+	_measurable_handler = new MeasurableHandler("measurable");
 	_handler_factory[U("measurable")] = _measurable_handler;
-	_log_server->info() << "A measurable handler is created";
+	serverLogger.info("A measurable handler is created");
 
-	_simulation_handler = new SimulationHandler("simulation", _log_access);
+	_simulation_handler = new SimulationHandler("simulation");
 	_handler_factory[U("simulation")] = _simulation_handler;
-	_log_server->info() << "A simulation handler is created";
+	serverLogger.info("A simulation handler is created");
 
-	_matrix_handler = new MatrixHandler("matrix", _log_access);
+	_matrix_handler = new MatrixHandler("matrix");
 	_handler_factory[U("matrix")] = _matrix_handler;
-	_log_server->info() << "A matrix handler is created";
+	serverLogger.info("A matrix handler is created");
 }
 
-
-void listener::handle_get(http_request &request){
+void listener::handle(http_request &request, string request_type) {
 	string_t path = request.request_uri().path();
 	AdminHandler *handler = find_handler(request);
 	// if no handlers can be found
 	if (handler == NULL) {
-		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + U(" 400");
+		accessLogger.error(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " 400");
 		json::value message;
 		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
 		request.reply(status_codes::BadRequest, message);
@@ -99,202 +96,62 @@ void listener::handle_get(http_request &request){
 	//handler->REQUEST_MODE = handler->POST;
 	http_response response;
 	try {
-		handler->handle_read(_world, path, request, response);
+		if(request_type == "GET") handler->handle_read(_world, path, request, response);
+		else if(request_type == "POST") handler->handle_create(_world, path, request, response);
+		else if(request_type == "PUT") handler->handle_update(_world, path, request, response);
+		else handler->handle_delete(_world, path, request, response);
 		status_code code = response.status_code();
-		_log_access->info() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
+		accessLogger.info(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(code)));
 		request.reply(response);
 	}
 	catch (ClientException &e) {
 		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		accessLogger.error(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
 		response.set_status_code(error_code);
 		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
+		message[U("message")] = json::value(string_to_string_t(e.getErrorMessage()));
 		response.set_body(message);
 		request.reply(response);
 	}
 	catch (ServerException &e) {
 		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		accessLogger.error("GET " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
 		response.set_status_code(error_code);
 		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
+		message[U("message")] = json::value(string_to_string_t(e.getErrorMessage()));
 		response.set_body(message);
 		request.reply(response);
 	}
 	catch (CoreException &e) {
 		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("GET ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
+		accessLogger.error(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
 		response.set_status_code(error_code);
 		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
+		message[U("message")] = json::value(string_to_string_t(e.getErrorMessage()));
 		response.set_body(message);
 		request.reply(response);
 
 		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
-			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
+			accessLogger.error("Shutting down server due to error: " + e.getErrorMessage());
 			exit(0);
 		}
 	}
+}
+
+void listener::handle_get(http_request &request){
+	handle(request, "GET");
 }
 
 void listener::handle_put(http_request &request) {
-	string_t path = request.request_uri().path();
-	AdminHandler *handler = find_handler(request);
-	// if no handlers can be found
-	if (handler == NULL) {
-		_log_access->error() << U("POST") + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
-		request.reply(status_codes::BadRequest, message);
-		return;
-	}
-	//handler->REQUEST_MODE = handler->POST;
-	http_response response;
-	try {
-		handler->handle_update(_world, path, request, response);
-		status_code code = response.status_code();
-		_log_access->info() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
-		request.reply(response);
-	}
-	catch (ClientException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (ServerException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (CoreException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-
-		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
-			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
-			exit(0);
-		}
-	}
+	handle(request, "PUT");
 }
 
 void listener::handle_post(http_request &request){
-	string_t path = request.request_uri().path();
-	AdminHandler *handler = find_handler(request);
-	// if no handlers can be found
-	if (handler == NULL) {
-		_log_access->error() << U("POST") + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
-		request.reply(status_codes::BadRequest, message);
-		return;
-	}
-	//handler->REQUEST_MODE = handler->POST;
-	http_response response;
-	try {
-		handler->handle_create(_world, path, request, response);
-		status_code code = response.status_code();
-		_log_access->info()<< U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
-		request.reply(response);
-	}
-	catch (ClientException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")]= json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (ServerException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (CoreException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("POST ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-
-		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
-			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
-			exit(0);
-		}
-	}
+	handle(request, "POST");
 }
 
 void listener::handle_delete(http_request &request){
-	string_t path = request.request_uri().path();
-	AdminHandler *handler = find_handler(request);
-	// if no handlers can be found
-	if (handler == NULL) {
-		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + U(" 400");
-		json::value message;
-		message[U("message")] = json::value::string(U("cannot find coresponding handler!"));
-		request.reply(status_codes::BadRequest, message);
-		return;
-	}
-	//handler->REQUEST_MODE = handler->POST;
-	http_response response;
-	try {
-		handler->handle_delete(_world, path, request, response);
-		status_code code = response.status_code();
-		_log_access->info() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(code);
-		request.reply(response);
-	}
-	catch (ClientException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (ServerException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-	}
-	catch (CoreException &e) {
-		status_code error_code = e.getErrorCode();
-		_log_access->error() << U("DELETE ") + request.absolute_uri().to_string() + status_code_to_string_t(error_code);
-		response.set_status_code(error_code);
-		json::value message;
-		message[U("message")] = json::value(e.getErrorMessage());
-		response.set_body(message);
-		request.reply(response);
-
-		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
-			_log_server->error() << "Shutting down server due to error: " + string_t_to_string(e.getErrorMessage());
-			exit(0);
-		}
-	}
+	handle(request, "DELETE");
 }
 
 void listener::init_restmap(std::map < string_t, vector<string_t>> &rest_map) {
@@ -304,7 +161,7 @@ void listener::init_restmap(std::map < string_t, vector<string_t>> &rest_map) {
 			for (int i = 0; i < it->second.size(); ++i) {
 				string_t s_path = it->second[i];
 				_path_to_handler[s_path] = s_factory;
-				_log_server->info() << "add mapping from " + string_t_to_string(s_path) + " to \"" + string_t_to_string(s_factory) + "\"";
+				serverLogger.info("add mapping from " + string_t_to_string(s_path) + " to \"" + string_t_to_string(s_factory) + "\"");
 			}
 		}
 	}
