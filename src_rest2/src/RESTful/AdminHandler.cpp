@@ -108,14 +108,6 @@ void AdminHandler::vector_string_to_array(std::vector<string> &list, std::vector
 	}
 }
 
-Agent *AdminHandler::get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response) {
-	Agent *agent = world->getAgent(agent_id);
-	if (agent == NULL) {
-		throw ClientException("Cannot find the agent id!", ClientException::CLIENT_ERROR, status_codes::NotFound);
-	}
-	return agent;
-}
-
 string AdminHandler::get_string_input(json::value &data, string_t &name) {
 	check_field(data, name);
 	string_t value;

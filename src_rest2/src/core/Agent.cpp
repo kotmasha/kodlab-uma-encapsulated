@@ -35,23 +35,23 @@ Agent::Agent(string uuid, string dependency){
 	_dependency = dependency + ":" + _uuid;
 	_t = 0;
 
-	agentLogger.info("An agent " + uuid + " is created");
+	agentLogger.info("An agent " + uuid + " is created", _dependency);
 }
 
 void Agent::add_snapshot_stationary(string &uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		agentLogger.error("Cannot create a duplicate snapshot!");
+		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
 		throw CoreException("Cannot create a duplicate snapshot!", CoreException::CORE_ERROR, status_codes::Conflict);
 	}
 	_snapshots[uuid] = new Snapshot_Stationary(uuid, _dependency);
-	agentLogger.info("A Snapshot Stationary " + uuid + " is created");
+	agentLogger.info("A Snapshot Stationary " + uuid + " is created", _dependency);
 }
 
 Snapshot *Agent::getSnapshot(string &snapshot_id) {
 	if (_snapshots.find(snapshot_id) != _snapshots.end()) {
 		return _snapshots[snapshot_id];
 	}
-	agentLogger.warn("No snapshot " + snapshot_id + " is found");
+	agentLogger.warn("No snapshot " + snapshot_id + " is found", _dependency);
 	throw CoreException("Cannot find the snapshot id!", CoreException::CORE_ERROR, status_codes::NotFound);
 }
 
@@ -59,7 +59,7 @@ vector<float> Agent::decide(vector<bool> &obs_plus, vector<bool> &obs_minus, dou
 	vector<float> result;
 	result.push_back(simulation::decide(_snapshots["plus"], obs_plus, phi, active));
 	result.push_back(simulation::decide(_snapshots["minus"], obs_minus, phi, active));
-	agentLogger.info("Finished the " + to_string(_t++) + " th iteration");
+	agentLogger.info("Finished the " + to_string(_t++) + " th iteration", _dependency);
 	return result;
 }
 
@@ -128,7 +128,7 @@ void Agent::delete_snapshot(string &snapshot_id) {
 	delete _snapshots[snapshot_id];
 	_snapshots[snapshot_id] = NULL;
 	_snapshots.erase(snapshot_id);
-	agentLogger.info("Snapshot deleted");
+	agentLogger.info("Snapshot deleted", _dependency);
 }
 
 Agent::~Agent(){
@@ -139,7 +139,7 @@ Agent::~Agent(){
 		}
 	}
 	catch (exception &e) {
-		agentLogger.error("Fatal error while trying to delete agent: " + _uuid);
+		agentLogger.error("Fatal error while trying to delete agent: " + _uuid, _dependency);
 		throw CoreException("Fatal error in Agent destruction function", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 	agentLogger.info("Deleted the agent " + _uuid);

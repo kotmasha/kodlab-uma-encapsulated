@@ -11,14 +11,15 @@
 
 extern int ind(int row, int col);
 extern int compi(int x);
+extern std::map<string, std::map<string, string>> server_cfg;
 extern Logger dataManagerLogger;
 /*
 init function
 Input: DataManager's log path
 */
 DataManager::DataManager(string dependency) {
-	_memory_expansion = 0.5;
 	_dependency = dependency;
+	_memory_expansion = stod(server_cfg["DataManager"]["memory_expansion"]);
 	dataManagerLogger.info("Setting the memory expansion rate to " + to_string(_memory_expansion), _dependency);
 }
 
@@ -327,19 +328,19 @@ void DataManager::gen_np_direction() {
 
 void DataManager::gen_signals() {
 	//malloc the space
-	h_signals = new bool[_sensor_size_max * _measurable_size_max];
-	h_lsignals = new bool[_sensor_size_max * _measurable_size_max];
-	cudaMalloc(&dev_signals, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_lsignals, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	h_signals = new bool[_measurable_size_max * _measurable_size_max];
+	h_lsignals = new bool[_measurable_size_max * _measurable_size_max];
+	cudaMalloc(&dev_signals, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_lsignals, _measurable_size_max * _measurable_size_max * sizeof(bool));
 
 	//init with all false
-	memset(h_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	memset(h_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	memset(h_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	memset(h_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
 
-	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max), _dependency);
-	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
 }
 
 void DataManager::gen_npdir_mask() {
@@ -607,7 +608,7 @@ Input: 2d vector of signals, first dimension should not exceed sensor size, seco
 */
 void DataManager::setSignals(vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _sensor_size) {
+	if (sig_count > _measurable_size_max) {
 		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < sig_count; ++i) {
@@ -655,7 +656,7 @@ input: 2d signals vector
 */
 void DataManager::setLSignals(vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _sensor_size) {
+	if (sig_count > _measurable_size_max) {
 		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < sig_count; ++i) {

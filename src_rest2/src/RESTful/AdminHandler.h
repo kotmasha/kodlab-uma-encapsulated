@@ -32,7 +32,6 @@ public:
 	void vector_int2d_to_array(std::vector<vector<int> > &lists, std::vector<json::value> &json_lists);
 	void vector_double2d_to_array(std::vector<vector<double> > &lists, std::vector<json::value> &json_lists);
 	void vector_string_to_array(std::vector<string> &list, std::vector<json::value> &json_list);
-	Agent *get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response);
 
 	string_t MESSAGE;
 	string_t REQUEST_MODE;

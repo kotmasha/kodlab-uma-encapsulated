@@ -13,6 +13,7 @@
 */
 extern int ind(int row, int col);
 extern int compi(int x);
+extern std::map<string, std::map<string, string>> server_cfg;
 extern Logger snapshotLogger;
 
 /*
@@ -65,20 +66,30 @@ Snapshot::Snapshot(string uuid, string dependency){
 	_uuid = uuid;
 
 	//set the init value for 0.5 for now, ideally should read such value from conf file
-	_total = 1.0;
-	_total_ = 1.0;
-	_q = 0.9;
-	_threshold = 0.125;
-	_auto_target = false;
-	_propagate_mask = false;
-	_initial_size = 0;
 	_dependency = dependency + ":" + uuid;
-	snapshotLogger.debug("Setting init total value to " + to_string(_total));
+
+	_total = stod(server_cfg["Snapshot"]["total"]);
+	_total_ = _total;
+	snapshotLogger.debug("Setting init total value to " + to_string(_total), _dependency);
+	
+	_q = stod(server_cfg["Snapshot"]["q"]);
+	snapshotLogger.debug("Setting q value to " + to_string(_q), _dependency);
+
+	_threshold = stod(server_cfg["Snapshot"]["threshold"]);
+	snapshotLogger.debug("Setting threshold value to " + to_string(_threshold), _dependency);
+
+	_auto_target = stoi(server_cfg["Snapshot"]["auto_target"]);
+	snapshotLogger.debug("Setting auto target value to " + to_string(_auto_target), _dependency);
+
+	_propagate_mask = stoi(server_cfg["Snapshot"]["propagate_mask"]);
+	snapshotLogger.debug("Setting propagate mask value to " + to_string(_propagate_mask), _dependency);
+
+	_initial_size = 0;
 
 	_dm = new DataManager(_dependency);
-	snapshotLogger.info("Data Manager is created");
+	snapshotLogger.info("Data Manager is created", _dependency);
 
-	snapshotLogger.info("A Snapshot " + _uuid + " is created");
+	snapshotLogger.info("A Snapshot " + _uuid + " is created", _dependency);
 }
 
 
@@ -94,15 +105,15 @@ Snapshot::~Snapshot(){
 		}
 	}
 	catch (exception &e) {
-		snapshotLogger.error("Fatal error when trying to delete snapshot: " + _uuid);
+		snapshotLogger.error("Fatal error when trying to delete snapshot: " + _uuid, _dependency);
 		throw CoreException("Fatal error in Snapshot destruction function", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
-	snapshotLogger.info("Deleted the snapshot: " + _uuid);
+	snapshotLogger.info("Deleted the snapshot: " + _uuid, _dependency);
 }
 
 void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &diag, vector<vector<double> > &w, vector<vector<bool> > &b) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
-		snapshotLogger.error("Cannot create a duplicate sensor!");
+		snapshotLogger.error("Cannot create a duplicate sensor!", _dependency);
 		throw CoreException("Cannot create a duplicate sensor!", CoreException::CORE_ERROR, status_codes::Conflict);
 	}
 	Sensor *sensor = NULL;
@@ -115,7 +126,7 @@ void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &di
 	_sensor_idx[id_pair.first] = sensor;
 	_sensor_idx[id_pair.second] = sensor;
 	_sensors.push_back(sensor);
-	snapshotLogger.debug("A Sensor " + id_pair.first + " is created with idx " + to_string(sensor->_idx));
+	snapshotLogger.debug("A Sensor " + id_pair.first + " is created with idx " + to_string(sensor->_idx), _dependency);
 	//creating sensor pairs
 	for (int i = 0; i < _sensors.size(); ++i) {
 		SensorPair *sensor_pair = NULL;
@@ -125,13 +136,13 @@ void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &di
 		else {
 			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, w[i], b[i]);
 		}
-		snapshotLogger.debug("A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created");
+		snapshotLogger.debug("A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created", _dependency);
 		_sensor_pairs.push_back(sensor_pair);
 	}
-	snapshotLogger.info(to_string(_sensors.size()) + " Sensor Pairs are created, total is " + to_string(ind(_sensors.size(), 0)));
+	snapshotLogger.info(to_string(_sensors.size()) + " Sensor Pairs are created, total is " + to_string(ind(_sensors.size(), 0)), _dependency);
 	
 	if (_sensors.size() > _dm->_sensor_size_max) {
-		snapshotLogger.debug("Need allocate more space after adding a sensor");
+		snapshotLogger.debug("Need allocate more space after adding a sensor", _dependency);
 		_dm->reallocate_memory(_total, _sensors.size());
 		_dm->create_sensors_to_arrays_index(0, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(0, _sensors.size(), _sensor_pairs);
@@ -139,7 +150,7 @@ void Snapshot::add_sensor(std::pair<string, string> &id_pair, vector<double> &di
 		_dm->copy_sensor_pairs_to_arrays(0, _sensors.size(), _sensor_pairs);
 	}
 	else {
-		snapshotLogger.debug("Have enough space, will not do remalloc");
+		snapshotLogger.debug("Have enough space, will not do remalloc", _dependency);
 		_dm->set_size(_sensors.size(), false);
 		_dm->create_sensors_to_arrays_index(_sensors.size() - 1, _sensors.size(), _sensors);
 		_dm->create_sensor_pairs_to_arrays_index(_sensors.size() - 1, _sensors.size(), _sensor_pairs);
@@ -232,7 +243,7 @@ void Snapshot::pruning(vector<bool> &signal){
 	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
 		throw CoreException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
-	snapshotLogger.info("Will prune " + to_string(sensor_list.size()) + " sensors, range from " + to_string(sensor_list[0]) + " to " + to_string(sensor_list.back()));
+	snapshotLogger.info("Will prune " + to_string(sensor_list.size()) + " sensors, range from " + to_string(sensor_list[0]) + " to " + to_string(sensor_list.back()), _dependency);
 
 	int row_escape = 0;
 	int total_escape = 0;
@@ -277,7 +288,7 @@ void Snapshot::pruning(vector<bool> &signal){
 	_dm->copy_sensors_to_arrays(0, _sensors.size(), _sensors);
 	_dm->copy_sensor_pairs_to_arrays(0, _sensors.size(), _sensor_pairs);
 
-	snapshotLogger.info("Pruning done successful");
+	snapshotLogger.info("Pruning done successful", _dependency);
 }
 
 vector<bool> Snapshot::convert_signal_to_sensor(vector<bool> &signal){
@@ -309,17 +320,17 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
 		if (list.size() < 2) {
-			snapshotLogger.warn("The amper vector size is less than 2, will abort this amper operation, list id: " + to_string(i));
+			snapshotLogger.warn("The amper vector size is less than 2, will abort this amper operation, list id: " + to_string(i), _dependency);
 			continue;
 		}
 		amper(list, id_pairs[i]);
 		success_amper++;
 	}
 
-	snapshotLogger.info(to_string(success_amper) + " out of " + to_string(lists.size()) + " amper successfully done");
+	snapshotLogger.info(to_string(success_amper) + " out of " + to_string(lists.size()) + " amper successfully done", _dependency);
 
 	if(_sensors.size() > _dm->_sensor_size_max){
-		snapshotLogger.info("New sensor size larger than current max, will resize");
+		snapshotLogger.info("New sensor size larger than current max, will resize", _dependency);
 		//if need to reallocate
 		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
@@ -342,7 +353,7 @@ void Snapshot::ampers(vector<vector<bool> > &lists, vector<std::pair<string, str
 //the input list size should be larger than 2
 void Snapshot::amper(vector<int> &list, std::pair<string, string> &uuid) {
 	if (list.size() < 2) {
-		snapshotLogger.warn("Amper list size is smaller than 2, will not continue");
+		snapshotLogger.warn("Amper list size is smaller than 2, will not continue", _dependency);
 	}
 	try{
 		amperand(list[1], list[0], true, uuid);
@@ -363,7 +374,7 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 	for(int i = 0; i < lists.size(); ++i){
 		vector<int> list = convert_list(lists[i]);
 		if (list.size() < 1) {
-			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i));
+			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i), _dependency);
 			continue;
 		}
 		if(list.size() == 1){
@@ -384,16 +395,16 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 			}
 		}
 		success_delay++;
-		snapshotLogger.info("A delayed sensor is generated " + id_pairs[i].first);
+		snapshotLogger.info("A delayed sensor is generated " + id_pairs[i].first, _dependency);
 		string delay_list="";
 		for(int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
-		snapshotLogger.verbose("The delayed sensor generated from " + delay_list);
+		snapshotLogger.verbose("The delayed sensor generated from " + delay_list, _dependency);
 	}
 
-	snapshotLogger.info(to_string(success_delay) + " out of " + to_string(lists.size()) + " delay successfully done");
+	snapshotLogger.info(to_string(success_delay) + " out of " + to_string(lists.size()) + " delay successfully done", _dependency);
 
 	if (_sensors.size() > _dm->_sensor_size_max) {
-		snapshotLogger.info("New sensor size larger than current max, will resize");
+		snapshotLogger.info("New sensor size larger than current max, will resize", _dependency);
 		//if need to reallocate
 		_dm->reallocate_memory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
@@ -420,12 +431,12 @@ void Snapshot::delays(vector<vector<bool> > &lists, vector<std::pair<string, str
 */
 void Snapshot::setThreshold(double &threshold) {
 	_threshold = threshold;
-	snapshotLogger.info("snapshot threshold changed to " + to_string(threshold));
+	snapshotLogger.info("snapshot threshold changed to " + to_string(threshold), _dependency);
 }
 
 void Snapshot::setQ(double &q) {
 	_q = q;
-	snapshotLogger.info("snapshot q changed to " + to_string(q));
+	snapshotLogger.info("snapshot q changed to " + to_string(q), _dependency);
 }
 
 void Snapshot::setAutoTarget(bool &auto_target) {
@@ -578,11 +589,11 @@ int Snapshot::getInitialSize() {
 
 void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor1);
+		snapshotLogger.error("Cannot find the sensor " + sensor1, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor2);
+		snapshotLogger.error("Cannot find the sensor " + sensor2, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
@@ -591,16 +602,16 @@ void Snapshot::create_implication(string &sensor1, string &sensor2) {
 	bool value = true;
 	measurable_pair->setD(value);
 	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
-	snapshotLogger.info("Implication success from " + sensor1 + " to " + sensor2);
+	snapshotLogger.info("Implication success from " + sensor1 + " to " + sensor2, _dependency);
 }
 
 void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor1);
+		snapshotLogger.error("Cannot find the sensor " + sensor1, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor2);
+		snapshotLogger.error("Cannot find the sensor " + sensor2, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
@@ -609,16 +620,16 @@ void Snapshot::delete_implication(string &sensor1, string &sensor2) {
 	bool value = false;
 	measurable_pair->setD(value);
 	data_util::boolH2D(_dm->_hvar_b(DIRS), _dm->_dvar_b(DIRS), 1, ind(idx1, idx2), ind(idx1, idx2));
-	snapshotLogger.info("Implication delete success from " + sensor1 + " to " + sensor2);
+	snapshotLogger.info("Implication delete success from " + sensor1 + " to " + sensor2, _dependency);
 }
 
 bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 	if (_sensor_idx.find(sensor1) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor1);
+		snapshotLogger.error("Cannot find the sensor " + sensor1, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor1, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	if (_sensor_idx.find(sensor2) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor2);
+		snapshotLogger.error("Cannot find the sensor " + sensor2, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor2, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	int idx1 = sensor1 == _sensor_idx[sensor1]->_m->_uuid ? _sensor_idx[sensor1]->_m->_idx : _sensor_idx[sensor1]->_cm->_idx;
@@ -631,7 +642,7 @@ bool Snapshot::get_implication(string &sensor1, string &sensor2) {
 
 void Snapshot::delete_sensor(string &sensor_id) {
 	if (_sensor_idx.find(sensor_id) == _sensor_idx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor_id);
+		snapshotLogger.error("Cannot find the sensor " + sensor_id, _dependency);
 		throw CoreException("Cannot find the sensor " + sensor_id, CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 
@@ -639,7 +650,7 @@ void Snapshot::delete_sensor(string &sensor_id) {
 	vector<bool> pruning_list(_dm->_measurable_size, false);
 	pruning_list[2 * sensor_idx] = true;
 	pruning(pruning_list);
-	snapshotLogger.info("Sensor " + sensor_id + " deleted");
+	snapshotLogger.info("Sensor " + sensor_id + " deleted", _dependency);
 }
 
 /*

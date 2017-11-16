@@ -2,7 +2,7 @@
 #define _LOGGER_
 
 #include "Global.h"
-#include "LogManager.h"
+using namespace std;
 
 class Logger {
 private:

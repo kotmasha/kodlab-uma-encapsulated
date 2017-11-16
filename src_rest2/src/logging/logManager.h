@@ -10,12 +10,10 @@ private:
 public:
 	enum{ERROR, WARN, INFO, DEBUG, VERBOSE};
 
-private:
-	void init_log_files();
-	void init_logger();
 public:
 	LogManager();
-	LogManager(std::map<string, std::map<string, string>> &log_cfg);
+	void init_log_dirs();
+	void init_logger();
 };
 
 #endif

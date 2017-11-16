@@ -26,7 +26,7 @@ class logManager;
 class listener
 {
 public:
-	listener(const http::uri& url, std::map<string_t, vector<string_t>> &rest_map);
+	listener(string url);
 	http_listener m_listener;
 
 protected:

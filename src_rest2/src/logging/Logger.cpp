@@ -4,8 +4,6 @@
 #include <time.h>
 #include <chrono>
 
-extern LogManager *logManager;
-
 Logger::Logger(){}
 
 Logger::Logger(string component, string filename, int level) {

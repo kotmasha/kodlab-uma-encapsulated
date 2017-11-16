@@ -1,6 +1,7 @@
 #include "LogManager.h"
 #include "UMAutil.h"
 #include "Logger.h"
+#include "ConfReader.h"
 
 Logger accessLogger;
 Logger serverLogger;
@@ -14,12 +15,8 @@ Logger measurablePairLogger;
 Logger dataManagerLogger;
 Logger simulationLogger;
 
-LogManager::LogManager(){}
-
-LogManager::LogManager(std::map<string, std::map<string, string>> &log_cfg) {
-	_log_cfg = log_cfg;
-	init_log_files();
-	init_logger();
+LogManager::LogManager() {
+	_log_cfg = ConfReader::read_log_configure();
 }
 
 void LogManager::init_logger() {
@@ -48,6 +45,6 @@ void LogManager::init_logger() {
 	serverLogger.info("Simulation logger component created");
 }
 
-void LogManager::init_log_files() {
+void LogManager::init_log_dirs() {
 	UMA_mkdir("log");
 }

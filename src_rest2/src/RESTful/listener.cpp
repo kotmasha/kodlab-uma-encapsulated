@@ -10,16 +10,17 @@
 #include "MeasurableHandler.h"
 #include "MatrixHandler.h"
 #include "UMAException.h"
+#include "ConfReader.h"
 #include "Logger.h"
 #include <cpprest/json.h>
 
 extern Logger accessLogger;
 extern Logger serverLogger;
 
-listener::listener(const http::uri& url, std::map<string_t, vector<string_t>> &rest_map) : m_listener(http_listener(url)){
+listener::listener(string url) : m_listener(http_listener(uri(string_to_string_t(url)))){
 	//init the UMAC_access and UMAC log
 
-	serverLogger.info("Listening on the url" + string_t_to_string(url.to_string()));
+	serverLogger.info("Listening on the url " + url);
 
 	// every test will only have a unique world object
 	_world = new World();
@@ -39,6 +40,7 @@ listener::listener(const http::uri& url, std::map<string_t, vector<string_t>> &r
 	//create data handler
 
 	try {
+		std::map < string_t, vector<string_t>> rest_map = ConfReader::read_restmap();
 		init_restmap(rest_map);
 		register_handler_factory();
 	}
@@ -115,7 +117,7 @@ void listener::handle(http_request &request, string request_type) {
 	}
 	catch (ServerException &e) {
 		status_code error_code = e.getErrorCode();
-		accessLogger.error("GET " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
+		accessLogger.error(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
 		response.set_status_code(error_code);
 		json::value message;
 		message[U("message")] = json::value(string_to_string_t(e.getErrorMessage()));
@@ -132,9 +134,21 @@ void listener::handle(http_request &request, string request_type) {
 		request.reply(response);
 
 		if (e.getErrorLevel() == CoreException::CORE_FATAL) {
-			accessLogger.error("Shutting down server due to error: " + e.getErrorMessage());
+			serverLogger.error("Shutting down server due to error: " + e.getErrorMessage());
 			exit(0);
 		}
+	}
+	catch (exception &e) {
+		status_code error_code = status_codes::InternalError;
+		accessLogger.error(request_type + " " + string_t_to_string(request.absolute_uri().to_string()) + " " + string_t_to_string(status_code_to_string_t(error_code)));
+		response.set_status_code(error_code);
+		json::value message;
+		message[U("message")] = json::value(string_to_string_t(string(e.what())));
+		response.set_body(message);
+		request.reply(response);
+
+		serverLogger.error("Shutting down server due to RUNTIME error: " + string(e.what()));
+		exit(0);
 	}
 }
 
