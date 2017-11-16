@@ -6,7 +6,7 @@
 
 class MatrixHandler: public AdminHandler {
 public:
-	MatrixHandler(string handler_factory, logManager *log_access);
+	MatrixHandler(string handler_factory);
 
 	virtual void handle_create(World *world, string_t &path, http_request &request, http_response &response);
 	virtual void handle_update(World *world, string_t &path, http_request &request, http_response &response);

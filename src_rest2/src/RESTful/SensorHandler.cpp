@@ -6,7 +6,7 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 
-SensorHandler::SensorHandler(string handler_factory, logManager *log_access) :AdminHandler(handler_factory, log_access) {
+SensorHandler::SensorHandler(string handler_factory) :AdminHandler(handler_factory) {
 	UMA_THRESHOLD = U("threshold");
 	UMA_Q = U("q");
 	UMA_AUTO_TARGET = U("auto_target");

@@ -1,48 +1,50 @@
-#include "logManager.h"
-#include "logging.h"
+#include "LogManager.h"
+#include "UMAutil.h"
+#include "Logger.h"
+#include "ConfReader.h"
 
-logManager::logManager(){}
+Logger accessLogger;
+Logger serverLogger;
+Logger worldLogger;
+Logger agentLogger;
+Logger snapshotLogger;
+Logger sensorLogger;
+Logger sensorPairLogger;
+Logger measurableLogger;
+Logger measurablePairLogger;
+Logger dataManagerLogger;
+Logger simulationLogger;
 
-logManager::logManager(int sim_level, string path, string filename, string classname){
-	_sim_level = sim_level;
-	_filename = filename;
-	_classname = classname;
-	
-#if defined(_WIN64)
-	_mkdir(path.c_str());
-#else 
-	mkdir(path.c_str(), 0777);
-#endif
-
-	_log = logging(path + "/" + filename, classname);
+LogManager::LogManager() {
+	_log_cfg = ConfReader::read_log_configure();
 }
 
-logging &logManager::debug(){
-	_log._active = logging::DEBUG <= _sim_level;
-	_log._level = "DEBUG";
-	return _log;
+void LogManager::init_logger() {
+	accessLogger = Logger("Access", "UMAC_access.log", string_to_log_level(_log_cfg["Access"]["level"]));
+	serverLogger = Logger("Server", "UMA_server.log", string_to_log_level(_log_cfg["Server"]["level"]));
+	worldLogger = Logger("World", "world.log", string_to_log_level(_log_cfg["World"]["level"]));
+	agentLogger = Logger("Agent", "agent.log", string_to_log_level(_log_cfg["Agent"]["level"]));
+	snapshotLogger = Logger("Snapshot", "snapshot.log", string_to_log_level(_log_cfg["Snapshot"]["level"]));
+	sensorLogger = Logger("Sensor", "sensor.log", string_to_log_level(_log_cfg["Sensor"]["level"]));
+	sensorPairLogger = Logger("SensorPair", "sensor.log", string_to_log_level(_log_cfg["SensorPair"]["level"]));
+	measurableLogger = Logger("Measurable", "measurable.log", string_to_log_level(_log_cfg["Measurable"]["level"]));
+	measurablePairLogger = Logger("MeasurablePair", "measurable.log", string_to_log_level(_log_cfg["MeasurablePair"]["level"]));
+	dataManagerLogger = Logger("DataManager", "dataManager.log", string_to_log_level(_log_cfg["DataManager"]["level"]));
+	simulationLogger = Logger("Simulation", "simulation.log", string_to_log_level(_log_cfg["Simulation"]["level"]));
+
+	serverLogger.info("Server logger component created");
+	serverLogger.info("Access logger component created");
+	serverLogger.info("World logger component created");
+	serverLogger.info("Agent logger component created");
+	serverLogger.info("Snapshot logger component created");
+	serverLogger.info("Sensor logger component created");
+	serverLogger.info("SensorPair logger component created");
+	serverLogger.info("Measurable logger component created");
+	serverLogger.info("MeasurablePair logger component created");
+	serverLogger.info("DataManager logger component created");
+	serverLogger.info("Simulation logger component created");
 }
 
-logging &logManager::info(){
-	_log._active = logging::INFO <= _sim_level;
-	_log._level = "INFO";
-	return _log;
-}
-
-logging &logManager::verbose(){
-	_log._active = logging::VERBOSE <= _sim_level;
-	_log._level = "VERBOSE";
-	return _log;
-}
-
-logging &logManager::warn() {
-	_log._active = logging::WARN <= _sim_level;
-	_log._level = "WARN";
-	return _log;
-}
-
-logging &logManager::error() {
-	_log._active = logging::ERROR <= _sim_level;
-	_log._level = "ERROR";
-	return _log;
+void LogManager::init_log_dirs() {
+	UMA_mkdir("log");
 }

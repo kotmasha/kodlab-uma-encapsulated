@@ -5,7 +5,7 @@
 #include "DataManager.h"
 #include "logManager.h"
 
-DataHandler::DataHandler(string handler_factory, logManager *log_access):AdminHandler(handler_factory, log_access) {
+DataHandler::DataHandler(string handler_factory):AdminHandler(handler_factory) {
 	UMA_TARGET = U("target");
 	UMA_CURRENT = U("current");
 	UMA_PREDICTION = U("prediction");

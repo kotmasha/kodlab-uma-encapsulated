@@ -2,25 +2,18 @@
 #define _LOGMANAGER_
 
 #include "Global.h"
-#include "logging.h"
 using namespace std;
 
-class logManager{
+class LogManager{
 private:
-	string _filename;
-	string _classname;
-	logging _log;
-	int _sim_level;
+	std::map<string, std::map<string, string>> _log_cfg;
 public:
+	enum{ERROR, WARN, INFO, DEBUG, VERBOSE};
 
 public:
-	logManager();
-	logManager(int sim_level, string path, string filename, string classname);
-	logging &debug();
-	logging &verbose();
-	logging &info();
-	logging &warn();
-	logging &error();
+	LogManager();
+	void init_log_dirs();
+	void init_logger();
 };
 
 #endif

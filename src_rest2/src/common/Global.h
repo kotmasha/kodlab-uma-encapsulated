@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <map>
+#include <unordered_set>
 #include <iostream>
 #include <fstream>
 #include <vector>

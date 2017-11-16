@@ -17,7 +17,7 @@ public:
 	UMAException(std::string message, int error_level, http::status_code error_code);
 	UMAException(std::string message, int error_level);
 	UMAException();
-	string_t getErrorMessage();
+	string getErrorMessage();
 	int getErrorLevel();
 	status_code getErrorCode();
 };

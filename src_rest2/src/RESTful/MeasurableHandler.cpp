@@ -8,7 +8,7 @@
 #include "Measurable.h"
 #include "MeasurablePair.h"
 
-MeasurableHandler::MeasurableHandler(string handler_factory, logManager *log_access) : AdminHandler(handler_factory, log_access) {
+MeasurableHandler::MeasurableHandler(string handler_factory) : AdminHandler(handler_factory) {
 	UMA_MEASURABLE1 = U("measurable1");
 	UMA_MEASURABLE2 = U("measurable2");
 	UMA_W = U("w");

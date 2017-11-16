@@ -4,7 +4,7 @@
 #include "logManager.h"
 #include "UMAException.h"
 
-AgentHandler::AgentHandler(string handler_factory, logManager *log_access):AdminHandler(handler_factory, log_access) {}
+AgentHandler::AgentHandler(string handler_factory):AdminHandler(handler_factory) {}
 
 void AgentHandler::handle_create(World *world, string_t &path, http_request &request, http_response &response) {
 	if (path == U("/UMA/object/agent")) {

@@ -2,13 +2,14 @@
 #include "Snapshot.h"
 #include "DataManager.h"
 #include "MeasurablePair.h"
-#include "logManager.h"
+#include "Logger.h"
 #include "data_util.h"
 #include "kernel_util.cuh"
 #include "uma_base.cuh"
 
 extern int ind(int row, int col);
-logManager *sim_log;
+extern Logger simulationLogger;
+
 
 void simulation::update_total(double &total, double &total_, double &q, double &phi) {
 	total_ = total;
@@ -63,7 +64,7 @@ void simulation::floyd(DataManager *dm) {
 	uma_base::floyd(dm->_dvar_b(NPDIRS), measurable_size);
 	data_util::boolD2H(dm->_hvar_b(NPDIRS), dm->_dvar_b(NPDIRS), measurable2d_size);
 	//cudaCheckErrors("kernel fails");
-	sim_log->debug() << "floyd is done";
+	simulationLogger.debug("floyd is done");
 }
 
 void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsignals, bool *dst, int sig_count, int measurable_size) {
@@ -80,7 +81,7 @@ void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsign
 	if (dst != NULL) {
 		data_util::boolD2D(lsignals, dst, sig_count * measurable_size);
 	}
-	sim_log->debug() << "Propagation is done for " + to_string(sig_count) + " sensors";
+	simulationLogger.debug("Propagation is done for " + to_string(sig_count) + " sensors");
 }
 
 void simulation::halucinate(DataManager *dm, int &initial_size) {
@@ -92,7 +93,7 @@ void simulation::halucinate(DataManager *dm, int &initial_size) {
 	kernel_util::allfalse(dm->_dvar_b(LOAD), measurable_size);
 	simulation::propagates(dm->_dvar_b(NPDIRS), dm->_dvar_b(LOAD), dm->_dvar_b(SIGNALS), dm->_dvar_b(LSIGNALS), dm->_dvar_b(PREDICTION), 1, measurable_size);
 	data_util::boolD2H(dm->_dvar_b(PREDICTION), dm->_hvar_b(PREDICTION), measurable_size);
-	sim_log->debug() << "Halucniate is done";
+	simulationLogger.debug("Halucniate is done");
 }
 
 void simulation::gen_mask(DataManager *dm,  int &initial_size) {
@@ -102,7 +103,7 @@ void simulation::gen_mask(DataManager *dm,  int &initial_size) {
 
 	uma_base::mask(dm->_dvar_b(MASK_AMPER), dm->_dvar_b(MASK), dm->_dvar_b(CURRENT), sensor_size);
 	uma_base::check_mask(dm->_dvar_b(MASK), sensor_size);
-	sim_log->debug() << "Mask is generated";
+	simulationLogger.debug("Mask is generated");
 }
 
 void simulation::propagate_mask(DataManager *dm) {

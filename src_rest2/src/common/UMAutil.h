@@ -10,15 +10,13 @@ using namespace web;
 using namespace utility;
 using namespace std;
 
-string_t string_to_string_t(string &s);
+string_t string_to_string_t(string s);
 
-string string_t_to_string(string_t &s);
+string string_t_to_string(string_t s);
 
-string_t status_code_to_string_t(status_code &s);
+string_t status_code_to_string_t(status_code s);
 
-std::map<string_t, vector<string_t>> read_restmap();
-
-std::map<string, string> read_log_level();
+void UMA_mkdir(string path);
 
 int string_to_log_level(string &s);
 

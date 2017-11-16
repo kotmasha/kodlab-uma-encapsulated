@@ -3,7 +3,7 @@
 #include "Sensor.h"
 #include "SensorPair.h"
 #include "UMAException.h"
-#include "logManager.h"
+#include "Logger.h"
 #include "uma_base.cuh"
 #include "kernel_util.cuh"
 
@@ -11,17 +11,16 @@
 
 extern int ind(int row, int col);
 extern int compi(int x);
-extern std::map<string, int> log_level;
+extern std::map<string, std::map<string, string>> server_cfg;
+extern Logger dataManagerLogger;
 /*
 init function
 Input: DataManager's log path
 */
-DataManager::DataManager(string &log_dir) {
-	_log_dir = log_dir;
-	_log = new logManager(log_level["DataManager"], log_dir, "DataManager.txt", "DataManager");
-
-	_memory_expansion = 0.5;
-	_log->info() << "Setting the memory expansion rate to " + to_string(_memory_expansion);
+DataManager::DataManager(string dependency) {
+	_dependency = dependency;
+	_memory_expansion = stod(server_cfg["DataManager"]["memory_expansion"]);
+	dataManagerLogger.info("Setting the memory expansion rate to " + to_string(_memory_expansion), _dependency);
 }
 
 /*
@@ -67,7 +66,7 @@ void DataManager::init_pointers() {
 	dev_signals = NULL;
 	dev_dists = NULL;
 
-	_log->debug() << "Setting all pointers to NULL";
+	dataManagerLogger.debug("Setting all pointers to NULL", _dependency);
 }
 
 /*
@@ -75,7 +74,7 @@ Remalloc the memory, based on the sensor size
 Input: the sensor size
 */
 void DataManager::reallocate_memory(double &total, int sensor_size) {
-	_log->info() << "Starting reallocating memory";
+	dataManagerLogger.info("Starting reallocating memory", _dependency);
 	//free all memory first
 	free_all_parameters();
 	//then set the size to be new one
@@ -94,7 +93,7 @@ void DataManager::reallocate_memory(double &total, int sensor_size) {
 		gen_other_parameters();
 	}
 	catch (CoreException &e) {
-		_log->error() << "Fatal error in reallocate_memory when doing memory allocation";
+		dataManagerLogger.error("Fatal error in reallocate_memory when doing memory allocation", _dependency);
 		throw CoreException("Fatal error in reallocate_memory when doing memory allocation", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 
@@ -103,10 +102,10 @@ void DataManager::reallocate_memory(double &total, int sensor_size) {
 		init_other_parameter(total);
 	}
 	catch (CoreException &e) {
-		_log->error() << "Fatal error in reallocate_memory when doing parameters init";
+		dataManagerLogger.error("Fatal error in reallocate_memory when doing parameters init", _dependency);
 		throw CoreException("Fatal error in reallocate_memory when doing parameters ini", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
-	_log->info() << "Memory reallocated!";
+	dataManagerLogger.info("Memory reallocated!", _dependency);
 }
 
 /*
@@ -121,12 +120,12 @@ void DataManager::set_size(int sensor_size, bool change_max = true) {
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
 	_npdir_size = _measurable2d_size + _sensor_size;
 
-	_log->info() << "Setting sensor size to " + to_string(_sensor_size);
-	_log->debug() << "Setting measurable size to " + to_string(_measurable_size);
-	_log->debug() << "Setting sensor size 2D to " + to_string(_sensor2d_size);
-	_log->debug() << "Setting measurable size 2D to " + to_string(_measurable2d_size);
-	_log->debug() << "Setting mask amper size to " + to_string(_mask_amper_size);
-	_log->debug() << "Setting npdir size to " + to_string(_npdir_size);
+	dataManagerLogger.info("Setting sensor size to " + to_string(_sensor_size), _dependency);
+	dataManagerLogger.debug("Setting measurable size to " + to_string(_measurable_size), _dependency);
+	dataManagerLogger.debug("Setting sensor size 2D to " + to_string(_sensor2d_size), _dependency);
+	dataManagerLogger.debug("Setting measurable size 2D to " + to_string(_measurable2d_size), _dependency);
+	dataManagerLogger.debug("Setting mask amper size to " + to_string(_mask_amper_size), _dependency);
+	dataManagerLogger.debug("Setting npdir size to " + to_string(_npdir_size), _dependency);
 
 	if (change_max) {
 		_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
@@ -136,14 +135,14 @@ void DataManager::set_size(int sensor_size, bool change_max = true) {
 		_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
 		_npdir_size_max = _measurable2d_size_max + _sensor_size_max;
 
-		_log->debug() << "Setting max sensor size to " + to_string(_sensor_size_max);
-		_log->debug() << "Setting max measurable size to " + to_string(_measurable_size_max);
-		_log->debug() << "Setting max sensor size 2D to " + to_string(_sensor2d_size_max);
-		_log->debug() << "Setting max measurable size 2D to " + to_string(_measurable2d_size_max);
-		_log->debug() << "Setting max mask amper size to " + to_string(_mask_amper_size_max);
-		_log->debug() << "Setting max npdir size to " + to_string(_npdir_size_max);
+		dataManagerLogger.debug("Setting max sensor size to " + to_string(_sensor_size_max), _dependency);
+		dataManagerLogger.debug("Setting max measurable size to " + to_string(_measurable_size_max), _dependency);
+		dataManagerLogger.debug("Setting max sensor size 2D to " + to_string(_sensor2d_size_max), _dependency);
+		dataManagerLogger.debug("Setting max measurable size 2D to " + to_string(_measurable2d_size_max), _dependency);
+		dataManagerLogger.debug("Setting max mask amper size to " + to_string(_mask_amper_size_max), _dependency);
+		dataManagerLogger.debug("Setting max npdir size to " + to_string(_npdir_size_max), _dependency);
 	}
-	else _log->info() << "All size max value remain the same";
+	else dataManagerLogger.info("All size max value remain the same", _dependency);
 }
 
 /*
@@ -189,7 +188,7 @@ Input: None
 Output: None
 */
 void DataManager::free_all_parameters() {//free data in case of memory leak
-	_log->info() << "Starting releasing memory";
+	dataManagerLogger.info("Starting releasing memory", _dependency);
 	try {
 		delete[] h_dirs;
 		delete[] h_weights;
@@ -215,7 +214,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		delete[] h_union_root;
 	}
 	catch (CoreException &e) {
-		_log->error() << "Fatal error in free_all_parameters, when doing cpu array release";
+		dataManagerLogger.error("Fatal error in free_all_parameters, when doing cpu array release", _dependency);
 		throw CoreException("Fatal error in free_all_parameters, when doing cpu array release", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
 
@@ -245,10 +244,10 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		cudaFree(dev_union_root);
 	}
 	catch (CoreException &e) {
-		_log->error() << "Fatal error in free_all_parameters, when doing gpu array release";
+		dataManagerLogger.error("Fatal error in free_all_parameters, when doing gpu array release", _dependency);
 		throw CoreException("Fatal error in free_all_parameters, when doing gpu array release", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 	}
-	_log->info() << "All memory released";
+	dataManagerLogger.info("All memory released", _dependency);
 }
 
 
@@ -264,7 +263,7 @@ void DataManager::gen_direction() {
 	memset(h_dirs, 0, _measurable2d_size_max * sizeof(bool));
 	cudaMemset(dev_dirs, 0, _measurable2d_size_max * sizeof(bool));
 
-	_log->debug() << "Dir matrix generated with size " + to_string(_measurable2d_size_max);
+	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
 }
 
 /*
@@ -279,7 +278,7 @@ void DataManager::gen_weight() {
 	memset(h_weights, 0, _measurable2d_size_max * sizeof(double));
 	cudaMemset(dev_weights, 0, _measurable2d_size_max * sizeof(double));
 
-	_log->debug() << "Weight matrix generated with size " + to_string(_measurable2d_size_max);
+	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
 }
 
 /*
@@ -294,7 +293,7 @@ void DataManager::gen_thresholds() {
 	memset(h_thresholds, 0, _sensor2d_size_max * sizeof(double));
 	cudaMemset(dev_thresholds, 0, _sensor2d_size_max * sizeof(double));
 
-	_log->debug() << "Threshold matrix generated with the size " + to_string(_sensor2d_size_max);
+	dataManagerLogger.debug("Threshold matrix generated with the size " + to_string(_sensor2d_size_max), _dependency);
 }
 
 /*
@@ -309,7 +308,7 @@ void DataManager::gen_mask_amper() {
 	memset(h_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
 	cudaMemset(dev_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
 
-	_log->debug() << "Mask amper matrix generated with size " + to_string(_mask_amper_size_max);
+	dataManagerLogger.debug("Mask amper matrix generated with size " + to_string(_mask_amper_size_max), _dependency);
 }
 
 /*
@@ -324,24 +323,24 @@ void DataManager::gen_np_direction() {
 	memset(h_npdirs, 0, _npdir_size_max * sizeof(bool));
 	cudaMemset(dev_npdirs, 0, _npdir_size_max * sizeof(bool));
 
-	_log->debug() << "NPDir matrix generated with size " + to_string(_npdir_size_max);
+	dataManagerLogger.debug("NPDir matrix generated with size " + to_string(_npdir_size_max), _dependency);
 }
 
 void DataManager::gen_signals() {
 	//malloc the space
-	h_signals = new bool[_sensor_size_max * _measurable_size_max];
-	h_lsignals = new bool[_sensor_size_max * _measurable_size_max];
-	cudaMalloc(&dev_signals, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_lsignals, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	h_signals = new bool[_measurable_size_max * _measurable_size_max];
+	h_lsignals = new bool[_measurable_size_max * _measurable_size_max];
+	cudaMalloc(&dev_signals, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMalloc(&dev_lsignals, _measurable_size_max * _measurable_size_max * sizeof(bool));
 
 	//init with all false
-	memset(h_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	memset(h_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_signals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_lsignals, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	memset(h_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	memset(h_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	cudaMemset(dev_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
 
-	_log->debug() << to_string(_sensor_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
-	_log->debug() << to_string(_sensor_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
+	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
 }
 
 void DataManager::gen_npdir_mask() {
@@ -353,7 +352,7 @@ void DataManager::gen_npdir_mask() {
 	memset(h_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
 	cudaMemset(dev_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
 
-	_log->debug() << to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max);
+	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max), _dependency);
 }
 
 void DataManager::gen_dists() {
@@ -365,7 +364,7 @@ void DataManager::gen_dists() {
 	memset(h_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
 	cudaMemset(dev_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
 
-	_log->debug() << to_string(_measurable_size_max) + "*" + to_string(_measurable_size_max) + "=" + to_string(_measurable_size_max * _measurable_size_max) + " num of space allocated for dists, used for block GPU";
+	dataManagerLogger.debug(to_string(_measurable_size_max) + "*" + to_string(_measurable_size_max) + "=" + to_string(_measurable_size_max * _measurable_size_max) + " num of space allocated for dists, used for block GPU", _dependency);
 }
 
 /*
@@ -400,7 +399,7 @@ void DataManager::gen_other_parameters() {
 	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
 	cudaMalloc(&dev_union_root, _sensor_size_max * sizeof(int));
 
-	_log->debug() << "Other parameter generated, with size " + to_string(_measurable_size_max);
+	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_measurable_size_max), _dependency);
 }
 
 void DataManager::create_sensors_to_arrays_index(int start_idx, int end_idx, vector<Sensor*> &sensors) {
@@ -412,11 +411,11 @@ void DataManager::create_sensors_to_arrays_index(int start_idx, int end_idx, vec
 			sensors[i]->setMeasurableCurrentPointers(h_current);
 		}
 		catch (exception &e) {
-			_log->error() << "Fatal error while doing create_sensor_to_arrays_index";
+			dataManagerLogger.error("Fatal error while doing create_sensor_to_arrays_index", _dependency);
 			throw CoreException("Fatal error happen in create_sensors_to_arrays_index", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->info() << "Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " have created idx to arrays";
+	dataManagerLogger.info("Sensor from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " have created idx to arrays", _dependency);
 }
 
 void DataManager::create_sensor_pairs_to_arrays_index(int start_idx, int end_idx, vector<SensorPair*> &sensor_pairs) {
@@ -425,11 +424,11 @@ void DataManager::create_sensor_pairs_to_arrays_index(int start_idx, int end_idx
 			sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
 		}
 		catch (exception &e) {
-			_log->error() << "Fatal error while doing create_sensor_pairs_to_arrays_index";
+			dataManagerLogger.error("Fatal error while doing create_sensor_pairs_to_arrays_index", _dependency);
 			throw CoreException("Fatal error happen in create_sensor_pairs_to_arrays_index", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->info() << "Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " have created idx to arrays";
+	dataManagerLogger.info("Sensor pairs from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " have created idx to arrays", _dependency);
 }
 
 /*
@@ -440,19 +439,19 @@ void DataManager::copy_arrays_to_sensors(int start_idx, int end_idx, vector<Sens
 	cudaMemcpy(h_current + start_idx, dev_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_diag + start_idx, dev_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_diag_ + start_idx, dev_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
-	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays";
+	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays", _dependency);
 	for (int i = start_idx; i < end_idx; ++i) {
 		//bring all sensor and measurable info into the object
 		try {
 			_sensors[i]->pointers_to_values();
 		}
 		catch (CoreException &e) {
-			_log->error() << "Fatal error while doing copy_arrays_to_sensors";
+			dataManagerLogger.error("Fatal error while doing copy_arrays_to_sensors", _dependency);
 			throw CoreException("Fatal error in function copy_arrays_to_sensors", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from cpu arrays to sensor";
-	_log->info() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied back from arrays";
+	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from cpu arrays to sensor", _dependency);
+	dataManagerLogger.info("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied back from arrays", _dependency);
 }
 
 void DataManager::copy_sensors_to_arrays(int start_idx, int end_idx, vector<Sensor*> &_sensors) {
@@ -463,18 +462,18 @@ void DataManager::copy_sensors_to_arrays(int start_idx, int end_idx, vector<Sens
 			_sensors[i]->values_to_pointers();
 		}
 		catch (exception &e) {
-			_log->error() << "Fatal error while doing copy_sensors_to_arrays";
+			dataManagerLogger.error("Fatal error while doing copy_sensors_to_arrays", _dependency);
 			throw CoreException("Fatal error in function copy_sensors_to_arrays", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays";
+	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays", _dependency);
 	//copy data from cpu array to GPU array
 	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_current + start_idx, h_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
-	_log->debug() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays";
-	_log->info() << "Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied to arrays";
+	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays", _dependency);
+	dataManagerLogger.info("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied to arrays", _dependency);
 }
 
 /*
@@ -491,17 +490,17 @@ void DataManager::copy_sensor_pairs_to_arrays(int start_idx, int end_idx, vector
 			_sensor_pairs[i]->values_to_pointers();
 		}
 		catch (exception &e) {
-			_log->error() << "Fatal error while doing copy_sensor_pairs_to_arrays";
+			dataManagerLogger.error("Fatal error while doing copy_sensor_pairs_to_arrays", _dependency);
 			throw CoreException("Fatal error in function copy_sensor_pairs_to_arrays", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays";
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays", _dependency);
 	//copy data from CPU arrays to GPU arrays
 	cudaMemcpy(dev_weights + ind(2 * start_idx, 0), h_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_dirs + ind(2 * start_idx, 0), h_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_thresholds + ind(start_idx, 0), h_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
-	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to GPU arrays";
-	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied to arrays";
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to GPU arrays", _dependency);
+	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied to arrays", _dependency);
 }
 
 void DataManager::copy_arrays_to_sensor_pairs(int start_idx, int end_idx, vector<SensorPair*> &_sensor_pairs) {
@@ -509,7 +508,7 @@ void DataManager::copy_arrays_to_sensor_pairs(int start_idx, int end_idx, vector
 	cudaMemcpy(h_weights + ind(2 * start_idx, 0), dev_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_dirs + ind(2 * start_idx, 0), dev_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_thresholds + ind(start_idx, 0), dev_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
-	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from GPU arrays to CPU arrays";
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from GPU arrays to CPU arrays", _dependency);
 	//copy data from CPU arrays to sensor pairs
 	for (int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i) {
 		//bring all sensor pair info into the object
@@ -517,12 +516,12 @@ void DataManager::copy_arrays_to_sensor_pairs(int start_idx, int end_idx, vector
 			_sensor_pairs[i]->pointers_to_values();
 		}
 		catch (exception &e) {
-			_log->error() << "Fatal error while doing copy_arrays_to_sensor_pairs";
+			dataManagerLogger.error("Fatal error while doing copy_arrays_to_sensor_pairs", _dependency);
 			throw CoreException("Fatal error in function copy_arrays_to_sensor_pairs", CoreException::CORE_FATAL, status_codes::ServiceUnavailable);
 		}
 	}
-	_log->debug() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to sensor pairs";
-	_log->info() << "Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied back from arrays";
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to sensor pairs", _dependency);
+	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied back from arrays", _dependency);
 }
 
 /*
@@ -539,7 +538,7 @@ void DataManager::setMask(vector<bool> &mask) {
 	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
 	cudaMemcpy(dev_mask, h_mask, mask.size() * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "Mask value set";
+	dataManagerLogger.debug("Mask value set", _dependency);
 }
 
 /*
@@ -555,7 +554,7 @@ void DataManager::setObserve(vector<bool> &observe) {//this is where data comes 
 		h_observe[i] = observe[i];
 	}
 	cudaMemcpy(dev_observe, h_observe, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "observe signal set";
+	dataManagerLogger.debug("observe signal set", _dependency);
 }
 
 /*
@@ -570,7 +569,7 @@ void DataManager::setCurrent(vector<bool> &current) {//this is where data comes 
 		h_current[i] = current[i];
 	}
 	cudaMemcpy(dev_current, h_current, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "current signal set for customized purpose";
+	dataManagerLogger.debug("current signal set for customized purpose", _dependency);
 }
 
 /*
@@ -585,7 +584,7 @@ void DataManager::setTarget(vector<bool> &target) {
 		h_target[i] = target[i];
 	}
 	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "target signal set";
+	dataManagerLogger.debug("target signal set", _dependency);
 }
 
 /*
@@ -600,7 +599,7 @@ void DataManager::setSignal(vector<bool> &signal) {
 		h_signal[i] = signal[i];
 	}
 	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "signal set";
+	dataManagerLogger.debug("signal set", _dependency);
 }
 
 /*
@@ -609,7 +608,7 @@ Input: 2d vector of signals, first dimension should not exceed sensor size, seco
 */
 void DataManager::setSignals(vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _sensor_size) {
+	if (sig_count > _measurable_size_max) {
 		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < sig_count; ++i) {
@@ -621,7 +620,7 @@ void DataManager::setSignals(vector<vector<bool> > &signals) {
 		}
 	}
 	cudaMemcpy(dev_signals, h_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << to_string(sig_count) + " signals set";
+	dataManagerLogger.debug(to_string(sig_count) + " signals set", _dependency);
 }
 
 /*
@@ -636,7 +635,7 @@ void DataManager::setLoad(vector<bool> &load) {
 		h_load[i] = load[i];
 	}
 	cudaMemcpy(dev_load, h_load, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
-	_log->debug() << "load set";
+	dataManagerLogger.debug("load set", _dependency);
 }
 
 void DataManager::setDists(vector<vector<int> > &dists) {
@@ -647,7 +646,7 @@ void DataManager::setDists(vector<vector<int> > &dists) {
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
 	}
 	cudaMemcpy(dev_dists, h_dists, _sensor_size * _sensor_size * sizeof(int), cudaMemcpyHostToDevice);
-	_log->debug() << "dists set";
+	dataManagerLogger.debug("dists set", _dependency);
 }
 
 /*
@@ -657,7 +656,7 @@ input: 2d signals vector
 */
 void DataManager::setLSignals(vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _sensor_size) {
+	if (sig_count > _measurable_size_max) {
 		throw CoreException("The input sensor size is larger than current sensor size!", CoreException::CORE_ERROR, status_codes::BadRequest);
 	}
 	for (int i = 0; i < sig_count; ++i) {
@@ -672,7 +671,7 @@ void DataManager::setLSignals(vector<vector<bool> > &signals) {
 	for (int i = 0; i < sig_count; ++i) {
 		kernel_util::disjunction(dev_lsignals + i * _measurable_size, dev_load, _measurable_size);
 	}
-	_log->debug() << "loaded signals set";
+	dataManagerLogger.debug("loaded signals set", _dependency);
 }
 
 /*
@@ -695,7 +694,7 @@ vector<vector<bool> > DataManager::getSignals(int sig_count) {
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[i * _measurable_size + j]);
 		results.push_back(tmp);
 	}
-	_log->debug() << to_string(sig_count) + " signals get";
+	dataManagerLogger.debug(to_string(sig_count) + " signals get", _dependency);
 	return results;
 }
 
@@ -711,7 +710,7 @@ vector<vector<bool> > DataManager::getLSignals(int sig_count) {
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_lsignals[i * _measurable_size + j]);
 		results.push_back(tmp);
 	}
-	_log->debug() << to_string(sig_count) + " loaded signals get";
+	dataManagerLogger.debug(to_string(sig_count) + " loaded signals get", _dependency);
 	return results;
 }
 
@@ -727,7 +726,7 @@ vector<vector<bool> > DataManager::getNpdirMasks() {
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_npdir_mask[i * _measurable_size + j]);
 		results.push_back(tmp);
 	}
-	_log->debug() << "npdir mask get";
+	dataManagerLogger.debug("npdir mask get", _dependency);
 	return results;
 }
 
@@ -741,7 +740,7 @@ vector<bool> DataManager::getCurrent() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_current[i]);
 	}
-	_log->debug() << "current signal get";
+	dataManagerLogger.debug("current signal get", _dependency);
 	return result;
 }
 
@@ -755,7 +754,7 @@ vector<bool> DataManager::getPrediction() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_prediction[i]);
 	}
-	_log->debug() << "prediction signal get";
+	dataManagerLogger.debug("prediction signal get", _dependency);
 	return result;
 }
 
@@ -769,7 +768,7 @@ vector<bool> DataManager::getTarget() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_target[i]);
 	}
-	_log->debug() << "target signal get";
+	dataManagerLogger.debug("target signal get", _dependency);
 	return result;
 }
 
@@ -787,7 +786,7 @@ vector<vector<double> > DataManager::getWeight2D() {
 			tmp.push_back(h_weights[n++]);
 		result.push_back(tmp);
 	}
-	_log->debug() << "weight matrix 2d get";
+	dataManagerLogger.debug("weight matrix 2d get", _dependency);
 	return result;
 }
 
@@ -805,7 +804,7 @@ vector<vector<bool> > DataManager::getDir2D() {
 			tmp.push_back(h_dirs[n++]);
 		result.push_back(tmp);
 	}
-	_log->debug() << "dir matrix 2d get";
+	dataManagerLogger.debug("dir matrix 2d get", _dependency);
 	return result;
 }
 
@@ -823,7 +822,7 @@ vector<vector<bool> > DataManager::getNPDir2D() {
 			tmp.push_back(h_npdirs[n++]);
 		result.push_back(tmp);
 	}
-	_log->debug() << "npdir matrix 2d get";
+	dataManagerLogger.debug("npdir matrix 2d get", _dependency);
 	return result;
 }
 
@@ -841,7 +840,7 @@ vector<vector<double> > DataManager::getThreshold2D() {
 			tmp.push_back(h_thresholds[n++]);
 		result.push_back(tmp);
 	}
-	_log->debug() << "threshold matrix 2d get";
+	dataManagerLogger.debug("threshold matrix 2d get", _dependency);
 	return result;
 }
 
@@ -859,7 +858,7 @@ vector<vector<bool> > DataManager::getMask_amper2D() {
 			tmp.push_back(h_mask_amper[n++]);
 		result.push_back(tmp);
 	}
-	_log->debug() << "mask amper 2d get";
+	dataManagerLogger.debug("mask amper 2d get", _dependency);
 	return result;
 }
 
@@ -873,7 +872,7 @@ vector<bool> DataManager::getMask_amper() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	_log->debug() << "mask amper 1d get";
+	dataManagerLogger.debug("mask amper 1d get", _dependency);
 	return results;
 }
 
@@ -887,7 +886,7 @@ vector<double> DataManager::getWeight() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	_log->debug() << "weight matrix 1d get";
+	dataManagerLogger.debug("weight matrix 1d get", _dependency);
 	return results;
 }
 
@@ -901,7 +900,7 @@ vector<bool> DataManager::getDir() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	_log->debug() << "dir matrix 1d get";
+	dataManagerLogger.debug("dir matrix 1d get", _dependency);
 	return results;
 }
 
@@ -915,7 +914,7 @@ vector<bool> DataManager::getNPDir() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	_log->debug() << "npdir matrix 1d get";
+	dataManagerLogger.debug("npdir matrix 1d get", _dependency);
 	return results;
 }
 
@@ -929,7 +928,7 @@ vector<double> DataManager::getThresholds() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	_log->debug() << "threshold matrix 1d get";
+	dataManagerLogger.debug("threshold matrix 1d get", _dependency);
 	return results;
 }
 
@@ -943,7 +942,7 @@ vector<double> DataManager::getDiag() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_diag[i]);
 	}
-	_log->debug() << "diag value get";
+	dataManagerLogger.debug("diag value get", _dependency);
 	return result;
 }
 
@@ -957,7 +956,7 @@ vector<double> DataManager::getDiagOld() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_diag_[i]);
 	}
-	_log->debug() << "old diag value get";
+	dataManagerLogger.debug("old diag value get", _dependency);
 	return result;
 }
 
@@ -969,7 +968,7 @@ vector<bool> DataManager::getMask() {
 	vector<bool> result;
 	cudaMemcpy(h_mask, dev_mask, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_mask[i]);
-	_log->debug() << "mask signal get";
+	dataManagerLogger.debug("mask signal get", _dependency);
 	return result;
 }
 
@@ -981,7 +980,7 @@ vector<bool> DataManager::getObserve() {
 	vector<bool> result;
 	cudaMemcpy(h_observe, dev_observe, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_observe[i]);
-	_log->debug() << "observe signal get";
+	dataManagerLogger.debug("observe signal get", _dependency);
 	return result;
 }
 
@@ -993,7 +992,7 @@ vector<bool> DataManager::getLoad() {
 	vector<bool> result;
 	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
 	for (int i = 0; i < _measurable_size; ++i) result.push_back(h_load[i]);
-	_log->debug() << "load signal get";
+	dataManagerLogger.debug("load signal get", _dependency);
 	return result;
 }
 
@@ -1007,7 +1006,7 @@ vector<bool> DataManager::getUp() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_up[i]);
 	}
-	_log->debug() << "up signal get";
+	dataManagerLogger.debug("up signal get", _dependency);
 	return result;
 }
 
@@ -1021,7 +1020,7 @@ vector<bool> DataManager::getDown() {
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_down[i]);
 	}
-	_log->debug() << "down signal get";
+	dataManagerLogger.debug("down signal get", _dependency);
 	return result;
 }
 

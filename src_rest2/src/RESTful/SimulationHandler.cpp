@@ -5,7 +5,7 @@
 #include "Snapshot.h"
 #include "UMAException.h"
 
-SimulationHandler::SimulationHandler(string handler_factory, logManager *log_access): AdminHandler(handler_factory, log_access) {
+SimulationHandler::SimulationHandler(string handler_factory): AdminHandler(handler_factory) {
 	UMA_DECISION = U("decision");
 	UMA_UP = U("up");
 	UMA_AMPER = U("amper");
@@ -159,11 +159,9 @@ void SimulationHandler::create_decision(World *world, http_request &request, htt
 		return_data[U("target_plus")] = json::value::array(json_target_plus);
 		return_data[U("target_minus")] = json::value::array(json_target_minus);
 		message[U("data")] = return_data;
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
 		request.reply(status_codes::Created, message);
 	}
 	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400");
 		request.reply(status_codes::BadRequest, json::value::string(U("decision made error!")));
 	}
 }

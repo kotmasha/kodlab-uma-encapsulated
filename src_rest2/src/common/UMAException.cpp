@@ -13,8 +13,8 @@ UMAException::UMAException(std::string message, int error_level) : std::runtime_
 
 UMAException::UMAException():std::runtime_error("") {}
 
-string_t UMAException::getErrorMessage() {
-	return string_to_string_t(_error_message);
+string UMAException::getErrorMessage() {
+	return _error_message;
 }
 
 http::status_code UMAException::getErrorCode() {

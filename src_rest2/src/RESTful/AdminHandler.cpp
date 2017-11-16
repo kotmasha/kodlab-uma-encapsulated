@@ -9,7 +9,7 @@ bool to_bool(string_t &s) {
 	return s == U("true") || s == U("True");
 }
 
-AdminHandler::AdminHandler(string handler_factory, logManager *log_access):_handler_factory(handler_factory){
+AdminHandler::AdminHandler(string handler_factory):_handler_factory(handler_factory){
 	UUID = U("uuid");
 	UMA_AGENT = U("agent");
 	UMA_SNAPSHOT = U("snapshot");
@@ -35,7 +35,6 @@ AdminHandler::AdminHandler(string handler_factory, logManager *log_access):_hand
 	DELETE = U(" DELETE ");
 
 	MESSAGE = U("message");
-	_log_access = log_access;
 }
 
 bool AdminHandler::check_field(json::value &data, string_t &s, bool hard_check) {
@@ -107,38 +106,6 @@ void AdminHandler::vector_string_to_array(std::vector<string> &list, std::vector
 		string_t tmp(list[i].begin(), list[i].end());
 		json_list.push_back(json::value::string(tmp));
 	}
-}
-
-Agent *AdminHandler::get_agent_by_id(World *world, string agent_id, http_request &request, http_response &response) {
-	Agent *agent = world->getAgent(agent_id);
-	if (agent == NULL) {
-		throw ClientException("Cannot find the agent id!", ClientException::CLIENT_ERROR, status_codes::NotFound);
-	}
-	return agent;
-}
-
-bool AdminHandler::get_snapshot_by_id(Agent *agent, string snapshot_id, Snapshot *&snapshot, http_request &request) {
-	snapshot = agent->getSnapshot(snapshot_id);
-	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + U(" 404");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("Cannot find the snapshot id!"));
-		request.reply(status_codes::NotFound, message);
-		return false;
-	}
-	return true;
-}
-
-bool AdminHandler::get_sensor_by_id(Snapshot *snapshot, string &sensor_id, Sensor *&sensor, http_request &request) {
-	sensor = snapshot->getSensor(sensor_id);
-	if (snapshot == NULL) {
-		_log_access->info() << request.absolute_uri().to_string() + U(" 404");
-		json::value message;
-		message[MESSAGE] = json::value::string(U("Cannot find the snapshot id!"));
-		request.reply(status_codes::NotFound, message);
-		return false;
-	}
-	return true;
 }
 
 string AdminHandler::get_string_input(json::value &data, string_t &name) {
