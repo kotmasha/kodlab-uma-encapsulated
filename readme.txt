@@ -1,22 +1,15 @@
-gway to compile file in Linux Ubuntu
+Please use CMAKE to compile the project
 
-1 compile cpp file
-2 use swig(already installed) to compile and get a cpp interface file
-3 use gcc to mix compile the cpp in 2
-4 use cuda compiler(nvcc) to compile cuda file and link all .o file and get .so
-
-Say if I have Agent.cpp and Snapshot.cpp and kernel.cu
-
-g++ -fPIC -std=c++11 -c Agent.cpp -o Agent.o//get the agent obj
-g++ -fPIC -std=c++11 -c Snapshot.cpp -o Snapshot.o//get the Snapshot obj
-g++ -fPIC -std=c++11 -c worker.cpp -o worker.o//get the worker obj
-swig -c++ -python -o UMA_NEW_wrap.cpp UMA_NEW.i//swig auto generate the UMA_NEW_wrap.cpp based on UMA_NEW.i, the UMA_NEW.i is like a interface protocal, I will maintain it.
-gcc -fPIC -c UMA_NEW_wrap.cpp -o UMA_NEW_wrap.o -I/usr/include/python2.7//use python and gcc c compiler to mix compile
-nvcc -shared -Xcompiler -fPIC kernel.cu Agent.o Snapshot.o worker.o UMA_NEW_wrap.o -o _UMA_NEW.so//use nvcc to compile cuda file and link all obj together
-
-note: 
-1 -fPIC is used to craete module with no specified location in memory(Position-Independent-Code)
-2 -shared means use shared library
-3 -Xcompiler is a tag in nvcc
-4 all the library is installed(python2.7,nvcc,swig)
-5 the name of the .so is _UMA_NEW.so and that really matters, if name changes, python may not find the module
+---------------------------------------------WINDOWS-------------------------------------------
+1 make sure you have vcpkg installed in your environment, check this link https://github.com/Microsoft/vcpkg
+2 make sure you have cpprestsdk(CASABLANCA) installed, use "vcpkg install cpprestsdk cpprestsdk:x64-windows" to install the package, check https://github.com/Microsoft/cpprestsdk,
+installing the corresponding package may require 30~60min, take around 5GB disk
+3 make sure you have CUDA 8.0 or higher in your environment, check https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
+4 make sure you have CMAKE installed in your pc, check here https://cmake.org/download/ please use binary distribution
+5 clone the project
+6 create a build folder where you want the visual studio project to be
+7 find cmake bin folder, open cmake-gui.exe, and choose "where is the source code" to be src, and "where to build the binaries" to be build folder
+8 click on Configure, resolve the variables you want(RELEASE/X64 ...)
+9 if no error, click generate, then open the project
+10 build the project, the runnable project will be under build/bin/$build_type
+11 be sure to copy "ini" folder to where you run the binary
