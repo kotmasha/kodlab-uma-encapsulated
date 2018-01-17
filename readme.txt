@@ -7,9 +7,11 @@ installing the corresponding package may require 30~60min, take around 5GB disk
 3 make sure you have CUDA 8.0 or higher in your environment, check https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
 4 make sure you have CMAKE installed in your pc, check here https://cmake.org/download/ please use binary distribution
 5 clone the project
-6 create a build folder where you want the visual studio project to be
-7 find cmake bin folder, open cmake-gui.exe, and choose "where is the source code" to be src, and "where to build the binaries" to be build folder
-8 click on Configure, resolve the variables you want(RELEASE/X64 ...)
-9 if no error, click generate, then open the project
-10 build the project, the runnable project will be under build/bin/$build_type
-11 be sure to copy "ini" folder to where you run the binary
+6 run build_dependency.bat, for the building gtest
+7 run build_vs.bat, for the project visual studio solution.
+8* if needed, find cmake bin folder, open cmake-gui.exe, and choose "where is the source code" to be src, and "where to build the binaries" to be build folder
+9* if needed click on Configure, resolve the variables you want(RELEASE/X64 ...)
+10* if no error, click generate, then open the project
+11 build the project, the runnable project will be under build/bin/$build_type
+12 be sure to copy "ini" folder to where you run the binary
+note 7 can be done manually by 8-10
