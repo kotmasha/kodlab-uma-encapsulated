@@ -1,0 +1,11 @@
+*.pyc
+build/
+dependency/build/
+*.lib
+*.dll
+*.exe
+*.so
+*.a
+*.xml
+*.iml
+*vcpkg
