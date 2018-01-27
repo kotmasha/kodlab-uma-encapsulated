@@ -67,7 +67,7 @@ int main() {
 	string url = "http://" + host + ":" + port;
 	serverLogger.info("Will listen on the url " + url);
 	UMARestListener listener(url);
-	
+
 	init_handlers(listener);
 	init_handler_path(listener);
 

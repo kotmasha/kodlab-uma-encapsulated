@@ -64,6 +64,6 @@ TEST(measurable_signal_to_sensor_signal, measurable_signal_to_sensor_signal_test
 int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);
-	RUN_ALL_TESTS();
+	(void)RUN_ALL_TESTS();
 	std::getchar(); // keep console window open until Return keystroke
 }

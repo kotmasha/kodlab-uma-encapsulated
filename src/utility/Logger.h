@@ -11,7 +11,7 @@ private:
 	int _level;
 
 public:
-	static enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_VERBOSE };
+	enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_VERBOSE };
 
 public:
 	Logger(const string component, const string output);
