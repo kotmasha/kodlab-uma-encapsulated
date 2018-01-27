@@ -15,3 +15,13 @@ installing the corresponding package may require 30~60min, take around 5GB disk
 11 build the project, the runnable project will be under build/bin/$build_type
 12 be sure to copy "ini" folder to where you run the binary
 note 7 can be done manually by 8-10
+
+---------------------------------------------LINUX--------------------------------------------
+1 make sure you have cpprestsdk(CASABLANCA) installed, check https://github.com/Microsoft/cpprestsdk for install steps
+2 make sure you have CMAKE installed in your pc, check here https://cmake.org/download/ please use binary distribution
+3 make sure you have CUDA 8.0 or higher in your environment, check https://developer.nvidia.com/cuda-downloads?target_os=Linux
+4 clone the project
+5 run build_kernel.sh to build the UMAKernel(under src/kernel) separately
+6 mkdir build
+7 cd build; cmake ../src
+8 make
