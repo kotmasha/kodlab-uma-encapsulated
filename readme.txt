@@ -7,7 +7,7 @@ installing the corresponding package may require 30~60min, take around 5GB disk
 3 make sure you have CUDA 8.0 or higher in your environment, check https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
 4 make sure you have CMAKE installed in your pc, check here https://cmake.org/download/ please use binary distribution
 5 clone the project
-6 run build_dependency.bat, for the building gtest
+6 run build_dependency.bat, to build gtest
 7 run build_vs.bat, for the project visual studio solution.
 8* if needed, find cmake bin folder, open cmake-gui.exe, and choose "where is the source code" to be src, and "where to build the binaries" to be build folder
 9* if needed click on Configure, resolve the variables you want(RELEASE/X64 ...)
@@ -22,6 +22,7 @@ note 7 can be done manually by 8-10
 3 make sure you have CUDA 8.0 or higher in your environment, check https://developer.nvidia.com/cuda-downloads?target_os=Linux
 4 clone the project
 5 run build_kernel.sh to build the UMAKernel(under src/kernel) separately
+6 run build_dependency.sh to build gtest
 6 mkdir build
 7 cd build; cmake ../src
 8 make
