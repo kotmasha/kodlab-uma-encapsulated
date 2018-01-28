@@ -12,6 +12,7 @@
 #include <time.h>
 #include <exception>
 #include <typeinfo>
+#include <math.h>
 
 using namespace std;
 

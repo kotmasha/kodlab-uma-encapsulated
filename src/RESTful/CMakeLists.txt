@@ -4,9 +4,6 @@ include_directories(../utility)
 
 add_definitions(-DBUILDING_DLL)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
 file(GLOB_RECURSE UMAREST
     "*.h"
     "*.cpp"
@@ -14,4 +11,8 @@ file(GLOB_RECURSE UMAREST
 
 source_group("UMARest" FILES ${UMAREST})
 add_library(UMARest SHARED ${UMAREST})
-target_link_libraries(UMARest UMAUtil UMAKernel cpprest_2_10.dll)
+if(MSVC)
+    target_link_libraries(UMARest UMAUtil cpprest_2_10)
+else()
+    target_link_libraries(UMARest UMAUtil cpprest crypto ssl boost_system)
+endif(MSVC)

@@ -266,7 +266,12 @@ void Snapshot::pruning(const vector<bool> &signal){
 	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
 		throw UMAException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	snapshotLogger.info("Will prune " + to_string(sensor_list.size()) + " sensors, range from " + to_string(sensor_list[0]) + " to " + to_string(sensor_list.back()), _dependency);
+
+	string str_list = "";
+	for (int i = 0; i < sensor_list.size(); ++i) {
+		if (sensor_list[i]) str_list += to_string(i) + ", ";
+	}
+	snapshotLogger.info("Will prune id=" + str_list, _dependency);
 
 	int row_escape = 0;
 	int total_escape = 0;

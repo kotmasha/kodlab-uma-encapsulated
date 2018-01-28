@@ -1,6 +1,5 @@
 #ifndef _UMAREST_
 #define _UMAREST_
-
 #include <cpprest/json.h>
 #include <cpprest/http_client.h>
 #include <cpprest/http_listener.h>

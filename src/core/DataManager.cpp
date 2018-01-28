@@ -5,10 +5,9 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 #include "Logger.h"
+#include "data_util.h"
 #include "uma_base.cuh"
 #include "kernel_util.cuh"
-#include <cuda.h>
-#include <cuda_runtime.h>
 
 extern int ind(int row, int col);
 extern int compi(int x);
@@ -163,6 +162,7 @@ Input: total value
 void DataManager::init_other_parameter(double &total) {
 	for (int i = 0; i < _measurable_size_max; ++i) {
 		h_observe[i] = false;
+		h_observe_[i] = false;
 		h_signal[i] = false;
 		h_load[i] = false;
 		h_mask[i] = false;
@@ -173,23 +173,24 @@ void DataManager::init_other_parameter(double &total) {
 		h_down[i] = false;
 		h_diag[i] = total / 2.0;
 		h_diag_[i] = total / 2.0;
+		h_negligible[i] = false;
 	}
 	*h_res = 0.0;
 	for (int i = 0; i < _sensor_size_max; ++i) {
 		h_union_root[i] = 0;
 	}
 
-	cudaMemset(dev_observe, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_signal, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_load, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_mask, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_current, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_target, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_prediction, 0, _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_res, 0, sizeof(float));
+	data_util::dev_init(dev_observe, _measurable_size_max);
+	data_util::dev_init(dev_signal, _measurable_size_max);
+	data_util::dev_init(dev_load, _measurable_size_max);
+	data_util::dev_init(dev_mask, _measurable_size_max);
+	data_util::dev_init(dev_current, _measurable_size_max);
+	data_util::dev_init(dev_target, _measurable_size_max);
+	data_util::dev_init(dev_prediction, _measurable_size_max);
+	data_util::dev_init(dev_negligible, _measurable_size_max);
+	data_util::dev_init(dev_res, 1);
+	data_util::dev_init(dev_union_root, _sensor_size_max);
 
-	cudaMemset(dev_union_root, 0, _sensor_size_max * sizeof(bool));
-	cudaMemset(dev_npdirs, 0, _measurable_size_max * sizeof(bool));
 	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
 }
 
@@ -233,31 +234,31 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 	}
 
 	try {
-		cudaFree(dev_dirs);
-		cudaFree(dev_weights);
-		cudaFree(dev_thresholds);
-		cudaFree(dev_mask_amper);
+		data_util::dev_free(dev_dirs);
+		data_util::dev_free(dev_weights);
+		data_util::dev_free(dev_thresholds);
+		data_util::dev_free(dev_mask_amper);
 
-		cudaFree(dev_mask);
-		cudaFree(dev_current);
-		cudaFree(dev_target);
+		data_util::dev_free(dev_mask);
+		data_util::dev_free(dev_current);
+		data_util::dev_free(dev_target);
 
-		cudaFree(dev_observe);
-		cudaFree(dev_signal);
-		cudaFree(dev_load);
+		data_util::dev_free(dev_observe);
+		data_util::dev_free(dev_signal);
+		data_util::dev_free(dev_load);
 
-		cudaFree(dev_prediction);
-		cudaFree(dev_negligible);
-		cudaFree(dev_diag);
-		cudaFree(dev_diag_);
+		data_util::dev_free(dev_prediction);
+		data_util::dev_free(dev_negligible);
+		data_util::dev_free(dev_diag);
+		data_util::dev_free(dev_diag_);
 
-		cudaFree(dev_npdir_mask);
-		cudaFree(dev_npdirs);
-		cudaFree(dev_signals);
-		cudaFree(dev_dists);
-		cudaFree(dev_union_root);
+		data_util::dev_free(dev_npdir_mask);
+		data_util::dev_free(dev_npdirs);
+		data_util::dev_free(dev_signals);
+		data_util::dev_free(dev_dists);
+		data_util::dev_free(dev_union_root);
 
-		cudaFree(dev_res);
+		data_util::dev_free(dev_res);
 	}
 	catch (UMAException &e) {
 		dataManagerLogger.error("Fatal error in free_all_parameters, when doing gpu array release", _dependency);
@@ -273,11 +274,11 @@ This function is generating dir matrix memory both on host and device
 void DataManager::gen_direction() {
 	//malloc the space
 	h_dirs = new bool[_measurable2d_size_max];
-	cudaMalloc(&dev_dirs, _measurable2d_size_max * sizeof(bool));
+	data_util::dev_bool(dev_dirs, _measurable2d_size_max);
 
 	//fill in all 0
 	memset(h_dirs, 0, _measurable2d_size_max * sizeof(bool));
-	cudaMemset(dev_dirs, 0, _measurable2d_size_max * sizeof(bool));
+	data_util::dev_init(dev_dirs, _measurable2d_size_max);
 
 	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
 }
@@ -288,11 +289,11 @@ This function is generating weight matrix memory both on host and device
 void DataManager::gen_weight() {
 	//malloc the space
 	h_weights = new double[_measurable2d_size_max];
-	cudaMalloc(&dev_weights, _measurable2d_size_max * sizeof(double));
+	data_util::dev_double(dev_weights, _measurable2d_size_max);
 
 	//fill in all 0
 	memset(h_weights, 0, _measurable2d_size_max * sizeof(double));
-	cudaMemset(dev_weights, 0, _measurable2d_size_max * sizeof(double));
+	data_util::dev_init(dev_weights, _measurable2d_size_max);
 
 	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
 }
@@ -303,11 +304,11 @@ This function is generating threshold matrix memory both on host and device
 void DataManager::gen_thresholds() {
 	//malloc the space
 	h_thresholds = new double[_sensor2d_size_max];
-	cudaMalloc(&dev_thresholds, _sensor2d_size_max * sizeof(double));
+	data_util::dev_double(dev_thresholds, _sensor2d_size_max);
 
 	//fill in all 0
 	memset(h_thresholds, 0, _sensor2d_size_max * sizeof(double));
-	cudaMemset(dev_thresholds, 0, _sensor2d_size_max * sizeof(double));
+	data_util::dev_init(dev_thresholds, _sensor2d_size_max);
 
 	dataManagerLogger.debug("Threshold matrix generated with the size " + to_string(_sensor2d_size_max), _dependency);
 }
@@ -318,11 +319,11 @@ This function is generating mask amper matrix memory both on host and device
 void DataManager::gen_mask_amper() {
 	//malloc the space
 	h_mask_amper = new bool[_mask_amper_size_max];
-	cudaMalloc(&dev_mask_amper, _mask_amper_size_max * sizeof(bool));
+	data_util::dev_bool(dev_mask_amper, _mask_amper_size_max);
 
 	//fill in all 0
 	memset(h_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
-	cudaMemset(dev_mask_amper, 0, _mask_amper_size_max * sizeof(bool));
+	data_util::dev_init(dev_mask_amper, _mask_amper_size_max);
 
 	dataManagerLogger.debug("Mask amper matrix generated with size " + to_string(_mask_amper_size_max), _dependency);
 }
@@ -333,11 +334,11 @@ This function is generating n power of dir matrix both on host and device
 void DataManager::gen_np_direction() {
 	//malloc the space
 	h_npdirs = new bool[_npdir_size_max];
-	cudaMalloc(&dev_npdirs, _npdir_size_max * sizeof(bool));
+	data_util::dev_bool(dev_npdirs, _npdir_size_max);
 
 	//fill in all 0
 	memset(h_npdirs, 0, _npdir_size_max * sizeof(bool));
-	cudaMemset(dev_npdirs, 0, _npdir_size_max * sizeof(bool));
+	data_util::dev_init(dev_npdirs, _npdir_size_max);
 
 	dataManagerLogger.debug("NPDir matrix generated with size " + to_string(_npdir_size_max), _dependency);
 }
@@ -346,14 +347,14 @@ void DataManager::gen_signals() {
 	//malloc the space
 	h_signals = new bool[_measurable_size_max * _measurable_size_max];
 	h_lsignals = new bool[_measurable_size_max * _measurable_size_max];
-	cudaMalloc(&dev_signals, _measurable_size_max * _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_lsignals, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	data_util::dev_bool(dev_signals, _measurable_size_max * _measurable_size_max);
+	data_util::dev_bool(dev_lsignals, _measurable_size_max * _measurable_size_max);
 
 	//init with all false
 	memset(h_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
 	memset(h_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
+	data_util::dev_init(dev_signals, _measurable_size_max * _measurable_size_max);
+	data_util::dev_init(dev_lsignals, _measurable_size_max * _measurable_size_max);
 
 	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
 	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
@@ -362,11 +363,11 @@ void DataManager::gen_signals() {
 void DataManager::gen_npdir_mask() {
 	//malloc the space
 	h_npdir_mask = new bool[_sensor_size_max * _measurable_size_max];
-	cudaMalloc(&dev_npdir_mask, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	data_util::dev_bool(dev_npdir_mask, _sensor_size_max * _measurable_size_max);
 
 	//init with all false
 	memset(h_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	cudaMemset(dev_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
+	data_util::dev_init(dev_npdir_mask, _sensor_size_max * _measurable_size_max);
 
 	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max), _dependency);
 }
@@ -374,11 +375,11 @@ void DataManager::gen_npdir_mask() {
 void DataManager::gen_dists() {
 	//malloc the space
 	h_dists = new int[_measurable_size_max * _measurable_size_max];
-	cudaMalloc(&dev_dists, _measurable_size_max * _measurable_size_max * sizeof(int));
+	data_util::dev_int(dev_dists, _measurable_size_max * _measurable_size_max);
 
 	//init with all 0
 	memset(h_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
-	cudaMemset(dev_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
+	data_util::dev_init(dev_dists, _measurable_size_max * _measurable_size_max);
 
 	dataManagerLogger.debug(to_string(_measurable_size_max) + "*" + to_string(_measurable_size_max) + "=" + to_string(_measurable_size_max * _measurable_size_max) + " num of space allocated for dists, used for block GPU", _dependency);
 }
@@ -403,19 +404,19 @@ void DataManager::gen_other_parameters() {
 	h_union_root = new int[_sensor_size_max];
 	h_res = new float;
 
-	cudaMalloc(&dev_observe, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_signal, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_load, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_mask, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_current, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_target, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_prediction, _measurable_size_max * sizeof(bool));
-	cudaMalloc(&dev_negligible, _measurable_size_max * sizeof(bool));
+	data_util::dev_bool(dev_observe, _measurable_size_max);
+	data_util::dev_bool(dev_signal, _measurable_size_max);
+	data_util::dev_bool(dev_load, _measurable_size_max);
+	data_util::dev_bool(dev_mask, _measurable_size_max);
+	data_util::dev_bool(dev_current, _measurable_size_max);
+	data_util::dev_bool(dev_target, _measurable_size_max);
+	data_util::dev_bool(dev_prediction, _measurable_size_max);
+	data_util::dev_bool(dev_negligible, _measurable_size_max);
 
-	cudaMalloc(&dev_diag, _measurable_size_max * sizeof(double));
-	cudaMalloc(&dev_diag_, _measurable_size_max * sizeof(double));
-	cudaMalloc(&dev_union_root, _sensor_size_max * sizeof(int));
-	cudaMalloc(&dev_res, sizeof(float));
+	data_util::dev_double(dev_diag, _measurable_size_max);
+	data_util::dev_double(dev_diag_, _measurable_size_max);
+	data_util::dev_int(dev_union_root, _sensor_size_max);
+	data_util::dev_float(dev_res, 1);
 
 	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_measurable_size_max), _dependency);
 }
@@ -454,9 +455,9 @@ void DataManager::create_sensor_pairs_to_arrays_index(const int start_idx, const
 */
 void DataManager::copy_arrays_to_sensors(const int start_idx, const int end_idx, const vector<Sensor*> &_sensors) {
 	//copy necessary info back from cpu array to GPU array first
-	cudaMemcpy(h_current + start_idx, dev_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_diag + start_idx, dev_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_diag_ + start_idx, dev_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_current, h_current, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleD2H(dev_diag, h_diag, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleD2H(dev_diag_, h_diag_, end_idx - start_idx, start_idx, start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays", _dependency);
 	for (int i = start_idx; i < end_idx; ++i) {
 		//bring all sensor and measurable info into the object
@@ -486,10 +487,10 @@ void DataManager::copy_sensors_to_arrays(const int start_idx, const int end_idx,
 	}
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays", _dependency);
 	//copy data from cpu array to GPU array
-	cudaMemcpy(dev_mask_amper + 2 * ind(start_idx, 0), h_mask_amper + 2 * ind(start_idx, 0), 2 * (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_current + start_idx, h_current + start_idx, (end_idx - start_idx) * sizeof(bool), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_diag + start_idx, h_diag + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_diag_ + start_idx, h_diag_ + start_idx, (end_idx - start_idx) * sizeof(double), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_mask_amper, dev_mask_amper, 2 * (ind(end_idx, 0) - ind(start_idx, 0)), 2 * ind(start_idx, 0), 2 * ind(start_idx, 0));
+	data_util::boolH2D(h_current, dev_current, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleH2D(h_diag, dev_diag, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleH2D(h_diag_, dev_diag_, end_idx - start_idx, start_idx, start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays", _dependency);
 	dataManagerLogger.info("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied to arrays", _dependency);
 }
@@ -514,18 +515,18 @@ void DataManager::copy_sensor_pairs_to_arrays(const int start_idx, const int end
 	}
 	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from sensor pairs to CPU arrays", _dependency);
 	//copy data from CPU arrays to GPU arrays
-	cudaMemcpy(dev_weights + ind(2 * start_idx, 0), h_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_dirs + ind(2 * start_idx, 0), h_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_thresholds + ind(start_idx, 0), h_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyHostToDevice);
+	data_util::doubleH2D(h_weights, dev_weights, (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)), ind(2 * start_idx, 0), ind(2 * start_idx, 0));
+	data_util::boolH2D(h_dirs, dev_dirs, (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)), ind(2 * start_idx, 0), ind(2 * start_idx, 0));
+	data_util::doubleH2D(h_thresholds, dev_thresholds, (ind(end_idx, 0) - ind(start_idx, 0)), ind(start_idx, 0), ind(start_idx, 0));
 	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from CPU arrays to GPU arrays", _dependency);
 	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied to arrays", _dependency);
 }
 
 void DataManager::copy_arrays_to_sensor_pairs(const int start_idx, const int end_idx, const vector<SensorPair*> &_sensor_pairs) {
 	//copy data from GPU arrays to CPU arrays
-	cudaMemcpy(h_weights + ind(2 * start_idx, 0), dev_weights + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_dirs + ind(2 * start_idx, 0), dev_dirs + ind(2 * start_idx, 0), (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)) * sizeof(bool), cudaMemcpyDeviceToHost);
-	cudaMemcpy(h_thresholds + ind(start_idx, 0), dev_thresholds + ind(start_idx, 0), (ind(end_idx, 0) - ind(start_idx, 0)) * sizeof(double), cudaMemcpyDeviceToHost);
+	data_util::doubleD2H(dev_weights, h_weights, (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)), ind(2 * start_idx, 0), ind(2 * start_idx, 0));
+	data_util::boolD2H(dev_dirs, h_dirs, (ind(2 * end_idx, 0) - ind(2 * start_idx, 0)), ind(2 * start_idx, 0), ind(2 * start_idx, 0));
+	data_util::doubleD2H(dev_thresholds, h_thresholds, (ind(end_idx, 0) - ind(start_idx, 0)), ind(start_idx, 0), ind(start_idx, 0));
 	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(start_idx, 0)) + " to " + to_string(ind(end_idx, 0)) + " are copied from GPU arrays to CPU arrays", _dependency);
 	//copy data from CPU arrays to sensor pairs
 	for (int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i) {
@@ -555,7 +556,7 @@ void DataManager::setMask(const vector<bool> &mask) {
 		throw UMAException("Input mask size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
-	cudaMemcpy(dev_mask, h_mask, mask.size() * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_mask, dev_mask, mask.size());
 	dataManagerLogger.debug("Mask value set", _dependency);
 }
 
@@ -567,11 +568,11 @@ void DataManager::setObserve(const vector<bool> &observe) {//this is where data 
 	if (observe.size() != _measurable_size) {
 		throw UMAException("Input observe size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	cudaMemcpy(h_observe_, h_observe, _measurable_size * sizeof(bool), cudaMemcpyHostToHost);
+	data_util::boolH2H(h_observe, h_observe_, _measurable_size);
 	for (int i = 0; i < observe.size(); ++i) {
 		h_observe[i] = observe[i];
 	}
-	cudaMemcpy(dev_observe, h_observe, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_observe, dev_observe, _measurable_size);
 	dataManagerLogger.debug("observe signal set", _dependency);
 }
 
@@ -586,7 +587,7 @@ void DataManager::setCurrent(const vector<bool> &current) {//this is where data 
 	for (int i = 0; i < current.size(); ++i) {
 		h_current[i] = current[i];
 	}
-	cudaMemcpy(dev_current, h_current, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_current, dev_current, _measurable_size);
 	dataManagerLogger.debug("current signal set for customized purpose", _dependency);
 }
 
@@ -601,7 +602,7 @@ void DataManager::setTarget(const vector<bool> &target) {
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_target[i] = target[i];
 	}
-	cudaMemcpy(dev_target, h_target, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_target, dev_target, _measurable_size);
 	dataManagerLogger.debug("target signal set", _dependency);
 }
 
@@ -616,7 +617,7 @@ void DataManager::setSignal(const vector<bool> &signal) {
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_signal[i] = signal[i];
 	}
-	cudaMemcpy(dev_signal, h_signal, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_signal, dev_signal, _measurable_size);
 	dataManagerLogger.debug("signal set", _dependency);
 }
 
@@ -637,7 +638,7 @@ void DataManager::setSignals(const vector<vector<bool> > &signals) {
 			h_signals[i * _measurable_size + j] = signals[i][j];
 		}
 	}
-	cudaMemcpy(dev_signals, h_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_signals, dev_signals, sig_count * _measurable_size);
 	dataManagerLogger.debug(to_string(sig_count) + " signals set", _dependency);
 }
 
@@ -652,7 +653,7 @@ void DataManager::setLoad(const vector<bool> &load) {
 	for (int i = 0; i < _measurable_size; ++i) {
 		h_load[i] = load[i];
 	}
-	cudaMemcpy(dev_load, h_load, _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_load, dev_load, _measurable_size);
 	dataManagerLogger.debug("load set", _dependency);
 }
 
@@ -663,7 +664,7 @@ void DataManager::setDists(const vector<vector<int> > &dists) {
 	for (int i = 0; i < dists.size(); ++i) {
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
 	}
-	cudaMemcpy(dev_dists, h_dists, _sensor_size * _sensor_size * sizeof(int), cudaMemcpyHostToDevice);
+	data_util::intH2D(h_dists, dev_dists, _sensor_size * _sensor_size);
 	dataManagerLogger.debug("dists set", _dependency);
 }
 
@@ -685,7 +686,7 @@ void DataManager::setLSignals(const vector<vector<bool> > &signals) {
 			h_lsignals[i * _measurable_size + j] = signals[i][j];
 		}
 	}
-	cudaMemcpy(dev_lsignals, h_lsignals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyHostToDevice);
+	data_util::boolH2D(h_lsignals, dev_lsignals, sig_count * _measurable_size);
 	for (int i = 0; i < sig_count; ++i) {
 		kernel_util::disjunction(dev_lsignals + i * _measurable_size, dev_load, _measurable_size);
 	}
@@ -704,7 +705,7 @@ Output: 2d format of signals
 */
 const vector<vector<bool> > DataManager::getSignals(int sig_count) {
 	vector<vector<bool> > results;
-	cudaMemcpy(h_signals, dev_signals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_signals, h_signals, sig_count * _measurable_size);
 	for (int i = 0; i < sig_count; ++i) {
 		vector<bool> tmp;
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[i * _measurable_size + j]);
@@ -720,7 +721,7 @@ Output: 2d format of loaded signals
 */
 const vector<vector<bool> > DataManager::getLSignals(int sig_count) {
 	vector<vector<bool> > results;
-	cudaMemcpy(h_lsignals, dev_lsignals, sig_count * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_lsignals, h_lsignals, sig_count * _measurable_size);
 	for (int i = 0; i < sig_count; ++i) {
 		vector<bool> tmp;
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_lsignals[i * _measurable_size + j]);
@@ -736,7 +737,7 @@ Output: 2d format of npdirs
 */
 const vector<vector<bool> > DataManager::getNpdirMasks() {
 	vector<vector<bool> > results;
-	cudaMemcpy(h_npdir_mask, dev_npdir_mask, _sensor_size * _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_npdir_mask, h_npdir_mask, _sensor_size * _measurable_size);
 	for (int i = 0; i < _sensor_size; ++i) {
 		vector<bool> tmp;
 		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_npdir_mask[i * _measurable_size + j]);
@@ -752,7 +753,7 @@ Output: current vector
 */
 const vector<bool> DataManager::getCurrent() {
 	vector<bool> result;
-	cudaMemcpy(h_current, dev_current, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_current, h_current, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_current[i]);
 	}
@@ -780,7 +781,7 @@ Output: target vector
 */
 const vector<bool> DataManager::getTarget() {
 	vector<bool> result;
-	cudaMemcpy(h_target, dev_target, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_target, h_target, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_target[i]);
 	}
@@ -793,7 +794,7 @@ The function is getting weight matrix in 2-dimensional form
 Output: weight matrix in 2d format
 */
 const vector<vector<double> > DataManager::getWeight2D() {
-	cudaMemcpy(h_weights, dev_weights, _measurable2d_size * sizeof(double), cudaMemcpyDeviceToHost);
+	data_util::doubleD2H(dev_weights, h_weights, _measurable2d_size);
 	vector<vector<double> > result;
 	int n = 0;
 	for (int i = 0; i < _measurable_size; ++i) {
@@ -811,7 +812,7 @@ The function is getting the dir matrix in 2-dimensional form
 Output: dir matrix in 2d format
 */
 const vector<vector<bool> > DataManager::getDir2D() {
-	cudaMemcpy(h_dirs, dev_dirs, _measurable2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_dirs, h_dirs, _measurable2d_size);
 	vector<vector<bool> > result;
 	int n = 0;
 	for (int i = 0; i < _measurable_size; ++i) {
@@ -829,7 +830,7 @@ The function is getting the n power of dir matrix in 2-dimensional form
 Output: npdir matrix in 2d format
 */
 const vector<vector<bool> > DataManager::getNPDir2D() {
-	cudaMemcpy(h_npdirs, dev_npdirs, _npdir_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_npdirs, h_npdirs, _npdir_size);
 	vector<vector<bool> > result;
 	int n = 0;
 	for (int i = 0; i < _measurable_size; ++i) {
@@ -847,7 +848,7 @@ The function is getting the threshold matrix in 2-dimensional form
 Output: threshold matrix in 2d format
 */
 const vector<vector<double> > DataManager::getThreshold2D() {
-	cudaMemcpy(h_thresholds, dev_thresholds, _sensor2d_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::doubleD2H(dev_thresholds, h_thresholds, _sensor2d_size);
 	vector<vector<double> > result;
 	int n = 0;
 	for (int i = 0; i < _sensor_size; ++i) {
@@ -866,7 +867,7 @@ Output: mask amper in 2d format
 */
 const vector<vector<bool> > DataManager::getMask_amper2D() {
 	vector<vector<bool> > result;
-	cudaMemcpy(h_mask_amper, dev_mask_amper, _mask_amper_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_mask_amper, h_mask_amper, _mask_amper_size);
 	int n = 0;
 	for (int i = 0; i < _sensor_size; ++i) {
 		vector<bool> tmp;
@@ -953,7 +954,7 @@ This function is getting the diagonal value of the weight matrix
 Output: diag value
 */
 const vector<double> DataManager::getDiag() {
-	cudaMemcpy(h_diag, dev_diag, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
+	data_util::doubleD2H(dev_diag, h_diag, _measurable_size);
 	vector<double> result;
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_diag[i]);
@@ -967,7 +968,7 @@ This function is getting the diagonal value of the weight matrix of last iterati
 Output: old diag value
 */
 const vector<double> DataManager::getDiagOld() {
-	cudaMemcpy(h_diag_, dev_diag_, _measurable_size * sizeof(double), cudaMemcpyDeviceToHost);
+	data_util::doubleD2H(dev_diag_, h_diag_, _measurable_size);
 	vector<double> result;
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_diag_[i]);
@@ -982,7 +983,7 @@ Output: mask signal
 */
 const vector<bool> DataManager::getMask() {
 	vector<bool> result;
-	cudaMemcpy(h_mask, dev_mask, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_mask, h_mask, _measurable_size);
 	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_mask[i]);
 	dataManagerLogger.debug("mask signal get", _dependency);
 	return result;
@@ -994,7 +995,7 @@ Output: observe signal
 */
 const vector<bool> DataManager::getObserve() {
 	vector<bool> result;
-	cudaMemcpy(h_observe, dev_observe, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_observe, h_observe, _measurable_size);
 	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_observe[i]);
 	dataManagerLogger.debug("observe signal get", _dependency);
 	return result;
@@ -1006,7 +1007,7 @@ Output: load signal
 */
 const vector<bool> DataManager::getLoad() {
 	vector<bool> result;
-	cudaMemcpy(h_load, dev_load, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_load, h_load, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) result.push_back(h_load[i]);
 	dataManagerLogger.debug("load signal get", _dependency);
 	return result;
@@ -1042,7 +1043,7 @@ const vector<bool> DataManager::getDown() {
 
 const vector<bool> DataManager::getNegligible() {
 	vector<bool> result;
-	cudaMemcpy(h_negligible, dev_negligible, _measurable_size * sizeof(bool), cudaMemcpyDeviceToHost);
+	data_util::boolD2H(dev_negligible, h_negligible, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_negligible[i]);
 	}
@@ -1054,7 +1055,7 @@ The function is getting the union root in union_find
 Output: the union root vector
 */
 const vector<int> DataManager::getUnionRoot() {
-	cudaMemcpy(h_union_root, dev_union_root, _sensor_size * sizeof(int), cudaMemcpyDeviceToHost);
+	data_util::intD2H(dev_union_root, h_union_root, _sensor_size);
 	vector<int> result;
 	for (int i = 0; i < _sensor_size; ++i) {
 		result.push_back(h_union_root[i]);

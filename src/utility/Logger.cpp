@@ -17,7 +17,7 @@ Logger::Logger(const string component, const string output) : _component(compone
 	catch (UMAException &e) {
 		cout << "Cannot find the component " + component << endl;
 		exit(0);
-		system("pause");
+                std::getchar();
 	}
 	_output = new ofstream(output, std::ios_base::app);
 }
