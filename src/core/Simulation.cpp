@@ -54,6 +54,7 @@ void simulation::update_state(DataManager *dm, const double &q, const double &ph
 	std::map<string, int> size_info = dm->getSizeInfo();
 	int sensor_size = size_info["_sensor_size"];
 	int measurable_size = size_info["_measurable_size"];
+
 	//update weights
 	uma_base::update_weights(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_b(DataManager::OBSERVE), measurable_size, q, phi, active);
 	//update diag from new weights
@@ -71,7 +72,7 @@ void simulation::update_state(DataManager *dm, const double &q, const double &ph
 	data_util::boolD2D(dm->_dvar_b(DataManager::OBSERVE), dm->_dvar_b(DataManager::SIGNALS), measurable_size);
 	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), measurable_size);
 	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, measurable_size);
-	data_util::boolD2H(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::CURRENT), measurable_size);
+	data_util::boolD2H(dm->_dvar_b(DataManager::CURRENT), dm->_hvar_b(DataManager::CURRENT), measurable_size);
 }
 
 void simulation::floyd(DataManager *dm) {
@@ -89,6 +90,7 @@ void simulation::floyd(DataManager *dm) {
 void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsignals, bool *dst, int sig_count, int measurable_size) {
 	//prepare loaded signals
 	data_util::boolD2D(signals, lsignals, sig_count * measurable_size);
+
 	for (int i = 0; i < sig_count; ++i) {
 		kernel_util::disjunction(lsignals + i * measurable_size, load, measurable_size);
 	}
@@ -98,6 +100,8 @@ void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsign
 	kernel_util::negate_conjunction_star(lsignals, signals, sig_count * measurable_size);
 	//copy result to dst
 	if (dst != NULL) {
+
+
 		data_util::boolD2D(lsignals, dst, sig_count * measurable_size);
 	}
 	simulationLogger.debug("Propagation is done for " + to_string(sig_count) + " sensors");
