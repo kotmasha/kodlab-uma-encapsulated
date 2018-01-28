@@ -753,7 +753,7 @@ Output: current vector
 */
 const vector<bool> DataManager::getCurrent() {
 	vector<bool> result;
-	//data_util::boolD2H(dev_current, h_current, _measurable_size);
+	data_util::boolD2H(dev_current, h_current, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_current[i]);
 	}
