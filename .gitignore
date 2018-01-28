@@ -8,4 +8,6 @@ dependency/build/
 *.a
 *.xml
 *.iml
+*.pdb
+*.exp
 *vcpkg

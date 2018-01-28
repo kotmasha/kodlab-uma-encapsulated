@@ -753,7 +753,7 @@ Output: current vector
 */
 const vector<bool> DataManager::getCurrent() {
 	vector<bool> result;
-	data_util::boolD2H(dev_current, h_current, _measurable_size);
+	//data_util::boolD2H(dev_current, h_current, _measurable_size);
 	for (int i = 0; i < _measurable_size; ++i) {
 		result.push_back(h_current[i]);
 	}
@@ -1127,6 +1127,7 @@ bool *DataManager::_dvar_b(int name) {
 	case NPDIR_MASK: return dev_npdir_mask;
 	case TARGET: return dev_target;
 	case PREDICTION: return dev_prediction;
+	case NEGLIGIBLE: return dev_negligible;
 	}
 }
 
@@ -1167,5 +1168,6 @@ bool *DataManager::_hvar_b(int name) {
 	case PREDICTION: return h_prediction;
 	case NPDIR_MASK: return h_npdir_mask;
 	case TARGET: return h_target;
+	case NEGLIGIBLE: return h_negligible;
 	}
 }

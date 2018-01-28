@@ -100,7 +100,7 @@ class ServiceSnapshot:
     #    return float(result['res']), result['current'], result['prediction'], result['target']
 
     def delay(self, delay_list, uuid_list):
-        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_list': delay_list, 'uuid_list': uuid_list}
+        data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_lists': delay_list, 'uuid_lists': uuid_list}
         #data = {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id, 'delay_list': [signal._VAL.tolist() for signal in delay_list], 'uuid_list': uuid_list}
         result = self._service.post('/UMA/snapshot/delay', data)
         if not result:
