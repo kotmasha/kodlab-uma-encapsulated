@@ -99,6 +99,14 @@ void Agent::delete_snapshot(const string &snapshot_id) {
 	agentLogger.info("Snapshot deleted", _dependency);
 }
 
+const int &Agent::getT() const {
+	return _t;
+}
+
+void Agent::setT(int t) {
+	_t = t;
+}
+
 Agent::~Agent(){
 	try {
 		for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {

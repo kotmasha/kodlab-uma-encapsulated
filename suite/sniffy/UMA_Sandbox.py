@@ -23,7 +23,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     # agent discount parameters
     MOTION_PARAMS=tuple([
         1.-pow(2,-7),   #memory discounting coefficient
-        True,           #Auto-targeting mode
+        False,          #Auto-targeting mode
         ])
     
     # initialize a new experiment
@@ -186,23 +186,23 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
 
     for agent_name in EX._AGENTS:
         EX._AGENTS[agent_name].init()
-        EX._AGENTS[agent_name].validate()
+        #EX._AGENTS[agent_name].validate()
 
     # ONE UPDATE CYCLE (without action) TO "FILL" THE STATE DEQUES
     reported_data=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
-    #for agent in [RT,LT]:
-    #    for token in ['plus','minus']:
-    #        delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
-    #        agent.delay(delay_sigs,token)
+    for agent in [RT,LT]:
+        for token in ['plus','minus']:
+            delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
+            agent.delay(delay_sigs,token)
 
     # SET ARTIFICIAL TARGET ONCE AND FOR ALL
-    #for agent in [RT,LT]:
-    #    for token in ['plus','minus']:
-    #        tmp_target=agent.generate_signal([id_nav]).value().tolist()
-    #        service_snapshot = ServiceSnapshot(agent._ID, token, service)
-    #        service_snapshot.setTarget(tmp_target)
+    for agent in [RT,LT]:
+        for token in ['plus','minus']:
+            tmp_target=agent.generate_signal([id_nav]).value().tolist()
+            service_snapshot = ServiceSnapshot(agent._ID, token, service)
+            service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
     #reported_data=EX.update_state([cid_rt,cid_lt])
@@ -318,7 +318,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
                         break
                     else:
                         continue
-            
+
             #display the results
             tok_BG={'plus':POS_BG,'minus':NEG_BG}
             tok_line={'plus':3-ind,'minus':6+ind}

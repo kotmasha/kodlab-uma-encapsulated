@@ -75,6 +75,9 @@ void DataManager::init_pointers() {
 	dev_negligible = NULL;
 	dev_union_root = NULL;
 	dev_res = NULL;
+	
+	dev_dec_tmp1 = NULL;
+	dev_dec_tmp2 = NULL;
 
 	dataManagerLogger.debug("Setting all pointers to NULL", _dependency);
 }
@@ -191,6 +194,9 @@ void DataManager::init_other_parameter(double &total) {
 	data_util::dev_init(dev_res, 1);
 	data_util::dev_init(dev_union_root, _sensor_size_max);
 
+	data_util::dev_init(dev_dec_tmp1, _measurable_size_max);
+	data_util::dev_init(dev_dec_tmp2, _measurable_size_max);
+
 	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
 }
 
@@ -259,6 +265,9 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		data_util::dev_free(dev_union_root);
 
 		data_util::dev_free(dev_res);
+
+		data_util::dev_free(dev_dec_tmp1);
+		data_util::dev_free(dev_dec_tmp2);
 	}
 	catch (UMAException &e) {
 		dataManagerLogger.error("Fatal error in free_all_parameters, when doing gpu array release", _dependency);
@@ -417,6 +426,9 @@ void DataManager::gen_other_parameters() {
 	data_util::dev_double(dev_diag_, _measurable_size_max);
 	data_util::dev_int(dev_union_root, _sensor_size_max);
 	data_util::dev_float(dev_res, 1);
+
+	data_util::dev_bool(dev_dec_tmp1, _measurable_size_max);
+	data_util::dev_bool(dev_dec_tmp2, _measurable_size_max);
 
 	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_measurable_size_max), _dependency);
 }
@@ -1128,6 +1140,8 @@ bool *DataManager::_dvar_b(int name) {
 	case TARGET: return dev_target;
 	case PREDICTION: return dev_prediction;
 	case NEGLIGIBLE: return dev_negligible;
+	case DEC_TMP1: return dev_dec_tmp1;
+	case DEC_TMP2: return dev_dec_tmp2;
 	}
 }
 

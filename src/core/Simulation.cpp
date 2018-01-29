@@ -47,6 +47,7 @@ vector<float> simulation::decide(Agent *agent, const vector<bool> &obs_plus, con
 	results.push_back(res_plus);
 	results.push_back(res_minus);
 
+	agent->setT(agent->getT() + 1);
 	return results;
 }
 
@@ -100,8 +101,6 @@ void simulation::propagates(bool *npdirs, bool *load, bool *signals, bool *lsign
 	kernel_util::negate_conjunction_star(lsignals, signals, sig_count * measurable_size);
 	//copy result to dst
 	if (dst != NULL) {
-
-
 		data_util::boolD2D(lsignals, dst, sig_count * measurable_size);
 	}
 	simulationLogger.debug("Propagation is done for " + to_string(sig_count) + " sensors");
@@ -163,13 +162,16 @@ float simulation::divergence(DataManager *dm) {
 
 	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), measurable_size);
 
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, measurable_size);
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::TARGET), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::TARGET), 1, measurable_size);
+	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::DEC_TMP1), measurable_size);
+	data_util::boolD2D(dm->_dvar_b(DataManager::TARGET), dm->_dvar_b(DataManager::DEC_TMP2), measurable_size);
 
-	kernel_util::subtraction(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::TARGET), measurable_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::DEC_TMP1), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::DEC_TMP1), 1, measurable_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::DEC_TMP2), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::DEC_TMP2), 1, measurable_size);
+
+	kernel_util::subtraction(dm->_dvar_b(DataManager::DEC_TMP1), dm->_dvar_b(DataManager::DEC_TMP2), measurable_size);
 	//apply weights to the computed divergence signal and output the result:
 
-	uma_base::delta_weight_sum(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::CURRENT), dm->_dvar_f(DataManager::RES), measurable_size);
+	uma_base::delta_weight_sum(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::DEC_TMP1), dm->_dvar_f(DataManager::RES), measurable_size);
 	data_util::floatD2H(dm->_dvar_f(DataManager::RES), dm->_hvar_f(DataManager::RES), 1);
 
 	const float value = *(dm->_hvar_f(DataManager::RES));

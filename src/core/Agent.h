@@ -31,6 +31,8 @@ public:
 	void delete_snapshot(const string &snapshot_id);
 	//void save_agent(ofstream &file);
 	//void copy_test_data(Agent *agent);
+	const int &getT() const;
+	void setT(int t);
 
 	const vector<string> getSnapshotInfo() const;
 	virtual ~Agent();

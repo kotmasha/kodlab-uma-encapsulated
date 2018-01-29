@@ -21,7 +21,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         return abs(p-q) 
 
     # agent discount parameters
-    MOTION_PARAMS=tuple([1.-pow(2,-7), True])
+    MOTION_PARAMS=tuple([1.-pow(2,-7), False])
     
     # initialize a new experiment
     EX=Experiment()
@@ -179,21 +179,21 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     message=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
-    #for agent in [RT,LT]:
-    #    for token in ['plus','minus']:
-    #        delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
-    #        agent.delay(delay_sigs,token)
+    for agent in [RT,LT]:
+        for token in ['plus','minus']:
+            delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
+            agent.delay(delay_sigs,token)
 
     ## SET ARTIFICIAL TARGET ONCE AND FOR ALL
-    #for agent in [RT,LT]:
-    #    for token in ['plus','minus']:
-    #        tmp_target=agent.generate_signal([id_nav]).value().tolist()
-    #        #agent.brain._snapshots[token].setTarget(tmp_target)
-    #        service_snapshot = ServiceSnapshot(agent._ID, token, service)
-    #        service_snapshot.setTarget(tmp_target)
+    for agent in [RT,LT]:
+        for token in ['plus','minus']:
+            tmp_target=agent.generate_signal([id_nav]).value().tolist()
+            #agent.brain._snapshots[token].setTarget(tmp_target)
+            service_snapshot = ServiceSnapshot(agent._ID, token, service)
+            service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
-    #message=EX.update_state([cid_rt,cid_lt])
+    message=EX.update_state([cid_rt,cid_lt])
 
     #
     ### Run
@@ -300,55 +300,58 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         WIN.addch(4,1+2*EX.this_state(id_pos,1),ord('S'),FG)
 
         ### Unpacking extra information
-        WINs.clear()
-        delta=lambda tok: 0 if tok=='plus' else 1
-        for token in ['plus','minus']:
-            WINs.addstr(0+delta(token),0,'Number of sensors in snapshot '+agent._ID+'['+ token +'] : '+str(agent._SIZE[token]))
-            WINs.addstr(2+delta(token),0,'Length of CURRENT['+token+'] :'+str(agent.report_current(token).len()))
-            WINs.addstr(4+delta(token),0,'Length of TARGET['+token+'] :'+str(agent.report_target(token).len()))
-            WINs.addstr(6+delta(token),0,'Length of PREDICTED['+token+'] :'+str(agent.report_predicted(token).len()))
-            WINs.addstr(8+delta(token),0,'Length of LAST['+token+'] :'+str(agent.report_last(token).len()))
-            WINs.addstr(10+delta(token),0,'Length of INITMASK['+token+'] :'+str(agent._INITMASK[token].len()))
+        #WINs.clear()
+        #delta=lambda tok: 0 if tok=='plus' else 1
+        #for token in ['plus','minus']:
+        #    WINs.addstr(0+delta(token),0,'Number of sensors in snapshot '+agent._ID+'['+ token +'] : '+str(agent._SIZE[token]))
+        #    WINs.addstr(2+delta(token),0,'Length of CURRENT['+token+'] :'+str(agent.report_current(token).len()))
+        #    WINs.addstr(4+delta(token),0,'Length of TARGET['+token+'] :'+str(agent.report_target(token).len()))
+        #    WINs.addstr(6+delta(token),0,'Length of PREDICTED['+token+'] :'+str(agent.report_predicted(token).len()))
+        #    WINs.addstr(8+delta(token),0,'Length of LAST['+token+'] :'+str(agent.report_last(token).len()))
+        #    WINs.addstr(10+delta(token),0,'Length of INITMASK['+token+'] :'+str(agent._INITMASK[token].len()))
 
         ## Unpacking extra information
-        #WINs.clear()
-        #WINs.addstr(0,0,'Observation:')
-        #WINs.addstr(4,0,'Chosen signed signal:')
+        WINs.clear()
+        WINs.addstr(0,0,'Observation:')
+        WINs.addstr(4,0,'Chosen signed signal:')
         #
-        #tok_BG={'plus':POS_BG,'minus':NEG_BG}
-        ##vpos={'plus':6,'minus':8}
+        tok_BG={'plus':POS_BG,'minus':NEG_BG}
+        vpos={'plus':6,'minus':8}
+        hpos = lambda x, token: 0 if x == 0 else 2 + len('  '.join(namelist[token][:x]))
         ##
         # CURRENT OBSERVATION
-        #OBS=agent._OBSERVE
-        #OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
+        OBS=agent._OBSERVE
+        OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
 
         #SIGNED SIGNAL TO WATCH:
         #SIG=agent._CURRENT
         
-        #sig=agent.generate_signal(['x0'])
+        sig=agent.generate_signal(['x0'])
         #sig = Signal([True,False,False,True])
         #sig=agent.generate_signal([EX.nid('{x0*;x2}')])
         #sig=agent.generate_signal([EX.nid('#x2')])
         #sig=agent.generate_signal([EX.nid('#x0*')])
-        #SIG=agent.brain.up(sig,False)
 
-        #SIG = {}
-        #for token in ['plus', 'minus']:
-        #    snapshot = ServiceSnapshot(agent._ID, token, service)
-        #    res = snapshot.make_up(sig.value().tolist())
-        #    SIG[token] = Signal(res)
+        SIG = {}
+        for token in ['plus', 'minus']:
+            snapshot = ServiceSnapshot(agent._ID, token, service)
+            res = snapshot.make_up(sig.value().tolist())
+            SIG[token] = Signal(res)
         #    #print sig.value().tolist()
         #    #print SIG[token]._VAL
 
         #
-        #namelist = agent._SENSORS
+        namelist = agent._SENSORS
         #
-        #for x,mid in enumerate(agent._SENSORS):
-        #    this_BG=OBS_BG if OBS.out(x) else REG_BG
-        #    WINs.addstr(2,hpos(x),namelist[x],this_BG)
-        #    for token in ['plus','minus']:
-        #        this_BG=tok_BG[token] if SIG[token].out(x) else REG_BG
-        #        WINs.addstr(vpos[token],hpos(x),namelist[x],this_BG)
+        print OBS
+        print len(agent._SENSORS["plus"])
+        exit()
+        for x,mid in enumerate(agent._SENSORS["plus"]):
+            this_BG=OBS_BG if OBS.out(x) else REG_BG
+            WINs.addstr(2,hpos(x, token),namelist[token][x],this_BG)
+            for token in ['plus','minus']:
+                this_BG=tok_BG[token] if SIG[token].out(x) else REG_BG
+                WINs.addstr(vpos[token],hpos(x, token),namelist[token][x],this_BG)
         
         # refresh the window
         WIN.overlay(stdscr)
