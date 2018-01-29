@@ -37,6 +37,13 @@ void DataHandler::handle_update(UMARestRequest &request) {
 		request.set_message("Customized current value set");
 		return;
 	}
+	else if (request_url == "/UMA/data/target" && request.check_data_field("target")) {
+		vector<bool> target = request.get_bool1d_data("target");
+		dm->setTarget(target);
+
+		request.set_message("Customized target value set");
+		return;
+	}
 
 	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
 }

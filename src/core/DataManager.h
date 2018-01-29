@@ -10,7 +10,7 @@ using namespace std;
 
 class DLL_PUBLIC DataManager {
 public:
-	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK, CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL, SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES };
+	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK, CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL, SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES, DEC_TMP1, DEC_TMP2 };
 protected:
 	/*
 	-----------------variables used in kernel.cu--------------------------
@@ -65,6 +65,9 @@ protected:
 	bool *h_up;
 	//down array used for separate propagationm have no corresponding device value
 	bool *h_down;
+	//decision tmp variables
+	bool *dev_dec_tmp1;
+	bool *dev_dec_tmp2;
 	//result variable for distance/divergence
 	float *h_res, *dev_res;
 	/*

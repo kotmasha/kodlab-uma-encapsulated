@@ -133,8 +133,8 @@ class ServiceSnapshot:
     def setThreshold(self, threshold):
         return self._service.put('/UMA/object/snapshot', {'threshold': threshold}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
-    def setTarget(self, target_list):
-        return self._service.put('/UMA/data/target', {'target_list': target_list}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
+    def setTarget(self, target):
+        return self._service.put('/UMA/data/target', {'target': target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
     def setAutoTarget(self, auto_target):
         return self._service.put('/UMA/object/snapshot', {'auto_target': auto_target}, {'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
