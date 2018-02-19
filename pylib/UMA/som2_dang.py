@@ -533,7 +533,9 @@ class Experiment(object):
                     # Restructuring
                     # STEP 1. Add new delayed sensors:
                     #sensors_to_be_added.extend(new_masks)
-                    agent.delay(sensors_to_be_added)
+                    #ENRICHMENT DONE HERE
+                    #agent.delay(sensors_to_be_added)
+                    
                     # Step 2. Remove old sensors:
                     #sensors_to_be_removed = agent.ALL_FALSE()
                     #for sig in delayed_downs:
@@ -707,14 +709,15 @@ class Agent(object):
             snap_service[token].setAutoTarget(self._PARAMS[1])
             snap_service[token].init_with_sensors(
                 [[self._SENSORS[token][2 * i], self._SENSORS[token][2 * i + 1]] for i in xrange(self._INITIAL_SIZE)])
+            snap_service[token].init()
 
-    def validate(self):
-        snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
-        snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
-        # snapshot_plus.setInitialSize(self._INITIAL_SIZE)
-        # snapshot_minus.setInitialSize(self._INITIAL_SIZE)
-        snapshot_plus.init()
-        snapshot_minus.init()
+    #def validate(self):
+    #    snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
+    #    snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
+    #    # snapshot_plus.setInitialSize(self._INITIAL_SIZE)
+    #    # snapshot_minus.setInitialSize(self._INITIAL_SIZE)
+    #    snapshot_plus.init()
+    #    snapshot_minus.init()
 
     def ALL_FALSE(self, token=None):
         token = ('plus' if self._ACTIVE else 'minus') if token is None else token

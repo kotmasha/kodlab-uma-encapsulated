@@ -87,10 +87,7 @@ Output: None
 __global__ void negate_conjunction_star_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
-		bool m1 = b1[2 * index];
-		bool m2 = b1[2 * index + 1];
-		b1[2 * index] = m1 && !b2[2 * index + 1];
-		b1[2 * index + 1] = m2 && !b2[2 * index];
+		b1[index] = b1[index] && !b2[compi(index)];
 	}
 }
 
@@ -101,12 +98,7 @@ Input: two bool array, and size of both
 __global__ void conjunction_star_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
-		if (index % 2 == 0) {
-			b1[index] = b1[index] && b2[index + 1];
-		}
-		else {
-			b1[index] = b1[index] && b2[index - 1];
-		}
+		b1[index] = b1[index] && b2[compi(index)];
 	}
 }
 

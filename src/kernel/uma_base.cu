@@ -183,8 +183,10 @@ Input: weight, observe signal, measurable size, q, phi value, and activity(indic
 __global__ void update_weights_kernel(double *weights, bool *observe, int measurable_size, double q, double phi, bool activity){
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if(indexX <= indexY && indexY < measurable_size){
-		weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
+	if (indexX <= indexY && indexY < measurable_size) {
+		if (activity) {
+			weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
+		}
 	}
 }
 
@@ -231,7 +233,7 @@ Output: None
 __global__ void update_thresholds_kernel(bool *dir, double *thresholds, double last_total, double q, double phi, int sensor_size) {
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if (indexY < sensor_size && indexX < indexY) {
+	if (indexY < sensor_size && indexX <= indexY) {
 		update_thresholds_GPU(dir, thresholds, last_total, q, phi, indexX, indexY);
 	}
 }
@@ -614,7 +616,7 @@ void uma_base::calculate_target(double *diag, bool *target, int sensor_size) {
 	umaBaseLogger.debug("calculate_target_kernel invoked!");
 }
 
-void uma_base::update_thresholds(bool *dirs, double *thresholds, double total_, double q, double phi, int &sensor_size) {
+void uma_base::update_thresholds(bool *dirs, double *thresholds, double total_, double q, double phi, int sensor_size) {
 	update_thresholds_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> > (dirs, thresholds, total_, q, phi, sensor_size);
 	umaBaseLogger.debug("update_thresholds_kernel invoked!");
 }
