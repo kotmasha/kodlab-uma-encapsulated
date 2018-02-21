@@ -7,7 +7,7 @@ namespace uma_base {
 	void update_weights(double *weights, bool *observe, int measurable_size, double q, double phi, bool active);
 	void get_weights_diag(double *weights, double *diag, double *diag_, int measurable_size);
 	void calculate_target(double *diag, bool *target, int sensor_size);
-	void update_thresholds(bool *dirs, double *thresholds, double total_, double q, double phi, int &sensor_size);
+	void update_thresholds(bool *dirs, double *thresholds, double total_, double q, double phi, int sensor_size);
 	void orient_all(bool *dirs, double *weights, double *thresholds, double total, int sensor_size);
 	void dfs(bool *signal, bool *dirs, double *thresholds, double q, int measurable_size);
 	void floyd(bool *npdirs, int measurable_size);

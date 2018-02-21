@@ -21,7 +21,7 @@ The function requires that the 'row' has to be not small than the 'col'
 __host__ __device__ int ind(int row, int col) {
 	if (row >= col)
 		return row * (row + 1) / 2 + col;
-	else if (row + 1 == col) {
+	else if (row + 1 == col && row % 2 == 0) {
 		return col * (col + 1) / 2 + row;
 	}
 	else {
@@ -36,7 +36,7 @@ input same as ind, row and col
 __host__ __device__ int npdir_ind(int row, int col) {
 	int offset = (row + 1) / 2;
 	if(row >= col) return offset + ind(row, col);
-	else if (row + 1 == col) return offset + 1 + ind(row, row);
+	else if (row + 1 == col && row % 2 == 0) return offset + 1 + ind(row, row);
 	else return npdir_ind(compi(col), compi(row));
 }
 

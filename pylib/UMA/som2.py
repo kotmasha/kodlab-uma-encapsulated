@@ -510,21 +510,21 @@ class Experiment(object):
                     # abduction over delayed sensors implying an initial sensor
                     # STEP 1. Gather them
 
-                    init_downs = agent.close_downwards([agent.generate_signal([sid]) for sid in agent.report_initial()])
-                    delayed_downs = [sig.subtract(agent.report_initmask()) for sig in init_downs]
-                    # STEP 2. Perform abduction
-                    new_masks = agent.perform_abduction(delayed_downs)
-
-                    # Restructuring
-                    # STEP 1. Add new delayed sensors:
-                    sensors_to_be_added.extend(new_masks)
-                    agent.delay(sensors_to_be_added)
-                    # Step 2. Remove old sensors:
-                    sensors_to_be_removed = agent.ALL_FALSE()
-                    for sig in delayed_downs:
-                        sensors_to_be_removed.add(sig)
-                    agent.pad_signal(sensors_to_be_removed)
-                    agent.prune(sensors_to_be_removed)
+                    #init_downs = agent.close_downwards([agent.generate_signal([sid]) for sid in agent.report_initial()])
+                    #delayed_downs = [sig.subtract(agent.report_initmask()) for sig in init_downs]
+                    ## STEP 2. Perform abduction
+                    #new_masks = agent.perform_abduction(delayed_downs)
+#
+                    ## Restructuring
+                    ## STEP 1. Add new delayed sensors:
+                    #sensors_to_be_added.extend(new_masks)
+                    #agent.delay(sensors_to_be_added)
+                    ## Step 2. Remove old sensors:
+                    #sensors_to_be_removed = agent.ALL_FALSE()
+                    #for sig in delayed_downs:
+                    #    sensors_to_be_removed.add(sig)
+                    #agent.pad_signal(sensors_to_be_removed)
+                    #agent.prune(sensors_to_be_removed)
 
                     # RANDOM THOUGHTS:
                     # There needs to be a budget of delayed units, and we should merely
