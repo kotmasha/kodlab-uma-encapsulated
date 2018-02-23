@@ -49,16 +49,16 @@ TEST(bool_signal_to_int_idx, bool_signal_to_int_idx_test) {
 	EXPECT_NE(SignalUtil::bool_signal_to_int_idx(signal3), list3);
 }
 
-TEST(measurable_signal_to_sensor_signal, measurable_signal_to_sensor_signal_test) {
+TEST(attr_sensor_signal_to_sensor_signal, attr_sensor_signal_to_sensor_signal_test) {
 	vector<bool> signal1 = { 1, 0, 0, 1, 0, 0, 1, 1 };
 	vector<bool> signal2 = { 0, 0, 1, 1, 0, 1, 1, 1, 0, 0 };
 	vector<bool> signal3 = { 0, 1, 0, 1, 1, 1 };
 	vector<bool> list1 = { 1, 1, 0, 1 };
 	vector<bool> list2 = { 0, 1, 1, 1, 0 };
 	vector<bool> list3 = { 1, 1, 1, 1, 1 };
-	EXPECT_EQ(SignalUtil::measurable_signal_to_sensor_signal(signal1), list1);
-	EXPECT_EQ(SignalUtil::measurable_signal_to_sensor_signal(signal2), list2);
-	EXPECT_NE(SignalUtil::measurable_signal_to_sensor_signal(signal3), list3);
+	EXPECT_EQ(SignalUtil::attr_sensor_signal_to_sensor_signal(signal1), list1);
+	EXPECT_EQ(SignalUtil::attr_sensor_signal_to_sensor_signal(signal2), list2);
+	EXPECT_NE(SignalUtil::attr_sensor_signal_to_sensor_signal(signal3), list3);
 }
 
 int main(int argc, char** argv)

@@ -4,9 +4,9 @@
 #include "Global.h"
 using namespace std;
 
-class Measurable;
+class AttrSensor;
 class Sensor;
-class MeasurablePair;
+class AttrSensorPair;
 class SensorPair;
 class Agent;
 class DataManager;
@@ -72,10 +72,10 @@ public:
 	---------------------GET FUNCTION----------------------
 	*/
 	SensorPair *getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const;
-	Measurable *getMeasurable(int idx) const;
-	Measurable *getMeasurable(const string &measurable_id) const;
-	MeasurablePair *getMeasurablePair(int m_idx1, int m_idx2) const;
-	MeasurablePair *getMeasurablePair(const string &mid1, const string &mid2) const;
+	AttrSensor *getAttrSensor(int idx) const;
+	AttrSensor *getAttrSensor(const string &measurable_id) const;
+	AttrSensorPair *getAttrSensorPair(int m_idx1, int m_idx2) const;
+	AttrSensorPair *getAttrSensorPair(const string &mid1, const string &mid2) const;
 	vector<bool> getAmperList(const string &sensor_id) const;
 	vector<string> getAmperListID(const string &sensor_id) const;
 	Sensor *getSensor(const string &sensor_id) const;

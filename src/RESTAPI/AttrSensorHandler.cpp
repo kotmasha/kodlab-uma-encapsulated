@@ -1,23 +1,23 @@
-#include "MeasurableHandler.h"
+#include "AttrSensorHandler.h"
 #include "UMAException.h"
 #include "World.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "Sensor.h"
 #include "SensorPair.h"
-#include "Measurable.h"
-#include "MeasurablePair.h"
+#include "AttrSensor.h"
+#include "AttrSensorPair.h"
 
-MeasurableHandler::MeasurableHandler(const string &handler_name) : UMARestHandler(handler_name) {
+AttrSensorHandler::AttrSensorHandler(const string &handler_name) : UMARestHandler(handler_name) {
 }
 
-void MeasurableHandler::handle_create(UMARestRequest &request) {
+void AttrSensorHandler::handle_create(UMARestRequest &request) {
 	//no post call available for measurable or measurable pair, as they are created by sensor
 	const string request_url = request.get_request_url();
 	throw UMAException("Cannot handle POST " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void MeasurableHandler::handle_update(UMARestRequest &request) {
+void AttrSensorHandler::handle_update(UMARestRequest &request) {
 	//only for test purpose
 	const string request_url = request.get_request_url();
 	if (request_url == "/UMA/object/measurable") {
@@ -31,7 +31,7 @@ void MeasurableHandler::handle_update(UMARestRequest &request) {
 	throw UMAException("Cannot handle PUT " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void MeasurableHandler::handle_read(UMARestRequest &request) {
+void AttrSensorHandler::handle_read(UMARestRequest &request) {
 	const string request_url = request.get_request_url();
 	if (request_url == "/UMA/object/measurable") {
 		get_measurable(request);
@@ -45,40 +45,40 @@ void MeasurableHandler::handle_read(UMARestRequest &request) {
 	throw UMAException("Cannot handle GET " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void MeasurableHandler::handle_delete(UMARestRequest &request) {
+void AttrSensorHandler::handle_delete(UMARestRequest &request) {
 	//no delete call for measurable measurable_pair, they are handled in sensor
 	const string request_url = request.get_request_url();
 	throw UMAException("Cannot handle DELETE " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void MeasurableHandler::get_measurable(UMARestRequest &request) {
+void AttrSensorHandler::get_measurable(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string measurable_id = request.get_string_query("measurable_id");
 
 	Agent *agent = World::getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	Measurable *measurable = snapshot->getMeasurable(measurable_id);
+	AttrSensor *measurable = snapshot->getAttrSensor(measurable_id);
 	const double diag = measurable->getDiag();
 	const double old_diag = measurable->getOldDiag();
 	bool current = measurable->getCurrent();
 	bool isOriginPure = measurable->getIsOriginPure();
 
-	request.set_message("Measurable info get");
+	request.set_message("AttrSensor info get");
 	request.set_data("diag", diag);
 	request.set_data("old_diag", old_diag);
 	request.set_data("status", current);
 	request.set_data("isOriginPure", isOriginPure);
 }
 
-void MeasurableHandler::update_measurable(UMARestRequest &request) {
+void AttrSensorHandler::update_measurable(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string measurable_id = request.get_string_query("measurable_id");
 
 	Agent *agent = World::getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	Measurable *measurable = snapshot->getMeasurable(measurable_id);
+	AttrSensor *measurable = snapshot->getAttrSensor(measurable_id);
 
 	if (request.check_data_field("diag")) {
 		const double diag = request.get_double_data("diag");
@@ -98,7 +98,7 @@ void MeasurableHandler::update_measurable(UMARestRequest &request) {
 	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void MeasurableHandler::get_measurable_pair(UMARestRequest &request) {
+void AttrSensorHandler::get_measurable_pair(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string measurable_id1 = request.get_string_query("measurable1");
@@ -106,16 +106,16 @@ void MeasurableHandler::get_measurable_pair(UMARestRequest &request) {
 
 	Agent *agent = World::getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	MeasurablePair *measurable_pair = snapshot->getMeasurablePair(measurable_id1, measurable_id2);
+	AttrSensorPair *measurable_pair = snapshot->getAttrSensorPair(measurable_id1, measurable_id2);
 
 	const double w = measurable_pair->getW();
 	const bool d = measurable_pair->getD();
-	request.set_message("Measurable pair info get");
+	request.set_message("AttrSensor pair info get");
 	request.set_data("w", w);
 	request.set_data("d", d);
 }
 
-void MeasurableHandler::update_measurable_pair(UMARestRequest &request) {
+void AttrSensorHandler::update_measurable_pair(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string measurable_id1 = request.get_string_query("measurable1");
@@ -123,7 +123,7 @@ void MeasurableHandler::update_measurable_pair(UMARestRequest &request) {
 
 	Agent *agent = World::getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	MeasurablePair *measurable_pair = snapshot->getMeasurablePair(measurable_id1, measurable_id2);
+	AttrSensorPair *measurable_pair = snapshot->getAttrSensorPair(measurable_id1, measurable_id2);
 
 	if (request.check_data_field("w")) {
 		const double w = request.get_double_data("w");
@@ -143,4 +143,4 @@ void MeasurableHandler::update_measurable_pair(UMARestRequest &request) {
 	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-MeasurableHandler::~MeasurableHandler() {}
+AttrSensorHandler::~AttrSensorHandler() {}

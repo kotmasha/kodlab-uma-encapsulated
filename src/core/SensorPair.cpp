@@ -1,5 +1,5 @@
 #include "SensorPair.h"
-#include "MeasurablePair.h"
+#include "AttrSensorPair.h"
 #include "Sensor.h"
 
 extern int ind(int row, int col);
@@ -13,10 +13,10 @@ SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
 	file.read((char *)(&vthreshold), sizeof(double));
 	_sensor_i = sensors[idx_i];
 	_sensor_j = sensors[idx_j];
-	mij = new MeasurablePair(file, _sensor_i->_m, _sensor_j->_m);
-	mi_j = new MeasurablePair(file, _sensor_i->_m, _sensor_j->_cm);
-	m_ij = new MeasurablePair(file, _sensor_i->_cm, _sensor_j->_m);
-	m_i_j = new MeasurablePair(file, _sensor_i->_cm, _sensor_j->_cm);
+	mij = new AttrSensorPair(file, _sensor_i->_m, _sensor_j->_m);
+	mi_j = new AttrSensorPair(file, _sensor_i->_m, _sensor_j->_cm);
+	m_ij = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_m);
+	m_i_j = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_cm);
 	pointers_to_null();
 }
 */
@@ -26,20 +26,20 @@ init function use sensor pointer, measurable pointer to create measurable pairs
 */
 SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, double total):
 	_sensor_i(_sensor_i),_sensor_j(_sensor_j){
-	mij = new MeasurablePair(_sensor_i->_m, _sensor_j->_m, total / 4.0, _sensor_i == _sensor_j);
-	mi_j = new MeasurablePair(_sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
-	m_ij = new MeasurablePair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
-	m_i_j = new MeasurablePair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
+	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, total / 4.0, _sensor_i == _sensor_j);
+	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
+	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
+	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
 	pointers_to_null();
 	this->vthreshold = threshold;
 }
 
 SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, const vector<double> &w, const vector<bool> &b):
 	_sensor_i(_sensor_i), _sensor_j(_sensor_j) {
-	mij = new MeasurablePair(_sensor_i->_m, _sensor_j->_m, w[0], b[0]);
-	mi_j = new MeasurablePair(_sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
-	m_ij = new MeasurablePair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
-	m_i_j = new MeasurablePair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
+	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, w[0], b[0]);
+	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
+	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
+	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
 	pointers_to_null();
 	this->vthreshold = threshold;
 }
@@ -116,7 +116,7 @@ void SensorPair::setAllPointers(double *weights, bool *dirs, double *thresholds)
 /*
 This function is getting the measurable pair by its pure/compi
 */
-MeasurablePair *SensorPair::getMeasurablePair(bool isOriginPure_i, bool isOriginPure_j){
+AttrSensorPair *SensorPair::getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j){
 	if(isOriginPure_i && isOriginPure_j) return mij;
 	else if(isOriginPure_i && !isOriginPure_j) return mi_j;
 	else if(!isOriginPure_i && isOriginPure_j) return m_ij;

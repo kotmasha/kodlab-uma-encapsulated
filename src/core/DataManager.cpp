@@ -127,31 +127,31 @@ Input: new sensor size and whether changing max of not
 */
 void DataManager::set_size(int sensor_size, bool change_max) {
 	_sensor_size = sensor_size;
-	_measurable_size = 2 * _sensor_size;
+	_attr_sensor_size = 2 * _sensor_size;
 	_sensor2d_size = _sensor_size * (_sensor_size + 1) / 2;
-	_measurable2d_size = _measurable_size * (_measurable_size + 1) / 2;
+	_attr_sensor2d_size = _attr_sensor_size * (_attr_sensor_size + 1) / 2;
 	_mask_amper_size = _sensor_size * (_sensor_size + 1);
-	_npdir_size = _measurable2d_size + _sensor_size;
+	_npdir_size = _attr_sensor2d_size + _sensor_size;
 
 	dataManagerLogger.info("Setting sensor size to " + to_string(_sensor_size), _dependency);
-	dataManagerLogger.debug("Setting measurable size to " + to_string(_measurable_size), _dependency);
+	dataManagerLogger.debug("Setting attr_sensor size to " + to_string(_attr_sensor_size), _dependency);
 	dataManagerLogger.debug("Setting sensor size 2D to " + to_string(_sensor2d_size), _dependency);
-	dataManagerLogger.debug("Setting measurable size 2D to " + to_string(_measurable2d_size), _dependency);
+	dataManagerLogger.debug("Setting attr_sensor size 2D to " + to_string(_attr_sensor2d_size), _dependency);
 	dataManagerLogger.debug("Setting mask amper size to " + to_string(_mask_amper_size), _dependency);
 	dataManagerLogger.debug("Setting npdir size to " + to_string(_npdir_size), _dependency);
 
 	if (change_max) {
 		_sensor_size_max = (int)(_sensor_size * (1 + _memory_expansion));
-		_measurable_size_max = 2 * _sensor_size_max;
+		_attr_sensor_size_max = 2 * _sensor_size_max;
 		_sensor2d_size_max = _sensor_size_max * (_sensor_size_max + 1) / 2;
-		_measurable2d_size_max = _measurable_size_max * (_measurable_size_max + 1) / 2;
+		_attr_sensor2d_size_max = _attr_sensor_size_max * (_attr_sensor_size_max + 1) / 2;
 		_mask_amper_size_max = _sensor_size_max * (_sensor_size_max + 1);
-		_npdir_size_max = _measurable2d_size_max + _sensor_size_max;
+		_npdir_size_max = _attr_sensor2d_size_max + _sensor_size_max;
 
 		dataManagerLogger.debug("Setting max sensor size to " + to_string(_sensor_size_max), _dependency);
-		dataManagerLogger.debug("Setting max measurable size to " + to_string(_measurable_size_max), _dependency);
+		dataManagerLogger.debug("Setting max attr_sensor size to " + to_string(_attr_sensor_size_max), _dependency);
 		dataManagerLogger.debug("Setting max sensor size 2D to " + to_string(_sensor2d_size_max), _dependency);
-		dataManagerLogger.debug("Setting max measurable size 2D to " + to_string(_measurable2d_size_max), _dependency);
+		dataManagerLogger.debug("Setting max attr_sensor size 2D to " + to_string(_attr_sensor2d_size_max), _dependency);
 		dataManagerLogger.debug("Setting max mask amper size to " + to_string(_mask_amper_size_max), _dependency);
 		dataManagerLogger.debug("Setting max npdir size to " + to_string(_npdir_size_max), _dependency);
 	}
@@ -163,7 +163,7 @@ init other parameters
 Input: total value
 */
 void DataManager::init_other_parameter(double &total) {
-	for (int i = 0; i < _measurable_size_max; ++i) {
+	for (int i = 0; i < _attr_sensor_size_max; ++i) {
 		h_observe[i] = false;
 		h_observe_[i] = false;
 		h_signal[i] = false;
@@ -183,21 +183,21 @@ void DataManager::init_other_parameter(double &total) {
 		h_union_root[i] = 0;
 	}
 
-	data_util::dev_init(dev_observe, _measurable_size_max);
-	data_util::dev_init(dev_signal, _measurable_size_max);
-	data_util::dev_init(dev_load, _measurable_size_max);
-	data_util::dev_init(dev_mask, _measurable_size_max);
-	data_util::dev_init(dev_current, _measurable_size_max);
-	data_util::dev_init(dev_target, _measurable_size_max);
-	data_util::dev_init(dev_prediction, _measurable_size_max);
-	data_util::dev_init(dev_negligible, _measurable_size_max);
+	data_util::dev_init(dev_observe, _attr_sensor_size_max);
+	data_util::dev_init(dev_signal, _attr_sensor_size_max);
+	data_util::dev_init(dev_load, _attr_sensor_size_max);
+	data_util::dev_init(dev_mask, _attr_sensor_size_max);
+	data_util::dev_init(dev_current, _attr_sensor_size_max);
+	data_util::dev_init(dev_target, _attr_sensor_size_max);
+	data_util::dev_init(dev_prediction, _attr_sensor_size_max);
+	data_util::dev_init(dev_negligible, _attr_sensor_size_max);
 	data_util::dev_init(dev_res, 1);
 	data_util::dev_init(dev_union_root, _sensor_size_max);
 
-	data_util::dev_init(dev_dec_tmp1, _measurable_size_max);
-	data_util::dev_init(dev_dec_tmp2, _measurable_size_max);
+	data_util::dev_init(dev_dec_tmp1, _attr_sensor_size_max);
+	data_util::dev_init(dev_dec_tmp2, _attr_sensor_size_max);
 
-	uma_base::init_diag(dev_diag, dev_diag_, total, total, _measurable_size_max);
+	uma_base::init_diag(dev_diag, dev_diag_, total, total, _attr_sensor_size_max);
 }
 
 
@@ -282,14 +282,14 @@ This function is generating dir matrix memory both on host and device
 */
 void DataManager::gen_direction() {
 	//malloc the space
-	h_dirs = new bool[_measurable2d_size_max];
-	data_util::dev_bool(dev_dirs, _measurable2d_size_max);
+	h_dirs = new bool[_attr_sensor2d_size_max];
+	data_util::dev_bool(dev_dirs, _attr_sensor2d_size_max);
 
 	//fill in all 0
-	memset(h_dirs, 0, _measurable2d_size_max * sizeof(bool));
-	data_util::dev_init(dev_dirs, _measurable2d_size_max);
+	memset(h_dirs, 0, _attr_sensor2d_size_max * sizeof(bool));
+	data_util::dev_init(dev_dirs, _attr_sensor2d_size_max);
 
-	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
+	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_attr_sensor2d_size_max), _dependency);
 }
 
 /*
@@ -297,14 +297,14 @@ This function is generating weight matrix memory both on host and device
 */
 void DataManager::gen_weight() {
 	//malloc the space
-	h_weights = new double[_measurable2d_size_max];
-	data_util::dev_double(dev_weights, _measurable2d_size_max);
+	h_weights = new double[_attr_sensor2d_size_max];
+	data_util::dev_double(dev_weights, _attr_sensor2d_size_max);
 
 	//fill in all 0
-	memset(h_weights, 0, _measurable2d_size_max * sizeof(double));
-	data_util::dev_init(dev_weights, _measurable2d_size_max);
+	memset(h_weights, 0, _attr_sensor2d_size_max * sizeof(double));
+	data_util::dev_init(dev_weights, _attr_sensor2d_size_max);
 
-	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_measurable2d_size_max), _dependency);
+	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_attr_sensor2d_size_max), _dependency);
 }
 
 /*
@@ -354,92 +354,92 @@ void DataManager::gen_np_direction() {
 
 void DataManager::gen_signals() {
 	//malloc the space
-	h_signals = new bool[_measurable_size_max * _measurable_size_max];
-	h_lsignals = new bool[_measurable_size_max * _measurable_size_max];
-	data_util::dev_bool(dev_signals, _measurable_size_max * _measurable_size_max);
-	data_util::dev_bool(dev_lsignals, _measurable_size_max * _measurable_size_max);
+	h_signals = new bool[_attr_sensor_size_max * _attr_sensor_size_max];
+	h_lsignals = new bool[_attr_sensor_size_max * _attr_sensor_size_max];
+	data_util::dev_bool(dev_signals, _attr_sensor_size_max * _attr_sensor_size_max);
+	data_util::dev_bool(dev_lsignals, _attr_sensor_size_max * _attr_sensor_size_max);
 
 	//init with all false
-	memset(h_signals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
-	memset(h_lsignals, 0, _measurable_size_max * _measurable_size_max * sizeof(bool));
-	data_util::dev_init(dev_signals, _measurable_size_max * _measurable_size_max);
-	data_util::dev_init(dev_lsignals, _measurable_size_max * _measurable_size_max);
+	memset(h_signals, 0, _attr_sensor_size_max * _attr_sensor_size_max * sizeof(bool));
+	memset(h_lsignals, 0, _attr_sensor_size_max * _attr_sensor_size_max * sizeof(bool));
+	data_util::dev_init(dev_signals, _attr_sensor_size_max * _attr_sensor_size_max);
+	data_util::dev_init(dev_lsignals, _attr_sensor_size_max * _attr_sensor_size_max);
 
-	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
-	dataManagerLogger.debug(to_string(_measurable_size_max) + " num of loaded signals with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_measurable_size_max * _measurable_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_attr_sensor_size_max) + " num of signals with length " + to_string(_attr_sensor_size_max) + " are generated, total size " + to_string(_attr_sensor_size_max * _attr_sensor_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_attr_sensor_size_max) + " num of loaded signals with length " + to_string(_attr_sensor_size_max) + " are generated, total size " + to_string(_attr_sensor_size_max * _attr_sensor_size_max), _dependency);
 }
 
 void DataManager::gen_npdir_mask() {
 	//malloc the space
-	h_npdir_mask = new bool[_sensor_size_max * _measurable_size_max];
-	data_util::dev_bool(dev_npdir_mask, _sensor_size_max * _measurable_size_max);
+	h_npdir_mask = new bool[_sensor_size_max * _attr_sensor_size_max];
+	data_util::dev_bool(dev_npdir_mask, _sensor_size_max * _attr_sensor_size_max);
 
 	//init with all false
-	memset(h_npdir_mask, 0, _sensor_size_max * _measurable_size_max * sizeof(bool));
-	data_util::dev_init(dev_npdir_mask, _sensor_size_max * _measurable_size_max);
+	memset(h_npdir_mask, 0, _sensor_size_max * _attr_sensor_size_max * sizeof(bool));
+	data_util::dev_init(dev_npdir_mask, _sensor_size_max * _attr_sensor_size_max);
 
-	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_measurable_size_max) + " are generated, total size " + to_string(_sensor_size_max * _measurable_size_max), _dependency);
+	dataManagerLogger.debug(to_string(_sensor_size_max) + " num of npdir mask with length " + to_string(_attr_sensor_size_max) + " are generated, total size " + to_string(_sensor_size_max * _attr_sensor_size_max), _dependency);
 }
 
 void DataManager::gen_dists() {
 	//malloc the space
-	h_dists = new int[_measurable_size_max * _measurable_size_max];
-	data_util::dev_int(dev_dists, _measurable_size_max * _measurable_size_max);
+	h_dists = new int[_attr_sensor_size_max * _attr_sensor_size_max];
+	data_util::dev_int(dev_dists, _attr_sensor_size_max * _attr_sensor_size_max);
 
 	//init with all 0
-	memset(h_dists, 0, _measurable_size_max * _measurable_size_max * sizeof(int));
-	data_util::dev_init(dev_dists, _measurable_size_max * _measurable_size_max);
+	memset(h_dists, 0, _attr_sensor_size_max * _attr_sensor_size_max * sizeof(int));
+	data_util::dev_init(dev_dists, _attr_sensor_size_max * _attr_sensor_size_max);
 
-	dataManagerLogger.debug(to_string(_measurable_size_max) + "*" + to_string(_measurable_size_max) + "=" + to_string(_measurable_size_max * _measurable_size_max) + " num of space allocated for dists, used for block GPU", _dependency);
+	dataManagerLogger.debug(to_string(_attr_sensor_size_max) + "*" + to_string(_attr_sensor_size_max) + "=" + to_string(_attr_sensor_size_max * _attr_sensor_size_max) + " num of space allocated for dists, used for block GPU", _dependency);
 }
 
 /*
 This function generate other parameter
 */
 void DataManager::gen_other_parameters() {
-	h_observe = new bool[_measurable_size_max];
-	h_observe_ = new bool[_measurable_size_max];
-	h_signal = new bool[_measurable_size_max];
-	h_load = new bool[_measurable_size_max];
-	h_mask = new bool[_measurable_size_max];
-	h_current = new bool[_measurable_size_max];
-	h_target = new bool[_measurable_size_max];
-	h_negligible = new bool[_measurable_size_max];
-	h_diag = new double[_measurable_size_max];
-	h_diag_ = new double[_measurable_size_max];
-	h_prediction = new bool[_measurable_size_max];
-	h_up = new bool[_measurable_size_max];
-	h_down = new bool[_measurable_size_max];
+	h_observe = new bool[_attr_sensor_size_max];
+	h_observe_ = new bool[_attr_sensor_size_max];
+	h_signal = new bool[_attr_sensor_size_max];
+	h_load = new bool[_attr_sensor_size_max];
+	h_mask = new bool[_attr_sensor_size_max];
+	h_current = new bool[_attr_sensor_size_max];
+	h_target = new bool[_attr_sensor_size_max];
+	h_negligible = new bool[_attr_sensor_size_max];
+	h_diag = new double[_attr_sensor_size_max];
+	h_diag_ = new double[_attr_sensor_size_max];
+	h_prediction = new bool[_attr_sensor_size_max];
+	h_up = new bool[_attr_sensor_size_max];
+	h_down = new bool[_attr_sensor_size_max];
 	h_union_root = new int[_sensor_size_max];
 	h_res = new float;
 
-	data_util::dev_bool(dev_observe, _measurable_size_max);
-	data_util::dev_bool(dev_signal, _measurable_size_max);
-	data_util::dev_bool(dev_load, _measurable_size_max);
-	data_util::dev_bool(dev_mask, _measurable_size_max);
-	data_util::dev_bool(dev_current, _measurable_size_max);
-	data_util::dev_bool(dev_target, _measurable_size_max);
-	data_util::dev_bool(dev_prediction, _measurable_size_max);
-	data_util::dev_bool(dev_negligible, _measurable_size_max);
+	data_util::dev_bool(dev_observe, _attr_sensor_size_max);
+	data_util::dev_bool(dev_signal, _attr_sensor_size_max);
+	data_util::dev_bool(dev_load, _attr_sensor_size_max);
+	data_util::dev_bool(dev_mask, _attr_sensor_size_max);
+	data_util::dev_bool(dev_current, _attr_sensor_size_max);
+	data_util::dev_bool(dev_target, _attr_sensor_size_max);
+	data_util::dev_bool(dev_prediction, _attr_sensor_size_max);
+	data_util::dev_bool(dev_negligible, _attr_sensor_size_max);
 
-	data_util::dev_double(dev_diag, _measurable_size_max);
-	data_util::dev_double(dev_diag_, _measurable_size_max);
+	data_util::dev_double(dev_diag, _attr_sensor_size_max);
+	data_util::dev_double(dev_diag_, _attr_sensor_size_max);
 	data_util::dev_int(dev_union_root, _sensor_size_max);
 	data_util::dev_float(dev_res, 1);
 
-	data_util::dev_bool(dev_dec_tmp1, _measurable_size_max);
-	data_util::dev_bool(dev_dec_tmp2, _measurable_size_max);
+	data_util::dev_bool(dev_dec_tmp1, _attr_sensor_size_max);
+	data_util::dev_bool(dev_dec_tmp2, _attr_sensor_size_max);
 
-	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_measurable_size_max), _dependency);
+	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_attr_sensor_size_max), _dependency);
 }
 
 void DataManager::create_sensors_to_arrays_index(const int start_idx, const int end_idx, const vector<Sensor*> &sensors) {
 	//create idx for diag and current
 	for (int i = start_idx; i < end_idx; ++i) {
 		try {
-			sensors[i]->setMeasurableDiagPointers(h_diag, h_diag_);
-			sensors[i]->setMeasurableObservePointers(h_observe, h_observe_);
-			sensors[i]->setMeasurableCurrentPointers(h_current);
+			sensors[i]->setAttrSensorDiagPointers(h_diag, h_diag_);
+			sensors[i]->setAttrSensorObservePointers(h_observe, h_observe_);
+			sensors[i]->setAttrSensorCurrentPointers(h_current);
 		}
 		catch (exception &e) {
 			dataManagerLogger.error("Fatal error while doing create_sensor_to_arrays_index", _dependency);
@@ -472,7 +472,7 @@ void DataManager::copy_arrays_to_sensors(const int start_idx, const int end_idx,
 	data_util::doubleD2H(dev_diag_, h_diag_, end_idx - start_idx, start_idx, start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays", _dependency);
 	for (int i = start_idx; i < end_idx; ++i) {
-		//bring all sensor and measurable info into the object
+		//bring all sensor and attr_sensor info into the object
 		try {
 			_sensors[i]->pointers_to_values();
 		}
@@ -561,11 +561,11 @@ void DataManager::copy_arrays_to_sensor_pairs(const int start_idx, const int end
 
 /*
 Set the mask used in halucination, for testing purpose, usual workflow, mask is get from gen_mask
-Input: mask vector, size of mask have to be the _measurable_size
+Input: mask vector, size of mask have to be the _attr_sensor_size
 */
 void DataManager::setMask(const vector<bool> &mask) {
-	if (mask.size() != _measurable_size) {
-		throw UMAException("Input mask size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (mask.size() != _attr_sensor_size) {
+		throw UMAException("Input mask size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
 	data_util::boolH2D(h_mask, dev_mask, mask.size());
@@ -577,14 +577,14 @@ This function set observe signal from python side
 Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
-	if (observe.size() != _measurable_size) {
-		throw UMAException("Input observe size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (observe.size() != _attr_sensor_size) {
+		throw UMAException("Input observe size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	data_util::boolH2H(h_observe, h_observe_, _measurable_size);
+	data_util::boolH2H(h_observe, h_observe_, _attr_sensor_size);
 	for (int i = 0; i < observe.size(); ++i) {
 		h_observe[i] = observe[i];
 	}
-	data_util::boolH2D(h_observe, dev_observe, _measurable_size);
+	data_util::boolH2D(h_observe, dev_observe, _attr_sensor_size);
 	dataManagerLogger.debug("observe signal set", _dependency);
 }
 
@@ -593,13 +593,13 @@ The function to set the current value, mainly used for testing puropse
 Input: current signal
 */
 void DataManager::setCurrent(const vector<bool> &current) {//this is where data comes in in every frame
-	if (current.size() != _measurable_size) {
-		throw UMAException("Input current size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (current.size() != _attr_sensor_size) {
+		throw UMAException("Input current size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current[i] = current[i];
 	}
-	data_util::boolH2D(h_current, dev_current, _measurable_size);
+	data_util::boolH2D(h_current, dev_current, _attr_sensor_size);
 	dataManagerLogger.debug("current signal set for customized purpose", _dependency);
 }
 
@@ -608,70 +608,70 @@ The function to set the target value
 Input: target signal
 */
 void DataManager::setTarget(const vector<bool> &target) {
-	if (target.size() != _measurable_size) {
-		throw UMAException("Input target size not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (target.size() != _attr_sensor_size) {
+		throw UMAException("Input target size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		h_target[i] = target[i];
 	}
-	data_util::boolH2D(h_target, dev_target, _measurable_size);
+	data_util::boolH2D(h_target, dev_target, _attr_sensor_size);
 	dataManagerLogger.debug("target signal set", _dependency);
 }
 
 /*
 set Signal
-Input: list of signal in bool, input size has to be measurable size
+Input: list of signal in bool, input size has to be attr_sensor size
 */
 void DataManager::setSignal(const vector<bool> &signal) {
-	if (signal.size() != _measurable_size) {
-		throw UMAException("The input signal size is not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (signal.size() != _attr_sensor_size) {
+		throw UMAException("The input signal size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		h_signal[i] = signal[i];
 	}
-	data_util::boolH2D(h_signal, dev_signal, _measurable_size);
+	data_util::boolH2D(h_signal, dev_signal, _attr_sensor_size);
 	dataManagerLogger.debug("signal set", _dependency);
 }
 
 /*
 set Signals
-Input: 2d vector of signals, first dimension should not exceed sensor size, second one must be measurable size
+Input: 2d vector of signals, first dimension should not exceed sensor size, second one must be attr_sensor size
 */
 void DataManager::setSignals(const vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _measurable_size_max) {
+	if (sig_count > _attr_sensor_size_max) {
 		throw UMAException("The input sensor size is larger than current sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < sig_count; ++i) {
-		if (signals[i].size() != _measurable_size) {
-			throw UMAException("The " + to_string(i) + "th input string size is not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		if (signals[i].size() != _attr_sensor_size) {
+			throw UMAException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < signals[i].size(); ++j) {
-			h_signals[i * _measurable_size + j] = signals[i][j];
+			h_signals[i * _attr_sensor_size + j] = signals[i][j];
 		}
 	}
-	data_util::boolH2D(h_signals, dev_signals, sig_count * _measurable_size);
+	data_util::boolH2D(h_signals, dev_signals, sig_count * _attr_sensor_size);
 	dataManagerLogger.debug(to_string(sig_count) + " signals set", _dependency);
 }
 
 /*
 set load
-Input: list of load in bool, list size has to be measurable size
+Input: list of load in bool, list size has to be attr_sensor size
 */
 void DataManager::setLoad(const vector<bool> &load) {
-	if (load.size() != _measurable_size) {
-		throw UMAException("The input load size is not matching the measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (load.size() != _attr_sensor_size) {
+		throw UMAException("The input load size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		h_load[i] = load[i];
 	}
-	data_util::boolH2D(h_load, dev_load, _measurable_size);
+	data_util::boolH2D(h_load, dev_load, _attr_sensor_size);
 	dataManagerLogger.debug("load set", _dependency);
 }
 
 void DataManager::setDists(const vector<vector<int> > &dists) {
 	if (dists.size() != _sensor_size) {
-		throw UMAException("The input dists size is not matching the measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("The input dists size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
@@ -687,20 +687,20 @@ input: 2d signals vector
 */
 void DataManager::setLSignals(const vector<vector<bool> > &signals) {
 	int sig_count = signals.size();
-	if (sig_count > _measurable_size_max) {
+	if (sig_count > _attr_sensor_size_max) {
 		throw UMAException("The input sensor size is larger than current sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < sig_count; ++i) {
-		if (signals[i].size() != _measurable_size) {
-			throw UMAException("The " + to_string(i) + "th input string size is not matching measurable size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		if (signals[i].size() != _attr_sensor_size) {
+			throw UMAException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < signals[i].size(); ++j) {
-			h_lsignals[i * _measurable_size + j] = signals[i][j];
+			h_lsignals[i * _attr_sensor_size + j] = signals[i][j];
 		}
 	}
-	data_util::boolH2D(h_lsignals, dev_lsignals, sig_count * _measurable_size);
+	data_util::boolH2D(h_lsignals, dev_lsignals, sig_count * _attr_sensor_size);
 	for (int i = 0; i < sig_count; ++i) {
-		kernel_util::disjunction(dev_lsignals + i * _measurable_size, dev_load, _measurable_size);
+		kernel_util::disjunction(dev_lsignals + i * _attr_sensor_size, dev_load, _attr_sensor_size);
 	}
 	dataManagerLogger.debug("loaded signals set", _dependency);
 }
@@ -717,10 +717,10 @@ Output: 2d format of signals
 */
 const vector<vector<bool> > DataManager::getSignals(int sig_count) {
 	vector<vector<bool> > results;
-	data_util::boolD2H(dev_signals, h_signals, sig_count * _measurable_size);
+	data_util::boolD2H(dev_signals, h_signals, sig_count * _attr_sensor_size);
 	for (int i = 0; i < sig_count; ++i) {
 		vector<bool> tmp;
-		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_signals[i * _measurable_size + j]);
+		for (int j = 0; j < _attr_sensor_size; ++j) tmp.push_back(h_signals[i * _attr_sensor_size + j]);
 		results.push_back(tmp);
 	}
 	dataManagerLogger.debug(to_string(sig_count) + " signals get", _dependency);
@@ -733,10 +733,10 @@ Output: 2d format of loaded signals
 */
 const vector<vector<bool> > DataManager::getLSignals(int sig_count) {
 	vector<vector<bool> > results;
-	data_util::boolD2H(dev_lsignals, h_lsignals, sig_count * _measurable_size);
+	data_util::boolD2H(dev_lsignals, h_lsignals, sig_count * _attr_sensor_size);
 	for (int i = 0; i < sig_count; ++i) {
 		vector<bool> tmp;
-		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_lsignals[i * _measurable_size + j]);
+		for (int j = 0; j < _attr_sensor_size; ++j) tmp.push_back(h_lsignals[i * _attr_sensor_size + j]);
 		results.push_back(tmp);
 	}
 	dataManagerLogger.debug(to_string(sig_count) + " loaded signals get", _dependency);
@@ -749,10 +749,10 @@ Output: 2d format of npdirs
 */
 const vector<vector<bool> > DataManager::getNpdirMasks() {
 	vector<vector<bool> > results;
-	data_util::boolD2H(dev_npdir_mask, h_npdir_mask, _sensor_size * _measurable_size);
+	data_util::boolD2H(dev_npdir_mask, h_npdir_mask, _sensor_size * _attr_sensor_size);
 	for (int i = 0; i < _sensor_size; ++i) {
 		vector<bool> tmp;
-		for (int j = 0; j < _measurable_size; ++j) tmp.push_back(h_npdir_mask[i * _measurable_size + j]);
+		for (int j = 0; j < _attr_sensor_size; ++j) tmp.push_back(h_npdir_mask[i * _attr_sensor_size + j]);
 		results.push_back(tmp);
 	}
 	dataManagerLogger.debug("npdir mask get", _dependency);
@@ -765,8 +765,8 @@ Output: current vector
 */
 const vector<bool> DataManager::getCurrent() {
 	vector<bool> result;
-	data_util::boolD2H(dev_current, h_current, _measurable_size);
-	for (int i = 0; i < _measurable_size; ++i) {
+	data_util::boolD2H(dev_current, h_current, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_current[i]);
 	}
 	dataManagerLogger.debug("current signal get", _dependency);
@@ -780,7 +780,7 @@ Output: prediction vector
 const vector<bool> DataManager::getPrediction() {
 	vector<bool> result;
 	//no corresponding dev variable to copy from, should be copied after the halucinate
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_prediction[i]);
 	}
 	dataManagerLogger.debug("prediction signal get", _dependency);
@@ -793,8 +793,8 @@ Output: target vector
 */
 const vector<bool> DataManager::getTarget() {
 	vector<bool> result;
-	data_util::boolD2H(dev_target, h_target, _measurable_size);
-	for (int i = 0; i < _measurable_size; ++i) {
+	data_util::boolD2H(dev_target, h_target, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_target[i]);
 	}
 	dataManagerLogger.debug("target signal get", _dependency);
@@ -806,10 +806,10 @@ The function is getting weight matrix in 2-dimensional form
 Output: weight matrix in 2d format
 */
 const vector<vector<double> > DataManager::getWeight2D() {
-	data_util::doubleD2H(dev_weights, h_weights, _measurable2d_size);
+	data_util::doubleD2H(dev_weights, h_weights, _attr_sensor2d_size);
 	vector<vector<double> > result;
 	int n = 0;
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		vector<double> tmp;
 		for (int j = 0; j <= i; ++j)
 			tmp.push_back(h_weights[n++]);
@@ -824,10 +824,10 @@ The function is getting the dir matrix in 2-dimensional form
 Output: dir matrix in 2d format
 */
 const vector<vector<bool> > DataManager::getDir2D() {
-	data_util::boolD2H(dev_dirs, h_dirs, _measurable2d_size);
+	data_util::boolD2H(dev_dirs, h_dirs, _attr_sensor2d_size);
 	vector<vector<bool> > result;
 	int n = 0;
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		vector<bool> tmp;
 		for (int j = 0; j <= i; ++j)
 			tmp.push_back(h_dirs[n++]);
@@ -845,7 +845,7 @@ const vector<vector<bool> > DataManager::getNPDir2D() {
 	data_util::boolD2H(dev_npdirs, h_npdirs, _npdir_size);
 	vector<vector<bool> > result;
 	int n = 0;
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		vector<bool> tmp;
 		for (int j = 0; j <= i + (i % 2 == 0); ++j)
 			tmp.push_back(h_npdirs[n++]);
@@ -966,9 +966,9 @@ This function is getting the diagonal value of the weight matrix
 Output: diag value
 */
 const vector<double> DataManager::getDiag() {
-	data_util::doubleD2H(dev_diag, h_diag, _measurable_size);
+	data_util::doubleD2H(dev_diag, h_diag, _attr_sensor_size);
 	vector<double> result;
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_diag[i]);
 	}
 	dataManagerLogger.debug("diag value get", _dependency);
@@ -980,9 +980,9 @@ This function is getting the diagonal value of the weight matrix of last iterati
 Output: old diag value
 */
 const vector<double> DataManager::getDiagOld() {
-	data_util::doubleD2H(dev_diag_, h_diag_, _measurable_size);
+	data_util::doubleD2H(dev_diag_, h_diag_, _attr_sensor_size);
 	vector<double> result;
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_diag_[i]);
 	}
 	dataManagerLogger.debug("old diag value get", _dependency);
@@ -995,8 +995,8 @@ Output: mask signal
 */
 const vector<bool> DataManager::getMask() {
 	vector<bool> result;
-	data_util::boolD2H(dev_mask, h_mask, _measurable_size);
-	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_mask[i]);
+	data_util::boolD2H(dev_mask, h_mask, _attr_sensor_size);
+	for (int i = 0; i < this->_attr_sensor_size; ++i) result.push_back(h_mask[i]);
 	dataManagerLogger.debug("mask signal get", _dependency);
 	return result;
 }
@@ -1007,8 +1007,8 @@ Output: observe signal
 */
 const vector<bool> DataManager::getObserve() {
 	vector<bool> result;
-	data_util::boolD2H(dev_observe, h_observe, _measurable_size);
-	for (int i = 0; i < this->_measurable_size; ++i) result.push_back(h_observe[i]);
+	data_util::boolD2H(dev_observe, h_observe, _attr_sensor_size);
+	for (int i = 0; i < this->_attr_sensor_size; ++i) result.push_back(h_observe[i]);
 	dataManagerLogger.debug("observe signal get", _dependency);
 	return result;
 }
@@ -1019,8 +1019,8 @@ Output: load signal
 */
 const vector<bool> DataManager::getLoad() {
 	vector<bool> result;
-	data_util::boolD2H(dev_load, h_load, _measurable_size);
-	for (int i = 0; i < _measurable_size; ++i) result.push_back(h_load[i]);
+	data_util::boolD2H(dev_load, h_load, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) result.push_back(h_load[i]);
 	dataManagerLogger.debug("load signal get", _dependency);
 	return result;
 }
@@ -1032,7 +1032,7 @@ Output: up signal
 const vector<bool> DataManager::getUp() {
 	vector<bool> result;
 	//up have no corresponding dev variable, when doing up_GPU, the value should be stored and copied back to host
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_up[i]);
 	}
 	dataManagerLogger.debug("up signal get", _dependency);
@@ -1046,7 +1046,7 @@ Output: down signal
 const vector<bool> DataManager::getDown() {
 	vector<bool> result;
 	//down have no corresponding dev variable, when doing up_GPU, the value should be stored and copied back to host
-	for (int i = 0; i < _measurable_size; ++i) {
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_down[i]);
 	}
 	dataManagerLogger.debug("down signal get", _dependency);
@@ -1055,8 +1055,8 @@ const vector<bool> DataManager::getDown() {
 
 const vector<bool> DataManager::getNegligible() {
 	vector<bool> result;
-	data_util::boolD2H(dev_negligible, h_negligible, _measurable_size);
-	for (int i = 0; i < _measurable_size; ++i) {
+	data_util::boolD2H(dev_negligible, h_negligible, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
 		result.push_back(h_negligible[i]);
 	}
 	return result;
@@ -1090,10 +1090,10 @@ const std::map<string, int> DataManager::getSizeInfo() {
 	s["_sensor_size_max"] = _sensor_size_max;
 	s["_sensor2d_size"] = _sensor2d_size;
 	s["_sensor2d_size_max"] = _sensor2d_size_max;
-	s["_measurable_size"] = _measurable_size;
-	s["_measurable_size_max"] = _measurable_size_max;
-	s["_measurable2d_size"] = _measurable2d_size;
-	s["_measurable2d_size_max"] = _measurable2d_size_max;
+	s["_attr_sensor_size"] = _attr_sensor_size;
+	s["_attr_sensor_size_max"] = _attr_sensor_size_max;
+	s["_attr_sensor2d_size"] = _attr_sensor2d_size;
+	s["_attr_sensor2d_size_max"] = _attr_sensor2d_size_max;
 	s["_mask_amper_size"] = _mask_amper_size;
 	s["_mask_amper_size_max"] = _mask_amper_size_max;
 	s["_npdir_size"] = _npdir_size;

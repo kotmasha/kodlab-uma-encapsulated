@@ -32,11 +32,11 @@ set(SENSOR
     "SensorPair.h"
     "SensorPair.cpp"
 )
-set(GLOB_RECURSE MEASURABLE
-    "Measurable.h"
-    "Measurable.cpp"
-    "MeasurablePair.h"
-    "MeasurablePair.cpp"
+set(ATTRSENSOR
+    "AttrSensor.h"
+    "AttrSensor.cpp"
+    "AttrSensorPair.h"
+    "AttrSensorPair.cpp"
 )
 set(SIMULATION
     "Simulation.h"

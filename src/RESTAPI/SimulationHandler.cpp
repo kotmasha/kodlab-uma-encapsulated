@@ -268,9 +268,9 @@ void SimulationHandler::create_up(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
-	int measurable_size = size_info["_measurable_size"];
+	int attr_sensor_size = size_info["_attr_sensor_size"];
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, measurable_size);
+	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, attr_sensor_size);
 
 	vector<vector<bool> > results = dm->getSignals(1);
 
@@ -288,10 +288,10 @@ void SimulationHandler::create_ups(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
-	int measurable_size = size_info["_measurable_size"];
+	int attr_sensor_size = size_info["_attr_sensor_size"];
 
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, measurable_size);
+	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attr_sensor_size);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -309,10 +309,10 @@ void SimulationHandler::create_downs(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
-	int measurable_size = size_info["_measurable_size"];
+	int attr_sensor_size = size_info["_attr_sensor_size"];
 
 	dm->setSignals(signals);
-	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, measurable_size);
+	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attr_sensor_size);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -331,12 +331,12 @@ void SimulationHandler::create_propagation(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
-	int measurable_size = size_info["_measurable_size"];
+	int attr_sensor_size = size_info["_attr_sensor_size"];
 
 	dm->setSignals(signals);
 	dm->setLoad(load);
 
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), NULL, sig_count, measurable_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), NULL, sig_count, attr_sensor_size);
 	vector<vector<bool> > results = dm->getLSignals(signals.size());
 
 	request.set_message("Propagation created");

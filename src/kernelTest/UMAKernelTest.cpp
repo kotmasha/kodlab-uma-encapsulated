@@ -967,6 +967,524 @@ TEST(dioid_square, uma_base_test) {
 	data_util::dev_free(dev_dists);
 }
 
+TEST(transpose_multiply, uma_base_test) {
+	bool *h_npdirs, *dev_npdirs;
+	bool *h_signals, *dev_signals;
+	h_npdirs = new bool[60];
+	h_signals = new bool[100];
+	data_util::dev_bool(dev_npdirs, 60);
+	data_util::dev_bool(dev_signals, 100);
+
+	h_npdirs[0] = 1; h_npdirs[1] = 0;
+	h_npdirs[2] = 0; h_npdirs[3] = 1;
+	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1; h_npdirs[7] = 0;
+	h_npdirs[8] = 0; h_npdirs[9] = 1; h_npdirs[10] = 0; h_npdirs[11] = 1;
+	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1; h_npdirs[17] = 0;
+	h_npdirs[18] = 0; h_npdirs[19] = 1; h_npdirs[20] = 0; h_npdirs[21] = 1; h_npdirs[22] = 0; h_npdirs[23] = 1;
+	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1; h_npdirs[31] = 0;
+	h_npdirs[32] = 0; h_npdirs[33] = 1; h_npdirs[34] = 0; h_npdirs[35] = 1; h_npdirs[36] = 0; h_npdirs[37] = 0; h_npdirs[38] = 0; h_npdirs[39] = 1;
+	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1; h_npdirs[49] = 0;
+	h_npdirs[50] = 0; h_npdirs[51] = 1; h_npdirs[52] = 0; h_npdirs[53] = 1; h_npdirs[54] = 0; h_npdirs[55] = 0; h_npdirs[56] = 0; h_npdirs[57] = 0; h_npdirs[58] = 0; h_npdirs[59] = 1;
+	data_util::boolH2D(h_npdirs, dev_npdirs, 60);
+
+	h_signals[0] = 1; h_signals[1] = 0; h_signals[2] = 0; h_signals[3] = 0; h_signals[4] = 0; h_signals[5] = 0; h_signals[6] = 0; h_signals[7] = 0; h_signals[8] = 0; h_signals[9] = 0;
+	h_signals[10] = 0; h_signals[11] = 0; h_signals[12] = 1; h_signals[13] = 0; h_signals[14] = 0; h_signals[15] = 0; h_signals[16] = 0; h_signals[17] = 0; h_signals[18] = 0; h_signals[19] = 0;
+	h_signals[20] = 0; h_signals[21] = 0; h_signals[22] = 0; h_signals[23] = 0; h_signals[24] = 1; h_signals[25] = 0; h_signals[26] = 0; h_signals[27] = 0; h_signals[28] = 0; h_signals[29] = 0;
+	h_signals[30] = 0; h_signals[31] = 0; h_signals[32] = 0; h_signals[33] = 0; h_signals[34] = 0; h_signals[35] = 0; h_signals[36] = 1; h_signals[37] = 0; h_signals[38] = 0; h_signals[39] = 0;	
+	h_signals[40] = 0; h_signals[41] = 0; h_signals[42] = 0; h_signals[43] = 0; h_signals[44] = 0; h_signals[45] = 0; h_signals[46] = 0; h_signals[47] = 0; h_signals[48] = 1; h_signals[49] = 0;
+	h_signals[50] = 1; h_signals[51] = 0; h_signals[52] = 0; h_signals[53] = 0; h_signals[54] = 0; h_signals[55] = 0; h_signals[56] = 0; h_signals[57] = 0; h_signals[58] = 1; h_signals[59] = 0;
+	data_util::boolH2D(h_signals, dev_signals, 100);
+	uma_base::transpose_multiply(dev_npdirs, dev_signals, 10, 6);
+	data_util::boolD2H(dev_signals, h_signals, 60);
+
+	vector<bool> v1 = {
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		0, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 1, 0, 1, 0,
+		1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+	};
+	vector<bool> v2;
+	for (int i = 0; i < 60; ++i) v2.push_back(h_signals[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_npdirs, h_signals;
+	data_util::dev_free(dev_npdirs);
+	data_util::dev_free(dev_signals);
+}
+
+TEST(multiply, uma_base_test) {
+	bool *h_npdirs, *dev_npdirs;
+	bool *h_signals, *dev_signals;
+	h_npdirs = new bool[60];
+	h_signals = new bool[100];
+	data_util::dev_bool(dev_npdirs, 60);
+	data_util::dev_bool(dev_signals, 100);
+
+	h_npdirs[0] = 1; h_npdirs[1] = 0;
+	h_npdirs[2] = 0; h_npdirs[3] = 1;
+	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1; h_npdirs[7] = 0;
+	h_npdirs[8] = 0; h_npdirs[9] = 1; h_npdirs[10] = 0; h_npdirs[11] = 1;
+	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1; h_npdirs[17] = 0;
+	h_npdirs[18] = 0; h_npdirs[19] = 1; h_npdirs[20] = 0; h_npdirs[21] = 1; h_npdirs[22] = 0; h_npdirs[23] = 1;
+	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1; h_npdirs[31] = 0;
+	h_npdirs[32] = 0; h_npdirs[33] = 1; h_npdirs[34] = 0; h_npdirs[35] = 1; h_npdirs[36] = 0; h_npdirs[37] = 0; h_npdirs[38] = 0; h_npdirs[39] = 1;
+	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1; h_npdirs[49] = 0;
+	h_npdirs[50] = 0; h_npdirs[51] = 1; h_npdirs[52] = 0; h_npdirs[53] = 1; h_npdirs[54] = 0; h_npdirs[55] = 0; h_npdirs[56] = 0; h_npdirs[57] = 0; h_npdirs[58] = 0; h_npdirs[59] = 1;
+	data_util::boolH2D(h_npdirs, dev_npdirs, 60);
+
+	h_signals[0] = 1; h_signals[1] = 0; h_signals[2] = 0; h_signals[3] = 0; h_signals[4] = 0; h_signals[5] = 0; h_signals[6] = 0; h_signals[7] = 0; h_signals[8] = 0; h_signals[9] = 0;
+	h_signals[10] = 0; h_signals[11] = 0; h_signals[12] = 1; h_signals[13] = 0; h_signals[14] = 0; h_signals[15] = 0; h_signals[16] = 0; h_signals[17] = 0; h_signals[18] = 0; h_signals[19] = 0;
+	h_signals[20] = 0; h_signals[21] = 0; h_signals[22] = 0; h_signals[23] = 0; h_signals[24] = 1; h_signals[25] = 0; h_signals[26] = 0; h_signals[27] = 0; h_signals[28] = 0; h_signals[29] = 0;
+	h_signals[30] = 0; h_signals[31] = 0; h_signals[32] = 0; h_signals[33] = 0; h_signals[34] = 0; h_signals[35] = 0; h_signals[36] = 1; h_signals[37] = 0; h_signals[38] = 0; h_signals[39] = 0;
+	h_signals[40] = 0; h_signals[41] = 0; h_signals[42] = 0; h_signals[43] = 0; h_signals[44] = 0; h_signals[45] = 0; h_signals[46] = 0; h_signals[47] = 0; h_signals[48] = 1; h_signals[49] = 0;
+	h_signals[50] = 1; h_signals[51] = 0; h_signals[52] = 0; h_signals[53] = 0; h_signals[54] = 0; h_signals[55] = 0; h_signals[56] = 0; h_signals[57] = 0; h_signals[58] = 1; h_signals[59] = 0;
+	data_util::boolH2D(h_signals, dev_signals, 100);
+	uma_base::multiply(dev_npdirs, dev_signals, 10, 6);
+	data_util::boolD2H(dev_signals, h_signals, 60);
+
+	vector<bool> v1 = {
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+		1, 0, 1, 0, 1, 0, 0, 0, 1, 0,
+		1, 0, 1, 0, 0, 0, 1, 0, 1, 0,
+		1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+		1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+	};
+	vector<bool> v2;
+	for (int i = 0; i < 60; ++i) v2.push_back(h_signals[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_npdirs, h_signals;
+	data_util::dev_free(dev_npdirs);
+	data_util::dev_free(dev_signals);
+}
+
+TEST(check_mask, uma_base_test) {
+	bool *h_mask, *dev_mask;
+	h_mask = new bool[8];
+	data_util::dev_bool(dev_mask, 8);
+
+	h_mask[0] = 0; h_mask[1] = 0; h_mask[2] = 0; h_mask[3] = 1;
+	h_mask[4] = 1; h_mask[5] = 0; h_mask[6] = 1; h_mask[7] = 1;
+
+	data_util::boolH2D(h_mask, dev_mask, 8);
+	uma_base::check_mask(dev_mask, 4);
+	data_util::boolD2H(dev_mask, h_mask, 8);
+
+	vector<bool> v1 = {0, 0, 0, 1, 1, 0, 1, 0};
+	vector<bool> v2;
+	for (int i = 0; i < 8; ++i) v2.push_back(h_mask[i]);
+	EXPECT_EQ(v1, v2);
+	
+	delete[] h_mask;
+	data_util::dev_free(dev_mask);
+}
+
+TEST(mask, uma_base_test) {
+	bool *h_mask_amper, *dev_mask_amper;
+	bool *h_current, *dev_current;
+	bool *h_mask, *dev_mask;
+	vector<bool> v;
+
+	h_mask_amper = new bool[72];
+	h_mask_amper[0] = 0; h_mask_amper[1] = 0;
+	h_mask_amper[2] = 0; h_mask_amper[3] = 0; h_mask_amper[4] = 0; h_mask_amper[5] = 0;
+	h_mask_amper[6] = 0; h_mask_amper[7] = 0; h_mask_amper[8] = 0; h_mask_amper[9] = 0; h_mask_amper[10] = 0; h_mask_amper[11] = 0;
+	h_mask_amper[12] = 0; h_mask_amper[13] = 0; h_mask_amper[14] = 0; h_mask_amper[15] = 0; h_mask_amper[16] = 0; h_mask_amper[17] = 0; h_mask_amper[18] = 0; h_mask_amper[19] = 0;
+	h_mask_amper[20] = 0; h_mask_amper[21] = 1; h_mask_amper[22] = 0; h_mask_amper[23] = 0; h_mask_amper[24] = 0; h_mask_amper[25] = 0; h_mask_amper[26] = 0; h_mask_amper[27] = 0; h_mask_amper[28] = 0; h_mask_amper[29] = 0;
+	h_mask_amper[30] = 0; h_mask_amper[31] = 0; h_mask_amper[32] = 1; h_mask_amper[33] = 0; h_mask_amper[34] = 0; h_mask_amper[35] = 1; h_mask_amper[36] = 0; h_mask_amper[37] = 0; h_mask_amper[38] = 0; h_mask_amper[39] = 0; h_mask_amper[40] = 0; h_mask_amper[41] = 0;
+	h_mask_amper[42] = 0; h_mask_amper[43] = 0; h_mask_amper[44] = 0; h_mask_amper[45] = 0; h_mask_amper[46] = 1; h_mask_amper[47] = 0; h_mask_amper[48] = 0; h_mask_amper[49] = 1; h_mask_amper[50] = 0; h_mask_amper[51] = 0; h_mask_amper[52] = 0; h_mask_amper[53] = 0; h_mask_amper[54] = 0; h_mask_amper[55] = 0;
+	h_mask_amper[56] = 0; h_mask_amper[57] = 0; h_mask_amper[58] = 0; h_mask_amper[59] = 0; h_mask_amper[60] = 0; h_mask_amper[61] = 0; h_mask_amper[62] = 0; h_mask_amper[63] = 0; h_mask_amper[64] = 0; h_mask_amper[65] = 0; h_mask_amper[66] = 0; h_mask_amper[67] = 1; h_mask_amper[68] = 1; h_mask_amper[69] = 0; h_mask_amper[70] = 0; h_mask_amper[71] = 0;
+	data_util::dev_bool(dev_mask_amper, 72);
+	data_util::boolH2D(h_mask_amper, dev_mask_amper, 72);
+
+	h_current = new bool[16];
+	h_mask = new bool[16];
+	data_util::dev_bool(dev_current, 16);
+	data_util::dev_bool(dev_mask, 16);
+
+	//1st round
+	h_current[0] = 1; h_current[1] = 0; h_current[2] = 1; h_current[3] = 0; h_current[4] = 1; h_current[5] = 0; h_current[6] = 1; h_current[7] = 0;
+	h_current[8] = 1; h_current[9] = 0; h_current[10] = 1; h_current[11] = 0; h_current[12] = 1; h_current[13] = 0; h_current[14] = 1; h_current[15] = 0;
+	h_mask[0] = 0; h_mask[1] = 0; h_mask[2] = 0; h_mask[3] = 0; h_mask[4] = 0; h_mask[5] = 0; h_mask[6] = 0; h_mask[7] = 0;
+	h_mask[8] = 1; h_mask[9] = 1; h_mask[10] = 1; h_mask[11] = 1; h_mask[12] = 1; h_mask[13] = 1; h_mask[14] = 1; h_mask[15] = 1;
+	data_util::boolH2D(h_current, dev_current, 16);
+	data_util::boolH2D(h_mask, dev_mask, 16);
+	uma_base::mask(dev_mask_amper, dev_mask, dev_current, 8);
+	data_util::boolD2H(dev_mask, h_mask, 16);
+	vector<bool> v1 = { 0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1 };
+	for (int i = 0; i < 16; ++i) v.push_back(h_mask[i]);
+	EXPECT_EQ(v, v1);
+	v.clear();
+
+	//2nd round
+	h_current[0] = 0; h_current[1] = 1; h_current[2] = 0; h_current[3] = 1; h_current[4] = 0; h_current[5] = 1; h_current[6] = 0; h_current[7] = 1;
+	h_current[8] = 0; h_current[9] = 1; h_current[10] = 0; h_current[11] = 1; h_current[12] = 0; h_current[13] = 1; h_current[14] = 0; h_current[15] = 1;
+	h_mask[0] = 0; h_mask[1] = 0; h_mask[2] = 0; h_mask[3] = 0; h_mask[4] = 0; h_mask[5] = 0; h_mask[6] = 0; h_mask[7] = 0;
+	h_mask[8] = 1; h_mask[9] = 1; h_mask[10] = 1; h_mask[11] = 1; h_mask[12] = 1; h_mask[13] = 1; h_mask[14] = 1; h_mask[15] = 1;
+	data_util::boolH2D(h_current, dev_current, 16);
+	data_util::boolH2D(h_mask, dev_mask, 16);
+	uma_base::mask(dev_mask_amper, dev_mask, dev_current, 8);
+	data_util::boolD2H(dev_mask, h_mask, 16);
+	vector<bool> v2 = { 0,0,0,0,0,0,0,0,1,1,0,1,0,1,0,1 };
+	for (int i = 0; i < 16; ++i) v.push_back(h_mask[i]);
+	EXPECT_EQ(v, v2);
+	v.clear();
+
+	//3rd round
+	h_current[0] = 1; h_current[1] = 0; h_current[2] = 1; h_current[3] = 0; h_current[4] = 0; h_current[5] = 1; h_current[6] = 0; h_current[7] = 1;
+	h_current[8] = 0; h_current[9] = 1; h_current[10] = 0; h_current[11] = 1; h_current[12] = 1; h_current[13] = 0; h_current[14] = 1; h_current[15] = 0;
+	h_mask[0] = 0; h_mask[1] = 0; h_mask[2] = 0; h_mask[3] = 0; h_mask[4] = 0; h_mask[5] = 0; h_mask[6] = 0; h_mask[7] = 0;
+	h_mask[8] = 1; h_mask[9] = 1; h_mask[10] = 1; h_mask[11] = 1; h_mask[12] = 1; h_mask[13] = 1; h_mask[14] = 1; h_mask[15] = 1;
+	data_util::boolH2D(h_current, dev_current, 16);
+	data_util::boolH2D(h_mask, dev_mask, 16);
+	uma_base::mask(dev_mask_amper, dev_mask, dev_current, 8);
+	data_util::boolD2H(dev_mask, h_mask, 16);
+	vector<bool> v3 = { 0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,1 };
+	for (int i = 0; i < 16; ++i) v.push_back(h_mask[i]);
+	EXPECT_EQ(v, v3);
+	v.clear();
+
+	//4th
+	h_current[0] = 0; h_current[1] = 1; h_current[2] = 0; h_current[3] = 1; h_current[4] = 1; h_current[5] = 0; h_current[6] = 0; h_current[7] = 1;
+	h_current[8] = 1; h_current[9] = 0; h_current[10] = 1; h_current[11] = 0; h_current[12] = 1; h_current[13] = 0; h_current[14] = 0; h_current[15] = 1;
+	h_mask[0] = 0; h_mask[1] = 0; h_mask[2] = 0; h_mask[3] = 0; h_mask[4] = 0; h_mask[5] = 0; h_mask[6] = 0; h_mask[7] = 0;
+	h_mask[8] = 1; h_mask[9] = 1; h_mask[10] = 1; h_mask[11] = 1; h_mask[12] = 1; h_mask[13] = 1; h_mask[14] = 1; h_mask[15] = 1;
+	data_util::boolH2D(h_current, dev_current, 16);
+	data_util::boolH2D(h_mask, dev_mask, 16);
+	uma_base::mask(dev_mask_amper, dev_mask, dev_current, 8);
+	data_util::boolD2H(dev_mask, h_mask, 16);
+	vector<bool> v4 = { 0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,1 };
+	for (int i = 0; i < 16; ++i) v.push_back(h_mask[i]);
+	EXPECT_EQ(v, v4);
+	v.clear();
+
+	delete[] h_current, h_mask, h_mask_amper;
+	data_util::dev_free(dev_current);
+	data_util::dev_free(dev_mask);
+	data_util::dev_free(dev_mask_amper);
+}
+
+TEST(union_init, uma_base_test) {
+	int *h_union_root, *dev_union_root;
+	h_union_root = new int[8];
+	for (int i = 0; i < 8; ++i) h_union_root[i] = -1;
+
+	data_util::dev_int(dev_union_root, 8);
+	uma_base::union_init(dev_union_root, 8);
+	data_util::intD2H(dev_union_root, h_union_root, 8);
+
+	vector<int> v1 = { 0, 1, 2, 3, 4, 5, 6, 7 };
+	vector<int> v2;
+	for (int i = 0; i < 8; ++i) v2.push_back(h_union_root[i]);
+	EXPECT_EQ(v1, v2);
+	
+	delete[] h_union_root;
+	data_util::dev_free(dev_union_root);
+}
+
+TEST(check_dist, uma_base_test) {
+	int *h_dists, *dev_dists;
+	h_dists = new int[25];
+	data_util::dev_int(dev_dists, 25);
+	vector<int> v;
+
+	//1st round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 3; h_dists[3] = 3; h_dists[4] = 3;
+	h_dists[5] = 1; h_dists[6] = 0; h_dists[7] = 3; h_dists[8] = 3; h_dists[9] = 3;
+	h_dists[10] = 3; h_dists[11] = 3; h_dists[12] = 0; h_dists[13] = 2; h_dists[14] = 3;
+	h_dists[15] = 3; h_dists[16] = 3; h_dists[17] = 2; h_dists[18] = 0; h_dists[19] = 3;
+	h_dists[20] = 3; h_dists[21] = 3; h_dists[22] = 3; h_dists[23] = 3; h_dists[24] = 0;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	uma_base::check_dist(dev_dists, 0.7, 5);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v1 = {
+		1, 0, 0, 0, 0,
+		0, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0,
+		0, 0, 0, 0, 1
+	};
+	for (int i = 0; i < 25; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v1);
+	v.clear();
+
+	//2nd round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 3; h_dists[3] = 3; h_dists[4] = 3;
+	h_dists[5] = 1; h_dists[6] = 0; h_dists[7] = 3; h_dists[8] = 3; h_dists[9] = 3;
+	h_dists[10] = 3; h_dists[11] = 3; h_dists[12] = 0; h_dists[13] = 2; h_dists[14] = 3;
+	h_dists[15] = 3; h_dists[16] = 3; h_dists[17] = 2; h_dists[18] = 0; h_dists[19] = 3;
+	h_dists[20] = 3; h_dists[21] = 3; h_dists[22] = 3; h_dists[23] = 3; h_dists[24] = 0;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	uma_base::check_dist(dev_dists, 1.5, 5);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v2 = {
+		1, 1, 0, 0, 0,
+		1, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0,
+		0, 0, 0, 0, 1
+	};
+	for (int i = 0; i < 25; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v2);
+	v.clear();
+
+	//3nd round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 3; h_dists[3] = 3; h_dists[4] = 3;
+	h_dists[5] = 1; h_dists[6] = 0; h_dists[7] = 3; h_dists[8] = 3; h_dists[9] = 3;
+	h_dists[10] = 3; h_dists[11] = 3; h_dists[12] = 0; h_dists[13] = 2; h_dists[14] = 3;
+	h_dists[15] = 3; h_dists[16] = 3; h_dists[17] = 2; h_dists[18] = 0; h_dists[19] = 3;
+	h_dists[20] = 3; h_dists[21] = 3; h_dists[22] = 3; h_dists[23] = 3; h_dists[24] = 0;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	uma_base::check_dist(dev_dists, 2.2, 5);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v3 = {
+		1, 1, 0, 0, 0,
+		1, 1, 0, 0, 0,
+		0, 0, 1, 1, 0,
+		0, 0, 1, 1, 0,
+		0, 0, 0, 0, 1
+	};
+	for (int i = 0; i < 25; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v3);
+	v.clear();
+
+	//4th round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 3; h_dists[3] = 3; h_dists[4] = 3;
+	h_dists[5] = 1; h_dists[6] = 0; h_dists[7] = 3; h_dists[8] = 3; h_dists[9] = 3;
+	h_dists[10] = 3; h_dists[11] = 3; h_dists[12] = 0; h_dists[13] = 2; h_dists[14] = 3;
+	h_dists[15] = 3; h_dists[16] = 3; h_dists[17] = 2; h_dists[18] = 0; h_dists[19] = 3;
+	h_dists[20] = 3; h_dists[21] = 3; h_dists[22] = 3; h_dists[23] = 3; h_dists[24] = 0;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	uma_base::check_dist(dev_dists, 3.1, 5);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v4 = {
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1
+	};
+	for (int i = 0; i < 25; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v4);
+	v.clear();
+
+	//5th round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 2; h_dists[3] = 2;
+	h_dists[4] = 1; h_dists[5] = 0; h_dists[6] = 2; h_dists[7] = 2;
+	h_dists[8] = 2; h_dists[9] = 2; h_dists[10] = 0; h_dists[11] = 1;
+	h_dists[12] = 2; h_dists[13] = 2; h_dists[14] = 1; h_dists[15] = 0;
+	data_util::intH2D(h_dists, dev_dists, 16);
+	uma_base::check_dist(dev_dists, 0.5, 4);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v5 = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	};
+	for (int i = 0; i < 16; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v5);
+	v.clear();
+
+	//6th round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 2; h_dists[3] = 2;
+	h_dists[4] = 1; h_dists[5] = 0; h_dists[6] = 2; h_dists[7] = 2;
+	h_dists[8] = 2; h_dists[9] = 2; h_dists[10] = 0; h_dists[11] = 1;
+	h_dists[12] = 2; h_dists[13] = 2; h_dists[14] = 1; h_dists[15] = 0;
+	data_util::intH2D(h_dists, dev_dists, 16);
+	uma_base::check_dist(dev_dists, 1.5, 4);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v6 = {
+		1, 1, 0, 0,
+		1, 1, 0, 0,
+		0, 0, 1, 1,
+		0, 0, 1, 1,
+	};
+	for (int i = 0; i < 16; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v6);
+	v.clear();
+
+	//7th round
+	h_dists[0] = 0; h_dists[1] = 1; h_dists[2] = 2; h_dists[3] = 2;
+	h_dists[4] = 1; h_dists[5] = 0; h_dists[6] = 2; h_dists[7] = 2;
+	h_dists[8] = 2; h_dists[9] = 2; h_dists[10] = 0; h_dists[11] = 1;
+	h_dists[12] = 2; h_dists[13] = 2; h_dists[14] = 1; h_dists[15] = 0;
+	data_util::intH2D(h_dists, dev_dists, 16);
+	uma_base::check_dist(dev_dists, 2.01, 4);
+	data_util::intD2H(dev_dists, h_dists, 25);
+	vector<int> v7 = {
+		1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, 1, 1,
+	};
+	for (int i = 0; i < 16; ++i) v.push_back(h_dists[i]);
+	EXPECT_EQ(v, v7);
+	v.clear();
+
+	delete[] h_dists;
+	data_util::dev_free(dev_dists);
+}
+
+TEST(union_GPU, uma_base_test) {
+	int *h_dists, *dev_dists;
+	int *h_union_root, *dev_union_root;
+	h_dists = new int[25];
+	h_union_root = new int[5];
+	data_util::dev_int(dev_dists, 25);
+	data_util::dev_int(dev_union_root, 5);
+	vector<int> v;
+
+	//1st round
+	h_dists[0] = 1; h_dists[1] = 0; h_dists[2] = 0; h_dists[3] = 0; h_dists[4] = 0;
+	h_dists[5] = 0; h_dists[6] = 1; h_dists[7] = 0; h_dists[8] = 0; h_dists[9] = 0;
+	h_dists[10] = 0; h_dists[11] = 0; h_dists[12] = 1; h_dists[13] = 0; h_dists[14] = 0;
+	h_dists[15] = 0; h_dists[16] = 0; h_dists[17] = 0; h_dists[18] = 1; h_dists[19] = 0;
+	h_dists[20] = 0; h_dists[21] = 0; h_dists[22] = 0; h_dists[23] = 0; h_dists[24] = 1;
+	for (int i = 0; i < 5; ++i) h_union_root[i] = i;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	data_util::intH2D(h_union_root, dev_union_root, 5);
+	uma_base::union_GPU(dev_dists, dev_union_root, 5);
+	data_util::intD2H(dev_union_root, h_union_root, 5);
+	vector<int> v1 = { 0, 1, 2, 3, 4 };
+	for (int i = 0; i < 5; ++i) v.push_back(h_union_root[i]);
+	EXPECT_EQ(v, v1);
+	v.clear();
+
+	//2nd round
+	h_dists[0] = 1; h_dists[1] = 1; h_dists[2] = 0; h_dists[3] = 0; h_dists[4] = 0;
+	h_dists[5] = 1; h_dists[6] = 1; h_dists[7] = 0; h_dists[8] = 0; h_dists[9] = 0;
+	h_dists[10] = 0; h_dists[11] = 0; h_dists[12] = 1; h_dists[13] = 0; h_dists[14] = 0;
+	h_dists[15] = 0; h_dists[16] = 0; h_dists[17] = 0; h_dists[18] = 1; h_dists[19] = 0;
+	h_dists[20] = 0; h_dists[21] = 0; h_dists[22] = 0; h_dists[23] = 0; h_dists[24] = 1;
+	for (int i = 0; i < 5; ++i) h_union_root[i] = i;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	data_util::intH2D(h_union_root, dev_union_root, 5);
+	uma_base::union_GPU(dev_dists, dev_union_root, 5);
+	data_util::intD2H(dev_union_root, h_union_root, 5);
+	vector<int> v2 = { 0, 0, 2, 3, 4 };
+	for (int i = 0; i < 5; ++i) v.push_back(h_union_root[i]);
+	EXPECT_EQ(v, v2);
+	v.clear();
+
+	//3rd round
+	h_dists[0] = 1; h_dists[1] = 1; h_dists[2] = 0; h_dists[3] = 0; h_dists[4] = 0;
+	h_dists[5] = 1; h_dists[6] = 1; h_dists[7] = 0; h_dists[8] = 0; h_dists[9] = 0;
+	h_dists[10] = 0; h_dists[11] = 0; h_dists[12] = 1; h_dists[13] = 1; h_dists[14] = 0;
+	h_dists[15] = 0; h_dists[16] = 0; h_dists[17] = 1; h_dists[18] = 1; h_dists[19] = 0;
+	h_dists[20] = 0; h_dists[21] = 0; h_dists[22] = 0; h_dists[23] = 0; h_dists[24] = 1;
+	for (int i = 0; i < 5; ++i) h_union_root[i] = i;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	data_util::intH2D(h_union_root, dev_union_root, 5);
+	uma_base::union_GPU(dev_dists, dev_union_root, 5);
+	data_util::intD2H(dev_union_root, h_union_root, 5);
+	vector<int> v3 = { 0, 0, 2, 2, 4 };
+	for (int i = 0; i < 5; ++i) v.push_back(h_union_root[i]);
+	EXPECT_EQ(v, v3);
+	v.clear();
+
+	//4th round
+	h_dists[0] = 1; h_dists[1] = 1; h_dists[2] = 1; h_dists[3] = 1; h_dists[4] = 1;
+	h_dists[5] = 1; h_dists[6] = 1; h_dists[7] = 1; h_dists[8] = 1; h_dists[9] = 1;
+	h_dists[10] = 1; h_dists[11] = 1; h_dists[12] = 1; h_dists[13] = 1; h_dists[14] = 1;
+	h_dists[15] = 1; h_dists[16] = 1; h_dists[17] = 1; h_dists[18] = 1; h_dists[19] = 1;
+	h_dists[20] = 1; h_dists[21] = 1; h_dists[22] = 1; h_dists[23] = 1; h_dists[24] = 1;
+	for (int i = 0; i < 5; ++i) h_union_root[i] = i;
+	data_util::intH2D(h_dists, dev_dists, 25);
+	data_util::intH2D(h_union_root, dev_union_root, 5);
+	uma_base::union_GPU(dev_dists, dev_union_root, 5);
+	data_util::intD2H(dev_union_root, h_union_root, 5);
+	vector<int> v4 = { 0, 0, 0, 0, 0 };
+	for (int i = 0; i < 5; ++i) v.push_back(h_union_root[i]);
+	EXPECT_EQ(v, v4);
+	v.clear();
+
+	delete[] h_union_root, h_dists;
+	data_util::dev_free(dev_union_root);
+	data_util::dev_free(dev_dists);
+}
+
+TEST(copy_npdir, uma_base_test) {
+	bool *h_npdirs, *dev_npdirs;
+	bool *h_dirs, *dev_dirs;
+	h_npdirs = new bool[60];
+	h_dirs = new bool[55];
+	data_util::dev_bool(dev_npdirs, 60);
+	data_util::dev_bool(dev_dirs, 55);
+	data_util::dev_init(dev_dirs, 55);
+	data_util::dev_init(dev_npdirs, 60);
+
+	h_dirs[0] = 1;
+	h_dirs[1] = 0; h_dirs[2] = 1;
+	h_dirs[3] = 0; h_dirs[4] = 0; h_dirs[5] = 1;
+	h_dirs[6] = 0; h_dirs[7] = 1; h_dirs[8] = 0; h_dirs[9] = 1;
+	h_dirs[10] = 0; h_dirs[11] = 0; h_dirs[12] = 0; h_dirs[13] = 0; h_dirs[14] = 1; 
+	h_dirs[15] = 0; h_dirs[16] = 1; h_dirs[17] = 0; h_dirs[18] = 1; h_dirs[19] = 0; h_dirs[20] = 1;
+	h_dirs[21] = 0; h_dirs[22] = 0; h_dirs[23] = 0; h_dirs[24] = 0; h_dirs[25] = 0; h_dirs[26] = 0; h_dirs[27] = 1; 
+	h_dirs[28] = 0; h_dirs[29] = 1; h_dirs[30] = 0; h_dirs[31] = 1; h_dirs[32] = 0; h_dirs[33] = 0; h_dirs[34] = 0; h_dirs[35] = 1;
+	h_dirs[36] = 0; h_dirs[37] = 0; h_dirs[38] = 0; h_dirs[39] = 0; h_dirs[40] = 1; h_dirs[41] = 0; h_dirs[42] = 1; h_dirs[43] = 0; h_dirs[44] = 1;
+	h_dirs[45] = 0; h_dirs[46] = 1; h_dirs[47] = 0; h_dirs[48] = 1; h_dirs[49] = 0; h_dirs[50] = 0; h_dirs[51] = 0; h_dirs[52] = 0; h_dirs[53] = 0; h_dirs[54] = 1;
+	data_util::boolH2D(h_dirs, dev_dirs, 55);
+
+	uma_base::copy_npdir(dev_npdirs, dev_dirs, 55);
+
+	h_npdirs[0] = 1; h_npdirs[1] = 0;
+	h_npdirs[2] = 0; h_npdirs[3] = 1;
+	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1; h_npdirs[7] = 0;
+	h_npdirs[8] = 0; h_npdirs[9] = 1; h_npdirs[10] = 0; h_npdirs[11] = 1;
+	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1; h_npdirs[17] = 0;
+	h_npdirs[18] = 0; h_npdirs[19] = 1; h_npdirs[20] = 0; h_npdirs[21] = 1; h_npdirs[22] = 0; h_npdirs[23] = 1;
+	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1; h_npdirs[31] = 0;
+	h_npdirs[32] = 0; h_npdirs[33] = 1; h_npdirs[34] = 0; h_npdirs[35] = 1; h_npdirs[36] = 0; h_npdirs[37] = 0; h_npdirs[38] = 0; h_npdirs[39] = 1;
+	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1; h_npdirs[49] = 0;
+	h_npdirs[50] = 0; h_npdirs[51] = 1; h_npdirs[52] = 0; h_npdirs[53] = 1; h_npdirs[54] = 0; h_npdirs[55] = 0; h_npdirs[56] = 0; h_npdirs[57] = 0; h_npdirs[58] = 0; h_npdirs[59] = 1;
+	
+	vector<bool> v1, v2;
+	for (int i = 0; i < 60; ++i) v1.push_back(h_npdirs[i]);
+	data_util::boolD2H(dev_npdirs, h_npdirs, 60);
+	for (int i = 0; i < 60; ++i) v2.push_back(h_npdirs[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_npdirs, h_dirs;
+	data_util::dev_free(dev_npdirs);
+	data_util::dev_free(dev_dirs);
+}
+
+TEST(negligible, uma_base_test) {
+	bool *h_negligible, *dev_negligible;
+	bool *h_npdirs, *dev_npdirs;
+	h_npdirs = new bool[60];
+	h_negligible = new bool[10];
+	data_util::dev_bool(dev_npdirs, 60);
+	data_util::dev_bool(dev_negligible, 10);
+
+	h_npdirs[0] = 1; h_npdirs[1] = 1;
+	h_npdirs[2] = 0; h_npdirs[3] = 1;
+	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1; h_npdirs[7] = 0;
+	h_npdirs[8] = 0; h_npdirs[9] = 1; h_npdirs[10] = 1; h_npdirs[11] = 1;
+	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1; h_npdirs[17] = 0;
+	h_npdirs[18] = 0; h_npdirs[19] = 1; h_npdirs[20] = 0; h_npdirs[21] = 1; h_npdirs[22] = 0; h_npdirs[23] = 1;
+	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1; h_npdirs[31] = 1;
+	h_npdirs[32] = 0; h_npdirs[33] = 1; h_npdirs[34] = 0; h_npdirs[35] = 1; h_npdirs[36] = 0; h_npdirs[37] = 0; h_npdirs[38] = 1; h_npdirs[39] = 1;
+	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1; h_npdirs[49] = 0;
+	h_npdirs[50] = 0; h_npdirs[51] = 1; h_npdirs[52] = 0; h_npdirs[53] = 1; h_npdirs[54] = 0; h_npdirs[55] = 0; h_npdirs[56] = 0; h_npdirs[57] = 0; h_npdirs[58] = 1; h_npdirs[59] = 1;
+	data_util::boolH2D(h_npdirs, dev_npdirs, 60);
+	uma_base::negligible(dev_npdirs, dev_negligible, 5);
+	data_util::boolD2H(dev_negligible, h_negligible, 10);
+
+	vector<bool> v1 = { 1, 0, 0, 1, 0, 0, 1, 1, 0, 1 };
+	vector<bool> v2;
+	for (int i = 0; i < 10; ++i) v2.push_back(h_negligible[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_npdirs, h_negligible;
+	data_util::dev_free(dev_npdirs);
+	data_util::dev_free(dev_negligible);
+}
+
 //--------------------------uma_base test----------------------------------
 
 int main(int argc, char** argv)

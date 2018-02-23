@@ -69,11 +69,11 @@ const vector<int> SignalUtil::bool_signal_to_int_idx(const vector<bool> &list){
 }
 
 /*
-This function is converting the measurable signal to sensor signal, any of the 2 measurable signal is true will lead to true in the sensor signal
-Input: measurable signal
+This function is converting the attr_sensor signal to sensor signal, any of the 2 attr_sensor signal is true will lead to true in the sensor signal
+Input: attr_sensor signal
 Output: sensor signal
 */
-const vector<bool> SignalUtil::measurable_signal_to_sensor_signal(const vector<bool> &signal) {
+const vector<bool> SignalUtil::attr_sensor_signal_to_sensor_signal(const vector<bool> &signal) {
 	vector<bool> result;
 	for (int i = 0; i < signal.size() / 2; ++i) {
 		if (signal[2 * i] || signal[2 * i + 1]) result.push_back(true);

@@ -2,8 +2,8 @@
 #include "World.h"
 #include "Sensor.h"
 #include "SensorPair.h"
-#include "Measurable.h"
-#include "MeasurablePair.h"
+#include "AttrSensor.h"
+#include "AttrSensorPair.h"
 #include "Logger.h"
 #include "DataManager.h"
 #include "UMAException.h"
@@ -166,7 +166,7 @@ void Snapshot::delete_sensor(const string &sensor_id) {
 	}
 
 	int sensor_idx = _sensor_idx.at(sensor_id)->_idx;
-	vector<bool> pruning_list(_dm->_measurable_size, false);
+	vector<bool> pruning_list(_dm->_attr_sensor_size, false);
 	pruning_list[2 * sensor_idx] = true;
 	pruning(pruning_list);
 	snapshotLogger.info("Sensor " + sensor_id + " deleted", _dependency);
@@ -255,13 +255,13 @@ void Snapshot::copy_test_data(Snapshot *snapshot) {
 
 /*
 The function is pruning the sensor and sensor pair list, also adjust their corresponding idx
-Input: the signal of all measurable
+Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
 	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
 	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
-	//get converted sensor list, from measurable signal
-	const vector<bool> sensor_list = SignalUtil::measurable_signal_to_sensor_signal(signal);
+	//get converted sensor list, from attr_sensor signal
+	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
 
 	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
 		throw UMAException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
@@ -462,12 +462,12 @@ void Snapshot::setOldTotal(const double &total_) {
 //------------------------------------GET FUNCTION------------------------------------
 
 /*
-this function is getting the measurable, from the sensor list
+this function is getting the attr_sensor, from the sensor list
 */
-Measurable *Snapshot::getMeasurable(int idx) const{
+AttrSensor *Snapshot::getAttrSensor(int idx) const{
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		throw UMAException("the input measurable index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
@@ -477,11 +477,11 @@ Measurable *Snapshot::getMeasurable(int idx) const{
 	}
 }
 
-Measurable *Snapshot::getMeasurable(const string &measurable_id) const{
-	Sensor *sensor = getSensor(measurable_id);
-	if (measurable_id == sensor->_m->_uuid) return sensor->_m;
-	else if(measurable_id == sensor->_cm->_uuid) return sensor->_cm;
-	throw UMAException("Cannot find the measurable id " + measurable_id, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+AttrSensor *Snapshot::getAttrSensor(const string &attr_sensor_id) const{
+	Sensor *sensor = getSensor(attr_sensor_id);
+	if (attr_sensor_id == sensor->_m->_uuid) return sensor->_m;
+	else if(attr_sensor_id == sensor->_cm->_uuid) return sensor->_cm;
+	throw UMAException("Cannot find the attr_sensor id " + attr_sensor_id, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 }
 
 SensorPair *Snapshot::getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const{
@@ -491,21 +491,21 @@ SensorPair *Snapshot::getSensorPair(const Sensor *sensor1, const Sensor *sensor2
 }
 
 /*
-This function is getting the measurable pair from the sensor pair list
-Input: m_idx1, m_idx2 are index of the measurable, m_idx1 > m_idx2
+This function is getting the attr_sensor pair from the sensor pair list
+Input: m_idx1, m_idx2 are index of the attr_sensor, m_idx1 > m_idx2
 */
-MeasurablePair *Snapshot::getMeasurablePair(int m_idx1, int m_idx2) const{
+AttrSensorPair *Snapshot::getAttrSensorPair(int m_idx1, int m_idx2) const{
 	int s_idx1 = m_idx1 / 2;
 	int s_idx2 = m_idx2 / 2;
-	Measurable *m1 = getMeasurable(m_idx1);
-	Measurable *m2 = getMeasurable(m_idx2);
-	return _sensor_pairs[ind(s_idx1, s_idx2)]->getMeasurablePair(m1->_isOriginPure, m2->_isOriginPure);
+	AttrSensor *m1 = getAttrSensor(m_idx1);
+	AttrSensor *m2 = getAttrSensor(m_idx2);
+	return _sensor_pairs[ind(s_idx1, s_idx2)]->getAttrSensorPair(m1->_isOriginPure, m2->_isOriginPure);
 }
 
-MeasurablePair *Snapshot::getMeasurablePair(const string &mid1, const string &mid2) const{
-	int idx1 = getMeasurable(mid1)->_idx > getMeasurable(mid2)->_idx ? getMeasurable(mid1)->_idx : getMeasurable(mid2)->_idx;
-	int idx2 = getMeasurable(mid1)->_idx > getMeasurable(mid2)->_idx ? getMeasurable(mid2)->_idx : getMeasurable(mid1)->_idx;
-	return getMeasurablePair(idx1, idx2);
+AttrSensorPair *Snapshot::getAttrSensorPair(const string &mid1, const string &mid2) const{
+	int idx1 = getAttrSensor(mid1)->_idx > getAttrSensor(mid2)->_idx ? getAttrSensor(mid1)->_idx : getAttrSensor(mid2)->_idx;
+	int idx2 = getAttrSensor(mid1)->_idx > getAttrSensor(mid2)->_idx ? getAttrSensor(mid2)->_idx : getAttrSensor(mid1)->_idx;
+	return getAttrSensorPair(idx1, idx2);
 }
 
 vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
@@ -513,7 +513,7 @@ vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
 		throw UMAException("Cannot find the sensor id " + sensor_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	Sensor *sensor = _sensor_idx.at(sensor_id);
-	vector<bool> result(_dm->_measurable_size, false);
+	vector<bool> result(_dm->_attr_sensor_size, false);
 	for (int i = 0; i < sensor->_amper.size(); ++i) {
 		result[sensor->_amper[i]] = true;
 	}
@@ -595,7 +595,7 @@ void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &u
 
 /*
 This is the amper and function, used in amper and delay
-Input: m_idx1, m_idx2 are the measurable idx that need to be amperand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
+Input: m_idx1, m_idx2 are the attr_sensor idx that need to be amperand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
 */
 void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<string, string> &id_pair) {
 	vector<SensorPair*> amper_and_sensor_pairs;
@@ -605,42 +605,42 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<stri
 
 	double f = 1.0;
 	if(_total > 1e-5)
-		f = getMeasurablePair(m_idx1, m_idx2)->v_w / _total;
+		f = getAttrSensorPair(m_idx1, m_idx2)->v_w / _total;
 	for(int i = 0; i < _sensors.size(); ++i){
 		SensorPair *sensor_pair = NULL;
 		sensor_pair = new SensorPair(amper_and_sensor, _sensors[i], _threshold, _total);
-		Measurable *m1 = _sensors[i]->_m;
-		Measurable *m2 = _sensors[i]->_cm;
+		AttrSensor *m1 = _sensors[i]->_m;
+		AttrSensor *m2 = _sensors[i]->_cm;
 
 		if (_sensors[i]->_m->_idx == m_idx1 || _sensors[i]->_m->_idx == m_idx2) {
-			sensor_pair->mij->v_w = getMeasurablePair(m_idx1, m_idx2)->v_w;
+			sensor_pair->mij->v_w = getAttrSensorPair(m_idx1, m_idx2)->v_w;
 			sensor_pair->mi_j->v_w = 0.0;
 			if (_sensors[i]->_m->_idx == m_idx1) {
-				sensor_pair->m_ij->v_w = getMeasurablePair(m_idx1, compi(m_idx2))->v_w;
-				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx1), compi(m_idx1))->v_w;
+				sensor_pair->m_ij->v_w = getAttrSensorPair(m_idx1, compi(m_idx2))->v_w;
+				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->v_w;
 			}
 			else {
-				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx1), m_idx2)->v_w;
-				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx2), compi(m_idx2))->v_w;
+				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx1), m_idx2)->v_w;
+				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->v_w;
 			}
 		}
 		else if (_sensors[i]->_cm->_idx == m_idx1 || _sensors[i]->_cm->_idx == m_idx2) {
-			sensor_pair->mi_j->v_w = getMeasurablePair(m_idx1, m_idx2)->v_w;
+			sensor_pair->mi_j->v_w = getAttrSensorPair(m_idx1, m_idx2)->v_w;
 			sensor_pair->mij->v_w = 0.0;
 			if (_sensors[i]->_cm->_idx == m_idx1) {
-				sensor_pair->m_i_j->v_w = getMeasurablePair(m_idx1, compi(m_idx2))->v_w;
-				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx1), compi(m_idx1))->v_w;
+				sensor_pair->m_i_j->v_w = getAttrSensorPair(m_idx1, compi(m_idx2))->v_w;
+				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->v_w;
 			}
 			else {
-				sensor_pair->m_i_j->v_w = getMeasurablePair(compi(m_idx1), m_idx2)->v_w;
-				sensor_pair->m_ij->v_w = getMeasurablePair(compi(m_idx2), compi(m_idx2))->v_w;
+				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx1), m_idx2)->v_w;
+				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->v_w;
 			}
 		}
 		else {
-			sensor_pair->mij->v_w = f * getMeasurablePair(m1->_idx, m1->_idx)->v_w;
-			sensor_pair->mi_j->v_w = f * getMeasurablePair(m2->_idx, m2->_idx)->v_w;
-			sensor_pair->m_ij->v_w = (1.0 - f) * getMeasurablePair(m1->_idx, m1->_idx)->v_w;
-			sensor_pair->m_i_j->v_w = (1.0 - f) * getMeasurablePair(m2->_idx, m2->_idx)->v_w;
+			sensor_pair->mij->v_w = f * getAttrSensorPair(m1->_idx, m1->_idx)->v_w;
+			sensor_pair->mi_j->v_w = f * getAttrSensorPair(m2->_idx, m2->_idx)->v_w;
+			sensor_pair->m_ij->v_w = (1.0 - f) * getAttrSensorPair(m1->_idx, m1->_idx)->v_w;
+			sensor_pair->m_i_j->v_w = (1.0 - f) * getAttrSensorPair(m2->_idx, m2->_idx)->v_w;
 		}
 		amper_and_sensor_pairs.push_back(sensor_pair);
 	}
@@ -683,7 +683,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<stri
 /*
 This function is generating the delayed weights
 Before this function is called, have to make sure, _sensors and _sensor_pairs have valid info in vwxx;
-Input: mid of the measurable doing the delay, and whether to merge after the operation
+Input: mid of the attr_sensor doing the delay, and whether to merge after the operation
 */
 void Snapshot::generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair){
 	//create a new delayed sensor
@@ -770,7 +770,7 @@ bool Snapshot::amper_and_signals(Sensor * const sensor) const{
 	vector<int> amper_list = sensor->getAmperList();
 	for (int i = 0; i < amper_list.size(); ++i) {
 		int j = amper_list[i];
-		Measurable *m = getMeasurable(j);
+		AttrSensor *m = getAttrSensor(j);
 		if (!(m->getOldObserve())) return false;
 	}
 	return true;
