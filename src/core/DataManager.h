@@ -17,13 +17,13 @@ protected:
 	variables start with 'host_' means it is used for GPU data copy, but it is on host memory
 	variables start with 'dev_' means it is used for GPU computation, it is on device memory
 	*/
-	//dir matrix, every pair of measurable has a dir value
+	//dir matrix, every pair of attr_sensor has a dir value
 	bool *h_dirs, *dev_dirs;
-	//weight matrix, every pair of measurable has a weight value
+	//weight matrix, every pair of attr_sensor has a weight value
 	double *h_weights, *dev_weights;
 	//threshold matrix, every pair of sensor has a threshold
 	double *h_thresholds, *dev_thresholds;
-	//amper value collection for mask, mask_amper matrix, every sensor has a mask amper, but the construction is all other measurables
+	//amper value collection for mask, mask_amper matrix, every sensor has a mask amper, but the construction is all other attr_sensors
 	bool *h_mask_amper, *dev_mask_amper;
 	//n power of dir matrix, computed using floyd algorithm									
 	bool *h_npdirs, *dev_npdirs;
@@ -79,23 +79,23 @@ protected:
 	int _sensor_size;
 	//the current sensor max size
 	int _sensor_size_max;
-	//the measurable size, also changable
-	int _measurable_size;
-	//the measurable max size
-	int _measurable_size_max;
+	//the attr_sensor size, also changable
+	int _attr_sensor_size;
+	//the attr_sensor max size
+	int _attr_sensor_size_max;
 	//the sensor 2 dimensional size, hold the size of the threshold
 	int _sensor2d_size;
 	//the _sensor2d_size max value
 	int _sensor2d_size_max;
-	//the measurable 2 dimensional size, hold the size of weight and dir matrix
-	int _measurable2d_size;
-	//the _measurable2d_size max value
-	int _measurable2d_size_max;
+	//the attr_sensor 2 dimensional size, hold the size of weight and dir matrix
+	int _attr_sensor2d_size;
+	//the _attr_sensor2d_size max value
+	int _attr_sensor2d_size_max;
 	//the mask amper size, used to hold the mask amper
 	int _mask_amper_size;
 	//the _mask_amper_size max value
 	int _mask_amper_size_max;
-	//the npdir matrix size, npdir_size = _measurable2d_size + sensor_size(increase value on y=2i, x=2i)
+	//the npdir matrix size, npdir_size = _attr_sensor2d_size + sensor_size(increase value on y=2i, x=2i)
 	int _npdir_size;
 	//the npdir max size
 	int _npdir_size_max;

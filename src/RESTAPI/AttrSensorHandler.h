@@ -4,9 +4,9 @@
 #include "Global.h"
 #include "UMARestHandler.h"
 
-class MeasurableHandler: public UMARestHandler {
+class AttrSensorHandler: public UMARestHandler {
 public:
-	MeasurableHandler(const string &handler_name);
+	AttrSensorHandler(const string &handler_name);
 
 	virtual void handle_create(UMARestRequest &request);
 	virtual void handle_update(UMARestRequest &request);
@@ -17,7 +17,7 @@ public:
 	void get_measurable_pair(UMARestRequest &request);
 	void update_measurable_pair(UMARestRequest &request);
 	void update_measurable(UMARestRequest &request);
-	~MeasurableHandler();
+	~AttrSensorHandler();
 };
 
 #endif

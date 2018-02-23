@@ -1,5 +1,5 @@
 #include "Sensor.h"
-#include "Measurable.h"
+#include "AttrSensor.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
@@ -23,8 +23,8 @@ Sensor::Sensor(ifstream &file) {
 		file.read((char *)(&tmp_value), sizeof(int));
 		_amper.push_back(tmp_value);
 	}
-	_m = new Measurable(file);
-	_cm = new Measurable(file);
+	_m = new AttrSensor(file);
+	_cm = new AttrSensor(file);
 }
 */
 
@@ -34,14 +34,14 @@ Input: _sid is sensor id, const int, and _sname, sensor name
 */
 Sensor::Sensor(const std::pair<string, string> &id_pair, const double &total, int idx): _uuid(id_pair.first){
 	_idx = idx;
-	_m = new Measurable(id_pair.first, 2 * idx, true, total / 2);
-	_cm = new Measurable(id_pair.second, 2 * idx + 1, false, total / 2);
+	_m = new AttrSensor(id_pair.first, 2 * idx, true, total / 2);
+	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, total / 2);
 }
 
 Sensor::Sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, int idx): _uuid(id_pair.first) {
 	_idx = idx;
-	_m = new Measurable(id_pair.first, 2 * idx, true, diag[0]);
-	_cm = new Measurable(id_pair.second, 2 * idx + 1, false, diag[1]);
+	_m = new AttrSensor(id_pair.first, 2 * idx, true, diag[0]);
+	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, diag[1]);
 }
 
 /*
@@ -72,7 +72,7 @@ void Sensor::pointers_to_null() {
 This function is setting the diag pointers of _m and _cm through the sensor object
 Input: weight matrix diagonal value of this and last iteration
 */
-void Sensor::setMeasurableDiagPointers(double *_diags, double *_diags_) {
+void Sensor::setAttrSensorDiagPointers(double *_diags, double *_diags_) {
 	_m->setDiagPointers(_diags, _diags_);
 	_cm->setDiagPointers(_diags, _diags_);
 }
@@ -81,12 +81,12 @@ void Sensor::setMeasurableDiagPointers(double *_diags, double *_diags_) {
 This function is setting the status pointers of _m and _cm through the sensor object
 Input: weight matrix diagonal value of this and last iteration
 */
-void Sensor::setMeasurableObservePointers(bool *observe, bool *observe_) {
+void Sensor::setAttrSensorObservePointers(bool *observe, bool *observe_) {
 	_m->setObservePointers(observe, observe_);
 	_cm->setObservePointers(observe, observe_);
 }
 
-void Sensor::setMeasurableCurrentPointers(bool *current) {
+void Sensor::setAttrSensorCurrentPointers(bool *current) {
 	_m->setCurrentPointers(current);
 	_cm->setCurrentPointers(current);
 }

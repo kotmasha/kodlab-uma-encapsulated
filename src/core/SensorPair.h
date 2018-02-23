@@ -3,7 +3,7 @@
 
 #include "Global.h"
 
-class MeasurablePair;
+class AttrSensorPair;
 class Sensor;
 
 using namespace std;
@@ -18,7 +18,7 @@ private:
 	//const pointer to sensor, smaller idx
 	Sensor * _sensor_j;
 	//pointers to measurable pairs
-	MeasurablePair *mij, *mi_j, *m_ij, *m_i_j;
+	AttrSensorPair *mij, *mi_j, *m_ij, *m_i_j;
 	//pointer to threshold matrix
 	double *threshold;
 	//threshold matrix value
@@ -41,7 +41,7 @@ public:
 	void values_to_pointers();
 	void setAllPointers(double *weights, bool *dirs, double *thresholds);
 
-	MeasurablePair *getMeasurablePair(bool isOriginPure_i, bool isOriginPure_j);
+	AttrSensorPair *getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j);
 	//void save_sensor_pair(ofstream &file);
 	//void copy_data(SensorPair *sp);
 	const double &getThreshold() const;

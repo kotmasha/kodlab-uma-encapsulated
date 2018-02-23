@@ -21,7 +21,7 @@ dfs('./data')
 #print "Sensor test passed"
 #test.run_test('test_data/measurable_test.yml')
 #print "Measurable test passed"
-#test.run_test('test_data/matrix_test.yml')
+#test.run_test('data/simulation/matrix_test.yml')
 #print "Matrix test passed"
 #test.run_test('test_data/amper_test.yml')
 #print "Amper test passed"

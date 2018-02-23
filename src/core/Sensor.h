@@ -3,7 +3,7 @@
 
 #include "Global.h"
 class Snapshot;
-class Measurable;
+class AttrSensor;
 class SensorPair;
 
 using namespace std;
@@ -25,9 +25,9 @@ public:
 	void pointers_to_null();
 
 	//set pointers
-	void setMeasurableDiagPointers(double *_diags, double *_diags_);
-	void setMeasurableObservePointers(bool *observe, bool *observe_);
-	void setMeasurableCurrentPointers(bool *current);
+	void setAttrSensorDiagPointers(double *_diags, double *_diags_);
+	void setAttrSensorObservePointers(bool *observe, bool *observe_);
+	void setAttrSensorCurrentPointers(bool *current);
 
 	void setAmperList(int idx);
 	void setAmperList(Sensor * const sensor);
@@ -51,7 +51,7 @@ protected:
 	//idx is the index of sensor in the array structure, can be changed due to pruning
 	int _idx;
 	//*m is the pointer to the measurable object under this sensor, and cm is the compi
-	Measurable *_m, *_cm;
+	AttrSensor *_m, *_cm;
 	vector<int> _amper;
 
 	friend class SensorPair;

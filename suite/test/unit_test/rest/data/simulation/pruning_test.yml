@@ -119,10 +119,10 @@ get data size 6 sensor:
       _sensor_size_max: 6
       _sensor2d_size: 21
       _sensor2d_size_max: 21
-      _measurable_size: 12
-      _measurable_size_max: 12
-      _measurable2d_size: 78
-      _measurable2d_size_max: 78
+      _attr_sensor_size: 12
+      _attr_sensor_size_max: 12
+      _attr_sensor2d_size: 78
+      _attr_sensor2d_size_max: 78
       _mask_amper_size: 42
       _mask_amper_size_max: 42
       _npdir_size: 84
@@ -169,10 +169,10 @@ get data size 4 sensor:
       _sensor_size_max: 6
       _sensor2d_size: 10
       _sensor2d_size_max: 21
-      _measurable_size: 8
-      _measurable_size_max: 12
-      _measurable2d_size: 36
-      _measurable2d_size_max: 78
+      _attr_sensor_size: 8
+      _attr_sensor_size_max: 12
+      _attr_sensor2d_size: 36
+      _attr_sensor2d_size_max: 78
       _mask_amper_size: 20
       _mask_amper_size_max: 42
       _npdir_size: 40
@@ -223,10 +223,10 @@ get data size 7 sensor:
       _sensor_size_max: 10
       _sensor2d_size: 28
       _sensor2d_size_max: 55
-      _measurable_size: 14
-      _measurable_size_max: 20
-      _measurable2d_size: 105
-      _measurable2d_size_max: 210
+      _attr_sensor_size: 14
+      _attr_sensor_size_max: 20
+      _attr_sensor2d_size: 105
+      _attr_sensor2d_size_max: 210
       _mask_amper_size: 56
       _mask_amper_size_max: 110
       _npdir_size: 112
@@ -271,10 +271,10 @@ get data size 2 sensor:
       _sensor_size_max: 10
       _sensor2d_size: 3
       _sensor2d_size_max: 55
-      _measurable_size: 4
-      _measurable_size_max: 20
-      _measurable2d_size: 10
-      _measurable2d_size_max: 210
+      _attr_sensor_size: 4
+      _attr_sensor_size_max: 20
+      _attr_sensor2d_size: 10
+      _attr_sensor2d_size_max: 210
       _mask_amper_size: 6
       _mask_amper_size_max: 110
       _npdir_size: 12
