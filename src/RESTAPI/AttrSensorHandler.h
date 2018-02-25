@@ -13,10 +13,10 @@ public:
 	virtual void handle_read(UMARestRequest &request);
 	virtual void handle_delete(UMARestRequest &request);
 
-	void get_measurable(UMARestRequest &request);
-	void get_measurable_pair(UMARestRequest &request);
-	void update_measurable_pair(UMARestRequest &request);
-	void update_measurable(UMARestRequest &request);
+	void get_attr_sensor(UMARestRequest &request);
+	void get_attr_sensor_pair(UMARestRequest &request);
+	void update_attr_sensor_pair(UMARestRequest &request);
+	void update_attr_sensor(UMARestRequest &request);
 	~AttrSensorHandler();
 };
 
