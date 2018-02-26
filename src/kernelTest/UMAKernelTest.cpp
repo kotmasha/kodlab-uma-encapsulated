@@ -768,26 +768,26 @@ TEST(get_weights_diag, uma_base_test) {
 }
 
 TEST(calculate_target, uma_base_test) {
-	double *h_measurable, *dev_measurable;
+	double *h_attr_sensor, *dev_attr_sensor;
 	bool *h_target, *dev_target;
 
-	h_measurable = new double[10];
+	h_attr_sensor = new double[10];
 	h_target = new bool[10];
-	data_util::dev_double(dev_measurable, 10);
+	data_util::dev_double(dev_attr_sensor, 10);
 	data_util::dev_bool(dev_target, 10);
 
-	h_measurable[0] = 1.02; h_measurable[2] = -2.21; h_measurable[4] = 10000000; h_measurable[6] = 0.0003; h_measurable[8] = 0.0;
-	h_measurable[1] = 1.01; h_measurable[3] = -2.22; h_measurable[5] = -10000000; h_measurable[7] = 0.0004; h_measurable[9] = -0.01;
+	h_attr_sensor[0] = 1.02; h_attr_sensor[2] = -2.21; h_attr_sensor[4] = 10000000; h_attr_sensor[6] = 0.0003; h_attr_sensor[8] = 0.0;
+	h_attr_sensor[1] = 1.01; h_attr_sensor[3] = -2.22; h_attr_sensor[5] = -10000000; h_attr_sensor[7] = 0.0004; h_attr_sensor[9] = -0.01;
 	vector<bool> v_target = { true, false, true, false, true, false, false, true, true, false };
 
-	data_util::doubleH2D(h_measurable, dev_measurable, 10);
-	uma_base::calculate_target(dev_measurable, dev_target, 5);
+	data_util::doubleH2D(h_attr_sensor, dev_attr_sensor, 10);
+	uma_base::calculate_target(dev_attr_sensor, dev_target, 5);
 	data_util::boolD2H(dev_target, h_target, 10);
 
 	for (int i = 0; i < 10; ++i) EXPECT_DOUBLE_EQ(h_target[i], v_target[i]);
 
-	delete[] h_measurable, h_target;
-	data_util::dev_free(dev_measurable);
+	delete[] h_attr_sensor, h_target;
+	data_util::dev_free(dev_attr_sensor);
 	data_util::dev_free(dev_target);
 }
 
@@ -1483,6 +1483,67 @@ TEST(negligible, uma_base_test) {
 	delete[] h_npdirs, h_negligible;
 	data_util::dev_free(dev_npdirs);
 	data_util::dev_free(dev_negligible);
+}
+
+TEST(delta_weight_sum, uma_base_test) {
+	double *h_attr_sensor, *dev_attr_sensor;
+	bool *h_signal, *dev_signal;
+	float *h_result, *dev_result;
+	h_signal = new bool[16];
+	h_attr_sensor = new double[16];
+	h_result = new float;
+
+	data_util::dev_bool(dev_signal, 16);
+	data_util::dev_double(dev_attr_sensor, 16);
+	data_util::dev_float(dev_result, 1);
+	data_util::dev_init(dev_result, 1);
+
+	h_attr_sensor[0] = 0; h_attr_sensor[1] = 3; h_attr_sensor[2] = 6; h_attr_sensor[3] = 2;
+	h_attr_sensor[4] = 9; h_attr_sensor[5] = 7; h_attr_sensor[6] = 11; h_attr_sensor[7] = 19;
+	h_attr_sensor[8] = 16; h_attr_sensor[9] = 3; h_attr_sensor[10] = 14; h_attr_sensor[11] = 22;
+	h_attr_sensor[12] = 28; h_attr_sensor[13] = 6; h_attr_sensor[14] = 31; h_attr_sensor[15] = 8;
+	data_util::doubleH2D(h_attr_sensor, dev_attr_sensor, 16);
+
+	//1st round
+	h_signal[0] = 1; h_signal[1] = 0; h_signal[2] = 1; h_signal[3] = 0;
+	h_signal[4] = 0; h_signal[5] = 1; h_signal[6] = 0; h_signal[7] = 1;
+	data_util::boolH2D(h_signal, dev_signal, 8);
+	uma_base::delta_weight_sum(dev_attr_sensor, dev_signal, dev_result, 8);
+	data_util::floatD2H(dev_result, h_result, 1);
+	EXPECT_FLOAT_EQ(*h_result, 7.0);
+	data_util::dev_init(dev_result, 1);
+
+	//2st round
+	h_signal[0] = 0; h_signal[1] = 1; h_signal[2] = 0; h_signal[3] = 0;
+	h_signal[4] = 1; h_signal[5] = 0; h_signal[6] = 0; h_signal[7] = 1;
+	h_signal[8] = 1; h_signal[9] = 0; h_signal[10] = 0; h_signal[11] = 0;
+	data_util::boolH2D(h_signal, dev_signal, 12);
+	uma_base::delta_weight_sum(dev_attr_sensor, dev_signal, dev_result, 12);
+	data_util::floatD2H(dev_result, h_result, 1);
+	EXPECT_FLOAT_EQ(*h_result, 26.0);
+	data_util::dev_init(dev_result, 1);
+
+	//3rd round
+	h_signal[0] = 0; h_signal[1] = 1; h_signal[2] = 1; h_signal[3] = 0;
+	h_signal[4] = 0; h_signal[5] = 0; h_signal[6] = 0; h_signal[7] = 1;
+	h_signal[8] = 0; h_signal[9] = 0; h_signal[10] = 1; h_signal[11] = 0;
+	h_signal[12] = 0; h_signal[13] = 1; h_signal[14] = 1; h_signal[15] = 0;
+	data_util::boolH2D(h_signal, dev_signal, 16);
+	uma_base::delta_weight_sum(dev_attr_sensor, dev_signal, dev_result, 16);
+	data_util::floatD2H(dev_result, h_result, 1);
+	EXPECT_FLOAT_EQ(*h_result, 8.0);
+	data_util::dev_init(dev_result, 1);
+
+	//4th round
+	h_signal[0] = 1; h_signal[1] = 0; h_signal[2] = 0; h_signal[3] = 0;
+	h_signal[4] = 0; h_signal[5] = 1; h_signal[6] = 0; h_signal[7] = 0;
+	h_signal[8] = 1; h_signal[9] = 0; h_signal[10] = 1; h_signal[11] = 0;
+	h_signal[12] = 0; h_signal[13] = 1; h_signal[14] = 0; h_signal[15] = 0;
+	data_util::boolH2D(h_signal, dev_signal, 16);
+	uma_base::delta_weight_sum(dev_attr_sensor, dev_signal, dev_result, 16);
+	data_util::floatD2H(dev_result, h_result, 1);
+	EXPECT_FLOAT_EQ(*h_result, -22.0);
+	data_util::dev_init(dev_result, 1);
 }
 
 //--------------------------uma_base test----------------------------------

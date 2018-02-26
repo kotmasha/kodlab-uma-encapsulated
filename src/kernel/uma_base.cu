@@ -42,7 +42,7 @@ __device__ double raise_threshold(double q, double total, double phi, double T){
 
 /*
 This function does implies on GPU, using non-worker solution
-Input: row, col info, measurable size, weight matrix and threshold
+Input: row, col info, attr_sensor size, weight matrix and threshold
 Output: bool value(mathematical info please inquiry Kotomasha)
 */
 __device__ bool implies_GPU(int row, int col, double *weights, double total, double threshold){//implies
@@ -55,7 +55,7 @@ __device__ bool implies_GPU(int row, int col, double *weights, double total, dou
 
 /*
 This function does equivalent on GPU, using non-worker solution
-Input: row, col info, measurable size, weight matrix and threshold
+Input: row, col info, attr_sensor size, weight matrix and threshold
 Output: bool value(mathematical info please inquiry Kotomasha)
 */
 /*
@@ -128,7 +128,7 @@ __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds
 */
 /*
 initiate the mask kernel, filling all initial sensor to false, the other to true
-Input: mask signal, initial size and measurable size
+Input: mask signal, initial size and attr_sensor size
 */
 __global__ void init_mask_kernel(bool *mask, int initial_size, int size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
@@ -140,11 +140,11 @@ __global__ void init_mask_kernel(bool *mask, int initial_size, int size){
 
 /*
 initiate diag value, the value should be half of total value
-Input: diag and old diag list, total, last total, and measurable size
+Input: diag and old diag list, total, last total, and attr_sensor size
 */
-__global__ void init_diag_kernel(double *diag, double *diag_, double total, double last_total, int measurable_size){
+__global__ void init_diag_kernel(double *diag, double *diag_, double total, double last_total, int attr_sensor_size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	if(index < measurable_size){
+	if(index < attr_sensor_size){
 		diag[index] = total / 2.0;
 		diag_[index] = last_total / 2.0;
 	}
@@ -152,13 +152,13 @@ __global__ void init_diag_kernel(double *diag, double *diag_, double total, doub
 
 /*
 This function is update weights for discounted agent, using non-worker solution
-Input: weight matrix, observe bool value from python side and measurable size
+Input: weight matrix, observe bool value from python side and attr_sensor size
 Output: None
 */
-__global__ void update_weights_kernel_stationary(double *weights, bool *observe, int measurable_size, double q, double phi, bool activity){
+__global__ void update_weights_kernel_stationary(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool activity){
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if(indexX <= indexY && indexY < measurable_size){
+	if(indexX <= indexY && indexY < attr_sensor_size){
 		if(activity){
 			weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
 		}
@@ -168,22 +168,22 @@ __global__ void update_weights_kernel_stationary(double *weights, bool *observe,
 /*
 Deprecated
 */
-__global__ void update_weights_kernel_forgetful(double *weights, bool *observe, int measurable_size, double q, double phi, bool activity){
+__global__ void update_weights_kernel_forgetful(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool activity){
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if(indexX <= indexY && indexY < measurable_size){
+	if(indexX <= indexY && indexY < attr_sensor_size){
 	    weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * activity * phi;
 	}
 }
 
 /*
 update the weight matrix based on observe signal
-Input: weight, observe signal, measurable size, q, phi value, and activity(indicating whether the snapshot is active)
+Input: weight, observe signal, attr_sensor size, q, phi value, and activity(indicating whether the snapshot is active)
 */
-__global__ void update_weights_kernel(double *weights, bool *observe, int measurable_size, double q, double phi, bool activity){
+__global__ void update_weights_kernel(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool activity){
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if (indexX <= indexY && indexY < measurable_size) {
+	if (indexX <= indexY && indexY < attr_sensor_size) {
 		if (activity) {
 			weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
 		}
@@ -192,11 +192,11 @@ __global__ void update_weights_kernel(double *weights, bool *observe, int measur
 
 /*
 get the weight matrix's diag value, store in diag and update old diag
-Input: weight matrix, diag, old diag, measurable size
+Input: weight matrix, diag, old diag, attr_sensor size
 */
-__global__ void get_weights_diag_kernel(double *weights, double *diags, double *diags_, int measurable_size){
+__global__ void get_weights_diag_kernel(double *weights, double *diags, double *diags_, int attr_sensor_size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	if(index < measurable_size){
+	if(index < attr_sensor_size){
 		int idx = ind(index, index);
 		diags_[index] = diags[index];
 		diags[index] = weights[idx];
@@ -204,17 +204,17 @@ __global__ void get_weights_diag_kernel(double *weights, double *diags, double *
 }
 
 /*
-calculate the target value based on the measurable vector value
-Input: measurable list, target signal, sensor size
+calculate the target value based on the attr_sensor vector value
+Input: attr_sensor list, target signal, sensor size
 */
-__global__ void calculate_target_kernel(double *measurable, bool *target, int sensor_size){
+__global__ void calculate_target_kernel(double *attr_sensor, bool *target, int sensor_size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if(index < sensor_size){
-		if(measurable[2 * index] - measurable[2 * index + 1] > 1e-12){
+		if(attr_sensor[2 * index] - attr_sensor[2 * index + 1] > 1e-12){
 			target[2 * index] = true;
 			target[2 * index + 1] = false;
 		}
-		else if(measurable[2 * index] - measurable[2 * index + 1] < 1e-12){
+		else if(attr_sensor[2 * index] - attr_sensor[2 * index + 1] < 1e-12){
 			target[2 * index] = false;
 			target[2 * index + 1] = true;
 		}
@@ -227,7 +227,7 @@ __global__ void calculate_target_kernel(double *measurable, bool *target, int se
 
 /* 
 GPU method: updating the thresholds prior to orientation update
-Input: dir weights, thresholds, last_total, q, phi, measurable_size
+Input: dir weights, thresholds, last_total, q, phi, attr_sensor_size
 Output: None
 */
 __global__ void update_thresholds_kernel(bool *dir, double *thresholds, double last_total, double q, double phi, int sensor_size) {
@@ -240,7 +240,7 @@ __global__ void update_thresholds_kernel(bool *dir, double *thresholds, double l
 
 /*
 This function is orient all on GPU, using non-worker solution
-Input: direction, weight, threshold matrix, and measurable size
+Input: direction, weight, threshold matrix, and attr_sensor size
 Output: None
 */
 __global__ void orient_all_kernel(bool *dir, double *weights, double *thresholds, double total, int sensor_size){
@@ -254,7 +254,7 @@ __global__ void orient_all_kernel(bool *dir, double *weights, double *thresholds
 /*
 This function is dfs on GPU, using non-worker solution
 This function use shared memory and thus has only one GPU block, the default threshold number is 1024
-Input: bool list of data to be dfsed, direction matrix and measurable size
+Input: bool list of data to be dfsed, direction matrix and attr_sensor size
 Output: None
 ****************************No long usaged in latest version, but functionality remain***************************
 */
@@ -315,12 +315,12 @@ __global__ void dfs_kernel(bool *x, bool *dir, double *thresholds, bool is_stabl
 
 /*
 copy the npdir value from dir value, but need to take care of x=2i+1, y=2i case, set the value to false
-Input: npdir matrix, dir matrix, measurable size
+Input: npdir matrix, dir matrix, attr_sensor size
 */
-__global__ void copy_npdir_kernel(bool *npdir, bool *dir, int measurable_size) {
+__global__ void copy_npdir_kernel(bool *npdir, bool *dir, int attr_sensor_size) {
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if (indexX < measurable_size && indexY < measurable_size) {
+	if (indexX < attr_sensor_size && indexY < attr_sensor_size) {
 		if (indexX <= indexY) {//normal case
 			npdir[npdir_ind(indexY, indexX)] = dir[ind(indexY, indexX)];
 		}
@@ -332,14 +332,14 @@ __global__ void copy_npdir_kernel(bool *npdir, bool *dir, int measurable_size) {
 
 /*
 floyd kernel, calculating the npdir
-Input: dir matrix, measurable size
+Input: dir matrix, attr_sensor size
 */
-__global__ void floyd_kernel(bool *dir, int measurable_size) {
+__global__ void floyd_kernel(bool *dir, int attr_sensor_size) {
 	int indexX = threadIdx.x;
 	int indexY = threadIdx.y;
-	for (int i = 0; i < measurable_size; ++i) {
+	for (int i = 0; i < attr_sensor_size; ++i) {
 		int x = indexX, y = indexY;
-		while (y < measurable_size) {
+		while (y < attr_sensor_size) {
 			if (y < x && (x % 2 != 0 || x != y + 1)) {
 				y += THREAD2D;
 				x = indexX;
@@ -524,12 +524,12 @@ __global__ void check_mask_kernel(bool *mask, int sensor_size){
 
 /*
 get the delta weight sum
-Input: measurable(diag) value, current signal, tmp variable for result, and measurable size
+Input: attr_sensor(diag) value, current signal, tmp variable for result, and attr_sensor size
 */
-__global__ void delta_weight_sum_kernel(double *measurable, bool *signal, float *result, int measurable_size){
+__global__ void delta_weight_sum_kernel(double *attr_sensor, bool *signal, float *result, int attr_sensor_size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	if(index < measurable_size){
-		atomicAdd(result, signal[index] * (measurable[index] - measurable[compi(index)]));
+	if(index < attr_sensor_size){
+		atomicAdd(result, signal[index] * (attr_sensor[index] - attr_sensor[compi(index)]));
 	}
 }
 
@@ -591,23 +591,23 @@ __global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size
 */
 
 
-void uma_base::init_mask(bool *mask, int initial_size, int measurable_size) {
-	init_mask_kernel << <GRID1D(measurable_size), BLOCK1D >> > (mask, initial_size, measurable_size);
+void uma_base::init_mask(bool *mask, int initial_size, int attr_sensor_size) {
+	init_mask_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (mask, initial_size, attr_sensor_size);
 	umaBaseLogger.debug("init_mask_kernel invoked!");
 }
 
-void uma_base::init_diag(double *diag, double *diag_, double total, double total_, int measurable_size_max) {
-	init_diag_kernel << <GRID1D(measurable_size_max), BLOCK1D >> > (diag, diag_, total, total_, measurable_size_max);
+void uma_base::init_diag(double *diag, double *diag_, double total, double total_, int attr_sensor_size_max) {
+	init_diag_kernel << <GRID1D(attr_sensor_size_max), BLOCK1D >> > (diag, diag_, total, total_, attr_sensor_size_max);
 	umaBaseLogger.debug("init_diag_kernel invoked!");
 }
 
-void uma_base::update_weights(double *weights, bool *observe, int measurable_size, double q, double phi, bool active) {
-	update_weights_kernel << <GRID2D(measurable_size, measurable_size), BLOCK2D >> > (weights, observe, measurable_size, q, phi, active);
+void uma_base::update_weights(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool active) {
+	update_weights_kernel << <GRID2D(attr_sensor_size, attr_sensor_size), BLOCK2D >> > (weights, observe, attr_sensor_size, q, phi, active);
 	umaBaseLogger.debug("update_weights invoked!");
 }
 
-void uma_base::get_weights_diag(double *weights, double *diag, double *diag_, int measurable_size) {
-	get_weights_diag_kernel << <GRID1D(measurable_size), BLOCK1D >> > (weights, diag, diag_, measurable_size);
+void uma_base::get_weights_diag(double *weights, double *diag, double *diag_, int attr_sensor_size) {
+	get_weights_diag_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (weights, diag, diag_, attr_sensor_size);
 	umaBaseLogger.debug("get_weights_diag_kernel invoked!");
 }
 
@@ -626,13 +626,13 @@ void uma_base::orient_all(bool *dirs, double *weights, double *thresholds, doubl
 	umaBaseLogger.debug("orient_all_kernel invoked!");
 }
 
-void uma_base::dfs(bool *signal, bool *dirs, double *thresholds, double q, int measurable_size) {
-	dfs_kernel << <1, BLOCK1D, 2 * measurable_size * sizeof(bool) >> >(signal, dirs, thresholds, false, 1 - q, measurable_size);
+void uma_base::dfs(bool *signal, bool *dirs, double *thresholds, double q, int attr_sensor_size) {
+	dfs_kernel << <1, BLOCK1D, 2 * attr_sensor_size * sizeof(bool) >> >(signal, dirs, thresholds, false, 1 - q, attr_sensor_size);
 	umaBaseLogger.debug("dfs_kernel invoked!");
 }
 
-void uma_base::floyd(bool *npdirs, int measurable_size) {
-	floyd_kernel << <GRID2D(1, 1), BLOCK2D >> >(npdirs, measurable_size);
+void uma_base::floyd(bool *npdirs, int attr_sensor_size) {
+	floyd_kernel << <GRID2D(1, 1), BLOCK2D >> >(npdirs, attr_sensor_size);
 	umaBaseLogger.debug("floyd_kernel invoked!");
 }
 
@@ -641,13 +641,13 @@ void uma_base::dioid_square(int *dists, int sensor_size) {
 	umaBaseLogger.debug("diod_square_kernel invoked!");
 }
 
-void uma_base::transpose_multiply(bool *npdirs, bool *signals, int measurable_size, int sig_count) {
-	transpose_multiply_kernel << <GRID2D(sig_count, measurable_size), BLOCK2D >> >(npdirs, signals, measurable_size, sig_count);
+void uma_base::transpose_multiply(bool *npdirs, bool *signals, int attr_sensor_size, int sig_count) {
+	transpose_multiply_kernel << <GRID2D(sig_count, attr_sensor_size), BLOCK2D >> >(npdirs, signals, attr_sensor_size, sig_count);
 	umaBaseLogger.debug("transpose_multiply_kernel invoked!");
 }
 
-void uma_base::multiply(bool *npdirs, bool *signals, int measurable_size, int sig_count) {
-	multiply_kernel << <GRID2D(sig_count, measurable_size), BLOCK2D >> >(npdirs, signals, measurable_size, sig_count);
+void uma_base::multiply(bool *npdirs, bool *signals, int attr_sensor_size, int sig_count) {
+	multiply_kernel << <GRID2D(sig_count, attr_sensor_size), BLOCK2D >> >(npdirs, signals, attr_sensor_size, sig_count);
 	umaBaseLogger.debug("multiply_kernel invoked!");
 }
 
@@ -661,8 +661,8 @@ void uma_base::check_mask(bool *mask, int sensor_size) {
 	umaBaseLogger.debug("check_mask_kernel invoked!");
 }
 
-void uma_base::delta_weight_sum(double *diag, bool *d1, float *result, int measurable_size) {
-	delta_weight_sum_kernel << <GRID1D(measurable_size), BLOCK1D >> > (diag, d1, result, measurable_size);
+void uma_base::delta_weight_sum(double *diag, bool *d1, float *result, int attr_sensor_size) {
+	delta_weight_sum_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (diag, d1, result, attr_sensor_size);
 	umaBaseLogger.debug("delta_weight_sum_kernel invoked!");
 }
 
@@ -681,8 +681,8 @@ void uma_base::union_GPU(int *dists, int *union_root, int sensor_size) {
 	umaBaseLogger.debug("union_GPU_kernel invoked!");
 }
 
-void uma_base::copy_npdir(bool *npdir, bool *dir, int measurable_size) {
-	copy_npdir_kernel << <GRID2D(measurable_size, measurable_size), BLOCK2D >> > (npdir, dir, measurable_size);
+void uma_base::copy_npdir(bool *npdir, bool *dir, int attr_sensor_size) {
+	copy_npdir_kernel << <GRID2D(attr_sensor_size, attr_sensor_size), BLOCK2D >> > (npdir, dir, attr_sensor_size);
 	umaBaseLogger.debug("copy_npdir_kernel invoked!");
 }
 
