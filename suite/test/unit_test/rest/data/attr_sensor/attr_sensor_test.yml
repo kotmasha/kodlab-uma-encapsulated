@@ -81,96 +81,96 @@ create sensor5:
     d: []
     diag: []
 
-get measurable without mid:
+get attr_sensor without mid:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 400
   message: Coming request is missing necessary fields
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
 
-get measurable sensor1:
+get attr_sensor sensor1:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: True
 
-get measurable c_sensor1:
+get attr_sensor c_sensor1:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor1
+    attr_sensor_id: c_sensor1
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-get measurable sensor3:
+get attr_sensor sensor3:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor3
+    attr_sensor_id: sensor3
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: True
 
-get measurable c_sensor3:
+get attr_sensor c_sensor3:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor3
+    attr_sensor_id: c_sensor3
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-get measurable sensor5:
+get attr_sensor sensor5:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor5
+    attr_sensor_id: sensor5
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: True
 
-get measurable c_sensor5:
+get attr_sensor c_sensor5:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor5
+    attr_sensor_id: c_sensor5
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-update measurable without mid:
+update attr_sensor without mid:
   method: PUT
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 400
   message: Coming request is missing necessary fields
   query:
@@ -179,148 +179,148 @@ update measurable without mid:
   data:
     w: 1
 
-update measurable with nothing:
+update attr_sensor with nothing:
   method: PUT
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 400
   message: The coming put request has nothing to update
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
 
-update measurable sensor1 diag:
+update attr_sensor sensor1 diag:
   method: PUT
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
   data:
     diag: 1
 
 update mearuable sensor1 old diag:
   method: PUT
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
   data:
     old_diag: 2
 
-get measurable sensor1 after update:
+get attr_sensor sensor1 after update:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
   kwargs:
     diag: 1
     old_diag: 2
     isOriginPure: True
 
-get measurable pair without mid:
+get attr_sensor pair without mid:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 400
   message: Coming request is missing necessary fields
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor1
+    attr_sensor1: sensor1
 
-get measurable pair sensro1 sensor1:
+get attr_sensor pair sensro1 sensor1:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor1
-    measurable2: sensor1
+    attr_sensor1: sensor1
+    attr_sensor2: sensor1
   kwargs:
     d: True
     w: 0.25
 
-get measurable pair c_sensro1 c_sensor1:
+get attr_sensor pair c_sensro1 c_sensor1:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor1
-    measurable2: c_sensor1
+    attr_sensor1: c_sensor1
+    attr_sensor2: c_sensor1
   kwargs:
     d: True
     w: 0.25
 
-get measurable pair sensro1 sensor2:
+get attr_sensor pair sensro1 sensor2:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor1
-    measurable2: sensor2
+    attr_sensor1: sensor1
+    attr_sensor2: sensor2
   kwargs:
     d: False
     w: 0.25
 
-get measurable pair sensro2 sensor1:
+get attr_sensor pair sensro2 sensor1:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor2
-    measurable2: sensor1
+    attr_sensor1: sensor2
+    attr_sensor2: sensor1
   kwargs:
     d: False
     w: 0.25
 
-get measurable pair sensro3 sensor3:
+get attr_sensor pair sensro3 sensor3:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor3
-    measurable2: sensor3
+    attr_sensor1: sensor3
+    attr_sensor2: sensor3
   kwargs:
     d: True
     w: 0.25
 
-get measurable pair sensro4 c_sensor3:
+get attr_sensor pair sensro4 c_sensor3:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor4
-    measurable2: c_sensor3
+    attr_sensor1: sensor4
+    attr_sensor2: c_sensor3
   kwargs:
     d: False
     w: 0.25
 
-get measurable pair c_sensro4 sensor5:
+get attr_sensor pair c_sensro4 sensor5:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
   kwargs:
     d: False
     w: 0.25
@@ -334,221 +334,221 @@ delete c_sensor3:
     snapshot_id: test_snapshot
     sensor_id: c_sensor3
 
-get measurable sensor1 after deletion:
+get attr_sensor sensor1 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: True
 
-get measurable sensor3 after deletion:
+get attr_sensor sensor3 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 404
   message: Cannot find the sensor id
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor3
+    attr_sensor_id: sensor3
 
-get measurable sensor5 after deletion:
+get attr_sensor sensor5 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor1
+    attr_sensor_id: c_sensor1
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-get measurable c_sensor1 after deletion:
+get attr_sensor c_sensor1 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor1
+    attr_sensor_id: c_sensor1
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-get measurable c_sensor3 after deletion:
+get attr_sensor c_sensor3 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 404
   message: Cannot find the sensor id
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor3
+    attr_sensor_id: c_sensor3
 
-get measurable c_sensor5 after deletion:
+get attr_sensor c_sensor5 after deletion:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: c_sensor5
+    attr_sensor_id: c_sensor5
   kwargs:
     diag: 0.5
     old_diag: 0.5
     isOriginPure: False
 
-get measurable pair sensor1 sensor1 after deletion:
+get attr_sensor pair sensor1 sensor1 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor1
-    measurable2: sensor1
+    attr_sensor1: sensor1
+    attr_sensor2: sensor1
   kwargs:
     d: True
     w: 0.25
 
-get measurable pair c_sensor1 c_sensor1 after deletion:
+get attr_sensor pair c_sensor1 c_sensor1 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor1
-    measurable2: c_sensor1
+    attr_sensor1: c_sensor1
+    attr_sensor2: c_sensor1
   kwargs:
     d: True
     w: 0.25
 
-get measurable pair sensor1 sensor2 after deletion:
+get attr_sensor pair sensor1 sensor2 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor1
-    measurable2: sensor2
+    attr_sensor1: sensor1
+    attr_sensor2: sensor2
   kwargs:
     d: False
     w: 0.25
 
-get measurable pair sensor2 sensor1 after deletion:
+get attr_sensor pair sensor2 sensor1 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor2
-    measurable2: sensor1
+    attr_sensor1: sensor2
+    attr_sensor2: sensor1
   kwargs:
     d: False
     w: 0.25
 
-get measurable pair sensor3 sensor3 after deletion:
+get attr_sensor pair sensor3 sensor3 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 404
   message: Cannot find the sensor id
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor3
-    measurable2: sensor3
+    attr_sensor1: sensor3
+    attr_sensor2: sensor3
 
-get measurable pair sensor4 c_sensor3 after deletion:
+get attr_sensor pair sensor4 c_sensor3 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 404
   message: Cannot find the sensor id
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: sensor4
-    measurable2: c_sensor3
+    attr_sensor1: sensor4
+    attr_sensor2: c_sensor3
 
-get measurable pair c_sensor4 sensor5 after deletion:
+get attr_sensor pair c_sensor4 sensor5 after deletion:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
   kwargs:
     d: False
     w: 0.25
 
-update measurable pair without mid:
+update attr_sensor pair without mid:
   method: PUT
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 400
   message: Coming request is missing necessary fields
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
+    attr_sensor1: c_sensor4
   data:
     w: 1
 
 update meaurable pair with nothing:
   method: PUT
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 400
   message: The coming put request has nothing to update
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
 
 update meaurable pair c_sensor4 sensor5 w:
   method: PUT
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
   data:
     w: 1
 
 update meaurable pair c_sensor4 sensor5 d:
   method: PUT
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
   data:
     d: True
 
-get measurable pair c_sensor4 sensor5 after update:
+get attr_sensor pair c_sensor4 sensor5 after update:
   method: GET
-  url: /UMA/object/measurable_pair
+  url: /UMA/object/attr_sensor_pair
   status_code: 200
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable1: c_sensor4
-    measurable2: sensor5
+    attr_sensor1: c_sensor4
+    attr_sensor2: sensor5
   kwargs:
     d: True
     w: 1
@@ -560,15 +560,15 @@ delete agent:
   data:
     agent_id: test_agent
 
-get measurable after delete agent:
+get attr_sensor after delete agent:
   method: GET
-  url: /UMA/object/measurable
+  url: /UMA/object/attr_sensor
   status_code: 404
   message: Cannot find the agent id!
   query:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    measurable_id: sensor1
+    attr_sensor_id: sensor1
 
 tests:
   - create agent
@@ -578,44 +578,44 @@ tests:
   - create sensor3
   - create sensor4
   - create sensor5
-  - get measurable without mid
-  - get measurable sensor1
-  - get measurable c_sensor1
-  - get measurable sensor3
-  - get measurable c_sensor3
-  - get measurable sensor5
-  - get measurable c_sensor5
-  - update measurable without mid
-  - update measurable with nothing
-  - update measurable sensor1 diag
+  - get attr_sensor without mid
+  - get attr_sensor sensor1
+  - get attr_sensor c_sensor1
+  - get attr_sensor sensor3
+  - get attr_sensor c_sensor3
+  - get attr_sensor sensor5
+  - get attr_sensor c_sensor5
+  - update attr_sensor without mid
+  - update attr_sensor with nothing
+  - update attr_sensor sensor1 diag
   - update mearuable sensor1 old diag
-  - get measurable sensor1 after update
-  - get measurable pair without mid
-  - get measurable pair sensro1 sensor1
-  - get measurable pair c_sensro1 c_sensor1
-  - get measurable pair sensro1 sensor2
-  - get measurable pair sensro2 sensor1
-  - get measurable pair sensro3 sensor3
-  - get measurable pair sensro4 c_sensor3
-  - get measurable pair c_sensro4 sensor5
+  - get attr_sensor sensor1 after update
+  - get attr_sensor pair without mid
+  - get attr_sensor pair sensro1 sensor1
+  - get attr_sensor pair c_sensro1 c_sensor1
+  - get attr_sensor pair sensro1 sensor2
+  - get attr_sensor pair sensro2 sensor1
+  - get attr_sensor pair sensro3 sensor3
+  - get attr_sensor pair sensro4 c_sensor3
+  - get attr_sensor pair c_sensro4 sensor5
   - delete c_sensor3
-  - get measurable sensor1 after deletion
-  - get measurable sensor3 after deletion
-  - get measurable sensor5 after deletion
-  - get measurable c_sensor3 after deletion
-  - get measurable c_sensor1 after deletion
-  - get measurable c_sensor5 after deletion
-  - get measurable pair sensor1 sensor1 after deletion
-  - get measurable pair c_sensor1 c_sensor1 after deletion
-  - get measurable pair sensor1 sensor2 after deletion
-  - get measurable pair sensor2 sensor1 after deletion
-  - get measurable pair sensor3 sensor3 after deletion
-  - get measurable pair sensor4 c_sensor3 after deletion
-  - get measurable pair c_sensor4 sensor5 after deletion
-  - update measurable pair without mid
+  - get attr_sensor sensor1 after deletion
+  - get attr_sensor sensor3 after deletion
+  - get attr_sensor sensor5 after deletion
+  - get attr_sensor c_sensor3 after deletion
+  - get attr_sensor c_sensor1 after deletion
+  - get attr_sensor c_sensor5 after deletion
+  - get attr_sensor pair sensor1 sensor1 after deletion
+  - get attr_sensor pair c_sensor1 c_sensor1 after deletion
+  - get attr_sensor pair sensor1 sensor2 after deletion
+  - get attr_sensor pair sensor2 sensor1 after deletion
+  - get attr_sensor pair sensor3 sensor3 after deletion
+  - get attr_sensor pair sensor4 c_sensor3 after deletion
+  - get attr_sensor pair c_sensor4 sensor5 after deletion
+  - update attr_sensor pair without mid
   - update meaurable pair with nothing
   - update meaurable pair c_sensor4 sensor5 w
   - update meaurable pair c_sensor4 sensor5 d
-  - get measurable pair c_sensor4 sensor5 after update
+  - get attr_sensor pair c_sensor4 sensor5 after update
   - delete agent
-  - get measurable after delete agent
+  - get attr_sensor after delete agent

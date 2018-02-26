@@ -32,11 +32,11 @@ set(SENSOR
     "SensorPair.h"
     "SensorPair.cpp"
 )
-set(GLOB_RECURSE MEASURABLE
-    "Measurable.h"
-    "Measurable.cpp"
-    "MeasurablePair.h"
-    "MeasurablePair.cpp"
+set(ATTRSENSOR
+    "AttrSensor.h"
+    "AttrSensor.cpp"
+    "AttrSensorPair.h"
+    "AttrSensorPair.cpp"
 )
 set(SIMULATION
     "Simulation.h"
@@ -52,7 +52,7 @@ source_group("agent" FILES ${AGENT})
 source_group("snapshot" FILES ${SNAPSHOT})
 source_group("dataManager" FILES ${DATAMANAGER})
 source_group("sensor" FILES ${SENSOR})
-source_group("measurable" FILES ${MEASURABLE})
+source_group("attr_sensor" FILES ${ATTRSENSOR})
 source_group("simulation" FILES ${SIMULATION})
 
 if(MSVC)

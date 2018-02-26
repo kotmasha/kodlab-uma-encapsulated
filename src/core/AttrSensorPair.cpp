@@ -1,17 +1,17 @@
-#include "MeasurablePair.h"
-#include "Measurable.h"
+#include "AttrSensorPair.h"
+#include "AttrSensor.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
 
 /*
-MeasurablePair::MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j)
+AttrSensorPair::AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j)
 	:_measurable_i(_m_i), _measurable_j(_m_j) {
 	file.read((char *)(&v_w), sizeof(double));
 }
 */
 
-MeasurablePair::MeasurablePair(Measurable * const _m_i, Measurable * const _m_j, double w, bool d)
+AttrSensorPair::AttrSensorPair(AttrSensor * const _m_i, AttrSensor * const _m_j, double w, bool d)
 	:_measurable_i(_m_i), _measurable_j(_m_j){
 	v_w = w;
 	v_d = d;
@@ -20,7 +20,7 @@ MeasurablePair::MeasurablePair(Measurable * const _m_i, Measurable * const _m_j,
 /*
 This function is setting pointers to null
 */
-void MeasurablePair::pointers_to_null(){
+void AttrSensorPair::pointers_to_null(){
 	_w = NULL;
 	_d = NULL;
 }
@@ -28,7 +28,7 @@ void MeasurablePair::pointers_to_null(){
 /*
 This function is setting the weight matrix pointer
 */
-void MeasurablePair::setWeightPointers(double *weights){
+void AttrSensorPair::setWeightPointers(double *weights){
 	int idx_i = _measurable_i->_idx;
 	int idx_j = _measurable_j->_idx;
 	_w = weights + ind(idx_i, idx_j);
@@ -37,7 +37,7 @@ void MeasurablePair::setWeightPointers(double *weights){
 /*
 This function is setting the dir matrix pointer
 */
-void MeasurablePair::setDirPointers(bool *dirs){
+void AttrSensorPair::setDirPointers(bool *dirs){
 	int idx_i = _measurable_i->_idx;
 	int idx_j = _measurable_j->_idx;
 	_d = dirs + ind(idx_i, idx_j);
@@ -46,7 +46,7 @@ void MeasurablePair::setDirPointers(bool *dirs){
 /*
 This function is copying pointer values to value
 */
-void MeasurablePair::pointers_to_values(){
+void AttrSensorPair::pointers_to_values(){
 	v_w = *_w;
 	v_d = *_d;
 }
@@ -54,7 +54,7 @@ void MeasurablePair::pointers_to_values(){
 /*
 This function is copying value to pointer value
 */
-void MeasurablePair::values_to_pointers(){
+void AttrSensorPair::values_to_pointers(){
 	*_w = v_w;
 	*_d = v_d;
 }
@@ -69,32 +69,32 @@ No dir matrix is needed as it can be concluded from weight
 Input: file ofstream
 */
 /*
-void MeasurablePair::save_measurable_pair(ofstream &file){
+void AttrSensorPair::save_measurable_pair(ofstream &file){
 	file.write(reinterpret_cast<const char *>(&v_w), sizeof(double));
 }
 
-void MeasurablePair::copy_data(MeasurablePair *mp) {
+void AttrSensorPair::copy_data(AttrSensorPair *mp) {
 	//dir value will not be copied
 	v_w = mp->v_w;
 }
 */
 
-const double &MeasurablePair::getW() const{
+const double &AttrSensorPair::getW() const{
 	return *_w;
 }
 
-const bool &MeasurablePair::getD() const{
+const bool &AttrSensorPair::getD() const{
 	return *_d;
 }
 
-void MeasurablePair::setW(const double w) {
+void AttrSensorPair::setW(const double w) {
 	*_w = w;
 }
 
-void MeasurablePair::setD(const bool d) {
+void AttrSensorPair::setD(const bool d) {
 	*_d = d;
 }
 
-MeasurablePair::~MeasurablePair(){
+AttrSensorPair::~AttrSensorPair(){
 	pointers_to_null();
 }

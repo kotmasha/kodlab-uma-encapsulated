@@ -5,7 +5,7 @@
 #include "SnapshotHandler.h"
 #include "DataHandler.h"
 #include "SensorHandler.h"
-#include "MeasurableHandler.h"
+#include "AttrSensorHandler.h"
 #include "SimulationHandler.h"
 #include "ConfReader.h"
 #include "Logger.h"
@@ -17,7 +17,7 @@ static AgentHandler *agent_handler = NULL;
 static SnapshotHandler *snapshot_handler = NULL;
 static DataHandler *data_handler = NULL;
 static SensorHandler *sensor_handler = NULL;
-static MeasurableHandler *measurable_handler = NULL;
+static AttrSensorHandler *attr_sensor_handler = NULL;
 static SimulationHandler *simulation_handler = NULL;
 
 static Logger serverLogger("Server", "log/UMA_server.log");
@@ -28,7 +28,7 @@ static void init_handlers(UMARestListener &listener) {
 	snapshot_handler = new SnapshotHandler("snapshot");
 	data_handler = new DataHandler("data");
 	sensor_handler = new SensorHandler("sensor");
-	measurable_handler = new MeasurableHandler("measurable");
+	attr_sensor_handler = new AttrSensorHandler("attr_sensor");
 	simulation_handler = new SimulationHandler("simulation");
 
 	listener.register_handler(world_handler);
@@ -36,7 +36,7 @@ static void init_handlers(UMARestListener &listener) {
 	listener.register_handler(snapshot_handler);
 	listener.register_handler(data_handler);
 	listener.register_handler(sensor_handler);
-	listener.register_handler(measurable_handler);
+	listener.register_handler(attr_sensor_handler);
 	listener.register_handler(simulation_handler);
 }
 

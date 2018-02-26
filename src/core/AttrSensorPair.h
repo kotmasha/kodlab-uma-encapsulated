@@ -1,22 +1,22 @@
-#ifndef _MEASURABLEPAIR_
-#define _MEASURABLEPAIR_
+#ifndef _ATTRSENSORPAIR_
+#define _ATTRSENSORPAIR_
 #include "Global.h"
 
 class Snapshot;
 class SensorPair;
-class Measurable;
+class AttrSensor;
 
 using namespace std;
 /*
 This is measurable pair class, owned by sensor pair, manage and store all weight and dir pointers to actual location
 variable start with v are temparay variable to store the value, used in amper/delay/pruning and saving/loading
 */
-class DLL_PUBLIC MeasurablePair{
+class DLL_PUBLIC AttrSensorPair{
 private:
 	//const pointer to measurable, larger idx
-	Measurable * const _measurable_i;
+	AttrSensor * const _measurable_i;
 	//const pointer to measurable, smaller idx
-	Measurable * const _measurable_j;
+	AttrSensor * const _measurable_j;
 	//weight matrix pointer
 	double *_w;
 	//tmp variable for weight
@@ -30,8 +30,8 @@ private:
 	friend class Snapshot;
 
 public:
-	//MeasurablePair(ifstream &file, Measurable *_m_i, Measurable *_m_j);
-	MeasurablePair(Measurable * const _m_i, Measurable * const _m_j, double w, bool d);
+	//AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j);
+	AttrSensorPair(AttrSensor * const _m_i, AttrSensor * const _m_j, double w, bool d);
 
 	void pointers_to_null();
 	void pointers_to_values();
@@ -40,13 +40,13 @@ public:
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);
 	//void save_measurable_pair(ofstream &file);
-	//void copy_data(MeasurablePair *mp);
+	//void copy_data(AttrSensorPair *mp);
 
 	const double &getW() const;
 	const bool &getD() const;
 	void setW(const double w);
 	void setD(const bool d);
-	~MeasurablePair();
+	~AttrSensorPair();
 };
 
 #endif

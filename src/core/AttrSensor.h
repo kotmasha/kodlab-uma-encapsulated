@@ -4,13 +4,13 @@
 #include "Global.h"
 class Snapshot;
 class Sensor;
-class MeasurablePair;
+class AttrSensorPair;
 
 using namespace std;
 /*
-This is the Measurable class, it is controlled by the Sensor class
+This is the AttrSensor class, it is controlled by the Sensor class
 */
-class DLL_PUBLIC Measurable{
+class DLL_PUBLIC AttrSensor{
 protected:
 	//measurable id
 	const string _uuid;
@@ -34,11 +34,11 @@ protected:
 	bool _isOriginPure;
 	friend class Snapshot;
 	friend class Sensor;
-	friend class MeasurablePair;
+	friend class AttrSensorPair;
 
 public:
-	//Measurable(ifstream &file);
-	Measurable(const string &uuid, int idx, bool isOriginPure, double diag);
+	//AttrSensor(ifstream &file);
+	AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag);
 
 	void pointers_to_null();
 	void pointers_to_values();
@@ -50,7 +50,7 @@ public:
 	void setIdx(int idx);
 	
 	//void save_measurable(ofstream &file);
-	//void copy_data(Measurable *m);
+	//void copy_data(AttrSensor *m);
 
 	const double &getDiag() const;
 	const double &getOldDiag() const;
@@ -62,7 +62,7 @@ public:
 	void setDiag(const double &diag);
 	void setOldDiag(const double &diag_);
 	void setIsOriginPure(const bool &isOriginPure);
-	~Measurable();
+	~AttrSensor();
 };
 
 #endif
