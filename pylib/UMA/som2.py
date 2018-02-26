@@ -8,6 +8,7 @@ from Service_World import *
 from Service_Agent import *
 from Service_Snapshot import *
 from Service_Sensor import *
+
 import uuid
 import time
 import json
@@ -468,13 +469,18 @@ class Experiment(object):
 
     ## Update the experiment state and output a summary of decisions
     def update_state(self, instruction='decide'):
+        #additional data reported to the experiment, by agent id:
+        agent_reports={}
+        #update initiation time:
+        initial_time=time.clock()
+        
+        #purge the experiment's decision variable
         id_dec = 'decision'
         self.set_state(id_dec, [])
-        # prepare empty dictionary for agent messages
-        messages = {}
-
+        
         ## Iterate over agents and decision-dependent measurables
         # - if id of an agent, then form a decision and append to id_dec
+        # - if cid of an agent, then pass
         # - if id of a measurable, update its value
         for mid in (tmp_id for tmp_id in self._MID if self.dep(tmp_id)):
             midc = name_comp(mid)
@@ -482,16 +488,20 @@ class Experiment(object):
 
             if agentQ:
                 if mid in self._AGENTS:  # if mid is an agent...
+                    agent_reports[mid]={} #prepare a dictionary for agent's report
+                    agent_start_time=time.clock()
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
                     activity = 'plus' if agent._ACTIVE else 'minus'
+                    agent_reports[mid]['activity']=activity #report active snapshot
 
                     ## ENRICHMENT
                     # agent analyzes outcomes of preceding decision
                     # cycle; if the prediction was too broad, add a
                     # sensor corresponding to the episode last observed
                     # and acknowledged by the active snapshot of the agent:
+                    agent_reports[mid]['pred_too_general']=agent.report_current().subtract(agent.report_predicted()).weight()
                     if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
                         new_episode = agent.report_last().intersect(agent.report_initmask())
                         sensors_to_be_added = [new_episode]
@@ -509,17 +519,19 @@ class Experiment(object):
 
                     # abduction over delayed sensors implying an initial sensor
                     # STEP 1. Gather them
-
+                    #
                     #init_downs = agent.close_downwards([agent.generate_signal([sid]) for sid in agent.report_initial()])
                     #delayed_downs = [sig.subtract(agent.report_initmask()) for sig in init_downs]
-                    ## STEP 2. Perform abduction
+                    # STEP 2. Perform abduction
                     #new_masks = agent.perform_abduction(delayed_downs)
-#
-                    ## Restructuring
-                    ## STEP 1. Add new delayed sensors:
+
+                    # Restructuring
+                    # STEP 1. Add new delayed sensors:
                     #sensors_to_be_added.extend(new_masks)
-                    #agent.delay(sensors_to_be_added)
-                    ## Step 2. Remove old sensors:
+                    #ENRICHMENT DONE HERE
+                    agent.delay(sensors_to_be_added)
+                    
+                    # Step 2. Remove old sensors:
                     #sensors_to_be_removed = agent.ALL_FALSE()
                     #for sig in delayed_downs:
                     #    sensors_to_be_removed.add(sig)
@@ -534,22 +546,37 @@ class Experiment(object):
                     #
                     ##THIS IS WHERE IT WOULD BE NICE TO HAVE AN ALTERNATIVE ARCHITECTURE
                     ##LEARNING THE SAME STRUCTURE OR AN APPROXIMATION THEREOF
+                    
+                    ## compute and record e&p duration:
+                    agent_e_and_p_ends=time.clock()
+                    agent_reports[mid]['e_and_p_duration']=agent_e_and_p_ends-agent_start_time
 
+                    ## agent enters observation-deliberation-decision stage and reports:
+                    agent_reports[mid]['deliberateQ'] = agent.decide()
+                    agent_reports[mid]['decision'] = mid if mid in self.this_state(id_dec) else midc
 
-                    ## agent enters observation-deliberation-decision stage
-                    messages[mid] = agent.decide()
-
+                    ## compute and report duration of decision cycle:
+                    agent_decision_produced=time.clock()
+                    agent_reports[mid]['decision_duration']=agent_decision_produced-agent_e_and_p_ends
+                    
+                    ## report the agent size:
+                    agent_reports[mid]['size']=max(agent._SIZE['plus'],agent._SIZE['minus'])
+                    
                     ## possible overriding instruction is considered
-                    if instruction != 'decide' and (mid in instruction or midc in instruction):
-                        # append override information to message
-                        messages[mid] += '\tINSTRUCTION OVERRIDE: EXECUTING ' + mid if mid in instruction else midc
-                        # replace last decision with provided instruction
-                        self.this_state(id_dec).pop()
-                        self.this_state(id_dec).append(mid if mid in instruction else midc)
+                    if instruction != 'decide':
+                        if mid in instruction or midc in instruction:
+                            # append override information to message
+                            agent_reports[mid]['override']=mid if mid in instruction else midc
+                            # replace last decision with provided instruction
+                            self.this_state(id_dec).pop()
+                            self.this_state(id_dec).append(mid if mid in instruction else midc)
+                    else:
+                        agent_reports[mid]['override']=''
 
-                else:  # if midc is an agent, decision already reached
+                else:  
+                    # if midc is an agent, a decision has already been reached, so no action is required
                     pass
-            else:  # neither mid nor midc is an agent, perform update
+            else:  # neither mid nor midc is an agent, so perform the value update
                 try:  # attempt update using definition
                     self.set_state(mid, self._DEFS[mid](self._STATE))
                 except:  # if no definition available, do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
@@ -562,30 +589,27 @@ class Experiment(object):
             agentQ = mid in self._AGENTS or midc in self._AGENTS
             depQ = self.dep(mid)
 
-            if agentQ:  # if mid is an agent (or its star)...
-                try:  # try evaluating the definition for the agent
+            if agentQ:  
+                # if mid is an agent (or its star)...
+                try:  
+                    # try evaluating the definition for this mid
                     self.set_state(mid, (self._DEFS[mid](self._STATE)))
-                    if mid in self._AGENTS and self.this_state(mid) != (
-                        mid in action_signal):  # if initial decision was changed
-                        messages[mid] += ', override by other (was ' + (
-                        mid if mid in action_signal else name_comp(mid)) + ')'
-                except:  # if no definition, set the value according to $action_signal$
+                    #report final decision for mid
+                    if mid in self._AGENTS:
+                        agent_reports[mid]['final'] = mid if self.this_state(mid) else midc
+                except:  
+                    # if no definition, set the value according to $action_signal$
                     self.set_state(mid, (mid in action_signal))
             else:
-                try:  # try updating using definition
+                try:  
+                    # try updating using definition
                     self.set_state(mid, (self._DEFS[mid](self._STATE)))
-                except:  # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
+                except:  
+                    # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                     pass
-
-        # aggregate and output the messages
-        message_all = ""
-        ordered_agents = [mid for mid in self._MID if mid in self._AGENTS]
-        for mid in ordered_agents:
-            name = mid
-            outp = '\t' + (name if self.this_state(mid) else name_comp(name)) + ' : ' + messages[mid] + '\n'
-            message_all += outp
-
-        return message_all
+        final_time=time.clock()
+        time_elapsed=final_time-initial_time
+        return time_elapsed,agent_reports
 
 
 class Agent(object):
@@ -685,14 +709,15 @@ class Agent(object):
             snap_service[token].setAutoTarget(self._PARAMS[1])
             snap_service[token].init_with_sensors(
                 [[self._SENSORS[token][2 * i], self._SENSORS[token][2 * i + 1]] for i in xrange(self._INITIAL_SIZE)])
+            snap_service[token].init()
 
-    def validate(self):
-        snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
-        snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
-        # snapshot_plus.setInitialSize(self._INITIAL_SIZE)
-        # snapshot_minus.setInitialSize(self._INITIAL_SIZE)
-        snapshot_plus.init()
-        snapshot_minus.init()
+    #def validate(self):
+    #    snapshot_plus = ServiceSnapshot(self._ID, 'plus', service)
+    #    snapshot_minus = ServiceSnapshot(self._ID, 'minus', service)
+    #    # snapshot_plus.setInitialSize(self._INITIAL_SIZE)
+    #    # snapshot_minus.setInitialSize(self._INITIAL_SIZE)
+    #    snapshot_plus.init()
+    #    snapshot_minus.init()
 
     def ALL_FALSE(self, token=None):
         token = ('plus' if self._ACTIVE else 'minus') if token is None else token
@@ -889,7 +914,8 @@ class Agent(object):
         self._EXPERIMENT.this_state('decision').append(self._ID if token == 'plus' else self._CID)
 
         # return comment
-        return 'deliberate' if qualityQ else 'random'
+        #return 'deliberate' if qualityQ else 'random'
+        return qualityQ
 
     ## PICK OUT SENSORS CORRESPONDING TO A SIGNAL
     #  - returns a list of mids corresponding to the signal

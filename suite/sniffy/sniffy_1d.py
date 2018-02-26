@@ -12,7 +12,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     # Number of decision cycles for burn-in period:
     BURN_IN=burn_in
     # experiment parameters and definitions
-    X_BOUND=4 #length
+    X_BOUND=10 #length
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
 
@@ -21,7 +21,11 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         return abs(p-q) 
 
     # agent discount parameters
-    MOTION_PARAMS=tuple([1.-pow(2,-7), False])
+    Q=1.-pow(2,-7)
+    MOTION_PARAMS=tuple([
+        Q,   #memory discounting coefficient
+        False,          #Auto-targeting mode
+        ])
     
     # initialize a new experiment
     EX=Experiment()
@@ -35,6 +39,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     # register motivation for motion agents
     # - this one is NOT dependent on agents except through the position, so
     #   it carries the default False tag.
+    id_at_targ,cid_at_targ=EX.register_sensor('atT')
     id_dist=EX.register('dist')
     id_sig=EX.register('sig')
     id_nav, id_navc=EX.register_sensor('nav')
@@ -78,7 +83,7 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         return state[id_toLT][0] and state[id_toRT][0]
     EX.construct_sensor(id_toF,about_to_enter_failure_mode, decdep=True)
 
-    # add basic motion agents
+    # add basic motion agents with arbitration
     def action_RT(state):
         rt_decided=(id_rt in state[id_dec][0])
         if state[id_toF][0]:
@@ -125,6 +130,14 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     while dist(TARGET,START)<X_BOUND/8:
         TARGET=rnd(X_BOUND+1)
 
+    # staying-at-target sensor
+    def stay_at_targetQ(state):
+        return state[id_pos][0]==TARGET and state[id_pos][1]==TARGET
+    INIT=False
+    EX.construct_sensor(id_at_targ,stay_at_targetQ,[INIT,INIT])
+    RT.add_sensor(id_at_targ)
+    LT.add_sensor(id_at_targ)
+
     # set up position sensors
     def xsensor(m): # along x-axis
         return lambda state: state[id_pos][0]<m+1
@@ -143,25 +156,29 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     INIT=dist(START,TARGET)
     EX.construct_measurable(id_dist,dist_to_target,[INIT,INIT])
          
-    # weighting signal for agents LT and RT
+    ## value signal for agents LT and RT
+    #signal scales logarithmically with distance to target
+    rescaling=lambda r: -(1./(1.-Q))*np.log2((1.+r)/(2*(1.+X_BOUND)))
+    #signal scales linearly with distance to target
+    #rescaling=lambda r: 1.+(1+X_BOUND-r)
+
     def sig(state):
         #return 1.
-        return 1+state[id_sig][0] if (state[id_pos][0]==TARGET and state[id_pos][1]==TARGET) else 2+X_BOUND-state[id_dist][0] 
+        return 1+state[id_sig][0] if state[id_at_targ][0] else rescaling(state[id_dist][0]) 
     #initial value for signal:
     #INIT=1.
-    INIT=2+X_BOUND-dist(START,TARGET)
+    INIT=rescaling(dist(START,TARGET))
     #construct the motivational signal
     EX.construct_measurable(id_sig,sig,[INIT,INIT])
 
     # performance sensor ("am I better now than in the last cycle?")
     # - $id_nav$ has already been registered
     def better(state):
-        return True if (state[id_pos][0]==TARGET and state[id_pos][1]==TARGET) else state[id_dist][0]<state[id_dist][1]
+        return True if state[id_at_targ][0] else state[id_dist][0]<state[id_dist][1]
     EX.construct_sensor(id_nav,better)
     RT.add_sensor(id_nav)
     LT.add_sensor(id_nav)
 
-    # at-target sensor
     # STOPPED HERE
 
     RT.add_sensor(id_rt)
@@ -173,10 +190,10 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
 
     for agent_name in EX._AGENTS:
         EX._AGENTS[agent_name].init()
-        EX._AGENTS[agent_name].validate()
+        #EX._AGENTS[agent_name].validate()
 
     # ONE UPDATE CYCLE (without action) TO "FILL" THE STATE DEQUES
-    message=EX.update_state([cid_rt,cid_lt])
+    reported_data=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
     for agent in [RT,LT]:
@@ -184,16 +201,15 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
             delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
             agent.delay(delay_sigs,token)
 
-    ## SET ARTIFICIAL TARGET ONCE AND FOR ALL
+    # SET ARTIFICIAL TARGET ONCE AND FOR ALL
     for agent in [RT,LT]:
         for token in ['plus','minus']:
             tmp_target=agent.generate_signal([id_nav]).value().tolist()
-            #agent.brain._snapshots[token].setTarget(tmp_target)
             service_snapshot = ServiceSnapshot(agent._ID, token, service)
             service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
-    message=EX.update_state([cid_rt,cid_lt])
+    reported_data=EX.update_state([cid_rt,cid_lt])
 
     #
     ### Run
@@ -234,10 +250,10 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     WIN.overlay(stdscr)
     WINs.overlay(stdscr)
 
-    def print_state(text,id_agent):
+    def print_state(banner_text,reported_data,id_agent):
         stdscr.clear()
         stdscr.addstr('W-E  A-R-E  R-U-N-N-I-N-G    (press [space] to stop) ')
-        stdscr.addstr(2,3,text)
+        stdscr.addstr(2,3,banner_text)
         stdscr.clrtoeol()
         stdscr.noutrefresh()
         WIN.clear()
@@ -246,11 +262,39 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         
         ## Unpacking the output from the tested agent (RT/LT)
         
-        #extract information from agent
+        #extract information from agent:
         agent=EX._AGENTS[id_agent]
+        namelist = agent._SENSORS
         curr=agent._CURRENT
         targ=agent._TARGET
         pred=agent._PREDICTED
+
+        #extract information from reported data:
+        ex_report,agent_reports=reported_data
+        elapsed_time=ex_report['elapsed_time']
+
+        ## information about E&P stage:
+        #'activity':            which snapshot was active last?
+        #'e_and_p_duration':    how long did its structural update take?
+        ## information about decision stage:
+        #'decision':            agent's decision
+        #'decision_duration':   time it took the agent to arrive at this decision
+        #'deliberateQ':         was the decision deliberate?
+        #'override':            decision was overridden by... (if at all)
+        #'final':               final decision to be executed (post arbitration)
+        #'pred_too_general':    weight of Curr-Pred
+        
+        #construct on-screen report:
+        text=''
+        for aid in EX._AGENTS.keys():
+            text +='\t'+(
+                'deliberate ' if agent_reports[aid]['deliberateQ'] else 'randomized '
+                )+agent_reports[aid]['decision']+',\t '
+            if not (agent_reports[aid]['override'] is ''):
+                text += 'overruled by instruction '+agent_reports[aid]['override']+',\t '
+            text +='leading to final: '+agent_reports[aid]['final']+'.\n'
+
+        stdscr.addstr(3,3,text)
 
         # extract "geographic" signals from state
         gps_list={'plus':[],'minus':[]}
@@ -258,11 +302,6 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
             for pos in xrange(X_BOUND):
                 ind=agent._SENSORS[token].index('x'+str(pos))
                 gps_list[token].extend([ind,ind+1])
-
-
-
-        #geo_start=min(ind for ind,id_tmp in enumerate(LT._SENSORS) if id_tmp=='x0')
-
         
         #choose the signals to visualize (curr,targ or pred)
         for ind,lookat in enumerate([curr,pred,targ]): 
@@ -271,13 +310,13 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
             for token in ['plus','minus']:
                 for x in xrange(0,X_BOUND):
                     if lookat[token].out(gps_list[token][2*x]):
-                        bounds[token][1]=x #pushing down the upper bound
+                        bounds[token][1]=min(x,bounds[token][1]) #pushing down the upper bound
                         break
                     else:
                         continue
                 for x in xrange(X_BOUND-1,-1,-1):
                     if lookat[token].out(gps_list[token][2*x+1]):
-                        bounds[token][0]=x+1 #pushing up the lower bound
+                        bounds[token][0]=max(x+1,bounds[token][0]) #pushing up the lower bound
                         break
                     else:
                         continue
@@ -299,29 +338,31 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         # display agent's position with FG attributes
         WIN.addch(4,1+2*EX.this_state(id_pos,1),ord('S'),FG)
 
-        ### Unpacking extra information
-        #WINs.clear()
-        #delta=lambda tok: 0 if tok=='plus' else 1
-        #for token in ['plus','minus']:
-        #    WINs.addstr(0+delta(token),0,'Number of sensors in snapshot '+agent._ID+'['+ token +'] : '+str(agent._SIZE[token]))
-        #    WINs.addstr(2+delta(token),0,'Length of CURRENT['+token+'] :'+str(agent.report_current(token).len()))
-        #    WINs.addstr(4+delta(token),0,'Length of TARGET['+token+'] :'+str(agent.report_target(token).len()))
-        #    WINs.addstr(6+delta(token),0,'Length of PREDICTED['+token+'] :'+str(agent.report_predicted(token).len()))
-        #    WINs.addstr(8+delta(token),0,'Length of LAST['+token+'] :'+str(agent.report_last(token).len()))
-        #    WINs.addstr(10+delta(token),0,'Length of INITMASK['+token+'] :'+str(agent._INITMASK[token].len()))
-
-        ## Unpacking extra information
+        
+        ### Display info about internal state signals (length, weights...)
+        WINs.clear()
+        delta=lambda tok: 0 if tok=='plus' else 1
+        for token in ['plus','minus']:
+            WINs.addstr(0+delta(token),0,'Number of sensors in snapshot '+agent._ID+'['+ token +'] : '+str(agent._SIZE[token])+'\t'+str(agent_reports[id_agent]['pred_too_general']))
+            WINs.addstr(2+delta(token),0,'Length,weight of CURRENT['+token+'] :'+str(agent.report_current(token).len())+',\t'+str(agent.report_current(token).weight()))
+            WINs.addstr(4+delta(token),0,'Length,weight of TARGET['+token+'] :'+str(agent.report_target(token).len())+',\t'+str(agent.report_target(token).weight()))
+            WINs.addstr(6+delta(token),0,'Length,weight of PREDICTED['+token+'] :'+str(agent.report_predicted(token).len())+',\t'+str(agent.report_predicted(token).weight()))
+            WINs.addstr(8+delta(token),0,'Length,weight of LAST['+token+'] :'+str(agent.report_last(token).len())+',\t'+str(agent.report_last(token).weight()))
+            WINs.addstr(10+delta(token),0,'Length,weight of INITMASK['+token+'] :'+str(agent._INITMASK[token].len())+',\t'+str(agent._INITMASK[token].weight()))
+        
+        """
+        ### Display the filter generated by a signal
         WINs.clear()
         WINs.addstr(0,0,'Observation:')
         WINs.addstr(4,0,'Chosen signed signal:')
-        #
+        
         tok_BG={'plus':POS_BG,'minus':NEG_BG}
         vpos={'plus':6,'minus':8}
-        hpos = lambda x, token: 0 if x == 0 else 2 + len('  '.join(namelist[token][:x]))
-        ##
+        hpos=lambda tok,x: 0 if x==0 else 2+len('  '.join(namelist[tok][:x]))
+        
+        
         # CURRENT OBSERVATION
         OBS=agent._OBSERVE
-        OBS=Signal([EX.this_state(mid) for mid in agent._SENSORS])
 
         #SIGNED SIGNAL TO WATCH:
         #SIG=agent._CURRENT
@@ -331,28 +372,22 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         #sig=agent.generate_signal([EX.nid('{x0*;x2}')])
         #sig=agent.generate_signal([EX.nid('#x2')])
         #sig=agent.generate_signal([EX.nid('#x0*')])
+        #SIG=agent.brain.up(sig,False)
 
         SIG = {}
         for token in ['plus', 'minus']:
             snapshot = ServiceSnapshot(agent._ID, token, service)
             res = snapshot.make_up(sig.value().tolist())
             SIG[token] = Signal(res)
-        #    #print sig.value().tolist()
-        #    #print SIG[token]._VAL
 
-        #
-        namelist = agent._SENSORS
-        #
-        print OBS
-        print len(agent._SENSORS["plus"])
-        exit()
-        for x,mid in enumerate(agent._SENSORS["plus"]):
-            this_BG=OBS_BG if OBS.out(x) else REG_BG
-            WINs.addstr(2,hpos(x, token),namelist[token][x],this_BG)
-            for token in ['plus','minus']:
+        for token in ['plus','minus']:
+            for x,mid in enumerate(namelist[token]):
+                this_BG=OBS_BG if OBS[token].out(x) else REG_BG
+                WINs.addstr(2,hpos(token,x),mid,this_BG)
                 this_BG=tok_BG[token] if SIG[token].out(x) else REG_BG
-                WINs.addstr(vpos[token],hpos(x, token),namelist[token][x],this_BG)
-        
+                WINs.addstr(vpos[token],hpos(token,x),mid,this_BG)
+        """      
+
         # refresh the window
         WIN.overlay(stdscr)
         WIN.noutrefresh()
@@ -364,25 +399,26 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     ## Random walk period
     while EX.this_state(id_count)<BURN_IN and stdscr.getch()!=ord(' '):
         # call output subroutine
-        print_state('BURN-IN ENDS IN '+str(BURN_IN-EX.this_state(id_count))+' STEPS:\n'+message,id_lookat)
+        print_state('BURN-IN ENDS IN '+str(BURN_IN-EX.this_state(id_count))+' STEPS:',reported_data,id_lookat)
         # update the state
         instruction=[(id_lt if rnd(2) else cid_lt),(id_rt if rnd(2) else cid_rt)]
-        message=EX.update_state(instruction)
+        reported_data=EX.update_state(instruction)
        
     ## Main loop
     while stdscr.getch()!=ord(' '):
 
         # call output subroutine
-        print_state('RUNNING:\n'+message,id_lookat)
+        print_state('RUNNING:',reported_data,id_lookat)
 
         # make decisions, update the state
-        message=EX.update_state()
+        reported_data=EX.update_state()
 
     else:
-        EX.save_experiment('sniffy1d')
-        print "data saved"
-        raise Exception('Aborting at your request...\n\n')
+        #EX.save_experiment('sniffy1d')
+        #print "data saved"
+        #raise Exception('Aborting at your request...\n\n')
+        pass
         
-curses.wrapper(start_experiment,50,'rt','nodelay')
+curses.wrapper(start_experiment,1000,'rt','nodelay')
+print "Aborting at your request...\n\n"
 exit(0)
-
