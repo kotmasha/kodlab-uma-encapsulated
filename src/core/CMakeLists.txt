@@ -52,7 +52,7 @@ source_group("agent" FILES ${AGENT})
 source_group("snapshot" FILES ${SNAPSHOT})
 source_group("dataManager" FILES ${DATAMANAGER})
 source_group("sensor" FILES ${SENSOR})
-source_group("measurable" FILES ${MEASURABLE})
+source_group("attr_sensor" FILES ${ATTRSENSOR})
 source_group("simulation" FILES ${SIMULATION})
 
 if(MSVC)
