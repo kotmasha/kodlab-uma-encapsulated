@@ -27,7 +27,7 @@ input: string_t
 output: bool value
 */
 bool RestUtil::string_t_to_bool(const string_t &s) {
-	return s == U("true") || s == U("True");
+	return !(s == U("false") || s == U("False") || s == U("0"));
 }
 
 
