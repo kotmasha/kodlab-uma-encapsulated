@@ -499,6 +499,40 @@ TEST_F(UMARestTestFixture, UMARestRequest_set_data) {
 	serverBool2d = { {}, {true, false, false}, {false, true, true}, {false, false}, {true, true, true, true, true} };
 	testAction("Receiving");
 	EXPECT_EQ(serverBool2d, clientBool2d);
+
+	//map string string
+	clientData[U("type")] = json::value::string(U("set_data_map_string_string"));
+	clientData[U("p_name")] = json::value::string(U("set_data_map_string_string"));
+	serverMapStringString["This is"] = "a test";
+	serverMapStringString["UMA"] = "is an architecture";
+	testAction("Receiving");
+	EXPECT_EQ(serverMapStringString, clientMapStringString);
+
+	//map string int
+	clientData[U("type")] = json::value::string(U("set_data_map_string_int"));
+	clientData[U("p_name")] = json::value::string(U("set_data_map_string_int"));
+	serverMapStringInt["value1"] = 1;
+	serverMapStringInt["value100"] = 100;
+	serverMapStringInt["value0"] = 0;
+	serverMapStringInt["value-100"] = -100;
+	testAction("Receiving");
+	EXPECT_EQ(serverMapStringInt, clientMapStringInt);
+
+	//map string double
+	clientData[U("type")] = json::value::string(U("set_data_map_string_double"));
+	clientData[U("p_name")] = json::value::string(U("set_data_map_string_double"));
+	serverMapStringDouble["value2.5"] = 2.5;
+	serverMapStringDouble["value13.0003"] = 13.0003;
+	testAction("Receiving");
+	EXPECT_EQ(serverMapStringDouble, clientMapStringDouble);
+
+	//map string bool
+	clientData[U("type")] = json::value::string(U("set_data_map_string_bool"));
+	clientData[U("p_name")] = json::value::string(U("set_data_map_string_bool"));
+	serverMapStringBool["true"] = true;
+	serverMapStringBool["false"] = false;
+	testAction("Receiving");
+	EXPECT_EQ(serverMapStringBool, clientMapStringBool);
 }
 
 int main(int argc, char** argv)

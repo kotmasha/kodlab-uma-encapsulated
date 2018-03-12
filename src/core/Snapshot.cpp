@@ -111,7 +111,7 @@ Snapshot::~Snapshot(){
 	snapshotLogger.info("Deleted the snapshot: " + _uuid, _dependency);
 }
 
-void Snapshot::add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector<bool> > &b) {
+Sensor *Snapshot::add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector<bool> > &b) {
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		snapshotLogger.error("Cannot create a duplicate sensor!", _dependency);
 		throw UMAException("Cannot create a duplicate sensor!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
@@ -157,6 +157,7 @@ void Snapshot::add_sensor(const std::pair<string, string> &id_pair, const vector
 		_dm->copy_sensors_to_arrays(_sensors.size() - 1, _sensors.size(), _sensors);
 		_dm->copy_sensor_pairs_to_arrays(_sensors.size() - 1, _sensors.size(), _sensor_pairs);
 	}
+	return sensor;
 }
 
 void Snapshot::delete_sensor(const string &sensor_id) {
@@ -372,6 +373,7 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 		}
 		if (list.size() == 1) {
 			try {
+				cout << list[0] << endl;
 				generate_delayed_weights(list[0], true, id_pairs[i]);
 			}
 			catch (UMAException &e) {
@@ -495,16 +497,18 @@ This function is getting the attr_sensor pair from the sensor pair list
 Input: m_idx1, m_idx2 are index of the attr_sensor, m_idx1 > m_idx2
 */
 AttrSensorPair *Snapshot::getAttrSensorPair(int m_idx1, int m_idx2) const{
-	int s_idx1 = m_idx1 / 2;
-	int s_idx2 = m_idx2 / 2;
-	AttrSensor *m1 = getAttrSensor(m_idx1);
-	AttrSensor *m2 = getAttrSensor(m_idx2);
+	int idx1 = m_idx1 > m_idx2 ? m_idx1 : m_idx2;
+	int idx2 = m_idx1 > m_idx2 ? m_idx2 : m_idx1;
+	int s_idx1 = idx1 / 2;
+	int s_idx2 = idx2 / 2;
+	AttrSensor *m1 = getAttrSensor(idx1);
+	AttrSensor *m2 = getAttrSensor(idx2);
 	return _sensor_pairs[ind(s_idx1, s_idx2)]->getAttrSensorPair(m1->_isOriginPure, m2->_isOriginPure);
 }
 
 AttrSensorPair *Snapshot::getAttrSensorPair(const string &mid1, const string &mid2) const{
-	int idx1 = getAttrSensor(mid1)->_idx > getAttrSensor(mid2)->_idx ? getAttrSensor(mid1)->_idx : getAttrSensor(mid2)->_idx;
-	int idx2 = getAttrSensor(mid1)->_idx > getAttrSensor(mid2)->_idx ? getAttrSensor(mid2)->_idx : getAttrSensor(mid1)->_idx;
+	int idx1 = getAttrSensor(mid1)->_idx;
+	int idx2 = getAttrSensor(mid2)->_idx;
 	return getAttrSensorPair(idx1, idx2);
 }
 
@@ -581,6 +585,7 @@ DataManager *Snapshot::getDM() const {
 void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &uuid) {
 	if (list.size() < 2) {
 		snapshotLogger.warn("Amper list size is smaller than 2, will not continue", _dependency);
+		return;
 	}
 	try {
 		amperand(list[1], list[0], true, uuid);
@@ -692,7 +697,6 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, const std::pair<str
 	_sensor_idx[id_pair.second] = delayed_sensor;
 	vector<SensorPair *> delayed_sensor_pairs;
 	//the sensor name is TBD, need python input
-	int delay_mid1 = mid, delay_mid2 = compi(mid);
 	int sid = mid / 2;
 	//get mid and sid
 

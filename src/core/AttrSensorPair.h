@@ -28,6 +28,9 @@ private:
 	//friend
 	friend class SensorPair;
 	friend class Snapshot;
+	friend class AmperAndTestFixture;
+	friend class GenerateDelayedWeightsTestFixture;
+	friend class AmperTestFixture;
 
 public:
 	//AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j);

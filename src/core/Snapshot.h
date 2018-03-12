@@ -54,10 +54,15 @@ protected:
 	const string _dependency;
 	friend class Agent;
 
+	friend class AmperAndTestFixture;
+	friend class GenerateDelayedWeightsTestFixture;
+	friend class AmperTestFixture;
+	friend class AmperAndSignalsTestFixture;
+
 public:
 	//Snapshot(ifstream &file, string &log_dir);
 	Snapshot(const string &uuid, const string &dependency);
-	void add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
+	Sensor *add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void delete_sensor(const string &sensor_id);
 	vector<vector<string> > getSensorInfo() const;
 
@@ -128,7 +133,7 @@ protected:
 /*
 Stationary Snapshot is not throwing away information when it is not active
 */
-class Snapshot_Stationary: public Snapshot{
+class DLL_PUBLIC Snapshot_Stationary: public Snapshot{
 public:
 	//Snapshot_Stationary(ifstream &file, string &log_dir);
 	Snapshot_Stationary(string uuid, string dependency);

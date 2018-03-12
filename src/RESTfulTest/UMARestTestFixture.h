@@ -60,6 +60,14 @@ public:
 	static vector<vector<string>> serverString2d;
 	static vector<vector<double>> clientDouble2d;
 	static vector<vector<double>> serverDouble2d;
+	static std::map<string, string> clientMapStringString;
+	static std::map<string, string> serverMapStringString;
+	static std::map<string, int> clientMapStringInt;
+	static std::map<string, int> serverMapStringInt;
+	static std::map<string, double> clientMapStringDouble;
+	static std::map<string, double> serverMapStringDouble;
+	static std::map<string, bool> clientMapStringBool;
+	static std::map<string, bool> serverMapStringBool;
 };
 
 class UMARestTestHandler: public UMARestHandler {

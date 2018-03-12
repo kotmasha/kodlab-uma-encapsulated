@@ -36,6 +36,14 @@ vector<vector<string>> UMARestTestFixture::serverString2d;
 vector<vector<string>> UMARestTestFixture::clientString2d;
 vector<vector<double>> UMARestTestFixture::serverDouble2d;
 vector<vector<double>> UMARestTestFixture::clientDouble2d;
+std::map<string, string> UMARestTestFixture::serverMapStringString;
+std::map<string, string> UMARestTestFixture::clientMapStringString;
+std::map<string, int> UMARestTestFixture::serverMapStringInt;
+std::map<string, int> UMARestTestFixture::clientMapStringInt;
+std::map<string, double> UMARestTestFixture::serverMapStringDouble;
+std::map<string, double> UMARestTestFixture::clientMapStringDouble;
+std::map<string, bool> UMARestTestFixture::serverMapStringBool;
+std::map<string, bool> UMARestTestFixture::clientMapStringBool;
 
 UMARestTestFixture::UMARestTestFixture() {
 	if (!listener) {
@@ -189,6 +197,30 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 			}
 			clientDouble2d = value;
 		}
+		else if (type == "set_data_map_string_string") {
+			json::object clientMapStringStringObj = data[U("map_string_string")].as_object();
+			for (auto it = clientMapStringStringObj.begin(); it != clientMapStringStringObj.end(); ++it) {
+				clientMapStringString[RestUtil::string_t_to_string(it->first)] = RestUtil::string_t_to_string(it->second.as_string());
+			}
+		}
+		else if (type == "set_data_map_string_int") {
+			json::object clientMapStringIntObj = data[U("map_string_int")].as_object();
+			for (auto it = clientMapStringIntObj.begin(); it != clientMapStringIntObj.end(); ++it) {
+				clientMapStringInt[RestUtil::string_t_to_string(it->first)] = it->second.as_integer();
+			}
+		}
+		else if (type == "set_data_map_string_double") {
+			json::object clientMapStringDoubleObj = data[U("map_string_double")].as_object();
+			for (auto it = clientMapStringDoubleObj.begin(); it != clientMapStringDoubleObj.end(); ++it) {
+				clientMapStringDouble[RestUtil::string_t_to_string(it->first)] = it->second.as_double();
+			}
+		}
+		else if (type == "set_data_map_string_bool") {
+			json::object clientMapStringBoolObj = data[U("map_string_bool")].as_object();
+			for (auto it = clientMapStringBoolObj.begin(); it != clientMapStringBoolObj.end(); ++it) {
+				clientMapStringBool[RestUtil::string_t_to_string(it->first)] = it->second.as_bool();
+			}
+		}
 	}).wait();
 }
 
@@ -299,6 +331,18 @@ void UMARestTestHandler::handle_create(UMARestRequest &request) {
 	}
 	else if (type == "set_data_bool2d") {
 		request.set_data("bool2d", UMARestTestFixture::serverBool2d);
+	}
+	else if (type == "set_data_map_string_string") {
+		request.set_data("map_string_string", UMARestTestFixture::serverMapStringString);
+	}
+	else if (type == "set_data_map_string_int") {
+		request.set_data("map_string_int", UMARestTestFixture::serverMapStringInt);
+	}
+	else if (type == "set_data_map_string_double") {
+		request.set_data("map_string_double", UMARestTestFixture::serverMapStringDouble);
+	}
+	else if (type == "set_data_map_string_bool") {
+		request.set_data("map_string_bool", UMARestTestFixture::serverMapStringBool);
 	}
 	else {
 		throw UMAException("cannot find any matching test case", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
