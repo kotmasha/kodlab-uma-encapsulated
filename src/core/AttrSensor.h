@@ -36,6 +36,9 @@ protected:
 	friend class Sensor;
 	friend class AttrSensorPair;
 
+	friend class GenerateDelayedWeightsTestFixture;
+	friend class AmperAndSignalsTestFixture;
+
 public:
 	//AttrSensor(ifstream &file);
 	AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag);
