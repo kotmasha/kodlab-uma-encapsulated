@@ -13,13 +13,14 @@ World::World(){
 	worldLogger.info("A new world is created");
 }
 
-void World::add_agent(const string &agent_id){
+Agent *World::add_agent(const string &agent_id){
 	if (_agents.find(agent_id) != _agents.end()) {
 		worldLogger.error("Cannot create a duplicate agent " + agent_id);
 		throw UMAException("Cannot create a duplicate agent " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
 	_agents[agent_id] = new Agent(agent_id, "world");
 	worldLogger.info("An agent " + agent_id + " is created");
+	return _agents[agent_id];
 }
 
 Agent *World::getAgent(const string &agent_id) {

@@ -28,6 +28,8 @@ public:
 	void setAttrSensorDiagPointers(double *_diags, double *_diags_);
 	void setAttrSensorObservePointers(bool *observe, bool *observe_);
 	void setAttrSensorCurrentPointers(bool *current);
+	void setAttrSensorTargetPointers(bool *target);
+	void setAttrSensorPredictionPointers(bool *prediction);
 
 	void setAmperList(int idx);
 	void setAmperList(Sensor * const sensor);
@@ -57,6 +59,8 @@ protected:
 	friend class SensorPair;
 	friend class Snapshot;
 	friend class Simulation;
+
+	friend class UMACoreDataFlowTestFixture;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 };
 

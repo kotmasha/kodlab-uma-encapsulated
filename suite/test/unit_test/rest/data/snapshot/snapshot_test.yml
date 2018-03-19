@@ -238,7 +238,7 @@ delete snapshot with invalid id:
   method: DELETE
   url: /UMA/object/snapshot
   status_code: 404
-  message: Cannot find the agent to delete
+  message: Cannot find the snapshot to delete
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot1

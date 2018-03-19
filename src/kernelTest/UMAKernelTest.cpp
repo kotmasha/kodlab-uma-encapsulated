@@ -1544,6 +1544,11 @@ TEST(delta_weight_sum, uma_base_test) {
 	data_util::floatD2H(dev_result, h_result, 1);
 	EXPECT_FLOAT_EQ(*h_result, -22.0);
 	data_util::dev_init(dev_result, 1);
+
+	delete[] h_attr_sensor, h_result, h_signal;
+	data_util::dev_free(dev_attr_sensor);
+	data_util::dev_free(dev_result);
+	data_util::dev_free(dev_signal);
 }
 
 //--------------------------uma_base test----------------------------------

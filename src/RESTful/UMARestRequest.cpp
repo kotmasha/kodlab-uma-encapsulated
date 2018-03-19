@@ -21,7 +21,8 @@ UMARestRequest::UMARestRequest(const http_request &request): _request(request) {
 	finished_task.wait();
 
 	//get the query
-	_query = uri::split_query(request.request_uri().query());
+	string_t decoded_uri = uri::decode(request.request_uri().query());
+	_query = uri::split_query(decoded_uri);
 }
 
 UMARestRequest::~UMARestRequest() {}
@@ -44,6 +45,7 @@ string UMARestRequest::get_string_data(const string &name) {
 string UMARestRequest::get_string_query(const string &name) {
 	string_t name_t = RestUtil::string_to_string_t(name);
 	RestUtil::check_field(_query, name_t);
+
 	try {
 		string_t value = web::uri::decode(_query[name_t]);
 		return RestUtil::string_t_to_string(value);
@@ -297,17 +299,17 @@ void UMARestRequest::set_status_code(const status_code status_code) {
 
 void UMARestRequest::set_data(const string &name, int value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = value;
+	_response_body[U("data")][name_t] = json::value::number(value);
 }
 
 void UMARestRequest::set_data(const string &name, double value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = value;
+	_response_body[U("data")][name_t] = json::value::number(value);
 }
 
 void UMARestRequest::set_data(const string &name, bool value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = value;
+	_response_body[U("data")][name_t] = json::value::boolean(value);
 }
 
 void UMARestRequest::set_data(const string &name, string value) {

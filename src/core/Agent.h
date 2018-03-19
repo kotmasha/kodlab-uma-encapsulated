@@ -26,7 +26,7 @@ protected:
 public:
 	//Agent(ifstream &file);
 	Agent(const string &uuid, const string &dependency);
-	void add_snapshot_stationary(const string &uuid);
+	Snapshot *add_snapshot_stationary(const string &uuid);
 	Snapshot *getSnapshot(const string &snapshot_id);
 	void delete_snapshot(const string &snapshot_id);
 	//void save_agent(ofstream &file);
