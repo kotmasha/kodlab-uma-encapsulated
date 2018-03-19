@@ -64,4 +64,22 @@ protected:
 	Snapshot *snapshot;
 };
 
+class UMACoreDataFlowTestFixture : public::testing::Test {
+public:
+	UMACoreDataFlowTestFixture();
+	~UMACoreDataFlowTestFixture();
+
+	void test_uma_core_dataflow(int start_idx, int end_idx);
+
+protected:
+	DataManager *dm;
+	vector<Sensor *> sensors;
+	vector<SensorPair *> sensorPairs;
+	vector<double> weights;
+	vector<double> thresholds;
+	vector<bool> dirs;
+	vector<double> diag;
+	vector<bool> observe;
+};
+
 #endif

@@ -112,6 +112,8 @@ Snapshot::~Snapshot(){
 }
 
 Sensor *Snapshot::add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector<bool> > &b) {
+	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
+	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	if (_sensor_idx.find(id_pair.first) != _sensor_idx.end() && _sensor_idx.find(id_pair.second) != _sensor_idx.end()) {
 		snapshotLogger.error("Cannot create a duplicate sensor!", _dependency);
 		throw UMAException("Cannot create a duplicate sensor!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
@@ -373,7 +375,6 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 		}
 		if (list.size() == 1) {
 			try {
-				cout << list[0] << endl;
 				generate_delayed_weights(list[0], true, id_pairs[i]);
 			}
 			catch (UMAException &e) {
@@ -610,7 +611,7 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<stri
 
 	double f = 1.0;
 	if(_total > 1e-5)
-		f = getAttrSensorPair(m_idx1, m_idx2)->v_w / _total;
+		f = getAttrSensorPair(m_idx1, m_idx2)->_vw / _total;
 	for(int i = 0; i < _sensors.size(); ++i){
 		SensorPair *sensor_pair = NULL;
 		sensor_pair = new SensorPair(amper_and_sensor, _sensors[i], _threshold, _total);
@@ -618,42 +619,42 @@ void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<stri
 		AttrSensor *m2 = _sensors[i]->_cm;
 
 		if (_sensors[i]->_m->_idx == m_idx1 || _sensors[i]->_m->_idx == m_idx2) {
-			sensor_pair->mij->v_w = getAttrSensorPair(m_idx1, m_idx2)->v_w;
-			sensor_pair->mi_j->v_w = 0.0;
+			sensor_pair->mij->_vw = getAttrSensorPair(m_idx1, m_idx2)->_vw;
+			sensor_pair->mi_j->_vw = 0.0;
 			if (_sensors[i]->_m->_idx == m_idx1) {
-				sensor_pair->m_ij->v_w = getAttrSensorPair(m_idx1, compi(m_idx2))->v_w;
-				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->v_w;
+				sensor_pair->m_ij->_vw = getAttrSensorPair(m_idx1, compi(m_idx2))->_vw;
+				sensor_pair->m_i_j->_vw = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->_vw;
 			}
 			else {
-				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx1), m_idx2)->v_w;
-				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->v_w;
+				sensor_pair->m_ij->_vw = getAttrSensorPair(compi(m_idx1), m_idx2)->_vw;
+				sensor_pair->m_i_j->_vw = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->_vw;
 			}
 		}
 		else if (_sensors[i]->_cm->_idx == m_idx1 || _sensors[i]->_cm->_idx == m_idx2) {
-			sensor_pair->mi_j->v_w = getAttrSensorPair(m_idx1, m_idx2)->v_w;
-			sensor_pair->mij->v_w = 0.0;
+			sensor_pair->mi_j->_vw = getAttrSensorPair(m_idx1, m_idx2)->_vw;
+			sensor_pair->mij->_vw = 0.0;
 			if (_sensors[i]->_cm->_idx == m_idx1) {
-				sensor_pair->m_i_j->v_w = getAttrSensorPair(m_idx1, compi(m_idx2))->v_w;
-				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->v_w;
+				sensor_pair->m_i_j->_vw = getAttrSensorPair(m_idx1, compi(m_idx2))->_vw;
+				sensor_pair->m_ij->_vw = getAttrSensorPair(compi(m_idx1), compi(m_idx1))->_vw;
 			}
 			else {
-				sensor_pair->m_i_j->v_w = getAttrSensorPair(compi(m_idx1), m_idx2)->v_w;
-				sensor_pair->m_ij->v_w = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->v_w;
+				sensor_pair->m_i_j->_vw = getAttrSensorPair(compi(m_idx1), m_idx2)->_vw;
+				sensor_pair->m_ij->_vw = getAttrSensorPair(compi(m_idx2), compi(m_idx2))->_vw;
 			}
 		}
 		else {
-			sensor_pair->mij->v_w = f * getAttrSensorPair(m1->_idx, m1->_idx)->v_w;
-			sensor_pair->mi_j->v_w = f * getAttrSensorPair(m2->_idx, m2->_idx)->v_w;
-			sensor_pair->m_ij->v_w = (1.0 - f) * getAttrSensorPair(m1->_idx, m1->_idx)->v_w;
-			sensor_pair->m_i_j->v_w = (1.0 - f) * getAttrSensorPair(m2->_idx, m2->_idx)->v_w;
+			sensor_pair->mij->_vw = f * getAttrSensorPair(m1->_idx, m1->_idx)->_vw;
+			sensor_pair->mi_j->_vw = f * getAttrSensorPair(m2->_idx, m2->_idx)->_vw;
+			sensor_pair->m_ij->_vw = (1.0 - f) * getAttrSensorPair(m1->_idx, m1->_idx)->_vw;
+			sensor_pair->m_i_j->_vw = (1.0 - f) * getAttrSensorPair(m2->_idx, m2->_idx)->_vw;
 		}
 		amper_and_sensor_pairs.push_back(sensor_pair);
 	}
 	SensorPair *self_pair = new SensorPair(amper_and_sensor, amper_and_sensor, _threshold, _total);
-	self_pair->mij->v_w = amper_and_sensor_pairs[0]->mij->v_w + amper_and_sensor_pairs[0]->mi_j->v_w;
-	self_pair->mi_j->v_w = 0.0;
-	self_pair->m_ij->v_w = 0.0;
-	self_pair->m_i_j->v_w = amper_and_sensor_pairs[0]->m_ij->v_w + amper_and_sensor_pairs[0]->m_i_j->v_w;
+	self_pair->mij->_vw = amper_and_sensor_pairs[0]->mij->_vw + amper_and_sensor_pairs[0]->mi_j->_vw;
+	self_pair->mi_j->_vw = 0.0;
+	self_pair->m_ij->_vw = 0.0;
+	self_pair->m_i_j->_vw = amper_and_sensor_pairs[0]->m_ij->_vw + amper_and_sensor_pairs[0]->m_i_j->_vw;
 	amper_and_sensor_pairs.push_back(self_pair);
 	if(!merge){
 		Sensor *old_sensor = _sensors.back();
@@ -718,23 +719,23 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, const std::pair<str
 			//if this is the last sensor pair, and it is the pair of the delayed sensor itself
 			sensor_pair = new SensorPair(delayed_sensor, delayed_sensor, _threshold, _total);
 			//copy all those diag values first
-			delayed_sensor->_m->_vdiag = delayed_sensor_pairs[0]->mij->v_w + delayed_sensor_pairs[0]->mi_j->v_w;
-			delayed_sensor->_cm->_vdiag = delayed_sensor_pairs[0]->m_ij->v_w + delayed_sensor_pairs[0]->m_i_j->v_w;
+			delayed_sensor->_m->_vdiag = delayed_sensor_pairs[0]->mij->_vw + delayed_sensor_pairs[0]->mi_j->_vw;
+			delayed_sensor->_cm->_vdiag = delayed_sensor_pairs[0]->m_ij->_vw + delayed_sensor_pairs[0]->m_i_j->_vw;
 			delayed_sensor->_m->_vdiag_ = delayed_sensor->_m->_vdiag;
 			delayed_sensor->_cm->_vdiag_ = delayed_sensor->_cm->_vdiag;
 			//then assign the value to sensor pair
-			sensor_pair->mij->v_w = delayed_sensor->_m->_vdiag;
-			sensor_pair->mi_j->v_w = 0;
-			sensor_pair->m_ij->v_w = 0;
-			sensor_pair->m_i_j->v_w = delayed_sensor->_cm->_vdiag;
+			sensor_pair->mij->_vw = delayed_sensor->_m->_vdiag;
+			sensor_pair->mi_j->_vw = 0;
+			sensor_pair->m_ij->_vw = 0;
+			sensor_pair->m_i_j->_vw = delayed_sensor->_cm->_vdiag;
 			delayed_sensor_pairs.push_back(sensor_pair);
 		}
 		else{
 			sensor_pair = new SensorPair(delayed_sensor, _sensors[i], _threshold, _total);
-			sensor_pair->mij->v_w = is_sensor_active * _sensors[i]->_m->_vdiag;
-			sensor_pair->mi_j->v_w = is_sensor_active * _sensors[i]->_cm->_vdiag;
-			sensor_pair->m_ij->v_w = !is_sensor_active * _sensors[i]->_m->_vdiag;
-			sensor_pair->m_i_j->v_w = !is_sensor_active * _sensors[i]->_cm->_vdiag;
+			sensor_pair->mij->_vw = is_sensor_active * _sensors[i]->_m->_vdiag;
+			sensor_pair->mi_j->_vw = is_sensor_active * _sensors[i]->_cm->_vdiag;
+			sensor_pair->m_ij->_vw = !is_sensor_active * _sensors[i]->_m->_vdiag;
+			sensor_pair->m_i_j->_vw = !is_sensor_active * _sensors[i]->_cm->_vdiag;
 			delayed_sensor_pairs.push_back(sensor_pair);
 		}
 	}

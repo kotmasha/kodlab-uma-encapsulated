@@ -1,9 +1,13 @@
 #include "SensorPair.h"
 #include "AttrSensorPair.h"
 #include "Sensor.h"
+#include "UMAException.h"
+#include "Logger.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
+
+static Logger sensorPairLogger("SensorPair", "log/sensor.log");
 
 /*
 SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
@@ -31,7 +35,9 @@ SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double 
 	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
 	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
 	pointers_to_null();
-	this->vthreshold = threshold;
+	this->_vthreshold = threshold;
+
+	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
 }
 
 SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, const vector<double> &w, const vector<bool> &b):
@@ -41,7 +47,9 @@ SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double 
 	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
 	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
 	pointers_to_null();
-	this->vthreshold = threshold;
+	this->_vthreshold = threshold;
+
+	sensorPairLogger.info("Sensor pair is constructed with weights and dirs, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
 }
 
 /*
@@ -70,14 +78,14 @@ This function is setting the threshold pointers
 void SensorPair::setThresholdPointers(double *thresholds){
 	int _idx_i = _sensor_i->_idx;
 	int _idx_j = _sensor_j->_idx;
-	this->threshold = thresholds + ind(_idx_i, _idx_j);
+	this->_threshold = thresholds + ind(_idx_i, _idx_j);
 }
 
 /*
 This function is validating the SensorPair value from the pointer, used before deleting the h_matrix to retain all necessary data
 */
 void SensorPair::pointers_to_values(){	
-	vthreshold = *threshold;
+	_vthreshold = *_threshold;
 	mij->pointers_to_values();
 	mi_j->pointers_to_values();
 	m_ij->pointers_to_values();
@@ -88,7 +96,7 @@ void SensorPair::pointers_to_values(){
 This function is copying the value back to pointer, used when copying sensor value back to GPU
 */
 void SensorPair::values_to_pointers(){
-	*threshold = vthreshold;
+	*_threshold = _vthreshold;
 	mij->values_to_pointers();
 	mi_j->values_to_pointers();
 	m_ij->values_to_pointers();
@@ -96,7 +104,7 @@ void SensorPair::values_to_pointers(){
 }
 
 void SensorPair::pointers_to_null(){
-	threshold = NULL;
+	_threshold = NULL;
 	mij->pointers_to_null();
 	mi_j->pointers_to_null();
 	m_ij->pointers_to_null();
@@ -154,8 +162,18 @@ void SensorPair::copy_data(SensorPair *sp) {
 }
 */
 
+void SensorPair::setThreshold(const double &threshold) {
+	if (!_threshold) {
+		throw UMAException("The threshold pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	*_threshold = threshold;
+}
+
 const double &SensorPair::getThreshold() const{
-	return vthreshold;
+	if (!_threshold) {
+		throw UMAException("The threshold pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	return *_threshold;
 }
 
 /*

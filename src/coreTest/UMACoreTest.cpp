@@ -236,6 +236,8 @@ TEST(snapshot_test, snapshot_get_entity) {
 	EXPECT_EQ(snapshot->getAttrSensorPair("s3", "cs2"), snapshot->getAttrSensorPair(3, 4));
 	EXPECT_EQ(snapshot->getAttrSensorPair("s1", "cs4"), snapshot->getAttrSensorPair(7, 0));
 	EXPECT_NE(snapshot->getAttrSensorPair("s4", "s3"), snapshot->getAttrSensorPair(0, 1));
+
+	delete snapshot;
 }
 
 TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
@@ -362,6 +364,333 @@ TEST_F(AmperAndSignalsTestFixture, amper_and_signals_test) {
 	EXPECT_EQ(test_amper_and_signals("s5", observe1), true);
 	EXPECT_EQ(test_amper_and_signals("cs4", observe2), true);
 	EXPECT_EQ(test_amper_and_signals("cs5", observe2), false);
+}
+
+TEST(dataManager_test, get_set_test) {
+	Snapshot *snapshot = new Snapshot("snapshot", "");
+
+	std::pair<string, string> sensor1 = { "s1", "cs1" };
+	std::pair<string, string> sensor2 = { "s2", "cs2" };
+	std::pair<string, string> sensor3 = { "s3", "cs3" };
+	std::pair<string, string> sensor4 = { "s4", "cs4" };
+	vector<double> diag;
+	vector<double> diag1 = { 0.2, 0.8 };
+	vector<vector<double>> w1, w3;
+	vector<vector<double>> w0 = { { 0.2, 0.8, 0.457, 0.543 } };
+	vector<vector<double>> w2 = { { 0.2, 0.8, 0.4, 0.6 },{ 0.1, 0.9, 0, 1 },{ 0.3, 0.7, 0.8, 0.2 } };
+	vector<vector<bool>> b1, b3;
+	vector<vector<bool>> b0 = { { true, false, true, false } };
+	vector<vector<bool>> b2 = { { true, false, false, true },{ false, false, false, false },{ true, true, true, true } };
+	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w0, b0);
+	Sensor *s2 = snapshot->add_sensor(sensor2, diag1, w1, b1);
+	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w2, b2);
+	snapshot->setThreshold(0.501);
+	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w3, b3);
+
+	DataManager *dm = snapshot->getDM();
+	//mask test
+	vector<bool> mask = { false, false, false, true, true, true };
+	EXPECT_THROW(dm->setMask(mask), UMAException);
+	mask.push_back(false); mask.push_back(false);
+	dm->setMask(mask);
+	EXPECT_EQ(mask, dm->getMask());
+	//load test
+	vector<bool> load = { true, false, false, true, false, false };
+	EXPECT_THROW(dm->setLoad(load), UMAException);
+	load.push_back(false); load.push_back(false);
+	dm->setLoad(load);
+	EXPECT_EQ(load, dm->getLoad());
+	//signals test
+	vector<vector<bool>> signals = {
+		{true},{false},{true},{false},{true}
+	};
+	EXPECT_THROW(dm->setSignals(signals), UMAException);
+	signals = { {true, false, true, false, false, false},
+	{false, true, false, true, true, true, false, false}
+	};
+	EXPECT_THROW(dm->setSignals(signals), UMAException);
+	signals[0].push_back(false); signals[0].push_back(true);
+	dm->setSignals(signals);
+	EXPECT_EQ(signals, dm->getSignals(2));
+	//lsignals test
+	vector<vector<bool>> lsignals = {
+		{ true },{ false },{ true },{ false },{ true }
+	};
+	dm->setLoad(load);
+	EXPECT_THROW(dm->setLSignals(lsignals), UMAException);
+	lsignals = { { true, false, true, false, false, false },
+	{ false, true, false, true, true, true, false, false }
+	};
+	EXPECT_THROW(dm->setLSignals(lsignals), UMAException);
+	lsignals[0].push_back(false); lsignals[0].push_back(true);
+	dm->setLSignals(lsignals);
+	lsignals = { { true, false, true, true, false, false, false, true },
+	{ true, true, false, true, true, true, false, false }
+	};
+	EXPECT_EQ(lsignals, dm->getLSignals(2));
+	//dists test
+	vector<vector<int>> dists = { {1}, {2}, {3} };
+	EXPECT_THROW(dm->setDists(dists), UMAException);
+	dists = {
+		{1, 1, 1},
+		{2, 2, 2, 2},
+		{3, 3, 3, 3},
+		{4, 4, 4, 4}
+	};
+	EXPECT_THROW(dm->setDists(dists), UMAException);
+	dists[0].push_back(1);
+	EXPECT_NO_THROW(dm->setDists(dists));
+	//current test
+	vector<bool> current = { true, false, false, true, true, true };
+	EXPECT_THROW(dm->setCurrent(current), UMAException);
+	current.push_back(false); current.push_back(false);
+	dm->setCurrent(current);
+	EXPECT_EQ(current, dm->getCurrent());
+	//target test
+	vector<bool> target = { false, true, false, true, true, true };
+	EXPECT_THROW(dm->setTarget(target), UMAException);
+	target.push_back(false); target.push_back(true);
+	dm->setTarget(target);
+	EXPECT_EQ(target, dm->getTarget());
+	//observe test
+	vector<bool> observe = { true, false, false, true, true, false };
+	EXPECT_THROW(dm->setObserve(observe), UMAException);
+	observe.push_back(true); observe.push_back(false);
+	dm->setObserve(observe);
+	EXPECT_EQ(observe, dm->getObserve());
+
+	//weights test
+	vector<vector<double>> t_weight2d = {
+		{0.2},
+		{0.457, 0.543},
+		{0.25, 0.25, 0.25},
+		{0.25, 0.25, 0.25, 0.25},
+		{0.2, 0.8, 0.1, 0.9, 0.3},
+		{0.4, 0.6, 0.0, 1.0, 0.8, 0.2},
+		{0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 },
+		{0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 },
+	};
+	vector<double> t_weight1d = { 0.2, 0.457, 0.543, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+	0.2, 0.8, 0.1, 0.9, 0.3, 0.4, 0.6, 0.0, 1.0, 0.8, 0.2, 0.25, 0.25, 0.25, 0.25,0.25,
+	0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 };
+	vector<vector<double>> r_weight2d = dm->getWeight2D();
+	vector<double> r_weight1d = dm->getWeight();
+	for (int i = 0; i < t_weight2d.size(); ++i) {
+		for (int j = 0; j < t_weight2d[i].size(); ++j)
+			EXPECT_DOUBLE_EQ(t_weight2d[i][j], r_weight2d[i][j]);
+	}
+	for (int i = 0; i < t_weight1d.size(); ++i) {
+		EXPECT_DOUBLE_EQ(t_weight1d[i], r_weight1d[i]);
+	}
+
+	//dirs test
+	vector<vector<bool>> t_dirs2d = {
+		{ true },
+		{ true, false },
+		{ false, false, true },
+		{ false, false, false, true },
+		{ true, false, false, false, true },
+		{ false, true, false, false, true, true },
+		{ false, false, false, false, false, false, true },
+		{ false, false, false, false, false, false, false, true },
+	};
+	vector<bool> t_dirs1d = { true, true, false, false, false, true, false, false, false, true,
+		true, false, false, false, true, false, true, false, false, true, true, false, false, false, false,
+		false, false, true, false, false, false, false, false, false, false, true };
+	vector<vector<bool>> r_dirs2d = dm->getDir2D();
+	vector<bool> r_dirs1d = dm->getDir();
+	EXPECT_EQ(t_dirs2d, r_dirs2d);
+	EXPECT_EQ(t_dirs1d, r_dirs1d);
+
+	//threshold test
+	vector<vector<double>> t_threshold2d = {
+		{0.125},
+		{0.125, 0.125},
+		{0.125, 0.125, 0.125},
+		{0.501, 0.501, 0.501, 0.501}
+	};
+	vector<double> t_threshold1d = { 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.501, 0.501, 0.501, 0.501 };
+	vector<vector<double>> r_threshold2d = dm->getThreshold2D();
+	for (int i = 0; i < t_threshold2d.size(); ++i) {
+		for (int j = 0; j < t_threshold2d[i].size(); ++j)
+			EXPECT_DOUBLE_EQ(r_threshold2d[i][j], t_threshold2d[i][j]);
+	}
+
+	vector<double> r_threshold1d = dm->getThresholds();
+	for (int i = 0; i < r_threshold1d.size(); ++i)
+		EXPECT_DOUBLE_EQ(r_threshold1d[i], t_threshold1d[i]);
+
+	//diag test
+	vector<double> t_diag_ = { 0.5, 0.5, 0.2, 0.8, 0.5, 0.5 };
+	vector<double> r_diag_ = dm->getDiagOld();
+	for (int i = 0; i < t_diag_.size(); ++i)
+		EXPECT_DOUBLE_EQ(t_diag_[i], r_diag_[i]);
+
+	vector<double> t_diag = {0.5, 0.5, 0.2, 0.8, 0.5, 0.5};
+	vector<double> r_diag = dm->getDiag();
+	for (int i = 0; i < t_diag.size(); ++i)
+		EXPECT_DOUBLE_EQ(t_diag[i], r_diag[i]);
+
+	delete snapshot;
+}
+
+TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test1) {
+	EXPECT_THROW(test_uma_core_dataflow(0, 5), UMAException);
+}
+
+TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test2) {
+	test_uma_core_dataflow(0, 3);
+}
+
+TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test3) {
+	test_uma_core_dataflow(2, 4);
+}
+
+TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test4) {
+	test_uma_core_dataflow(0, 4);
+}
+
+TEST(sensor_test, set_amper_list) {
+	pair<string, string> p1 = { "s1", "cs1" };
+	pair<string, string> p2 = { "s2", "cs2" };
+	Sensor *s1 = new Sensor(p1, 1.0, 0);
+	Sensor *s2 = new Sensor(p2, 1.0, 1);
+	s1->setAmperList(0);
+	s1->setAmperList(1);
+	s2->setAmperList(2);
+	s2->setAmperList(3);
+	s2->setAmperList(4);
+	vector<int> v1 = { 0, 1 };
+	vector<int> v2 = { 2, 3, 4 };
+	vector<int> v3 = { 0, 1, 2, 3, 4 };
+	EXPECT_EQ(s1->getAmperList(), v1);
+	EXPECT_EQ(s2->getAmperList(), v2);
+	s1->setAmperList(s2);
+	EXPECT_EQ(s1->getAmperList(), v3);
+
+	delete s1;
+	delete s2;
+}
+
+TEST(sensor_test, get_set_idx) {
+	pair<string, string> p1 = { "s1", "cs1" };
+	Sensor *s1 = new Sensor(p1, 1.0, 0);
+	EXPECT_EQ(s1->getIdx(), 0);
+	s1->setIdx(2);
+	EXPECT_EQ(s1->getIdx(), 2);
+
+	delete s1;
+}
+
+TEST(sensor_test, copy_amper_list_test) {
+	pair<string, string> p1 = { "s1", "cs1" };
+	pair<string, string> p2 = { "s2", "cs2" };
+	pair<string, string> p3 = { "s3", "cs3" };
+	pair<string, string> p4 = { "s4", "cs4" };
+	pair<string, string> p5 = { "s5", "cs5" };
+
+	Sensor *s1 = new Sensor(p1, 1.0, 0);
+	Sensor *s2 = new Sensor(p2, 1.0, 1);
+	Sensor *s3 = new Sensor(p3, 1.0, 2);
+	Sensor *s4 = new Sensor(p4, 1.0, 3);
+	Sensor *s5 = new Sensor(p5, 1.0, 4);
+
+	bool *ampers = new bool[30];
+	ampers[0] = 0; ampers[1] = 0;
+	ampers[2] = 0; ampers[3] = 0; ampers[4] = 0; ampers[5] = 0;
+	ampers[6] = 0; ampers[7] = 0; ampers[8] = 0; ampers[9] = 0; ampers[10] = 0; ampers[11] = 0;
+	ampers[12] = 0; ampers[13] = 0; ampers[14] = 0; ampers[15] = 0; ampers[16] = 0; ampers[17] = 0; ampers[18] = 0; ampers[19] = 0;
+	ampers[20] = 0; ampers[21] = 0; ampers[22] = 0; ampers[23] = 0; ampers[24] = 0; ampers[25] = 0; ampers[26] = 0; ampers[27] = 0; ampers[28] = 0; ampers[29] = 0;
+
+	s4->setAmperList(0);
+	s4->setAmperList(3);
+	s4->setAmperList(5);
+	s4->setAmperList(6);
+
+	s4->copyAmperList(ampers);
+
+	EXPECT_EQ(ampers[12], 1);
+	EXPECT_EQ(ampers[13], 0);
+	EXPECT_EQ(ampers[14], 0);
+	EXPECT_EQ(ampers[15], 1);
+	EXPECT_EQ(ampers[16], 0);
+	EXPECT_EQ(ampers[17], 1);
+	EXPECT_EQ(ampers[18], 1);
+	EXPECT_EQ(ampers[19], 0);
+
+	delete s1;
+	delete s2;
+	delete s3;
+	delete s4;
+	delete s5;
+}
+
+TEST(sensor_pair_test, sensor_pair_test) {
+	pair<string, string> p1 = { "s1", "cs1" };
+
+	Sensor *s1 = new Sensor(p1, 1.0, 0);
+
+	double *thresholds = new double;
+	double *weights = new double[4];
+	bool *dirs = new bool[4];
+
+	SensorPair *sp = new SensorPair(s1, s1, 0.25, 1.0);
+
+	sp->setAllPointers(weights, dirs, thresholds);
+	sp->values_to_pointers();
+
+	EXPECT_DOUBLE_EQ(sp->getThreshold(), 0.25);
+	sp->setThreshold(0.5);
+	EXPECT_DOUBLE_EQ(sp->getThreshold(), 0.5);
+
+	AttrSensorPair *asp1 = sp->getAttrSensorPair(true, true);
+	AttrSensorPair *asp2 = sp->getAttrSensorPair(true, false);
+	EXPECT_DOUBLE_EQ(asp1->getW(), 0.25);
+	EXPECT_DOUBLE_EQ(asp2->getW(), 0.25);
+	EXPECT_DOUBLE_EQ(asp1->getD(), true);
+	EXPECT_DOUBLE_EQ(asp2->getD(), false);
+	asp1->setD(false);
+	asp1->setW(0.8);
+	EXPECT_DOUBLE_EQ(asp1->getW(), 0.8);
+	EXPECT_DOUBLE_EQ(asp1->getD(), false);
+
+	delete s1;
+	delete sp;
+	delete thresholds;
+	delete dirs;
+	delete weights;
+}
+
+TEST(attr_sensor_test, attr_sensor_test) {
+	AttrSensor *as = new AttrSensor("attr_sensor", 0, true, 0.5);
+	double *diag = new double[2];
+	double *diag_ = new double[2];
+	bool *observe = new bool[2];
+	bool *observe_ = new bool[2];
+
+	EXPECT_EQ(as->getIdx(), 0);
+	as->setIdx(1);
+	EXPECT_EQ(as->getIdx(), 1);
+
+	EXPECT_EQ(as->getIsOriginPure(), true);
+	as->setIsOriginPure(false);
+	EXPECT_EQ(as->getIsOriginPure(), false);
+
+	as->setDiagPointers(diag, diag_);
+	as->setObservePointers(observe, observe_);
+	as->values_to_pointers();
+
+	EXPECT_EQ(as->getDiag(), 0.5);
+	EXPECT_EQ(as->getOldDiag(), 0.5);
+
+	as->setDiag(0.6);
+	as->setOldDiag(0.7);
+	EXPECT_EQ(as->getDiag(), 0.6);
+	EXPECT_EQ(as->getOldDiag(), 0.7);
+
+	delete as;
+	delete[] diag, diag_;
+	delete[] observe, observe_;
 }
 
 int main(int argc, char** argv)

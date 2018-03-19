@@ -14,27 +14,29 @@ variable start with v are temparay variable to store the value, used in amper/de
 class DLL_PUBLIC AttrSensorPair{
 private:
 	//const pointer to measurable, larger idx
-	AttrSensor * const _measurable_i;
+	AttrSensor * const _attr_sensor_i;
 	//const pointer to measurable, smaller idx
-	AttrSensor * const _measurable_j;
+	AttrSensor * const _attr_sensor_j;
 	//weight matrix pointer
 	double *_w;
 	//tmp variable for weight
-	double v_w;
+	double _vw;
 	//dir matrix pointer
 	bool *_d;
 	//tmp variable for dir
-	double v_d;
+	double _vd;
 	//friend
 	friend class SensorPair;
 	friend class Snapshot;
+
 	friend class AmperAndTestFixture;
 	friend class GenerateDelayedWeightsTestFixture;
 	friend class AmperTestFixture;
+	friend class UMACoreDataFlowTestFixture;
 
 public:
 	//AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j);
-	AttrSensorPair(AttrSensor * const _m_i, AttrSensor * const _m_j, double w, bool d);
+	AttrSensorPair(AttrSensor * const _a_i, AttrSensor * const _a_j, double w, bool d);
 
 	void pointers_to_null();
 	void pointers_to_values();

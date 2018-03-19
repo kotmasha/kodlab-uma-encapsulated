@@ -30,6 +30,10 @@ protected:
 	bool*_observe_, _vobserve_;
 	//the current pointer
 	bool *_current;
+	//the target pointer
+	bool *_target;
+	//the prediction pointer
+	bool *_prediction;
 	//indicate if the measurable is originally a pure
 	bool _isOriginPure;
 	friend class Snapshot;
@@ -38,6 +42,7 @@ protected:
 
 	friend class GenerateDelayedWeightsTestFixture;
 	friend class AmperAndSignalsTestFixture;
+	friend class UMACoreDataFlowTestFixture;
 
 public:
 	//AttrSensor(ifstream &file);
@@ -50,6 +55,8 @@ public:
 	void setDiagPointers(double *_diags, double *_diags_);
 	void setObservePointers(bool *observe, bool *observe_);
 	void setCurrentPointers(bool *current);
+	void setTargetPointers(bool *target);
+	void setPredictionPointers(bool *prediction);
 	void setIdx(int idx);
 	
 	//void save_measurable(ofstream &file);
@@ -61,6 +68,7 @@ public:
 	const bool &getObserve() const;
 	const bool &getOldObserve() const;
 	const bool &getCurrent() const;
+	const int &getIdx() const;
 
 	void setDiag(const double &diag);
 	void setOldDiag(const double &diag_);

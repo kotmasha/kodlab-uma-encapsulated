@@ -20,12 +20,14 @@ private:
 	//pointers to measurable pairs
 	AttrSensorPair *mij, *mi_j, *m_ij, *m_i_j;
 	//pointer to threshold matrix
-	double *threshold;
+	double *_threshold;
 	//threshold matrix value
-	double vthreshold;
+	double _vthreshold;
 	
 	//Snapshot class should be able to access all SensorPair value
 	friend class Snapshot;
+
+	friend class UMACoreDataFlowTestFixture;
 
 public:
 	// SensorPair(ifstream &file, vector<Sensor *> &sensors);
@@ -40,6 +42,8 @@ public:
 	void pointers_to_values();
 	void values_to_pointers();
 	void setAllPointers(double *weights, bool *dirs, double *thresholds);
+
+	void setThreshold(const double &threshold);
 
 	AttrSensorPair *getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j);
 	//void save_sensor_pair(ofstream &file);

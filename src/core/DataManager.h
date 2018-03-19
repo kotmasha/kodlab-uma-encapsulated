@@ -34,8 +34,6 @@ protected:
 	bool *h_observe_;
 	//current array, storing the observation value after going through propagation
 	bool *h_current, *dev_current;
-	//signal array, hold the input of propagation
-	bool *h_signal, *dev_signal;
 	//load array, hold the input of propagation
 	bool *h_load, *dev_load;
 	//mask array, will be calculated during init_mask, which will be used in halucinate
@@ -61,10 +59,6 @@ protected:
 
 	//prediction array after the halucinate, have no corresponding device value
 	bool *h_prediction, *dev_prediction;
-	//up array used for separate propagation, have no corresponding device value
-	bool *h_up;
-	//down array used for separate propagationm have no corresponding device value
-	bool *h_down;
 	//decision tmp variables
 	bool *dev_dec_tmp1;
 	bool *dev_dec_tmp2;
@@ -124,7 +118,6 @@ public:
 	//Set Functions
 	void setMask(const vector<bool> &mask);
 	void setLoad(const vector<bool> &load);
-	void setSignal(const vector<bool> &signal);
 	void setSignals(const vector<vector<bool> > &signals);
 	void setLSignals(const vector<vector<bool> > &signals);
 	void setDists(const vector<vector<int> > &dists);
@@ -153,8 +146,6 @@ public:
 	const vector<double> getDiag();
 	const vector<double> getDiagOld();
 	const vector<bool> getMask();
-	const vector<bool> getUp();
-	const vector<bool> getDown();
 	const vector<bool> getNegligible();
 	const vector < vector<bool> > getSignals(int sig_count);
 	const vector < vector<bool> > getLSignals(int sig_count);
@@ -168,6 +159,8 @@ public:
 	~DataManager();
 
 	friend class Snapshot;
+
+	friend class UMACoreDataFlowTestFixture;
 
 protected:
 	void init_pointers();
