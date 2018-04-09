@@ -72,7 +72,7 @@ amper 1&6:
   data:
     agent_id: test_agent
     snapshot_id: test_snapshot
-    delay_lists: [[True, False, False, False, False, False, False, False]]
+    delay_lists: [[False, True, False, False, False, False, True, False]]
     uuid_lists: [['sensor4', 'c_sensor4']]
 
 delay 0&8:
@@ -280,6 +280,67 @@ get data size 2 sensor:
       _npdir_size: 12
       _npdir_size_max: 220
 
+get sensor5 amper list:
+  method: GET
+  url: /UMA/object/sensor
+  status_code : 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    sensor_id: sensor5
+  kwargs:
+    amper_list_idx: []
+
+pruning 1:
+  method: POST
+  url: /UMA/snapshot/pruning
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    signals: [False, False, True, True]
+
+pruning 0 2:
+  method: POST
+  url: /UMA/snapshot/pruning
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    signals: [True, True, False, False, True, True, False, False, False, False, False, False, False, False]
+
+get sensor4 amper list:
+  method: GET
+  url: /UMA/object/sensor
+  status_code : 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    sensor_id: sensor4
+  kwargs:
+    amper_list_idx: [2]
+
+get sensor5 amper list1:
+  method: GET
+  url: /UMA/object/sensor
+  status_code : 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    sensor_id: sensor5
+  kwargs:
+    amper_list_idx: [4]
+
+get sensor6 amper list:
+  method: GET
+  url: /UMA/object/sensor
+  status_code : 200
+  query:
+    agent_id: test_agent
+    snapshot_id: test_snapshot
+    sensor_id: sensor6
+  kwargs:
+    amper_list_idx: [1, 2]
 
 delete agent:
   method: DELETE
@@ -310,4 +371,16 @@ tests:
   - pruning 0 2 3 4 6
   - get snapshot 2 sensor
   - get data size 2 sensor
+  - get sensor5 amper list
+  - pruning 1
+  - create sensor0
+  - create sensor2
+  - create sensor3
+  - amper 1&6
+  - delay 0&8
+  - amper 1&3&6
+  - pruning 0 2
+  - get sensor4 amper list
+  - get sensor5 amper list1
+  - get sensor6 amper list
   - delete agent

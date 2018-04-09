@@ -22,5 +22,6 @@ namespace uma_base {
 	void union_GPU(int *dists, int *union_root, int sensor_size);
 	void copy_npdir(bool *npdir, bool *dir, int attr_sensor_size);
 	void negligible(bool *npdir, bool *negligible, int sensor_size);
+	void new_episode(bool *current, int initial_sensor_size, int attr_sensor_size);
 }
 #endif

@@ -18,9 +18,10 @@ namespace simulation {
 	void DLL_PUBLIC propagate_mask(DataManager *dm);
 	void DLL_PUBLIC calculate_target(DataManager *dm);
 	float DLL_PUBLIC divergence(DataManager *dm);
+	float DLL_PUBLIC enrichment(Snapshot *snapshot);
 	float DLL_PUBLIC distance(DataManager *dm);
-	float DLL_PUBLIC decide(Snapshot *snapshot, const vector<bool> &signal, const double &phi, const bool active);
-	vector<float> DLL_PUBLIC decide(Agent *agent, const vector<bool> &obs_plus, const vector<bool> &obs_minus, const double &phi, const bool &active);
+	float DLL_PUBLIC decide(Snapshot *snapshot, vector<bool> &signal, const double &phi, const bool active);
+	vector<float> DLL_PUBLIC decide(Agent *agent, vector<bool> &obs_plus, vector<bool> &obs_minus, const double &phi, const bool &active);
 	void DLL_PUBLIC ups_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int attr_sensor_size);
 	void DLL_PUBLIC downs_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int attr_sensor_size);
 	vector<vector<vector<bool> > > DLL_PUBLIC abduction(DataManager *dm, const vector<vector<bool> > &signals);

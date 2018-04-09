@@ -9,7 +9,7 @@
 #include "uma_base.cuh"
 
 //--------------------------data_util test----------------------------------
-TEST(bool_cp, data_util_test) {
+TEST(data_util_test, bool_cp) {
 	bool *h_b1, *h_b2, *h_b3, *h_b4, *dev_b1, *dev_b2;
 	vector<bool> v1, v2, v3, v4;
 	h_b1 = new bool[10];
@@ -58,7 +58,7 @@ TEST(bool_cp, data_util_test) {
 	data_util::dev_free(dev_b2);
 }
 
-TEST(memset, data_util_test) {
+TEST(data_util_test, memset) {
 	//bool test
 	bool *h_b, *dev_b;
 	vector<bool> vb1, vb2(10, 0);
@@ -108,7 +108,7 @@ TEST(memset, data_util_test) {
 	delete[] h_f;
 }
 
-TEST(double_cp, data_util_test) {
+TEST(data_util_test, double_cp) {
 	double *h_d1, *h_d2, *h_d3, *h_d4, *dev_d1, *dev_d2;
 	vector<double> v1, v2, v3, v4;
 	h_d1 = new double[10];
@@ -157,7 +157,7 @@ TEST(double_cp, data_util_test) {
 	data_util::dev_free(dev_d2);
 }
 
-TEST(int_cp, data_util_test) {
+TEST(data_util_test, int_cp) {
 	int *h_i1, *h_i2, *h_i3, *h_i4, *dev_i1, *dev_i2;
 	vector<int> v1, v2, v3, v4;
 	h_i1 = new int[10];
@@ -206,7 +206,7 @@ TEST(int_cp, data_util_test) {
 	data_util::dev_free(dev_i2);
 }
 
-TEST(float_cp, data_util_test) {
+TEST(data_util_test, float_cp) {
 	float *h_f1, *h_f2, *h_f3, *h_f4, *dev_f1, *dev_f2;
 	vector<float> v1, v2, v3, v4;
 	h_f1 = new float[10];
@@ -261,7 +261,7 @@ extern int compi(int x);
 extern int ind(int row, int col);
 extern int npdir_ind(int row, int col);
 
-TEST(compi_host, device_util_test) {
+TEST(device_util_test, compi_host) {
 	vector<int> input = { 0, 3, 5, 8, 10 ,13 };
 	vector<int> target = { 1, 2 ,4, 9, 11, 12 };
 	vector<int> output;
@@ -269,7 +269,7 @@ TEST(compi_host, device_util_test) {
 	EXPECT_EQ(output, target);
 }
 
-TEST(ind_host, device_util_test) {
+TEST(device_util_test, ind_host) {
 	vector<int> input_y = { 0, 3, 5, 8, 11 ,13, 16, 18, 19 };
 	vector<int> input_x = { 0, 2, 1, 8, 11, 14, 17, 24, 25 };
 	vector<int> target = { 0, 8, 16, 44, 77, 132, 169, 344, 318 };
@@ -278,7 +278,7 @@ TEST(ind_host, device_util_test) {
 	EXPECT_EQ(output, target);
 }
 
-TEST(npdir_ind_host, device_util_test) {
+TEST(device_util_test, npdir_ind_host) {
 	vector<int> input_y = { 0, 3, 5, 8, 11 ,13, 16, 18, 19 };
 	vector<int> input_x = { 0, 2, 1, 8, 11, 14, 17, 24, 25 };
 	vector<int> target = { 0, 10, 19, 48, 83, 140, 161, 357, 330 };
@@ -291,7 +291,7 @@ TEST(npdir_ind_host, device_util_test) {
 
 //--------------------------kernel_util test----------------------------------
 
-TEST(all_true, kernel_util_test) {
+TEST(kernel_util_test, all_true) {
 	bool *h_b, *dev_b;
 	vector<bool> v1, v2;
 	h_b = new bool[20];
@@ -308,7 +308,7 @@ TEST(all_true, kernel_util_test) {
 	EXPECT_EQ(v1, v2);
 }
 
-TEST(all_false, kernel_util_test) {
+TEST(kernel_util_test, all_false) {
 	bool *h_b, *dev_b;
 	vector<bool> v1, v2;
 	h_b = new bool[20];
@@ -325,7 +325,7 @@ TEST(all_false, kernel_util_test) {
 	EXPECT_EQ(v1, v2);
 }
 
-TEST(bool2int, kernel_util_tets) {
+TEST(kernel_util_tets, bool2int) {
 	bool *h_b, *dev_b;
 	int *h_i, *dev_i;
 	vector<int> v1 = {1, 0 ,0 ,1 ,1 ,0, 1, 0, 1, 0};
@@ -349,7 +349,31 @@ TEST(bool2int, kernel_util_tets) {
 	EXPECT_EQ(v1, v2);
 }
 
-TEST(conjunction, kernel_util_test) {
+TEST(kernel_util_tets, bool2double) {
+	bool *h_b, *dev_b;
+	double *h_d, *dev_d;
+	vector<int> v1 = { 1, 0 ,0 ,1 ,1 ,0, 1, 0, 1, 0 };
+	vector<int> v2;
+	h_b = new bool[10];
+	h_d = new double[10];
+	h_b[0] = true; h_b[1] = false; h_b[2] = false; h_b[3] = true; h_b[4] = true;
+	h_b[5] = false; h_b[6] = true; h_b[7] = false; h_b[8] = true; h_b[9] = false;
+	data_util::dev_bool(dev_b, 10);
+	data_util::dev_double(dev_d, 10);
+
+	data_util::boolH2D(h_b, dev_b, 10);
+	kernel_util::bool2double(dev_b, dev_d, 10);
+	data_util::doubleD2H(dev_d, h_d, 10);
+	for (int i = 0; i < 10; ++i) v2.push_back(h_d[i]);
+
+	data_util::dev_free(dev_b);
+	data_util::dev_free(dev_d);
+	delete[] h_d, h_b;
+
+	for(int i = 0; i < 10; ++i) EXPECT_DOUBLE_EQ(v1[i], v2[i]);
+}
+
+TEST(kernel_util_test, conjunction) {
 	bool *h_b1, *h_b2;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { false, false, true, false };
@@ -380,7 +404,7 @@ TEST(conjunction, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
-TEST(disjunction, kernel_util_test) {
+TEST(kernel_util_test, disjunction) {
 	bool *h_b1, *h_b2;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { true, false, true, true };
@@ -411,7 +435,7 @@ TEST(disjunction, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
-TEST(subtraction, kernel_util_test) {
+TEST(kernel_util_test, subtraction) {
 	bool *h_b1, *h_b2;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { false, false, false, true };
@@ -442,7 +466,7 @@ TEST(subtraction, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
-TEST(negate_conjunction_star, kernel_util_test) {
+TEST(kernel_util_test, negate_conjunction_star) {
 	bool *h_b1, *h_b2;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { false, false, true, false };
@@ -473,7 +497,7 @@ TEST(negate_conjunction_star, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
-TEST(conjunction_star, kernel_util_test) {
+TEST(kernel_util_test, conjunction_star) {
 	bool *h_b1, *h_b2;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { false, false, false, true };
@@ -504,7 +528,7 @@ TEST(conjunction_star, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
-TEST(up2down, kernel_util_test) {
+TEST(kernel_util_test, up2down) {
 	bool *h_b1;
 	bool *dev_b1, *dev_b2;
 	vector<bool> v1 = { true, true, false, false, false, true, true, false };
@@ -532,11 +556,31 @@ TEST(up2down, kernel_util_test) {
 	EXPECT_EQ(v3, v4);
 }
 
+TEST(kernel_util_test, sum) {
+	double *h_d = new double[20];
+	double *dev_d;
+	data_util::dev_double(dev_d, 20);
+
+	h_d[0] = 1.0; h_d[1] = 3.0; h_d[2] = 5.0; h_d[3] = 7.0; h_d[4] = 9.0; h_d[5] = 11.0;
+	h_d[6] = -1.0; h_d[7] = -3.0; h_d[8] = -5.0; h_d[9] = -7.0; h_d[10] = -9.0; h_d[11] = -11.0;
+	h_d[12] = 1.0; h_d[13] = 3.0; h_d[14] = 5.0; h_d[15] = 7.0; h_d[16] = 9.0; h_d[17] = 11.0;
+
+	data_util::doubleH2D(h_d, dev_d, 18);
+	EXPECT_DOUBLE_EQ(kernel_util::sum(dev_d, 5), 25.0);
+	data_util::doubleH2D(h_d, dev_d, 18);
+	EXPECT_DOUBLE_EQ(kernel_util::sum(dev_d, 10), 20);
+	data_util::doubleH2D(h_d, dev_d, 18);
+	EXPECT_DOUBLE_EQ(kernel_util::sum(dev_d, 15), 9.0);
+
+	delete[] h_d;
+	data_util::dev_free(dev_d);
+}
+
 //--------------------------kernel_util test----------------------------------
 
 //--------------------------uma_base test----------------------------------
 
-TEST(init_mask, uma_base_test) {
+TEST(uma_base_test, init_mask) {
 	vector<bool> v1 = { false, false, false, false };
 	vector<bool> v2 = { false, false, false, false, false, false, true, true, true, true };
 	vector<bool> v3, v4;
@@ -565,7 +609,7 @@ TEST(init_mask, uma_base_test) {
 	EXPECT_EQ(v2, v4);
 }
 
-TEST(init_diag, uma_base_test) {
+TEST(uma_base_test, init_diag) {
 	double *h_d1, *h_d2;
 	double *dev_d1, *dev_d2;
 	vector<double> v1 = {0.8, 0.8, 0.8, 0.8};
@@ -593,7 +637,7 @@ TEST(init_diag, uma_base_test) {
 	EXPECT_EQ(v2, v4);
 }
 
-TEST(update_weights, uma_base_test) {
+TEST(uma_base_test, update_weights) {
 	double *h_weights = new double[21];
 	double *dev_weights;
 	bool *h_observe = new bool[6];
@@ -672,7 +716,7 @@ TEST(update_weights, uma_base_test) {
 	delete[] h_observe;
 }
 
-TEST(get_weights_diag, uma_base_test) {
+TEST(uma_base_test, get_weights_diag) {
 	double *h_diag, *h_diag_;
 	double *dev_diag, *dev_diag_;
 	double *h_weights;
@@ -767,7 +811,7 @@ TEST(get_weights_diag, uma_base_test) {
 	data_util::dev_free(dev_weights);
 }
 
-TEST(calculate_target, uma_base_test) {
+TEST(uma_base_test, calculate_target) {
 	double *h_attr_sensor, *dev_attr_sensor;
 	bool *h_target, *dev_target;
 
@@ -791,7 +835,7 @@ TEST(calculate_target, uma_base_test) {
 	data_util::dev_free(dev_target);
 }
 
-TEST(update_thresholds, uma_base_test) {
+TEST(uma_base_test, update_thresholds) {
 	bool *h_dirs, *dev_dirs;
 	double *h_thresholds, *dev_thresholds;
 
@@ -835,7 +879,7 @@ TEST(update_thresholds, uma_base_test) {
 	data_util::dev_free(dev_thresholds);
 }
 
-TEST(orient_all, uma_base_test) {
+TEST(uma_base_test, orient_all) {
 	double *h_weights, *dev_weights;
 	bool *h_dirs, *dev_dirs;
 	double *h_thresholds, *dev_thresholds;
@@ -878,7 +922,7 @@ TEST(orient_all, uma_base_test) {
 	data_util::dev_free(dev_thresholds);
 }
 
-TEST(floyd, uma_base_test) {
+TEST(uma_base_test, floyd) {
 	bool *h_npdirs, *dev_npdirs;
 
 	h_npdirs = new bool[60];
@@ -910,7 +954,7 @@ TEST(floyd, uma_base_test) {
 	vector<bool> v2;
 
 	data_util::boolH2D(h_npdirs, dev_npdirs, 60);
-	uma_base::floyd(dev_npdirs, 55);
+	uma_base::floyd(dev_npdirs, 10);
 	data_util::boolD2H(dev_npdirs, h_npdirs, 60);
 	for (int i = 0; i < 60; ++i) v2.push_back(h_npdirs[i]);
 	EXPECT_EQ(v1, v2);
@@ -919,7 +963,7 @@ TEST(floyd, uma_base_test) {
 	data_util::dev_free(dev_npdirs);
 }
 
-TEST(dioid_square, uma_base_test) {
+TEST(uma_base_test, dioid_square) {
 	int *h_dists, *dev_dists;
 	h_dists = new int[25];
 	data_util::dev_int(dev_dists, 25);
@@ -967,7 +1011,7 @@ TEST(dioid_square, uma_base_test) {
 	data_util::dev_free(dev_dists);
 }
 
-TEST(transpose_multiply, uma_base_test) {
+TEST(uma_base_test, transpose_multiply) {
 	bool *h_npdirs, *dev_npdirs;
 	bool *h_signals, *dev_signals;
 	h_npdirs = new bool[60];
@@ -1014,7 +1058,7 @@ TEST(transpose_multiply, uma_base_test) {
 	data_util::dev_free(dev_signals);
 }
 
-TEST(multiply, uma_base_test) {
+TEST(uma_base_test, multiply) {
 	bool *h_npdirs, *dev_npdirs;
 	bool *h_signals, *dev_signals;
 	h_npdirs = new bool[60];
@@ -1061,7 +1105,7 @@ TEST(multiply, uma_base_test) {
 	data_util::dev_free(dev_signals);
 }
 
-TEST(check_mask, uma_base_test) {
+TEST(uma_base_test, check_mask) {
 	bool *h_mask, *dev_mask;
 	h_mask = new bool[8];
 	data_util::dev_bool(dev_mask, 8);
@@ -1082,7 +1126,7 @@ TEST(check_mask, uma_base_test) {
 	data_util::dev_free(dev_mask);
 }
 
-TEST(mask, uma_base_test) {
+TEST(uma_base_test, mask) {
 	bool *h_mask_amper, *dev_mask_amper;
 	bool *h_current, *dev_current;
 	bool *h_mask, *dev_mask;
@@ -1167,7 +1211,7 @@ TEST(mask, uma_base_test) {
 	data_util::dev_free(dev_mask_amper);
 }
 
-TEST(union_init, uma_base_test) {
+TEST(uma_base_test, union_init) {
 	int *h_union_root, *dev_union_root;
 	h_union_root = new int[8];
 	for (int i = 0; i < 8; ++i) h_union_root[i] = -1;
@@ -1185,7 +1229,7 @@ TEST(union_init, uma_base_test) {
 	data_util::dev_free(dev_union_root);
 }
 
-TEST(check_dist, uma_base_test) {
+TEST(uma_base_test, check_dist) {
 	int *h_dists, *dev_dists;
 	h_dists = new int[25];
 	data_util::dev_int(dev_dists, 25);
@@ -1329,7 +1373,7 @@ TEST(check_dist, uma_base_test) {
 	data_util::dev_free(dev_dists);
 }
 
-TEST(union_GPU, uma_base_test) {
+TEST(uma_base_test, union_GPU) {
 	int *h_dists, *dev_dists;
 	int *h_union_root, *dev_union_root;
 	h_dists = new int[25];
@@ -1407,7 +1451,7 @@ TEST(union_GPU, uma_base_test) {
 	data_util::dev_free(dev_dists);
 }
 
-TEST(copy_npdir, uma_base_test) {
+TEST(uma_base_test, copy_npdir) {
 	bool *h_npdirs, *dev_npdirs;
 	bool *h_dirs, *dev_dirs;
 	h_npdirs = new bool[60];
@@ -1453,7 +1497,7 @@ TEST(copy_npdir, uma_base_test) {
 	data_util::dev_free(dev_dirs);
 }
 
-TEST(negligible, uma_base_test) {
+TEST(uma_base_test, negligible) {
 	bool *h_negligible, *dev_negligible;
 	bool *h_npdirs, *dev_npdirs;
 	h_npdirs = new bool[60];
@@ -1485,7 +1529,7 @@ TEST(negligible, uma_base_test) {
 	data_util::dev_free(dev_negligible);
 }
 
-TEST(delta_weight_sum, uma_base_test) {
+TEST(uma_base_test, delta_weight_sum) {
 	double *h_attr_sensor, *dev_attr_sensor;
 	bool *h_signal, *dev_signal;
 	float *h_result, *dev_result;
@@ -1549,6 +1593,40 @@ TEST(delta_weight_sum, uma_base_test) {
 	data_util::dev_free(dev_attr_sensor);
 	data_util::dev_free(dev_result);
 	data_util::dev_free(dev_signal);
+}
+
+TEST(uma_base_test, new_episode) {
+	bool *h_current = new bool[10];
+	bool *dev_current;
+
+	data_util::dev_bool(dev_current, 10);
+
+	//1st
+	h_current[0] = 0; h_current[1] = 0; h_current[2] = 1; h_current[3] = 1;
+	h_current[4] = 1; h_current[5] = 1; h_current[6] = 1; h_current[7] = 1;
+	h_current[8] = 0; h_current[9] = 0;
+	data_util::boolH2D(h_current, dev_current, 10);
+	uma_base::new_episode(dev_current, 3, 10);
+	data_util::boolD2H(dev_current, h_current, 10);
+	vector<bool> v1 = { 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 };
+	vector<bool> v2;
+	for (int i = 0; i < 10; ++i) v2.push_back(h_current[i]);
+	EXPECT_EQ(v1, v2);
+
+	//2nd
+	h_current[0] = 0; h_current[1] = 0; h_current[2] = 1; h_current[3] = 1;
+	h_current[4] = 1; h_current[5] = 1; h_current[6] = 1; h_current[7] = 1;
+	h_current[8] = 0; h_current[9] = 0;
+	data_util::boolH2D(h_current, dev_current, 10);
+	uma_base::new_episode(dev_current, 4, 10);
+	data_util::boolD2H(dev_current, h_current, 10);
+	v1 = { 0, 0, 1, 1, 1, 1, 1, 1, 0, 0 };
+	v2.clear();
+	for (int i = 0; i < 10; ++i) v2.push_back(h_current[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_current;
+	data_util::dev_free(dev_current);
 }
 
 //--------------------------uma_base test----------------------------------

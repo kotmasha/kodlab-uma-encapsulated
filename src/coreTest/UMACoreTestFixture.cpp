@@ -143,43 +143,6 @@ vector<vector<double>> AmperTestFixture::test_amper(const vector<int> &list, con
 	return w;
 }
 
-AmperAndSignalsTestFixture::AmperAndSignalsTestFixture() {
-	snapshot = new Snapshot("snapshot", "");
-	vector<vector<double>> w;
-	vector<vector<bool>> b;
-	std::pair<string, string> p0 = { "s0", "cs0" };
-	std::pair<string, string> p1 = { "s1", "cs1" };
-	std::pair<string, string> p2 = { "s2", "cs2" };
-	std::pair<string, string> p3 = { "s3", "cs3" };
-	vector<std::pair<string, string>> p4 = { { "s4", "cs4" } };
-	vector<std::pair<string, string>> p5 = { { "s5", "cs5" } };
-	vector<double> diag;
-	snapshot->add_sensor(p0, diag, w, b);
-	snapshot->add_sensor(p1, diag, w, b);
-	snapshot->add_sensor(p2, diag, w, b);
-	snapshot->add_sensor(p3, diag, w, b);
-
-	vector<vector<bool>> list1 = { {0, 0, 0, 1, 0, 1, 0, 1} };
-	vector<vector<bool>> list2 = { {1, 0, 0, 0, 0, 0, 0, 0, 1, 0} };
-	snapshot->ampers(list1, p4);
-	snapshot->delays(list2, p5);
-}
-
-AmperAndSignalsTestFixture::~AmperAndSignalsTestFixture() {
-	delete snapshot;
-}
-
-bool AmperAndSignalsTestFixture::test_amper_and_signals(const string &sid, vector<bool> &observe) {
-	Sensor *s = snapshot->getSensor(sid);
-
-	for (int i = 0; i < 2 * snapshot->_sensors.size(); ++i) {
-		*(snapshot->getAttrSensor(i)->_observe) = observe[i];
-		*(snapshot->getAttrSensor(i)->_observe_) = observe[i];
-	}
-
-	return snapshot->amper_and_signals(s);
-}
-
 UMACoreDataFlowTestFixture::UMACoreDataFlowTestFixture() {
 	dm = new DataManager("");
 

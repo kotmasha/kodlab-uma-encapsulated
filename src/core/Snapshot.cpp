@@ -265,6 +265,7 @@ void Snapshot::pruning(const vector<bool> &signal){
 	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
+	const vector<int> idx_list = SignalUtil::bool_signal_to_int_idx(sensor_list);
 
 	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
 		throw UMAException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
@@ -284,12 +285,33 @@ void Snapshot::pruning(const vector<bool> &signal){
 			//delete the sensor if necessary
 			_sensor_idx.erase(_sensors[i]->_m->_uuid);
 			_sensor_idx.erase(_sensors[i]->_cm->_uuid);
+			vector<int> amper_list = _sensors[i]->getAmperList();
+			vector<bool> amper_signal = SignalUtil::int_idx_to_bool_signal(amper_list, _sensors.size() * 2);
+			size_t delay_list_hash = delay_hash(amper_signal);
+			_delay_sensor_hash.erase(delay_list_hash);
+
 			delete _sensors[i];
 			_sensors[i] = NULL;
 			row_escape++;
 		}
 		else{
 			//or just adjust the idx of the sensor, and change the position
+			vector<int> amper_list = _sensors[i]->getAmperList();
+			vector<int> new_amper_list;
+			for (int j = 0; j < amper_list.size(); ++j) {
+				int idx = ArrayUtil::find_idx_in_sorted_array(idx_list, amper_list[j] / 2);
+				if (idx_list[idx] != amper_list[j] / 2) {//if the value is not to be pruned
+					new_amper_list.push_back(amper_list[j] - 2 * (idx + 1));
+				}
+			}
+
+			size_t old_delay_hash = delay_hash(SignalUtil::int_idx_to_bool_signal(amper_list, _sensors.size() * 2));
+			size_t new_delay_hash = delay_hash(SignalUtil::int_idx_to_bool_signal(new_amper_list, _sensors.size() * 2));
+			_delay_sensor_hash.erase(old_delay_hash);
+			_delay_sensor_hash.insert(new_delay_hash);
+
+			_sensors[i]->_amper.clear();
+			_sensors[i]->_amper = new_amper_list;
 			_sensors[i]->setIdx(i - row_escape);
 			_sensors[i - row_escape] = _sensors[i];
 		}
@@ -365,33 +387,52 @@ void Snapshot::ampers(const vector<vector<bool> > &lists, const vector<std::pair
 void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs) {
 	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
 	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
+
+	bool generate_default_id = id_pairs.empty();
+	pair<string, string> p;
 	int success_delay = 0;
 	//record how many delay are successful
 	for (int i = 0; i < lists.size(); ++i) {
+		size_t v = delay_hash(lists[i]);
+		if (_delay_sensor_hash.end() != _delay_sensor_hash.find(v)) {
+			snapshotLogger.info("Find an existing delayed sensor, will skip creating current one", _dependency);
+			continue;
+		}
+
 		const vector<int> list = SignalUtil::bool_signal_to_int_idx(lists[i]);
 		if (list.size() < 1) {
 			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i), _dependency);
 			continue;
 		}
+		if(generate_default_id){
+			p = { "delay" + to_string(_sensors.size() + success_delay), "c_delay" + to_string(_sensors.size() + success_delay) };
+		}
+		else {
+			p = id_pairs[i];
+		}
+		
+
 		if (list.size() == 1) {
 			try {
-				generate_delayed_weights(list[0], true, id_pairs[i]);
+				generate_delayed_weights(list[0], true, p);
 			}
 			catch (UMAException &e) {
 				throw UMAException("Fatal error in generate_delayed_weights", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 			}
 		}
 		else {
-			amper(list, id_pairs[i]);
+			amper(list, p);
 			try {
-				generate_delayed_weights(_sensors.back()->_m->_idx, false, id_pairs[i]);
+				generate_delayed_weights(_sensors.back()->_m->_idx, false, p);
 			}
 			catch (UMAException &e) {
 				throw UMAException("Fatal error in generate_delayed_weights", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 			}
 		}
 		success_delay++;
-		snapshotLogger.info("A delayed sensor is generated " + id_pairs[i].first, _dependency);
+		_delay_sensor_hash.insert(v);
+
+		snapshotLogger.info("A delayed sensor is generated " + p.first, _dependency);
 		string delay_list = "";
 		for (int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
 		snapshotLogger.verbose("The delayed sensor generated from " + delay_list, _dependency);
@@ -708,7 +749,8 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, const std::pair<str
 	}
 	else{
 		//means not a single sensor delay
-		is_sensor_active = amper_and_signals(_sensors[sid]);
+		_sensors[sid]->setObserveList(_dm->h_observe, _dm->h_observe_);
+		is_sensor_active = _sensors[sid]->generateDelayedSignal();
 	}
 	//reverse for compi
 	if (mid % 2 == 1) is_sensor_active = !is_sensor_active;
@@ -767,18 +809,24 @@ void Snapshot::generate_delayed_weights(int mid, bool merge, const std::pair<str
 	_sensor_pairs.insert(_sensor_pairs.end(), delayed_sensor_pairs.begin(), delayed_sensor_pairs.end());
 }
 
-/*
-This function is using the amper and observe array to get the delayed sensor value
-Input: observe array
-*/
-bool Snapshot::amper_and_signals(Sensor * const sensor) const{
-	vector<int> amper_list = sensor->getAmperList();
-	for (int i = 0; i < amper_list.size(); ++i) {
-		int j = amper_list[i];
-		AttrSensor *m = getAttrSensor(j);
-		if (!(m->getOldObserve())) return false;
+void Snapshot::generateObserve(vector<bool> &observe) {
+	if (observe.size() != 2 * _initial_size) {
+		throw UMAException("The input observe signal size is not the 2x initial sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
 	}
-	return true;
+	for (int i = _initial_size; i < _sensors.size(); ++i) {
+		bool b = _sensors[i]->generateDelayedSignal();
+		observe.push_back(b);
+		observe.push_back(!b);
+	}
+
+	_dm->setObserve(observe);
+}
+
+void Snapshot::update_total(double phi, bool active) {
+	_total_ = _total;
+	if (active) {
+		_total = _q * _total + (1 - _q) * phi;
+	}
 }
 
 /*

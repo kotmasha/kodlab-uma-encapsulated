@@ -22,7 +22,12 @@ namespace StrUtil {
 
 namespace SignalUtil {
 	const vector<int> bool_signal_to_int_idx(const vector<bool> &list);
+	const vector<bool> int_idx_to_bool_signal(const vector<int> &idx, int size);
 	const vector<bool> attr_sensor_signal_to_sensor_signal(const vector<bool> &signal);
+}
+
+namespace ArrayUtil {
+	int find_idx_in_sorted_array(const vector<int> &input, int target);
 }
 
 #endif

@@ -27,7 +27,7 @@ public:
 	//set pointers
 	void setAttrSensorDiagPointers(double *_diags, double *_diags_);
 	void setAttrSensorObservePointers(bool *observe, bool *observe_);
-	void setAttrSensorCurrentPointers(bool *current);
+	void setAttrSensorCurrentPointers(bool *current, bool *current_);
 	void setAttrSensorTargetPointers(bool *target);
 	void setAttrSensorPredictionPointers(bool *prediction);
 
@@ -45,6 +45,10 @@ public:
 	//void save_sensor(ofstream &file);
 	//void copy_data(Sensor *s);
 
+	bool generateDelayedSignal();
+
+	void setObserveList(bool *observe, bool *observe_);
+
 	~Sensor();
 
 protected:
@@ -55,6 +59,8 @@ protected:
 	//*m is the pointer to the measurable object under this sensor, and cm is the compi
 	AttrSensor *_m, *_cm;
 	vector<int> _amper;
+
+	bool *_observe, *_observe_;
 
 	friend class SensorPair;
 	friend class Snapshot;

@@ -53,17 +53,6 @@ protected:
 	Snapshot *snapshot;
 };
 
-class AmperAndSignalsTestFixture : public::testing::Test {
-public:
-	AmperAndSignalsTestFixture();
-	~AmperAndSignalsTestFixture();
-
-	bool test_amper_and_signals(const string &sid, vector<bool> &observe);
-
-protected:
-	Snapshot *snapshot;
-};
-
 class UMACoreDataFlowTestFixture : public::testing::Test {
 public:
 	UMACoreDataFlowTestFixture();
