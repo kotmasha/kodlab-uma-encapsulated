@@ -124,8 +124,8 @@ void SimulationHandler::create_decision(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
 	const double phi = request.get_double_data("phi");
 	const bool active = request.get_bool_data("active");
-	const vector<bool> obs_plus = request.get_bool1d_data("obs_plus");
-	const vector<bool> obs_minus = request.get_bool1d_data("obs_minus");
+	vector<bool> obs_plus = request.get_bool1d_data("obs_plus");
+	vector<bool> obs_minus = request.get_bool1d_data("obs_minus");
 
 	Agent *agent = World::getAgent(agent_id);
 	Snapshot *snapshot_plus = agent->getSnapshot("plus");

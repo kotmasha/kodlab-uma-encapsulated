@@ -467,6 +467,7 @@ tests:
   - set observe signal 0
   - set observe signal 0
   - delay 0, 0=true
+  - delay 0, 0=true
   - get weights after 0, 0=true
   - get sensorX 0
   - get snapshot 5 sensor
@@ -477,6 +478,7 @@ tests:
 #0, 0=false
   - set observe signal 1
   - set observe signal 1
+  - delay 0, 0=false
   - delay 0, 0=false
   - get weights after 0, 0=false
   - get sensorX 0
@@ -489,6 +491,7 @@ tests:
   - set observe signal 7
   - set observe signal 7
   - delay 7, 7=true
+  - delay 7, 7=true
   - get weights after 7, 7=true
   - get sensorX 7
   - get snapshot 5 sensor
@@ -499,6 +502,7 @@ tests:
 #7, 7=false
   - set observe signal 6
   - set observe signal 6
+  - delay 7, 7=false
   - delay 7, 7=false
   - get weights after 7, 7=false
   - get sensorX 7
@@ -512,6 +516,7 @@ tests:
   - set observe signal 0&2&4
   - set observe signal 0&2&4
   - delay 0&2&4, 0&2&4=true
+  - delay 0&2&4, 0&2&4=true
   - get weights after 0&2&4, 0&2&4=true
   - get sensorX 0&2&4
   - get snapshot 5 sensor
@@ -522,6 +527,7 @@ tests:
 #0&2&4, 0&2&4=false
   - set observe signal 0&2&5
   - set observe signal 0&2&5
+  - delay 0&2&4, 0&2&4=false
   - delay 0&2&4, 0&2&4=false
   - get weights after 0&2&4, 0&2&4=false
   - get sensorX 0&2&4

@@ -54,10 +54,12 @@ public:
 
 	void setDiagPointers(double *_diags, double *_diags_);
 	void setObservePointers(bool *observe, bool *observe_);
-	void setCurrentPointers(bool *current);
+	void setCurrentPointers(bool *current, bool *current_);
 	void setTargetPointers(bool *target);
 	void setPredictionPointers(bool *prediction);
 	void setIdx(int idx);
+	void setObserve(bool observe);
+	void setOldObserve(bool observe_);
 	
 	//void save_measurable(ofstream &file);
 	//void copy_data(AttrSensor *m);

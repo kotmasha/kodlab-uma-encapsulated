@@ -40,6 +40,7 @@ void DataManager::init_pointers() {
 	h_observe_ = NULL;
 	h_load = NULL;
 	h_current = NULL;
+	h_current_ = NULL;
 	h_mask = NULL;
 	h_target = NULL;
 	h_prediction = NULL;
@@ -60,6 +61,7 @@ void DataManager::init_pointers() {
 	dev_observe = NULL;
 	dev_load = NULL;
 	dev_current = NULL;
+	dev_current_ = NULL;
 	dev_mask = NULL;
 	dev_target = NULL;
 	dev_diag = NULL;
@@ -71,6 +73,7 @@ void DataManager::init_pointers() {
 	dev_negligible = NULL;
 	dev_union_root = NULL;
 	dev_res = NULL;
+	dev_sum = NULL;
 	
 	dev_dec_tmp1 = NULL;
 	dev_dec_tmp2 = NULL;
@@ -165,6 +168,7 @@ void DataManager::init_other_parameter(double &total) {
 		h_load[i] = false;
 		h_mask[i] = false;
 		h_current[i] = false;
+		h_current_[i] = false;
 		h_target[i] = false;
 		h_prediction[i] = false;
 		h_diag[i] = total / 2.0;
@@ -180,10 +184,12 @@ void DataManager::init_other_parameter(double &total) {
 	data_util::dev_init(dev_load, _attr_sensor_size_max);
 	data_util::dev_init(dev_mask, _attr_sensor_size_max);
 	data_util::dev_init(dev_current, _attr_sensor_size_max);
+	data_util::dev_init(dev_current_, _attr_sensor_size_max);
 	data_util::dev_init(dev_target, _attr_sensor_size_max);
 	data_util::dev_init(dev_prediction, _attr_sensor_size_max);
 	data_util::dev_init(dev_negligible, _attr_sensor_size_max);
 	data_util::dev_init(dev_res, 1);
+	data_util::dev_init(dev_sum, _attr_sensor_size_max);
 	data_util::dev_init(dev_union_root, _sensor_size_max);
 
 	data_util::dev_init(dev_dec_tmp1, _attr_sensor_size_max);
@@ -211,6 +217,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		delete[] h_load;
 		delete[] h_mask;
 		delete[] h_current;
+		delete[] h_current_;
 		delete[] h_target;
 		delete[] h_negligible;
 		delete[] h_diag;
@@ -236,6 +243,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 
 		data_util::dev_free(dev_mask);
 		data_util::dev_free(dev_current);
+		data_util::dev_free(dev_current_);
 		data_util::dev_free(dev_target);
 
 		data_util::dev_free(dev_observe);
@@ -253,6 +261,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		data_util::dev_free(dev_union_root);
 
 		data_util::dev_free(dev_res);
+		data_util::dev_free(dev_sum);
 
 		data_util::dev_free(dev_dec_tmp1);
 		data_util::dev_free(dev_dec_tmp2);
@@ -390,6 +399,7 @@ void DataManager::gen_other_parameters() {
 	h_load = new bool[_attr_sensor_size_max];
 	h_mask = new bool[_attr_sensor_size_max];
 	h_current = new bool[_attr_sensor_size_max];
+	h_current_ = new bool[_attr_sensor_size_max];
 	h_target = new bool[_attr_sensor_size_max];
 	h_negligible = new bool[_attr_sensor_size_max];
 	h_diag = new double[_attr_sensor_size_max];
@@ -402,6 +412,7 @@ void DataManager::gen_other_parameters() {
 	data_util::dev_bool(dev_load, _attr_sensor_size_max);
 	data_util::dev_bool(dev_mask, _attr_sensor_size_max);
 	data_util::dev_bool(dev_current, _attr_sensor_size_max);
+	data_util::dev_bool(dev_current_, _attr_sensor_size_max);
 	data_util::dev_bool(dev_target, _attr_sensor_size_max);
 	data_util::dev_bool(dev_prediction, _attr_sensor_size_max);
 	data_util::dev_bool(dev_negligible, _attr_sensor_size_max);
@@ -410,6 +421,7 @@ void DataManager::gen_other_parameters() {
 	data_util::dev_double(dev_diag_, _attr_sensor_size_max);
 	data_util::dev_int(dev_union_root, _sensor_size_max);
 	data_util::dev_float(dev_res, 1);
+	data_util::dev_double(dev_sum, _attr_sensor_size_max);
 
 	data_util::dev_bool(dev_dec_tmp1, _attr_sensor_size_max);
 	data_util::dev_bool(dev_dec_tmp2, _attr_sensor_size_max);
@@ -426,7 +438,7 @@ void DataManager::create_sensors_to_arrays_index(const int start_idx, const int 
 		try {
 			sensors[i]->setAttrSensorDiagPointers(h_diag, h_diag_);
 			sensors[i]->setAttrSensorObservePointers(h_observe, h_observe_);
-			sensors[i]->setAttrSensorCurrentPointers(h_current);
+			sensors[i]->setAttrSensorCurrentPointers(h_current, h_current_);
 			sensors[i]->setAttrSensorTargetPointers(h_target);
 			sensors[i]->setAttrSensorPredictionPointers(h_prediction);
 		}
@@ -568,7 +580,7 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attr_sensor_size) {
-		throw UMAException("Input observe size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("The input observe size is not the size of attr sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attr_sensor_size);
 	for (int i = 0; i < observe.size(); ++i) {
@@ -591,6 +603,21 @@ void DataManager::setCurrent(const vector<bool> &current) {//this is where data 
 	}
 	data_util::boolH2D(h_current, dev_current, _attr_sensor_size);
 	dataManagerLogger.debug("current signal set for customized purpose", _dependency);
+}
+
+/*
+The function to set the old current value, mainly used for testing puropse
+Input: current signal
+*/
+void DataManager::setOldCurrent(const vector<bool> &current) {//this is where data comes in in every frame
+	if (current.size() != _attr_sensor_size) {
+		throw UMAException("Input old current size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	for (int i = 0; i < current.size(); ++i) {
+		h_current_[i] = current[i];
+	}
+	data_util::boolH2D(h_current_, dev_current_, _attr_sensor_size);
+	dataManagerLogger.debug("old current signal set for customized purpose", _dependency);
 }
 
 /*
@@ -748,6 +775,16 @@ const vector<bool> DataManager::getCurrent() {
 		result.push_back(h_current[i]);
 	}
 	dataManagerLogger.debug("current signal get", _dependency);
+	return result;
+}
+
+const vector<bool> DataManager::getOldCurrent() {
+	vector<bool> result;
+	data_util::boolD2H(dev_current_, h_current_, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
+		result.push_back(h_current_[i]);
+	}
+	dataManagerLogger.debug("old current signal get", _dependency);
 	return result;
 }
 
@@ -1065,6 +1102,7 @@ double *DataManager::_dvar_d(int name) {
 	case THRESHOLDS: return dev_thresholds;
 	case DIAG: return dev_diag;
 	case OLD_DIAG: return dev_diag_;
+	case SUM: return dev_sum;
 	}
 }
 
@@ -1083,6 +1121,7 @@ bool *DataManager::_dvar_b(int name) {
 	case LSIGNALS: return dev_lsignals;
 	case LOAD: return dev_load;
 	case CURRENT: return dev_current;
+	case OLD_CURRENT: return dev_current_;
 	case MASK: return dev_mask;
 	case MASK_AMPER: return dev_mask_amper;
 	case NPDIR_MASK: return dev_npdir_mask;
@@ -1125,6 +1164,7 @@ bool *DataManager::_hvar_b(int name) {
 	case SIGNALS: return h_signals;
 	case LOAD: return h_load;
 	case CURRENT: return h_current;
+	case OLD_CURRENT: return h_current_;
 	case MASK: return h_mask;
 	case MASK_AMPER: return h_mask_amper;
 	case PREDICTION: return h_prediction;

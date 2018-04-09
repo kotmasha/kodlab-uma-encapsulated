@@ -96,7 +96,7 @@ void AttrSensor::setObservePointers(bool *observe, bool *observe_){
 /*
 This is setting the current value pointer
 */
-void AttrSensor::setCurrentPointers(bool *current) {
+void AttrSensor::setCurrentPointers(bool *current, bool *current_) {
 	_current = current + _idx;
 }
 
@@ -120,6 +120,20 @@ Input: new idx
 */
 void AttrSensor::setIdx(int idx){
 	_idx = idx;
+}
+
+void AttrSensor::setObserve(bool observe) {
+	if (!_observe) {
+		throw UMAException("The observe pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	*_observe = observe;
+}
+
+void AttrSensor::setOldObserve(bool observe_) {
+	if (!_observe_) {
+		throw UMAException("The observe_ pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	*_observe_ = observe_;
 }
 
 /*

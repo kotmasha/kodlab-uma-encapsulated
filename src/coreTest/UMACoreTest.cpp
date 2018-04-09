@@ -240,6 +240,45 @@ TEST(snapshot_test, snapshot_get_entity) {
 	delete snapshot;
 }
 
+TEST(snapshot_test, generateDelayedObservations) {
+	Snapshot *snapshot = new Snapshot("snapshot", "");
+
+	std::pair<string, string> sensor1 = { "s1", "cs1" };
+	std::pair<string, string> sensor2 = { "s2", "cs2" };
+	std::pair<string, string> sensor3 = { "s3", "cs3" };
+	std::pair<string, string> sensor4 = { "s4", "cs4" };
+	vector<std::pair<string, string>> sensor5_6 = { { "s5", "cs5" }, {"s6", "cs6"} };
+	vector<std::pair<string, string>> sensor7 = { { "s7", "cs7" } };
+	vector<double> diag;
+	vector<vector<double>> w;
+	vector<vector<bool>> b;
+	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w, b);
+	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w, b);
+	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w, b);
+	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w, b);
+	snapshot->setInitialSize();
+
+	vector<vector<bool>> list1 = { { true, false, false, true, false, true, true, false },{ false, true, false, false, false, true, false, false, false, false } };
+	vector<vector<bool>> list2 = { { false, true, false, true, true, false, true, false, true, false, false, false } };
+	snapshot->delays(list1, sensor5_6);
+	snapshot->ampers(list2, sensor7);
+	vector<bool> observe = { false, true, false, true, false, true, true, false};
+	//1st set, h_observe get the value, h_observe_ still empty
+	snapshot->generateObserve(observe);
+	for (int i = 0; i < 6; ++i) observe.pop_back();
+	//2nd set, h_observe_ get the value, but after delay calculation(delay still calculation on empty h_observe_)
+	snapshot->generateObserve(observe);
+	for (int i = 0; i < 6; ++i) observe.pop_back();
+	//3rd set, delay get correct h_observe_ to calculate
+	snapshot->generateObserve(observe);
+	for (int i = 0; i < 6; ++i) observe.pop_back();
+	EXPECT_EQ(false, snapshot->getSensor("s5")->getObserve());
+	EXPECT_EQ(true, snapshot->getSensor("cs6")->getObserve());
+	EXPECT_EQ(false, snapshot->getSensor("s7")->getObserve());
+
+	delete snapshot;
+}
+
 TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
 	std::pair<string, string> p = {"s5", "cs5"};
 	vector<vector<double>> target = test_amper_and(0, 2, true, p);
@@ -356,16 +395,6 @@ TEST_F(AmperTestFixture, amper_test) {
 	}
 }
 
-TEST_F(AmperAndSignalsTestFixture, amper_and_signals_test) {
-	vector<bool> observe1 = { true, false, true, false, false, true, false, true, true, false, true, false };
-	vector<bool> observe2 = { true, false, false, true, false, true, false, true, false, true, true, false };
-
-	EXPECT_EQ(test_amper_and_signals("s4", observe1), false);
-	EXPECT_EQ(test_amper_and_signals("s5", observe1), true);
-	EXPECT_EQ(test_amper_and_signals("cs4", observe2), true);
-	EXPECT_EQ(test_amper_and_signals("cs5", observe2), false);
-}
-
 TEST(dataManager_test, get_set_test) {
 	Snapshot *snapshot = new Snapshot("snapshot", "");
 
@@ -373,6 +402,7 @@ TEST(dataManager_test, get_set_test) {
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
 	std::pair<string, string> sensor3 = { "s3", "cs3" };
 	std::pair<string, string> sensor4 = { "s4", "cs4" };
+	snapshot->setInitialSize(3);
 	vector<double> diag;
 	vector<double> diag1 = { 0.2, 0.8 };
 	vector<vector<double>> w1, w3;
@@ -446,6 +476,12 @@ TEST(dataManager_test, get_set_test) {
 	current.push_back(false); current.push_back(false);
 	dm->setCurrent(current);
 	EXPECT_EQ(current, dm->getCurrent());
+	//old current test
+	vector<bool> old_current = { true, false, false, true, true, true };
+	EXPECT_THROW(dm->setOldCurrent(old_current), UMAException);
+	old_current.push_back(false); old_current.push_back(false);
+	dm->setOldCurrent(old_current);
+	EXPECT_EQ(old_current, dm->getOldCurrent());
 	//target test
 	vector<bool> target = { false, true, false, true, true, true };
 	EXPECT_THROW(dm->setTarget(target), UMAException);
@@ -453,10 +489,10 @@ TEST(dataManager_test, get_set_test) {
 	dm->setTarget(target);
 	EXPECT_EQ(target, dm->getTarget());
 	//observe test
-	vector<bool> observe = { true, false, false, true, true, false };
+	vector<bool> observe = { true, false, false, true, true, false};
 	EXPECT_THROW(dm->setObserve(observe), UMAException);
-	observe.push_back(true); observe.push_back(false);
-	dm->setObserve(observe);
+	observe.push_back(false); observe.push_back(false);
+	EXPECT_NO_THROW(dm->setObserve(observe));
 	EXPECT_EQ(observe, dm->getObserve());
 
 	//weights test
@@ -570,6 +606,46 @@ TEST(sensor_test, set_amper_list) {
 
 	delete s1;
 	delete s2;
+}
+
+TEST(sensor_test, generateDelayedSensor) {
+	Snapshot *snapshot = new Snapshot("snapshot", "");
+	vector<vector<double>> w;
+	vector<vector<bool>> b;
+	std::pair<string, string> p0 = { "s0", "cs0" };
+	std::pair<string, string> p1 = { "s1", "cs1" };
+	std::pair<string, string> p2 = { "s2", "cs2" };
+	std::pair<string, string> p3 = { "s3", "cs3" };
+	vector<std::pair<string, string>> p4 = { { "s4", "cs4" } };
+	vector<std::pair<string, string>> p5 = { { "s5", "cs5" } };
+	vector<double> diag;
+	snapshot->add_sensor(p0, diag, w, b);
+	snapshot->add_sensor(p1, diag, w, b);
+	snapshot->add_sensor(p2, diag, w, b);
+	snapshot->add_sensor(p3, diag, w, b);
+
+	vector<vector<bool>> list1 = { { 0, 0, 0, 1, 0, 1, 0, 1 } };
+	vector<vector<bool>> list2 = { { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0 } };
+	snapshot->ampers(list1, p4);
+	snapshot->delays(list2, p5);
+
+	vector<bool> observe1 = { true, false, true, false, false, true, false, true, true, false, true, false };
+	vector<bool> observe2 = { true, false, false, true, false, true, false, true, false, true, true, false };
+
+	Sensor *sensor4 = snapshot->getSensor("s4");
+	Sensor *sensor5 = snapshot->getSensor("s5");
+
+	snapshot->getDM()->setObserve(observe1);
+	snapshot->getDM()->setObserve(observe1);
+	EXPECT_EQ(sensor4->generateDelayedSignal(), false);
+	EXPECT_EQ(sensor5->generateDelayedSignal(), true);
+
+	snapshot->getDM()->setObserve(observe2);
+	snapshot->getDM()->setObserve(observe2);
+	EXPECT_EQ(sensor4->generateDelayedSignal(), true);
+	EXPECT_EQ(sensor5->generateDelayedSignal(), false);
+
+	delete snapshot;
 }
 
 TEST(sensor_test, get_set_idx) {

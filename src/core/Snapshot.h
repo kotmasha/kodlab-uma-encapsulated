@@ -42,6 +42,8 @@ protected:
 	vector<SensorPair*> _sensor_pairs;
 	//the map of sensor id to sensor
 	std::map<string, Sensor*> _sensor_idx;
+	//the set of existing delay sensor hash
+	std::set<size_t> _delay_sensor_hash;
 	//record current sensor num in the current Snapshot
 	int t;
 	//the bool indicating whether auto-target is on or off
@@ -52,6 +54,8 @@ protected:
 	DataManager *_dm;
 	//the snapshot's dependency chain
 	const string _dependency;
+	//the delay hash
+	hash<vector<bool>> delay_hash;
 	friend class Agent;
 
 	friend class AmperAndTestFixture;
@@ -66,12 +70,15 @@ public:
 	void delete_sensor(const string &sensor_id);
 	vector<vector<string> > getSensorInfo() const;
 
+	void generateObserve(vector<bool> &observe);
+
 	/*
 	self-enrichment and derichment function
 	*/
 	void ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
-	void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
+	void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs={});
 	void pruning(const vector<bool> &signal);
+	virtual void update_total(double phi, bool active);
 
 	/*
 	---------------------GET FUNCTION----------------------
@@ -127,7 +134,6 @@ protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
 	void amperand(int mid1, int mid2, bool merge, const std::pair<string, string> &id_pair);
 	void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
-	bool amper_and_signals(Sensor * const sensor) const;
 };
 
 /*
