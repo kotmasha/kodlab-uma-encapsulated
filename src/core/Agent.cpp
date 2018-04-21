@@ -34,13 +34,14 @@ Agent::Agent(const string &uuid, const string &dependency): _uuid(uuid), _depend
 	agentLogger.info("An agent " + uuid + " is created", _dependency);
 }
 
-void Agent::add_snapshot_stationary(const string &uuid){
+Snapshot *Agent::add_snapshot_stationary(const string &uuid){
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
 		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
 	_snapshots[uuid] = new Snapshot_Stationary(uuid, _dependency);
 	agentLogger.info("A Snapshot Stationary " + uuid + " is created", _dependency);
+	return _snapshots[uuid];
 }
 
 Snapshot *Agent::getSnapshot(const string &snapshot_id){
@@ -91,7 +92,7 @@ const vector<string> Agent::getSnapshotInfo() const{
 
 void Agent::delete_snapshot(const string &snapshot_id) {
 	if (_snapshots.find(snapshot_id) == _snapshots.end()) {
-		throw UMAException("Cannot find the agent to delete " + snapshot_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMAException("Cannot find the snapshot to delete " + snapshot_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	delete _snapshots[snapshot_id];
 	_snapshots[snapshot_id] = NULL;

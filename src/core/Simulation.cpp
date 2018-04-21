@@ -17,17 +17,36 @@ void simulation::update_total(double &total, double &total_, const double &q, co
 	total = q * total + (1 - q) * phi;
 }
 
-float simulation::decide(Snapshot *snapshot, const vector<bool> &signal, const double &phi, const bool active) {//the decide function
+float simulation::enrichment(Snapshot *snapshot) {
+	DataManager *dm = snapshot->getDM();
+	int initial_size = snapshot->getInitialSize();
+	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
+
+	kernel_util::subtraction(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
+	kernel_util::bool2double(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	int sum = (int)kernel_util::sum(dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	if (sum > 0) {
+		uma_base::new_episode(dm->_dvar_b(DataManager::OLD_CURRENT), initial_size, attr_sensor_size);
+		vector<vector<bool>> current_ = { dm->getOldCurrent() };
+		vector<std::pair<string, string>> p;
+		snapshot->delays(current_, p);
+	}
+
+	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::OLD_CURRENT), attr_sensor_size);
+}
+
+float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double &phi, const bool active) {//the decide function
 	DataManager *dm = snapshot->getDM();
 	double total = snapshot->getTotal();
 	double total_ = snapshot->getOldTotal();
 	double q = snapshot->getQ();
 	int initial_size = snapshot->getInitialSize();
 
-	dm->setObserve(signal);
-	simulation::update_total(total, total_, q, phi);
-	snapshot->setTotal(total);
-	snapshot->setOldTotal(total_);
+	snapshot->generateObserve(signal);
+
+	snapshot->update_total(phi, active);
+	//simulation::update_total(total, total_, q, phi);
+	
 	simulation::update_state(dm, q, phi, total, total_, active);
 	simulation::halucinate(dm, initial_size);
 
@@ -37,10 +56,13 @@ float simulation::decide(Snapshot *snapshot, const vector<bool> &signal, const d
 	return simulation::divergence(dm);
 }
 
-vector<float> simulation::decide(Agent *agent, const vector<bool> &obs_plus, const vector<bool> &obs_minus, const double &phi, const bool &active) {//the decide function
+vector<float> simulation::decide(Agent *agent, vector<bool> &obs_plus, vector<bool> &obs_minus, const double &phi, const bool &active) {//the decide function
 	vector<float> results;
 	Snapshot *snapshot_plus = agent->getSnapshot("plus");
 	Snapshot *snapshot_minus = agent->getSnapshot("minus");
+
+	if (active) simulation::enrichment(snapshot_plus);
+
 	const float res_plus = simulation::decide(snapshot_plus, obs_plus, phi, active);
 	const float res_minus = simulation::decide(snapshot_minus, obs_minus, phi, !active);
 	

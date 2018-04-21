@@ -586,6 +586,13 @@ __global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size
 	}
 }
 
+__global__ void new_episode_kernel(bool *current, int initial_sensor_size, int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index < size) {
+		if (index >= initial_sensor_size * 2) current[index] = false;
+	}
+}
+
 /*
 ---------------------AGENT---------------------
 */
@@ -689,4 +696,8 @@ void uma_base::copy_npdir(bool *npdir, bool *dir, int attr_sensor_size) {
 void uma_base::negligible(bool *npdir, bool *negligible, int sensor_size) {
 	negligible_kernel << <GRID1D(sensor_size), BLOCK1D >> > (npdir, negligible, sensor_size);
 	umaBaseLogger.debug("negligible_kernel invoked!");
+}
+
+void uma_base::new_episode(bool *current, int initial_sensor_size, int attr_sensor_size) {
+	new_episode_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (current, initial_sensor_size, attr_sensor_size);
 }

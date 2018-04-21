@@ -38,16 +38,14 @@ void DataManager::init_pointers() {
 	h_npdirs = NULL;
 	h_observe = NULL;
 	h_observe_ = NULL;
-	h_signal = NULL;
 	h_load = NULL;
 	h_current = NULL;
+	h_current_ = NULL;
 	h_mask = NULL;
 	h_target = NULL;
 	h_prediction = NULL;
 	h_diag = NULL;
 	h_diag_ = NULL;
-	h_up = NULL;
-	h_down = NULL;
 	h_npdir_mask = NULL;
 	h_signals = NULL;
 	h_dists = NULL;
@@ -61,9 +59,9 @@ void DataManager::init_pointers() {
 	dev_mask_amper = NULL;
 	dev_npdirs = NULL;
 	dev_observe = NULL;
-	dev_signal = NULL;
 	dev_load = NULL;
 	dev_current = NULL;
+	dev_current_ = NULL;
 	dev_mask = NULL;
 	dev_target = NULL;
 	dev_diag = NULL;
@@ -75,6 +73,7 @@ void DataManager::init_pointers() {
 	dev_negligible = NULL;
 	dev_union_root = NULL;
 	dev_res = NULL;
+	dev_sum = NULL;
 	
 	dev_dec_tmp1 = NULL;
 	dev_dec_tmp2 = NULL;
@@ -166,14 +165,12 @@ void DataManager::init_other_parameter(double &total) {
 	for (int i = 0; i < _attr_sensor_size_max; ++i) {
 		h_observe[i] = false;
 		h_observe_[i] = false;
-		h_signal[i] = false;
 		h_load[i] = false;
 		h_mask[i] = false;
 		h_current[i] = false;
+		h_current_[i] = false;
 		h_target[i] = false;
 		h_prediction[i] = false;
-		h_up[i] = false;
-		h_down[i] = false;
 		h_diag[i] = total / 2.0;
 		h_diag_[i] = total / 2.0;
 		h_negligible[i] = false;
@@ -184,14 +181,15 @@ void DataManager::init_other_parameter(double &total) {
 	}
 
 	data_util::dev_init(dev_observe, _attr_sensor_size_max);
-	data_util::dev_init(dev_signal, _attr_sensor_size_max);
 	data_util::dev_init(dev_load, _attr_sensor_size_max);
 	data_util::dev_init(dev_mask, _attr_sensor_size_max);
 	data_util::dev_init(dev_current, _attr_sensor_size_max);
+	data_util::dev_init(dev_current_, _attr_sensor_size_max);
 	data_util::dev_init(dev_target, _attr_sensor_size_max);
 	data_util::dev_init(dev_prediction, _attr_sensor_size_max);
 	data_util::dev_init(dev_negligible, _attr_sensor_size_max);
 	data_util::dev_init(dev_res, 1);
+	data_util::dev_init(dev_sum, _attr_sensor_size_max);
 	data_util::dev_init(dev_union_root, _sensor_size_max);
 
 	data_util::dev_init(dev_dec_tmp1, _attr_sensor_size_max);
@@ -216,17 +214,15 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		delete[] h_mask_amper;
 		delete[] h_observe;
 		delete[] h_observe_;
-		delete[] h_signal;
 		delete[] h_load;
 		delete[] h_mask;
 		delete[] h_current;
+		delete[] h_current_;
 		delete[] h_target;
 		delete[] h_negligible;
 		delete[] h_diag;
 		delete[] h_diag_;
 		delete[] h_prediction;
-		delete[] h_up;
-		delete[] h_down;
 		delete[] h_npdirs;
 		delete[] h_npdir_mask;
 		delete[] h_signals;
@@ -247,10 +243,10 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 
 		data_util::dev_free(dev_mask);
 		data_util::dev_free(dev_current);
+		data_util::dev_free(dev_current_);
 		data_util::dev_free(dev_target);
 
 		data_util::dev_free(dev_observe);
-		data_util::dev_free(dev_signal);
 		data_util::dev_free(dev_load);
 
 		data_util::dev_free(dev_prediction);
@@ -265,6 +261,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		data_util::dev_free(dev_union_root);
 
 		data_util::dev_free(dev_res);
+		data_util::dev_free(dev_sum);
 
 		data_util::dev_free(dev_dec_tmp1);
 		data_util::dev_free(dev_dec_tmp2);
@@ -399,25 +396,23 @@ This function generate other parameter
 void DataManager::gen_other_parameters() {
 	h_observe = new bool[_attr_sensor_size_max];
 	h_observe_ = new bool[_attr_sensor_size_max];
-	h_signal = new bool[_attr_sensor_size_max];
 	h_load = new bool[_attr_sensor_size_max];
 	h_mask = new bool[_attr_sensor_size_max];
 	h_current = new bool[_attr_sensor_size_max];
+	h_current_ = new bool[_attr_sensor_size_max];
 	h_target = new bool[_attr_sensor_size_max];
 	h_negligible = new bool[_attr_sensor_size_max];
 	h_diag = new double[_attr_sensor_size_max];
 	h_diag_ = new double[_attr_sensor_size_max];
 	h_prediction = new bool[_attr_sensor_size_max];
-	h_up = new bool[_attr_sensor_size_max];
-	h_down = new bool[_attr_sensor_size_max];
 	h_union_root = new int[_sensor_size_max];
 	h_res = new float;
 
 	data_util::dev_bool(dev_observe, _attr_sensor_size_max);
-	data_util::dev_bool(dev_signal, _attr_sensor_size_max);
 	data_util::dev_bool(dev_load, _attr_sensor_size_max);
 	data_util::dev_bool(dev_mask, _attr_sensor_size_max);
 	data_util::dev_bool(dev_current, _attr_sensor_size_max);
+	data_util::dev_bool(dev_current_, _attr_sensor_size_max);
 	data_util::dev_bool(dev_target, _attr_sensor_size_max);
 	data_util::dev_bool(dev_prediction, _attr_sensor_size_max);
 	data_util::dev_bool(dev_negligible, _attr_sensor_size_max);
@@ -426,6 +421,7 @@ void DataManager::gen_other_parameters() {
 	data_util::dev_double(dev_diag_, _attr_sensor_size_max);
 	data_util::dev_int(dev_union_root, _sensor_size_max);
 	data_util::dev_float(dev_res, 1);
+	data_util::dev_double(dev_sum, _attr_sensor_size_max);
 
 	data_util::dev_bool(dev_dec_tmp1, _attr_sensor_size_max);
 	data_util::dev_bool(dev_dec_tmp2, _attr_sensor_size_max);
@@ -435,11 +431,16 @@ void DataManager::gen_other_parameters() {
 
 void DataManager::create_sensors_to_arrays_index(const int start_idx, const int end_idx, const vector<Sensor*> &sensors) {
 	//create idx for diag and current
+	if (start_idx < 0 || end_idx > _sensor_size) {
+		throw UMAException("The input index range of sensor is illegal!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+	}
 	for (int i = start_idx; i < end_idx; ++i) {
 		try {
 			sensors[i]->setAttrSensorDiagPointers(h_diag, h_diag_);
 			sensors[i]->setAttrSensorObservePointers(h_observe, h_observe_);
-			sensors[i]->setAttrSensorCurrentPointers(h_current);
+			sensors[i]->setAttrSensorCurrentPointers(h_current, h_current_);
+			sensors[i]->setAttrSensorTargetPointers(h_target);
+			sensors[i]->setAttrSensorPredictionPointers(h_prediction);
 		}
 		catch (exception &e) {
 			dataManagerLogger.error("Fatal error while doing create_sensor_to_arrays_index", _dependency);
@@ -450,6 +451,9 @@ void DataManager::create_sensors_to_arrays_index(const int start_idx, const int 
 }
 
 void DataManager::create_sensor_pairs_to_arrays_index(const int start_idx, const int end_idx, const vector<SensorPair*> &sensor_pairs) {
+	if (start_idx < 0 || end_idx > _sensor_size) {
+		throw UMAException("The input index range of sensor is illegal!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+	}
 	for (int i = ind(start_idx, 0); i < ind(end_idx, 0); ++i) {
 		try {
 			sensor_pairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
@@ -467,7 +471,6 @@ void DataManager::create_sensor_pairs_to_arrays_index(const int start_idx, const
 */
 void DataManager::copy_arrays_to_sensors(const int start_idx, const int end_idx, const vector<Sensor*> &_sensors) {
 	//copy necessary info back from cpu array to GPU array first
-	data_util::boolD2H(dev_current, h_current, end_idx - start_idx, start_idx, start_idx);
 	data_util::doubleD2H(dev_diag, h_diag, end_idx - start_idx, start_idx, start_idx);
 	data_util::doubleD2H(dev_diag_, h_diag_, end_idx - start_idx, start_idx, start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays", _dependency);
@@ -500,7 +503,6 @@ void DataManager::copy_sensors_to_arrays(const int start_idx, const int end_idx,
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays", _dependency);
 	//copy data from cpu array to GPU array
 	data_util::boolH2D(h_mask_amper, dev_mask_amper, 2 * (ind(end_idx, 0) - ind(start_idx, 0)), 2 * ind(start_idx, 0), 2 * ind(start_idx, 0));
-	data_util::boolH2D(h_current, dev_current, end_idx - start_idx, start_idx, start_idx);
 	data_util::doubleH2D(h_diag, dev_diag, end_idx - start_idx, start_idx, start_idx);
 	data_util::doubleH2D(h_diag_, dev_diag_, end_idx - start_idx, start_idx, start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays", _dependency);
@@ -578,7 +580,7 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attr_sensor_size) {
-		throw UMAException("Input observe size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("The input observe size is not the size of attr sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attr_sensor_size);
 	for (int i = 0; i < observe.size(); ++i) {
@@ -604,6 +606,21 @@ void DataManager::setCurrent(const vector<bool> &current) {//this is where data 
 }
 
 /*
+The function to set the old current value, mainly used for testing puropse
+Input: current signal
+*/
+void DataManager::setOldCurrent(const vector<bool> &current) {//this is where data comes in in every frame
+	if (current.size() != _attr_sensor_size) {
+		throw UMAException("Input old current size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	for (int i = 0; i < current.size(); ++i) {
+		h_current_[i] = current[i];
+	}
+	data_util::boolH2D(h_current_, dev_current_, _attr_sensor_size);
+	dataManagerLogger.debug("old current signal set for customized purpose", _dependency);
+}
+
+/*
 The function to set the target value
 Input: target signal
 */
@@ -616,21 +633,6 @@ void DataManager::setTarget(const vector<bool> &target) {
 	}
 	data_util::boolH2D(h_target, dev_target, _attr_sensor_size);
 	dataManagerLogger.debug("target signal set", _dependency);
-}
-
-/*
-set Signal
-Input: list of signal in bool, input size has to be attr_sensor size
-*/
-void DataManager::setSignal(const vector<bool> &signal) {
-	if (signal.size() != _attr_sensor_size) {
-		throw UMAException("The input signal size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
-	}
-	for (int i = 0; i < _attr_sensor_size; ++i) {
-		h_signal[i] = signal[i];
-	}
-	data_util::boolH2D(h_signal, dev_signal, _attr_sensor_size);
-	dataManagerLogger.debug("signal set", _dependency);
 }
 
 /*
@@ -674,6 +676,9 @@ void DataManager::setDists(const vector<vector<int> > &dists) {
 		throw UMAException("The input dists size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
+		if (dists[i].size() != _sensor_size) {
+			throw UMAException("The " + to_string(i) + "th input dists size is not matching sensor_size size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		}
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
 	}
 	data_util::intH2D(h_dists, dev_dists, _sensor_size * _sensor_size);
@@ -770,6 +775,16 @@ const vector<bool> DataManager::getCurrent() {
 		result.push_back(h_current[i]);
 	}
 	dataManagerLogger.debug("current signal get", _dependency);
+	return result;
+}
+
+const vector<bool> DataManager::getOldCurrent() {
+	vector<bool> result;
+	data_util::boolD2H(dev_current_, h_current_, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
+		result.push_back(h_current_[i]);
+	}
+	dataManagerLogger.debug("old current signal get", _dependency);
 	return result;
 }
 
@@ -1025,34 +1040,6 @@ const vector<bool> DataManager::getLoad() {
 	return result;
 }
 
-/*
-The function is getting the up signal
-Output: up signal
-*/
-const vector<bool> DataManager::getUp() {
-	vector<bool> result;
-	//up have no corresponding dev variable, when doing up_GPU, the value should be stored and copied back to host
-	for (int i = 0; i < _attr_sensor_size; ++i) {
-		result.push_back(h_up[i]);
-	}
-	dataManagerLogger.debug("up signal get", _dependency);
-	return result;
-}
-
-/*
-The function is getting the down matrix
-Output: down signal
-*/
-const vector<bool> DataManager::getDown() {
-	vector<bool> result;
-	//down have no corresponding dev variable, when doing up_GPU, the value should be stored and copied back to host
-	for (int i = 0; i < _attr_sensor_size; ++i) {
-		result.push_back(h_down[i]);
-	}
-	dataManagerLogger.debug("down signal get", _dependency);
-	return result;
-}
-
 const vector<bool> DataManager::getNegligible() {
 	vector<bool> result;
 	data_util::boolD2H(dev_negligible, h_negligible, _attr_sensor_size);
@@ -1115,6 +1102,7 @@ double *DataManager::_dvar_d(int name) {
 	case THRESHOLDS: return dev_thresholds;
 	case DIAG: return dev_diag;
 	case OLD_DIAG: return dev_diag_;
+	case SUM: return dev_sum;
 	}
 }
 
@@ -1132,8 +1120,8 @@ bool *DataManager::_dvar_b(int name) {
 	case SIGNALS: return dev_signals;
 	case LSIGNALS: return dev_lsignals;
 	case LOAD: return dev_load;
-	case SIGNAL: return dev_signal;
 	case CURRENT: return dev_current;
+	case OLD_CURRENT: return dev_current_;
 	case MASK: return dev_mask;
 	case MASK_AMPER: return dev_mask_amper;
 	case NPDIR_MASK: return dev_npdir_mask;
@@ -1175,8 +1163,8 @@ bool *DataManager::_hvar_b(int name) {
 	case NPDIRS: return h_npdirs;
 	case SIGNALS: return h_signals;
 	case LOAD: return h_load;
-	case SIGNAL: return h_signal;
 	case CURRENT: return h_current;
+	case OLD_CURRENT: return h_current_;
 	case MASK: return h_mask;
 	case MASK_AMPER: return h_mask_amper;
 	case PREDICTION: return h_prediction;

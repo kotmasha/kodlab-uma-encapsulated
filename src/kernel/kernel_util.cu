@@ -44,6 +44,18 @@ __global__ void bool2int_kernel(bool *b, int *i, int size) {
 }
 
 /*
+convert the input bool to double, false->0, true->1
+Input: a bool source array, and double dest array, and size of both array
+*/
+__global__ void bool2double_kernel(bool *b, double *d, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		if (b[index]) d[index] = 1.0;
+		else d[index] = 0.0;
+	}
+}
+
+/*
 This function does the conjunction for two lists
 Input: two bool lists, and size of both
 Output: None
@@ -113,6 +125,22 @@ __global__ void up2down_kernel(bool *b1, bool *b2, int size) {
 	}
 }
 
+__global__ void sum_kernel(double *d, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	int offset = 1;
+	int j = index;
+	while (true) {
+		j = index;
+		while (j < size) {
+			if (j % (2 * offset) == 0 && j + offset < size) d[j] += d[j + offset];
+			j += THREAD1D;
+		}
+		offset = offset * 2;
+		__syncthreads();
+		if (offset >= size) break;
+	}
+}
+
 void kernel_util::alltrue(bool *b, int size) {
 	alltrue_kernel << <GRID1D(size), BLOCK1D >> > (b, size);
 	kernelUtilLogger.debug("alltrue_kernel invoked");
@@ -126,6 +154,11 @@ void kernel_util::allfalse(bool *b, int size) {
 void kernel_util::bool2int(bool *b, int *i, int size) {
 	bool2int_kernel << <GRID1D(size), BLOCK1D >> > (b, i, size);
 	kernelUtilLogger.debug("bool2int_kernel invoked");
+}
+
+void kernel_util::bool2double(bool *b, double *d, int size) {
+	bool2double_kernel << <GRID1D(size), BLOCK1D >> > (b, d, size);
+	kernelUtilLogger.debug("bool2double_kernel invoked");
 }
 
 void kernel_util::conjunction(bool *b1, bool *b2, int size) {
@@ -156,4 +189,13 @@ void kernel_util::conjunction_star(bool *b1, bool *b2, int size) {
 void kernel_util::up2down(bool *b1, bool *b2, int size) {
 	up2down_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("up2down_kernel invoked");
+}
+
+double kernel_util::sum(double *d, int size) {
+	sum_kernel << <1, BLOCK1D >> > (d, size);
+	double r;
+	cudaMemcpy(&r, d, sizeof(double), cudaMemcpyDeviceToHost);
+	kernelUtilLogger.debug("sum_kernel invoked");
+
+	return r;
 }

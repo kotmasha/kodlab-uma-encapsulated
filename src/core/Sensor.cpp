@@ -1,8 +1,12 @@
 #include "Sensor.h"
 #include "AttrSensor.h"
+#include "Logger.h"
+#include "UMAException.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
+
+static Logger sensorLogger("Sensor", "log/sensor.log");
 
 /*
 Sensor::Sensor(ifstream &file) {
@@ -36,12 +40,20 @@ Sensor::Sensor(const std::pair<string, string> &id_pair, const double &total, in
 	_idx = idx;
 	_m = new AttrSensor(id_pair.first, 2 * idx, true, total / 2);
 	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, total / 2);
+	_observe = NULL;
+	_observe_ = NULL;
+
+	sensorLogger.info("New sensor created with total value, id=" + _uuid);
 }
 
 Sensor::Sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, int idx): _uuid(id_pair.first) {
 	_idx = idx;
 	_m = new AttrSensor(id_pair.first, 2 * idx, true, diag[0]);
 	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, diag[1]);
+	_observe = NULL;
+	_observe_ = NULL;
+
+	sensorLogger.info("New sensor created with diag value, id=" + _uuid);
 }
 
 /*
@@ -79,16 +91,40 @@ void Sensor::setAttrSensorDiagPointers(double *_diags, double *_diags_) {
 
 /*
 This function is setting the status pointers of _m and _cm through the sensor object
-Input: weight matrix diagonal value of this and last iteration
+Input: observe value of this and last iteration
 */
 void Sensor::setAttrSensorObservePointers(bool *observe, bool *observe_) {
 	_m->setObservePointers(observe, observe_);
 	_cm->setObservePointers(observe, observe_);
+	_observe = observe;
+	_observe_ = observe_;
 }
 
-void Sensor::setAttrSensorCurrentPointers(bool *current) {
-	_m->setCurrentPointers(current);
-	_cm->setCurrentPointers(current);
+/*
+This function is setting the current pointers of _m and _cm
+Input: current pointer
+*/
+void Sensor::setAttrSensorCurrentPointers(bool *current, bool *current_) {
+	_m->setCurrentPointers(current, current_);
+	_cm->setCurrentPointers(current, current_);
+}
+
+/*
+This function is setting the current pointers of _m and _cm
+Input: target pointer
+*/
+void Sensor::setAttrSensorTargetPointers(bool *target) {
+	_m->setTargetPointers(target);
+	_cm->setTargetPointers(target);
+}
+
+/*
+This function is setting the current pointers of _m and _cm
+Input: prediction pointer
+*/
+void Sensor::setAttrSensorPredictionPointers(bool *prediction) {
+	_m->setPredictionPointers(prediction);
+	_cm->setPredictionPointers(prediction);
 }
 
 /*
@@ -189,6 +225,22 @@ void Sensor::copy_data(Sensor *s) {
 	_cm->copy_data(s->_cm);
 }
 */
+
+bool Sensor::generateDelayedSignal() {
+	if (!_observe_) {
+		throw UMAException("the old observe signal is NULL, be sure to init the sensor first!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+	}
+	for (int i = 0; i < _amper.size(); ++i) {
+		int j = _amper[i];
+		if (!_observe_[j]) return false;
+	}
+	return true;
+}
+
+void Sensor::setObserveList(bool *observe, bool *observe_) {
+	_observe = observe;
+	_observe_ = observe_;
+}
 
 /*
 destruct the sensor, sensorpair destruction is a separate process

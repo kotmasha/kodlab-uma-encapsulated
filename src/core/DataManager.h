@@ -10,7 +10,7 @@ using namespace std;
 
 class DLL_PUBLIC DataManager {
 public:
-	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK, CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL, SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES, DEC_TMP1, DEC_TMP2 };
+	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK, CURRENT, OLD_CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL, SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES, DEC_TMP1, DEC_TMP2, SUM };
 protected:
 	/*
 	-----------------variables used in kernel.cu--------------------------
@@ -34,8 +34,8 @@ protected:
 	bool *h_observe_;
 	//current array, storing the observation value after going through propagation
 	bool *h_current, *dev_current;
-	//signal array, hold the input of propagation
-	bool *h_signal, *dev_signal;
+	//old current array, storing the current value of last iteration
+	bool *h_current_, *dev_current_;
 	//load array, hold the input of propagation
 	bool *h_load, *dev_load;
 	//mask array, will be calculated during init_mask, which will be used in halucinate
@@ -61,15 +61,13 @@ protected:
 
 	//prediction array after the halucinate, have no corresponding device value
 	bool *h_prediction, *dev_prediction;
-	//up array used for separate propagation, have no corresponding device value
-	bool *h_up;
-	//down array used for separate propagationm have no corresponding device value
-	bool *h_down;
 	//decision tmp variables
 	bool *dev_dec_tmp1;
 	bool *dev_dec_tmp2;
 	//result variable for distance/divergence
 	float *h_res, *dev_res;
+	//a variable for sum function
+	double *dev_sum;
 	/*
 	-----------------variables used in kernel.cu--------------------------
 	*/
@@ -101,8 +99,6 @@ protected:
 	int _npdir_size_max;
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
 	double _memory_expansion;
-	//initial sensor size for the whole test
-	int _initial_sensor_size;
 	//the dataManager's dependency chain
 	const string _dependency;
 	//the cublas handle
@@ -124,12 +120,12 @@ public:
 	//Set Functions
 	void setMask(const vector<bool> &mask);
 	void setLoad(const vector<bool> &load);
-	void setSignal(const vector<bool> &signal);
 	void setSignals(const vector<vector<bool> > &signals);
 	void setLSignals(const vector<vector<bool> > &signals);
 	void setDists(const vector<vector<int> > &dists);
 	void setObserve(const vector<bool> &observe);
 	void setCurrent(const vector<bool> &current);
+	void setOldCurrent(const vector<bool> &current);
 	void setTarget(const vector<bool> &signal);
 	//Set Functions
 	//#############
@@ -137,6 +133,7 @@ public:
 	//#############
 	//Get Functions
 	const vector<bool> getCurrent();
+	const vector<bool> getOldCurrent();
 	const vector<bool> getPrediction();
 	const vector<bool> getTarget();
 	const vector<vector<double> > getWeight2D();
@@ -153,8 +150,6 @@ public:
 	const vector<double> getDiag();
 	const vector<double> getDiagOld();
 	const vector<bool> getMask();
-	const vector<bool> getUp();
-	const vector<bool> getDown();
 	const vector<bool> getNegligible();
 	const vector < vector<bool> > getSignals(int sig_count);
 	const vector < vector<bool> > getLSignals(int sig_count);
@@ -168,6 +163,8 @@ public:
 	~DataManager();
 
 	friend class Snapshot;
+
+	friend class UMACoreDataFlowTestFixture;
 
 protected:
 	void init_pointers();

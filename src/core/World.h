@@ -15,7 +15,7 @@ public:
 
 public:
 	World();
-	static void add_agent(const string &agent_id);
+	static Agent *add_agent(const string &agent_id);
 	static void delete_agent(const string &agent_id);
 	static Agent *getAgent(const string &agent_id);
 	static const vector<string> getAgentInfo();

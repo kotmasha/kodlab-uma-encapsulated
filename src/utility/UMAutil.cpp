@@ -69,6 +69,19 @@ const vector<int> SignalUtil::bool_signal_to_int_idx(const vector<bool> &list){
 }
 
 /*
+This function is converting the idx, from int to bool list
+Input: a int vector, size of output bool signal
+Output: a bool signal
+*/
+const vector<bool> SignalUtil::int_idx_to_bool_signal(const vector<int> &idx, int size) {
+	vector<bool> converted_list(size, false);
+	for (int i = 0; i < idx.size(); ++i) {
+		converted_list[idx[i]] = true;
+	}
+	return converted_list;
+}
+
+/*
 This function is converting the attr_sensor signal to sensor signal, any of the 2 attr_sensor signal is true will lead to true in the sensor signal
 Input: attr_sensor signal
 Output: sensor signal
@@ -84,3 +97,32 @@ const vector<bool> SignalUtil::attr_sensor_signal_to_sensor_signal(const vector<
 /*
 ##################SignalUtil####################
 */
+
+/*
+This function is finding the target position in a given input, based on integer
+It will find the position of the index if exist, or the position that is in the gap of two value
+ex: [1,2,3],1 = 0
+ex: [1,2,4],3 = 1
+Input: input int signal, target int to find
+Output: the index of target
+*/
+int ArrayUtil::find_idx_in_sorted_array(const vector<int> &input, int target) {
+	if (target <= input[0]) return 0;
+	if (target >= input.back()) return input.size() - 1;
+	int start_idx = 0;
+	int end_idx = input.size();
+	int mid_idx = (start_idx + end_idx) / 2;
+	while (true) {
+		if (input[mid_idx] == target) return mid_idx;
+		if (input[mid_idx] > target) {
+			if (input[mid_idx - 1] < target) return mid_idx - 1;
+			end_idx = mid_idx;
+		}
+		else {
+			if (input[mid_idx + 1] > target) return mid_idx;
+			start_idx = mid_idx;
+		}
+		mid_idx = (start_idx + end_idx) / 2;
+	}
+
+}
