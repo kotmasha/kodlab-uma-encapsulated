@@ -26,6 +26,7 @@ private:
 	
 	//Snapshot class should be able to access all SensorPair value
 	friend class Snapshot;
+	friend class Snapshot_qualitative;
 
 	friend class UMACoreDataFlowTestFixture;
 

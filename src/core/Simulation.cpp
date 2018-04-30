@@ -11,28 +11,80 @@
 extern int ind(int row, int col);
 static Logger simulationLogger("Simulation", "log/simulation.log");
 
-
-void simulation::update_total(double &total, double &total_, const double &q, const double &phi) {
-	total_ = total;
-	total = q * total + (1 - q) * phi;
-}
-
 float simulation::enrichment(Snapshot *snapshot) {
 	DataManager *dm = snapshot->getDM();
 	int initial_size = snapshot->getInitialSize();
 	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
+	int sensor_size = dm->getSizeInfo().at("_sensor_size");
 
-	kernel_util::subtraction(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
-	kernel_util::bool2double(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
+	kernel_util::subtraction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
+	kernel_util::bool2double(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_d(DataManager::SUM), attr_sensor_size);
 	int sum = (int)kernel_util::sum(dm->_dvar_d(DataManager::SUM), attr_sensor_size);
 	if (sum > 0) {
-		uma_base::new_episode(dm->_dvar_b(DataManager::OLD_CURRENT), initial_size, attr_sensor_size);
+		kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size, attr_sensor_size);
+		kernel_util::conjunction(dm->_dvar_b(DataManager::OLD_CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
 		vector<vector<bool>> current_ = { dm->getOldCurrent() };
 		vector<std::pair<string, string>> p;
 		snapshot->delays(current_, p);
 	}
 
 	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::OLD_CURRENT), attr_sensor_size);
+
+	bool *d1, *d2;
+	data_util::dev_bool(d1, sensor_size);
+	data_util::dev_bool(d2, sensor_size);
+	data_util::dev_init(d1, sensor_size);
+	data_util::dev_init(d2, sensor_size);
+	vector<bool> negligible = dm->getNegligible();
+	vector<int> lists;
+	for (int i = 0; i < negligible.size(); i += 2) {
+		if (negligible[i]) lists.push_back(i / 2);
+	}
+	vector<vector<int> > dist;
+	for (int i = 0; i < lists.size(); ++i) {
+		vector<int> tmp;
+		for (int j = 0; j <= i; ++j) {
+			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), d1, sensor_size, i * sensor_size);
+			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), d2, sensor_size, j * sensor_size);
+			tmp.push_back(simulation::distance(dm, d1, d2, sensor_size));
+		}
+		dist.push_back(tmp);
+	}
+	for (int i = 0; i < lists.size(); ++i) {
+		for (int j = i + 1; j < lists.size(); ++j) {
+			int v = dist[j][i];
+			dist[i].push_back(v);
+		}
+	}
+	data_util::dev_free(d1);
+	data_util::dev_free(d2);
+	dm->setDists(dist);
+	vector<vector<int> > groups = simulation::blocks_GPU(dm, 1);
+	vector<vector<bool>> inputs;
+	for (int i = 0; i < groups.size(); ++i) {
+		vector<AttrSensor*> m;
+		for (int j = 0; i < groups[i].size(); ++j) m.push_back(snapshot->getAttrSensor(2 * groups[i][j]));
+		inputs.push_back(snapshot->generateSignal(m));
+	}
+	simulation::abduction(dm, inputs);
+
+	//
+	vector<vector<bool>> downs;
+	for (int i = 0; i < initial_size * 2; ++i) {
+		vector<AttrSensor*> m(1, snapshot->getAttrSensor(i));
+		downs.push_back(snapshot->generateSignal(m));
+	}
+	dm->setSignals(downs);
+	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, initial_size * 2, attr_sensor_size);
+
+	for (int i = 0; i < initial_size * 2; ++i) {
+		kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size * 2, attr_sensor_size);
+		kernel_util::subtraction(dm->_dvar_b(DataManager::SIGNAL) + i * attr_sensor_size, dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
+	}
+	vector<vector<bool>> delayed_downs = dm->getSignals(initial_size * 2);
+
+	vector<vector<vector<bool>>> new_masks = simulation::abduction(dm, delayed_downs);
 }
 
 float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double &phi, const bool active) {//the decide function
@@ -47,11 +99,14 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 	snapshot->update_total(phi, active);
 	//simulation::update_total(total, total_, q, phi);
 	
-	simulation::update_state(dm, q, phi, total, total_, active);
+	if (AGENT_TYPE::STATIONARY == snapshot->getType())
+		simulation::update_state(dm, q, phi, total, total_, active);
+	else
+		simulation::update_state_qualitative(dm, q, phi, total, total_, active);
 	simulation::halucinate(dm, initial_size);
 
 	if (snapshot->getPropagateMask()) simulation::propagate_mask(dm);
-	if (snapshot->getAutoTarget()) simulation::calculate_target(dm);
+	if (snapshot->getAutoTarget()) simulation::calculate_target(dm, snapshot->getType());
 
 	return simulation::divergence(dm);
 }
@@ -62,6 +117,7 @@ vector<float> simulation::decide(Agent *agent, vector<bool> &obs_plus, vector<bo
 	Snapshot *snapshot_minus = agent->getSnapshot("minus");
 
 	if (active) simulation::enrichment(snapshot_plus);
+	else simulation::enrichment(snapshot_minus);
 
 	const float res_plus = simulation::decide(snapshot_plus, obs_plus, phi, active);
 	const float res_minus = simulation::decide(snapshot_minus, obs_minus, phi, !active);
@@ -86,6 +142,31 @@ void simulation::update_state(DataManager *dm, const double &q, const double &ph
 	uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
 	uma_base::orient_all(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	//floyd on new dirs and get npdirs
+	floyd(dm);
+	//negligible on npdir, store the results
+	uma_base::negligible(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::NEGLIGIBLE), sensor_size);
+
+	//the propagation on 
+	data_util::boolD2D(dm->_dvar_b(DataManager::OBSERVE), dm->_dvar_b(DataManager::SIGNALS), attr_sensor_size);
+	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, attr_sensor_size);
+	data_util::boolD2H(dm->_dvar_b(DataManager::CURRENT), dm->_hvar_b(DataManager::CURRENT), attr_sensor_size);
+}
+
+void simulation::update_state_qualitative(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active) {
+	std::map<string, int> size_info = dm->getSizeInfo();
+	int sensor_size = size_info["_sensor_size"];
+	int attr_sensor_size = size_info["_attr_sensor_size"];
+
+	//update weights
+	uma_base_qualitative::update_weights(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_b(DataManager::OBSERVE), attr_sensor_size, q, phi, active);
+	//update diag from new weights
+	uma_base::get_weights_diag(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::DIAG), dm->_dvar_d(DataManager::OLD_DIAG), attr_sensor_size);
+	//update thresholds, no operation for now
+	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
+	//update dirs
+	uma_base_qualitative::orient_all(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
@@ -166,12 +247,15 @@ void simulation::propagate_mask(DataManager *dm) {
 	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::NPDIR_MASK), NULL, sensor_size, attr_sensor_size);
 }
 
-void simulation::calculate_target(DataManager *dm) {
+void simulation::calculate_target(DataManager *dm, const int type) {
 	std::map<string, int> size_info = dm->getSizeInfo();
 	int sensor_size = size_info["_sensor_size"];
 	int attr_sensor_size = size_info["_attr_sensor_size"];
 
-	uma_base::calculate_target(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
+	if (AGENT_TYPE::STATIONARY == type)
+		uma_base::calculate_target(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
+	else
+		uma_base_qualitative::calculate_target(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
 	data_util::boolD2H(dm->_dvar_b(DataManager::TARGET), dm->_hvar_b(DataManager::TARGET), attr_sensor_size);
 }
 
@@ -201,26 +285,22 @@ float simulation::divergence(DataManager *dm) {
 	return value;
 }
 
-//still have problem in the function
-//deprecated
-float simulation::distance(DataManager *dm) {
-	/*
+//calculate the distance between 2 bool array
+int simulation::distance(DataManager *dm, bool *b1, bool *b2, int size) {
 	std::map<string, int> size_info = dm->getSizeInfo();
 	int attr_sensor_size = size_info["_attr_sensor_size"];
 
 	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), attr_sensor_size);
 
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, attr_sensor_size);
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::TARGET), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::TARGET), 1, attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), b1, dm->_dvar_b(DataManager::LSIGNALS), NULL, 1, attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), b2, dm->_dvar_b(DataManager::LSIGNALS), NULL, 1, attr_sensor_size);
 
-	kernel_util::conjunction_star(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::TARGET), attr_sensor_size);
+	kernel_util::conjunction_star(b1, b2, attr_sensor_size);
 
-	//cudaMemcpy(h_signal, signal1, _attr_sensor_size * sizeof(bool), cudaMemcpyDeviceToHost);
-	int sum = 0;
-	//for (int i = 0; i < _attr_sensor_size; ++i) sum += h_signal[i];
+	kernel_util::bool2double(b1, dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	int sum = (int)kernel_util::sum(dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+
 	return sum;
-	*/
-	return 0.0;
 }
 
 void simulation::ups_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int attr_sensor_size) {

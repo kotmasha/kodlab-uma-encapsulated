@@ -7,6 +7,7 @@ create agent1:
   status_code: 201
   data:
     agent_id: test_agent1
+    type: default
 
 create agent2:
   method: POST
@@ -14,6 +15,7 @@ create agent2:
   status_code: 201
   data:
     agent_id: test_agent2
+    type: default
 
 create agent3:
   method: POST
@@ -21,6 +23,7 @@ create agent3:
   status_code: 201
   data:
     agent_id: test_agent3
+    type: qualitative
 
 get world:
   method: GET
@@ -29,9 +32,9 @@ get world:
   message: Get world info
   kwargs:
     agent_ids:
-      - test_agent1
-      - test_agent2
-      - test_agent3
+      - [test_agent1, default]
+      - [test_agent2, default]
+      - [test_agent3, qualitative]
     agent_count: 3
 
 delete agent1:

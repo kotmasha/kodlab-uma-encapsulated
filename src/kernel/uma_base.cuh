@@ -22,6 +22,11 @@ namespace uma_base {
 	void union_GPU(int *dists, int *union_root, int sensor_size);
 	void copy_npdir(bool *npdir, bool *dir, int attr_sensor_size);
 	void negligible(bool *npdir, bool *negligible, int sensor_size);
-	void new_episode(bool *current, int initial_sensor_size, int attr_sensor_size);
+}
+
+namespace uma_base_qualitative {
+	void update_weights(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool active);
+	void orient_all(bool *dirs, double *weights, double *thresholds, double total, int sensor_size);
+	void calculate_target(double *diag, bool *target, int sensor_size);
 }
 #endif

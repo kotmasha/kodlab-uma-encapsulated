@@ -21,6 +21,7 @@ create an agent:
   status_code: 201
   data:
     agent_id: test_agent
+    type: default
 
 create an agent duplicate:
   method: POST
@@ -29,6 +30,7 @@ create an agent duplicate:
   message: Cannot create a duplicate agent
   data:
     agent_id: test_agent
+    type: default
 
 create snapshot1:
   method: POST
@@ -68,9 +70,9 @@ get agent:
     agent_id: test_agent
   kwargs:
     snapshot_ids:
-      - test_snapshot1
-      - test_snapshot2
-      - test_snapshot3
+      - [test_snapshot1, default]
+      - [test_snapshot2, default]
+      - [test_snapshot3, default]
     snapshot_count: 3
 
 delete agent without agent_id:
@@ -102,6 +104,43 @@ get agent after delete:
     agent_id: test_agent
   messaage: Cannot find the agent id
 
+create an agent qualitative:
+  method: POST
+  url: /UMA/object/agent
+  status_code: 201
+  data:
+    agent_id: test_agent
+    type: qualitative
+
+create snapshot1 qualitative:
+  method: POST
+  url: /UMA/object/snapshot
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot1
+
+create snapshot2 qualitative:
+  method: POST
+  url: /UMA/object/snapshot
+  status_code: 201
+  data:
+    agent_id: test_agent
+    snapshot_id: test_snapshot2
+
+get agent qualitative:
+  method: GET
+  url: /UMA/object/agent
+  status_code: 200
+  message: Get agent info
+  query:
+    agent_id: test_agent
+  kwargs:
+    snapshot_ids:
+      - [test_snapshot1, qualitative]
+      - [test_snapshot2, qualitative]
+    snapshot_count: 2
+
 tests:
   - create agent without agent_id
   - create agent with invalid id
@@ -116,3 +155,8 @@ tests:
   - delete agent with invlid agent_id
   - delete agent
   - get agent after delete
+  - create an agent qualitative
+  - create snapshot1 qualitative
+  - create snapshot2 qualitative
+  - get agent qualitative
+  - delete agent

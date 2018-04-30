@@ -15,10 +15,10 @@ public:
 
 public:
 	World();
-	static Agent *add_agent(const string &agent_id);
+	static Agent *add_agent(const string &agent_id, int type = AGENT_TYPE::STATIONARY);
 	static void delete_agent(const string &agent_id);
 	static Agent *getAgent(const string &agent_id);
-	static const vector<string> getAgentInfo();
+	static const vector<vector<string>> getAgentInfo();
 	//void save_world(string &name);
 	//void load_world(string &name);
 	//void merge_test();

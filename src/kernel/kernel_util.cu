@@ -141,6 +141,18 @@ __global__ void sum_kernel(double *d, int size) {
 	}
 }
 
+__global__ void init_mask_signal_kernel(bool *b, int init_size, int size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < size) {
+		if (index < 2 * init_size) {
+			b[index] = true;
+		}
+		else {
+			b[index] = false;
+		}
+	}
+}
+
 void kernel_util::alltrue(bool *b, int size) {
 	alltrue_kernel << <GRID1D(size), BLOCK1D >> > (b, size);
 	kernelUtilLogger.debug("alltrue_kernel invoked");
@@ -198,4 +210,9 @@ double kernel_util::sum(double *d, int size) {
 	kernelUtilLogger.debug("sum_kernel invoked");
 
 	return r;
+}
+
+void kernel_util::init_mask_signal(bool *b, int init_size, int size) {
+	init_mask_signal_kernel << <GRID1D(size), BLOCK1D >> > (b, init_size, size);
+	kernelUtilLogger.debug("init_mask_signal_kernel invoked");
 }

@@ -17,6 +17,8 @@
 
 using namespace std;
 
+enum AGENT_TYPE { STATIONARY, QUALITATIVE };
+
 #if defined(_WIN64)
 	#include<direct.h>
 #else

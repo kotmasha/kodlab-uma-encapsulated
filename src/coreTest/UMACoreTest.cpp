@@ -19,15 +19,15 @@ TEST(world_test, world_agent_test) {
 
 	EXPECT_NO_THROW(World::getAgent("test_agent1"));
 	EXPECT_THROW(World::getAgent("test_agent0"), UMAException);
-	vector<string> s = { "test_agent1", "test_agent2", "test_agent3", "test_agent4" };
+	vector<vector<string>> s = { { "test_agent1", "default" },{ "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
 	EXPECT_EQ(s, World::getAgentInfo());
 
 	World::delete_agent("test_agent1");
-	s = {"test_agent2", "test_agent3", "test_agent4" };
+	s = { { "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
 	EXPECT_EQ(s, World::getAgentInfo());
 
 	World::delete_agent("test_agent3");
-	s = { "test_agent2", "test_agent4" };
+	s = { { "test_agent2", "default" },{ "test_agent4", "default" } };
 	EXPECT_EQ(s, World::getAgentInfo());
 
 	EXPECT_THROW(World::getAgent("test_agent3"), UMAException);
@@ -40,22 +40,22 @@ TEST(world_test, world_agent_test) {
 TEST(agent_test, agent_snapshot_test) {
 	Agent *agent = new Agent("agent", "");
 
-	agent->add_snapshot_stationary("snapshot1");
-	agent->add_snapshot_stationary("snapshot2");
-	agent->add_snapshot_stationary("snapshot3");
-	agent->add_snapshot_stationary("snapshot4");
+	agent->add_snapshot("snapshot1");
+	agent->add_snapshot("snapshot2");
+	agent->add_snapshot("snapshot3");
+	agent->add_snapshot("snapshot4");
 
 	EXPECT_NO_THROW(agent->getSnapshot("snapshot2"));
 	EXPECT_THROW(agent->getSnapshot("snapshot0"), UMAException);
-	vector<string> s = { "snapshot1", "snapshot2", "snapshot3", "snapshot4" };
+	vector<vector<string>> s = { { "snapshot1", "default" },{ "snapshot2", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	agent->delete_snapshot("snapshot2");
-	s = { "snapshot1", "snapshot3", "snapshot4" };
+	s = { { "snapshot1", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	agent->delete_snapshot("snapshot4");
-	s = { "snapshot1", "snapshot3"};
+	s = { { "snapshot1", "default" },{ "snapshot3", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	EXPECT_THROW(agent->getSnapshot("snapshot2"), UMAException);
@@ -175,7 +175,7 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 }
 
 TEST(snapshot_test, snapshot_get_set_attribute_test, ) {
-	Snapshot_Stationary *snapshot = new Snapshot_Stationary("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", "");
 	
 	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.125);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
@@ -205,6 +205,33 @@ TEST(snapshot_test, snapshot_get_set_attribute_test, ) {
 	snapshot->update_total(1.2, false);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.82);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.82);
+
+	delete snapshot;
+}
+
+TEST(snapshot_qualitative_test, update_total, ) {
+	Snapshot *snapshot = new Snapshot_qualitative("snapshot", "");
+
+	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
+	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
+
+	snapshot->setTotal(2.0);
+	snapshot->setOldTotal(0.31);
+
+	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 2.0);
+	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 0.31);
+
+	snapshot->update_total(1.1, true);
+	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
+	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 2.0);
+
+	snapshot->update_total(1.2, false);
+	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
+	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.1);
+
+	snapshot->update_total(1.2, true);
+	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
+	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.1);
 
 	delete snapshot;
 }
@@ -275,6 +302,33 @@ TEST(snapshot_test, generateDelayedObservations) {
 	EXPECT_EQ(false, snapshot->getSensor("s5")->getObserve());
 	EXPECT_EQ(true, snapshot->getSensor("cs6")->getObserve());
 	EXPECT_EQ(false, snapshot->getSensor("s7")->getObserve());
+
+	delete snapshot;
+}
+
+TEST(snapshot_test, generateSignal) {
+	Snapshot *snapshot = new Snapshot("snapshot", "");
+
+	std::pair<string, string> sensor1 = { "s1", "cs1" };
+	std::pair<string, string> sensor2 = { "s2", "cs2" };
+	std::pair<string, string> sensor3 = { "s3", "cs3" };
+	std::pair<string, string> sensor4 = { "s4", "cs4" };
+	vector<double> diag;
+	vector<vector<double>> w;
+	vector<vector<bool>> b;
+	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w, b);
+	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w, b);
+	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w, b);
+	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w, b);
+
+	vector<AttrSensor*> m;
+	m.push_back(snapshot->getAttrSensor(0));
+	m.push_back(snapshot->getAttrSensor(3));
+	m.push_back(snapshot->getAttrSensor(6));
+	vector<bool> v1 = snapshot->generateSignal(m);
+	vector<bool> v2 = { 1, 0, 0, 1, 0, 0, 1, 0 };
+
+	EXPECT_EQ(v1, v2);
 
 	delete snapshot;
 }

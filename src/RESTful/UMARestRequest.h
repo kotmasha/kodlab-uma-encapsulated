@@ -13,13 +13,15 @@ protected:
 	http_response _response;
 	json::value _data;
 	std::map<string_t, string_t> _query;
-	json::value _response_body;
+	json::value _body;
 
 	friend class UMARestHandler;
 	friend class UMARestListener;
+	friend class UMARestClient;
 
 public:
 	UMARestRequest(const http_request &request);
+	UMARestRequest(const web::uri &u, const http::method m);
 	~UMARestRequest();
 
 	string get_string_data(const string &name);

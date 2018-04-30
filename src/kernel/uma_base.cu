@@ -54,6 +54,23 @@ __device__ bool implies_GPU(int row, int col, double *weights, double total, dou
 }
 
 /*
+This function does implies on GPU, using qualitative way
+Input: row, col info, attr_sensor size, weight matrix and threshold
+Output: bool value(mathematical info please inquiry Kotomasha)
+*/
+__device__ bool implies_GPU_qualitative(int row, int col, double *weights, double total, double threshold) {//implies
+	double rc = weights[ind(row, col)];//0.4
+	double r_c = weights[ind(compi(row), col)];//0
+	double rc_ = weights[ind(row, compi(col))];//0
+	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
+	if (rc < -0.5 || r_c_ < -0.5) return false;
+	if (rc_ < -0.5) return true;
+	return rc_ > threshold + max(rc, r_c_);
+}
+
+/*
+
+/*
 This function does equivalent on GPU, using non-worker solution
 Input: row, col info, attr_sensor size, weight matrix and threshold
 Output: bool value(mathematical info please inquiry Kotomasha)
@@ -117,6 +134,33 @@ __device__ void orient_square_GPU(bool *dir, double *weights, double *thresholds
 		dir[ind(compi(y), compi(x))] = implies_GPU(compi(y), compi(x), weights, total, threshold);
 	else
 		dir[ind(x, y)] = implies_GPU(x, y, weights, total, threshold);
+}
+
+/*
+GPU method: updates a "square" in the orientation matrix
+Input: dir matrix, weights matrix, thresholds matrix, xy location in dir matrix
+Output: None
+*/
+__device__ void orient_square_GPU_qualitative(bool *dir, double *weights, double *thresholds, double total, int x, int y) {//orient_square
+																														   //OBTAIN THE LOCAL THRESHOLD
+	double threshold = thresholds[ind(y / 2, x / 2)];
+	//UPDATE THE ORIENTATION MATRIX
+	if (y >= x)
+		dir[ind(y, x)] = implies_GPU_qualitative(y, x, weights, total, threshold);
+	else
+		dir[ind(compi(x), compi(y))] = implies_GPU_qualitative(compi(x), compi(y), weights, total, threshold);
+	if (compi(y) >= x)
+		dir[ind(compi(y), x)] = implies_GPU_qualitative(compi(y), x, weights, total, threshold);
+	else
+		dir[ind(compi(x), y)] = implies_GPU_qualitative(compi(x), y, weights, total, threshold);
+	if (y >= compi(x))
+		dir[ind(y, compi(x))] = implies_GPU_qualitative(y, compi(x), weights, total, threshold);
+	else
+		dir[ind(x, compi(y))] = implies_GPU_qualitative(x, compi(y), weights, total, threshold);
+	if (compi(y) >= compi(x))
+		dir[ind(compi(y), compi(x))] = implies_GPU_qualitative(compi(y), compi(x), weights, total, threshold);
+	else
+		dir[ind(x, y)] = implies_GPU_qualitative(x, y, weights, total, threshold);
 }
 
 /*
@@ -191,6 +235,24 @@ __global__ void update_weights_kernel(double *weights, bool *observe, int attr_s
 }
 
 /*
+update the weight matrix based on observe signal, for trial purpose only
+*/
+__global__ void update_weights_kernel_qualitative(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool activity) {
+	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
+	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
+	if (indexX <= indexY && indexY < attr_sensor_size) {
+		if (activity && observe[indexX] && observe[indexY]) {
+			if (weights[ind(indexY, indexX)] < -0.5) {// do it in a hack way, using == may be danerious since it is double
+				weights[ind(indexY, indexX)] = phi;
+			}
+			else {
+				weights[ind(indexY, indexX)] = min(weights[ind(indexY, indexX)], phi);
+			}
+		}
+	}
+}
+
+/*
 get the weight matrix's diag value, store in diag and update old diag
 Input: weight matrix, diag, old diag, attr_sensor size
 */
@@ -225,6 +287,28 @@ __global__ void calculate_target_kernel(double *attr_sensor, bool *target, int s
 	}
 }
 
+/*
+calculate the target value based on the attr_sensor vector value
+Input: attr_sensor list, target signal, sensor size
+*/
+__global__ void calculate_target_kernel_qualitative(double *attr_sensor, bool *target, int sensor_size) {
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	if (index < sensor_size) {
+		if (attr_sensor[2 * index] - attr_sensor[2 * index + 1] < 1e-12) {
+			target[2 * index] = true;
+			target[2 * index + 1] = false;
+		}
+		else if (attr_sensor[2 * index] - attr_sensor[2 * index + 1] > 1e-12) {
+			target[2 * index] = false;
+			target[2 * index + 1] = true;
+		}
+		else {
+			target[2 * index] = false;
+			target[2 * index + 1] = false;
+		}
+	}
+}
+
 /* 
 GPU method: updating the thresholds prior to orientation update
 Input: dir weights, thresholds, last_total, q, phi, attr_sensor_size
@@ -248,6 +332,19 @@ __global__ void orient_all_kernel(bool *dir, double *weights, double *thresholds
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
 	if(indexY < sensor_size && indexX < indexY){
 		orient_square_GPU(dir, weights, thresholds, total, indexX * 2, indexY * 2);
+	}
+}
+
+/*
+This function is orient all on GPU, using non-worker solution
+Input: direction, weight, threshold matrix, and attr_sensor size
+Output: None
+*/
+__global__ void orient_all_kernel_qualitative(bool *dir, double *weights, double *thresholds, double total, int sensor_size) {
+	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
+	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
+	if (indexY < sensor_size && indexX < indexY) {
+		orient_square_GPU_qualitative(dir, weights, thresholds, total, indexX * 2, indexY * 2);
 	}
 }
 
@@ -586,13 +683,6 @@ __global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size
 	}
 }
 
-__global__ void new_episode_kernel(bool *current, int initial_sensor_size, int size) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index < size) {
-		if (index >= initial_sensor_size * 2) current[index] = false;
-	}
-}
-
 /*
 ---------------------AGENT---------------------
 */
@@ -698,6 +788,17 @@ void uma_base::negligible(bool *npdir, bool *negligible, int sensor_size) {
 	umaBaseLogger.debug("negligible_kernel invoked!");
 }
 
-void uma_base::new_episode(bool *current, int initial_sensor_size, int attr_sensor_size) {
-	new_episode_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (current, initial_sensor_size, attr_sensor_size);
+void uma_base_qualitative::update_weights(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool active) {
+	update_weights_kernel_qualitative << <GRID2D(attr_sensor_size, attr_sensor_size), BLOCK2D >> > (weights, observe, attr_sensor_size, q, phi, active);
+	umaBaseLogger.debug("update_weights_qualitative invoked!");
+}
+
+void uma_base_qualitative::orient_all(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
+	orient_all_kernel_qualitative << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
+	umaBaseLogger.debug("orient_all_kernel_qualitative invoked!");
+}
+
+void uma_base_qualitative::calculate_target(double *diag, bool *target, int sensor_size) {
+	calculate_target_kernel_qualitative << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
+	umaBaseLogger.debug("calculate_target_kernel_qualitative invoked!");
 }

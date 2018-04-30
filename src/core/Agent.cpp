@@ -28,18 +28,18 @@ Agent::Agent(ifstream &file) {
 }
 */
 
-Agent::Agent(const string &uuid, const string &dependency): _uuid(uuid), _dependency(dependency + ":" + _uuid){
+Agent::Agent(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + _uuid), _type(type) {
 	_t = 0;
 
-	agentLogger.info("An agent " + uuid + " is created", _dependency);
+	agentLogger.info("An agent " + uuid + " is created, agent type is " + to_string(_type), _dependency);
 }
 
-Snapshot *Agent::add_snapshot_stationary(const string &uuid){
+Snapshot *Agent::add_snapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
 		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
-	_snapshots[uuid] = new Snapshot_Stationary(uuid, _dependency);
+	_snapshots[uuid] = new Snapshot(uuid, _dependency);
 	agentLogger.info("A Snapshot Stationary " + uuid + " is created", _dependency);
 	return _snapshots[uuid];
 }
@@ -82,10 +82,20 @@ void Agent::copy_test_data(Agent *agent) {
 }
 */
 
-const vector<string> Agent::getSnapshotInfo() const{
-	vector<string> results;
+const vector<vector<string>> Agent::getSnapshotInfo() const {
+	vector<vector<string>> results;
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
-		results.push_back(it->first);
+		vector<string> tmp;
+		tmp.push_back(it->first);
+
+		const int type = it->second->getType();
+		string s_type = "";
+		if (AGENT_TYPE::STATIONARY == type) s_type = "default";
+		else if (AGENT_TYPE::QUALITATIVE == type) s_type = "qualitative";
+
+		tmp.push_back(s_type);
+
+		results.push_back(tmp);
 	}
 	return results;
 }
@@ -108,6 +118,10 @@ void Agent::setT(int t) {
 	_t = t;
 }
 
+const int &Agent::getType() const {
+	return _type;
+}
+
 Agent::~Agent(){
 	try {
 		for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
@@ -120,4 +134,18 @@ Agent::~Agent(){
 		throw UMAException("Fatal error in Agent destruction function", UMAException::ERROR_LEVEL::FATAL, UMAException::SERVER);
 	}
 	agentLogger.info("Deleted the agent " + _uuid);
+}
+
+Agent_qualitative::Agent_qualitative(const string &uuid, const string &dependency) : Agent(uuid, dependency, AGENT_TYPE::QUALITATIVE) {}
+
+Agent_qualitative::~Agent_qualitative() {}
+
+Snapshot *Agent_qualitative::add_snapshot(const string &uuid) {
+	if (_snapshots.find(uuid) != _snapshots.end()) {
+		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
+		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+	}
+	_snapshots[uuid] = new Snapshot_qualitative(uuid, _dependency);
+	agentLogger.info("A Snapshot Qualitative " + uuid + " is created", _dependency);
+	return _snapshots[uuid];
 }

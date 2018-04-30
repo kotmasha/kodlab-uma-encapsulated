@@ -70,7 +70,7 @@ void SnapshotHandler::create_snapshot(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
 
 	Agent *agent = World::getAgent(agent_id);
-	agent->add_snapshot_stationary(snapshot_id);
+	agent->add_snapshot(snapshot_id);
 
 	request.set_message("Snapshot created");
 }
