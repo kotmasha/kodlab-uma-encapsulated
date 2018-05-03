@@ -481,8 +481,7 @@ class Experiment(object):
         agent_reports={}
 
         #update initiation time:
-        initial_time=time.clock()
-        ex_reports['update_cycle_starts']=initial_time
+        ex_reports['update_cycle_starts']=time.clock()
         
         #purge the experiment's decision variable
         id_dec = 'decision'
@@ -499,8 +498,7 @@ class Experiment(object):
             if agentQ:
                 if mid in self._AGENTS:  # if mid is an agent...
                     agent_reports[mid]={} #prepare a dictionary for agent's report
-                    agent_start_time=time.clock()
-                    agent_reports[mid]['decision_cycle_starts']=agent_start_time
+                    agent_reports[mid]['decision_cycle_starts']=time.clock()
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
@@ -617,8 +615,7 @@ class Experiment(object):
                     # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                     pass
 
-        final_time=time.clock()
-        ex_reports['update_cycle_ends']=final_time
+        ex_reports['update_cycle_ends']=time.clock()
         return ex_reports,agent_reports
 
 
