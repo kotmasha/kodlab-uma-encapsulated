@@ -458,21 +458,31 @@ class Experiment(object):
         # -------------------- Remove the old try/except block, because: -----------------------
         # if id_agent is None, getting this by throwing an exception will reduce performance, an if else check will be faster
         if id_agent in self._ID:
-            # construct new sensor and agent and append to agents list
-            self.construct_sensor(id_agent, definition, decdep=decdep)
+            # construct and initialize new sensor
+            self.construct_sensor(id_agent, definition=definition, decdep=decdep, init_value=[False,False])
+            # construct new agent (Python and C++)
             new_agent = Agent(self, id_agent, id_motivation, params)
             self._AGENTS[id_agent] = new_agent
-            ServiceWorld(service).add_agent(id_agent)
+            try:
+                #trying to pass along type specification to the UMA core
+                ServiceWorld(service).add_agent(id_agent,type=params['type'])
+            except KeyError:
+                #if no type specification, use the default
+                ServiceWorld(service).add_agent(id_agent)
             return new_agent
         else:
             raise Exception("the agent " + id_agent + " is not registered!")
 
     ## Update the experiment state and output a summary of decisions
     def update_state(self, instruction='decide'):
+        #additional date reported about the experiment update:
+        ex_reports={}
         #additional data reported to the experiment, by agent id:
         agent_reports={}
+
         #update initiation time:
         initial_time=time.clock()
+        ex_reports['update_cycle_starts']=initial_time
         
         #purge the experiment's decision variable
         id_dec = 'decision'
@@ -490,6 +500,7 @@ class Experiment(object):
                 if mid in self._AGENTS:  # if mid is an agent...
                     agent_reports[mid]={} #prepare a dictionary for agent's report
                     agent_start_time=time.clock()
+                    agent_reports[mid]['decision_cycle_starts']=agent_start_time
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
@@ -548,16 +559,14 @@ class Experiment(object):
                     ##LEARNING THE SAME STRUCTURE OR AN APPROXIMATION THEREOF
                     
                     ## compute and record e&p duration:
-                    agent_e_and_p_ends=time.clock()
-                    agent_reports[mid]['e_and_p_duration']=agent_e_and_p_ends-agent_start_time
+                    agent_reports[mid]['enrichment_and_pruning_ends']=time.clock()
 
                     ## agent enters observation-deliberation-decision stage and reports:
                     agent_reports[mid]['deliberateQ'] = agent.decide()
                     agent_reports[mid]['decision'] = mid if mid in self.this_state(id_dec) else midc
 
                     ## compute and report duration of decision cycle:
-                    agent_decision_produced=time.clock()
-                    agent_reports[mid]['decision_duration']=agent_decision_produced-agent_e_and_p_ends
+                    agent_reports[mid]['decision_cycle_ends']=time.clock()
                     
                     ## report the agent size:
                     agent_reports[mid]['size']=max(agent._SIZE['plus'],agent._SIZE['minus'])
@@ -607,9 +616,10 @@ class Experiment(object):
                 except:  
                     # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                     pass
+
         final_time=time.clock()
-        time_elapsed=final_time-initial_time
-        return time_elapsed,agent_reports
+        ex_reports['update_cycle_ends']=final_time
+        return ex_reports,agent_reports
 
 
 class Agent(object):
@@ -618,10 +628,18 @@ class Agent(object):
         # Agent's ID and complementary ID:
         self._ID = id_agent
         self._CID = name_comp(id_agent)
-        # Agent's initialization parameters
+
+        # Agent's initialization parameters; expects a dictionary with keys
+        #   'type'      -- 'default' / 'qualitative'
+        #   'discount'  -- for type 'default', the value of the discount parameter,
+        #                 in the range (0.5,1).
+        #   'AutoTarg'  -- True if Auto-Targeting mode, False for externally 
+        #                 specified target
         self._PARAMS = params
+
         # The experiment serving as the agent's environment
         self._EXPERIMENT = experiment
+
         # Agent's motivational signal:
         self._MOTIVATION = id_motivation
 
@@ -705,8 +723,13 @@ class Agent(object):
         snap_service = {}
         for token in ['plus', 'minus']:
             snap_service[token] = agent_service.add_snapshot(token)
-            snap_service[token].setQ(self._PARAMS[0])
-            snap_service[token].setAutoTarget(self._PARAMS[1])
+            
+            #initialization items depending on type:
+            if self._PARAMS['type']=='default':
+                snap_service[token].setQ(self._PARAMS['discount'])
+            
+            #common initialization items:
+            snap_service[token].setAutoTarget(self._PARAMS['AutoTarg'])
             snap_service[token].init_with_sensors(
                 [[self._SENSORS[token][2 * i], self._SENSORS[token][2 * i + 1]] for i in xrange(self._INITIAL_SIZE)])
             snap_service[token].init()
