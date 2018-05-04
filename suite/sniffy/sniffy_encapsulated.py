@@ -6,13 +6,14 @@ import time
 from som2 import *
 
 
-def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
+def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_string):
     # wait (=0) / don't wait (=1) for spacebar to execute next cycle:
     NODELAY=1 if delay_string=='nodelay' else 0
     # Number of decision cycles for burn-in period:
     BURN_IN=burn_in
     # experiment parameters and definitions
-    X_BOUND=10 #length
+    X_BOUND=env_length #length
+
     def in_bounds(pos):
         return (pos>=0 and pos<=X_BOUND)
 
@@ -20,12 +21,19 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     def dist(p,q):
         return abs(p-q) 
 
-    # agent discount parameters
-    Q=1.-pow(2,-7)
-    MOTION_PARAMS=tuple([
-        Q,   #memory discounting coefficient
-        False,          #Auto-targeting mode
-        ])
+    # "Discounted" agent parameters
+    Q=1.-pow(2,-discount)
+    MOTION_PARAMS={
+        'type':'default',
+        'discount':Q,
+        'AutoTarg':False,
+        }
+    
+    # "Qualitative" agent parameters
+    #MOTION_PARAMS={
+    #    'type':'qualitative',
+    #    'AutoTarg':False,
+    #    }
     
     # initialize a new experiment
     EX=Experiment()
@@ -196,10 +204,10 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
     reported_data=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
-    for agent in [RT,LT]:
-        for token in ['plus','minus']:
-            delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
-            agent.delay(delay_sigs,token)
+    #for agent in [RT,LT]:
+    #    for token in ['plus','minus']:
+    #        delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
+    #        agent.delay(delay_sigs,token)
 
     # SET ARTIFICIAL TARGET ONCE AND FOR ALL
     for agent in [RT,LT]:
@@ -271,14 +279,20 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
 
         #extract information from reported data:
         ex_report,agent_reports=reported_data
-        elapsed_time=ex_report['elapsed_time']
+        elapsed_time=ex_report['exiting_update_cycle']-ex_report['entering_update_counter']
 
-        ## information about E&P stage:
-        #'activity':            which snapshot was active last?
-        #'e_and_p_duration':    how long did its structural update take?
+        ## information about experiment update:
+        #'entering_update_cycle':           time stamp for beginning of update cycle
+        #'exiting_update_cycle':            time stamp for end of update cycle
+        #
         ## information about decision stage:
+        #'activity':                        which snapshot was active last?
+        #
+        #'entering_decision_cycle':         time stamp for beginning of agent's decision cycle
+        #'exiting_enrichment_and_pruning':  termination time stamp of agent's e&p stage
+        #'exiting_decision_cycle':          time stamp for end of agent's decision cycle
+        #
         #'decision':            agent's decision
-        #'decision_duration':   time it took the agent to arrive at this decision
         #'deliberateQ':         was the decision deliberate?
         #'override':            decision was overridden by... (if at all)
         #'final':               final decision to be executed (post arbitration)
@@ -418,7 +432,15 @@ def start_experiment(stdscr,burn_in,agent_to_examine,delay_string):
         #print "data saved"
         #raise Exception('Aborting at your request...\n\n')
         pass
-        
-curses.wrapper(start_experiment,1000,'rt','nodelay')
+       
+#generate a run with parameters:
+#   - length of environment
+#   - discount parameter becomes 1.-pow(2,-input)
+#   - number of cycles for burn-in period
+#   - BUA to visualize
+#   - 'nodelay' means no delay between cycles; 'delay' means [spacebar] is 
+#       required to advance the clock.
+#
+curses.wrapper(start_experiment,20,5,1000,'rt','nodelay')
 print "Aborting at your request...\n\n"
 exit(0)
