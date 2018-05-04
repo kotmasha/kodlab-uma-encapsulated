@@ -46,14 +46,14 @@ void AgentHandler::create_agent(UMARestRequest &request) {
 	int type = 0;
 	if (agent_type == "default") type = AGENT_TYPE::STATIONARY;
 	else type = AGENT_TYPE::QUALITATIVE;
-	World::add_agent(agent_id, type);
+	World::instance()->add_agent(agent_id, type);
 
 	request.set_message("Agent created");
 }
 
 void AgentHandler::get_agent(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	vector<vector<string>> snapshot_ids = agent->getSnapshotInfo();
 
 	request.set_message("Get agent info");
@@ -63,7 +63,7 @@ void AgentHandler::get_agent(UMARestRequest &request) {
 
 void AgentHandler::delete_agent(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
-	World::delete_agent(agent_id);
+	World::instance()->delete_agent(agent_id);
 
 	request.set_message("Agent deleted");
 }

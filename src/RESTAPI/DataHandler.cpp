@@ -19,7 +19,7 @@ void DataHandler::handle_update(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 
@@ -54,7 +54,7 @@ void DataHandler::handle_read(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 

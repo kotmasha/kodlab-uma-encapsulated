@@ -127,7 +127,7 @@ void SimulationHandler::create_decision(UMARestRequest &request) {
 	vector<bool> obs_plus = request.get_bool1d_data("obs_plus");
 	vector<bool> obs_minus = request.get_bool1d_data("obs_minus");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot_plus = agent->getSnapshot("plus");
 	Snapshot *snapshot_minus = agent->getSnapshot("minus");
 	vector<float> res = simulation::decide(agent, obs_plus, obs_minus, phi, active);
@@ -264,7 +264,7 @@ void SimulationHandler::create_up(UMARestRequest &request) {
 	const vector<bool> signal = request.get_bool1d_data("signal");
 	vector<vector<bool> > signals(1, signal);
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
@@ -284,7 +284,7 @@ void SimulationHandler::create_ups(UMARestRequest &request) {
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 	int sig_count = signals.size();
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
@@ -305,7 +305,7 @@ void SimulationHandler::create_downs(UMARestRequest &request) {
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 	int sig_count = signals.size();
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
@@ -327,7 +327,7 @@ void SimulationHandler::create_propagation(UMARestRequest &request) {
 	const vector<bool> load = request.get_bool1d_data("load");
 	int sig_count = signals.size();
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> size_info = dm->getSizeInfo();
@@ -347,7 +347,7 @@ void SimulationHandler::create_npdirs(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
 	const string snapshot_id = request.get_string_data("snapshot_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	simulation::floyd(dm);
@@ -363,7 +363,7 @@ void SimulationHandler::create_blocks(UMARestRequest &request) {
 	const double delta = request.get_double_data("delta");
 	const vector<vector<int> > dists = request.get_int2d_data("dists");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	dm->setDists(dists);
@@ -378,7 +378,7 @@ void SimulationHandler::create_abduction(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	vector<vector<vector<bool> > > results = simulation::abduction(dm, signals);
@@ -392,7 +392,7 @@ void SimulationHandler::create_propagate_masks(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
 	const string snapshot_id = request.get_string_data("snapshot_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	DataManager *dm = snapshot->getDM();
 	simulation::propagate_mask(dm);

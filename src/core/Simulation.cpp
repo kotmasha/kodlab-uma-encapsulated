@@ -7,15 +7,19 @@
 #include "data_util.h"
 #include "kernel_util.cuh"
 #include "uma_base.cuh"
+#include "UMAutil.h"
 
 extern int ind(int row, int col);
 static Logger simulationLogger("Simulation", "log/simulation.log");
 
-float simulation::enrichment(Snapshot *snapshot) {
+void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 	DataManager *dm = snapshot->getDM();
 	int initial_size = snapshot->getInitialSize();
 	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
 	int sensor_size = dm->getSizeInfo().at("_sensor_size");
+	vector<vector<bool>> sensors_to_be_added;
+	vector<bool> sensors_to_be_removed;
+	vector<bool> sensors_not_to_be_removed;
 
 	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
 	kernel_util::subtraction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
@@ -24,18 +28,18 @@ float simulation::enrichment(Snapshot *snapshot) {
 	if (sum > 0) {
 		kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size, attr_sensor_size);
 		kernel_util::conjunction(dm->_dvar_b(DataManager::OLD_CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
-		vector<vector<bool>> current_ = { dm->getOldCurrent() };
-		vector<std::pair<string, string>> p;
-		snapshot->delays(current_, p);
+		sensors_to_be_added = { dm->getOldCurrent() };
 	}
-
+	//moving this line to other place?
 	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::OLD_CURRENT), attr_sensor_size);
 
-	bool *d1, *d2;
-	data_util::dev_bool(d1, sensor_size);
-	data_util::dev_bool(d2, sensor_size);
-	data_util::dev_init(d1, sensor_size);
-	data_util::dev_init(d2, sensor_size);
+	if (!do_pruning) {
+		vector<std::pair<string, string>> p;
+		snapshot->delays(sensors_to_be_added, p);
+		return;
+	}
+
+	simulation::propagate_mask(dm);
 	vector<bool> negligible = dm->getNegligible();
 	vector<int> lists;
 	for (int i = 0; i < negligible.size(); i += 2) {
@@ -45,9 +49,9 @@ float simulation::enrichment(Snapshot *snapshot) {
 	for (int i = 0; i < lists.size(); ++i) {
 		vector<int> tmp;
 		for (int j = 0; j <= i; ++j) {
-			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), d1, sensor_size, i * sensor_size);
-			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), d2, sensor_size, j * sensor_size);
-			tmp.push_back(simulation::distance(dm, d1, d2, sensor_size));
+			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), dm->_dvar_b(DataManager::DEC_TMP1), sensor_size, i * sensor_size);
+			data_util::boolD2D(dm->_dvar_b(DataManager::NPDIR_MASK), dm->_dvar_b(DataManager::DEC_TMP2), sensor_size, j * sensor_size);
+			tmp.push_back(simulation::distance(dm, dm->_dvar_b(DataManager::DEC_TMP1), dm->_dvar_b(DataManager::DEC_TMP2), sensor_size));
 		}
 		dist.push_back(tmp);
 	}
@@ -57,8 +61,7 @@ float simulation::enrichment(Snapshot *snapshot) {
 			dist[i].push_back(v);
 		}
 	}
-	data_util::dev_free(d1);
-	data_util::dev_free(d2);
+
 	dm->setDists(dist);
 	vector<vector<int> > groups = simulation::blocks_GPU(dm, 1);
 	vector<vector<bool>> inputs;
@@ -67,7 +70,11 @@ float simulation::enrichment(Snapshot *snapshot) {
 		for (int j = 0; i < groups[i].size(); ++j) m.push_back(snapshot->getAttrSensor(2 * groups[i][j]));
 		inputs.push_back(snapshot->generateSignal(m));
 	}
-	simulation::abduction(dm, inputs);
+	vector<vector<vector<bool>>> results = simulation::abduction(dm, inputs);
+	for (int i = 0; i < results.size(); ++i) {
+		for (int j = 0; j < results[i].size(); ++j)
+			sensors_to_be_added.push_back(results[i][j]);
+	}
 
 	//
 	vector<vector<bool>> downs;
@@ -84,7 +91,37 @@ float simulation::enrichment(Snapshot *snapshot) {
 	}
 	vector<vector<bool>> delayed_downs = dm->getSignals(initial_size * 2);
 
-	vector<vector<vector<bool>>> new_masks = simulation::abduction(dm, delayed_downs);
+	results = simulation::abduction(dm, delayed_downs);
+	for (int i = 0; i < results.size(); ++i) {
+		for (int j = 0; j < results[i].size(); ++j)
+			sensors_to_be_added.push_back(results[i][j]);
+	}
+
+	for (int i = 0; i < sensors_to_be_removed.size(); ++i) dm->_hvar_b(DataManager::BOOL_TMP)[i] = sensors_to_be_removed[i];
+	data_util::boolH2D(dm->_hvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
+	for (int i = 0; i < delayed_downs.size(); ++i) {
+		kernel_util::disjunction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::SIGNALS) + i * attr_sensor_size, attr_sensor_size);
+	}
+	sensors_to_be_removed = dm->getTmpBool();
+
+	std::set<size_t> sensors_to_be_added_hash;
+	hash<vector<bool>> h;
+	for (int i = 0; i < sensors_to_be_added.size(); ++i) {
+		sensors_to_be_added_hash.insert(h(sensors_to_be_added[i]));
+	}
+
+	vector<int> sensors_to_be_removed_idx = SignalUtil::bool_signal_to_int_idx(sensors_to_be_removed);
+	for (int i = 0; i < sensors_to_be_removed_idx.size(); ++i) {
+		vector<bool> tmp = SignalUtil::int_idx_to_bool_signal(vector<int>(1, sensors_to_be_removed_idx[i]), attr_sensor_size);
+		size_t tmp_hash = h(tmp);
+		if (sensors_to_be_added_hash.find(tmp_hash) != sensors_to_be_added_hash.end()) {
+			sensors_to_be_removed[sensors_to_be_removed_idx[i]] = false;
+		}
+	}
+
+	vector<std::pair<string, string>> p;
+	snapshot->delays(sensors_to_be_added, p);
+	snapshot->pruning(sensors_to_be_removed);
 }
 
 float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double &phi, const bool active) {//the decide function
@@ -105,7 +142,6 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 		simulation::update_state_qualitative(dm, q, phi, total, total_, active);
 	simulation::halucinate(dm, initial_size);
 
-	if (snapshot->getPropagateMask()) simulation::propagate_mask(dm);
 	if (snapshot->getAutoTarget()) simulation::calculate_target(dm, snapshot->getType());
 
 	return simulation::divergence(dm);
@@ -116,8 +152,9 @@ vector<float> simulation::decide(Agent *agent, vector<bool> &obs_plus, vector<bo
 	Snapshot *snapshot_plus = agent->getSnapshot("plus");
 	Snapshot *snapshot_minus = agent->getSnapshot("minus");
 
-	if (active) simulation::enrichment(snapshot_plus);
-	else simulation::enrichment(snapshot_minus);
+	bool do_pruning = agent->do_pruning();
+	if (active) simulation::enrichment(snapshot_plus, do_pruning);
+	else simulation::enrichment(snapshot_minus, do_pruning);
 
 	const float res_plus = simulation::decide(snapshot_plus, obs_plus, phi, active);
 	const float res_minus = simulation::decide(snapshot_minus, obs_minus, phi, !active);

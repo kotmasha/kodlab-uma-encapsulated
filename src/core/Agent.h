@@ -22,6 +22,8 @@ protected:
 	int _t;
 	//agent type
 	const int _type;
+	//pruning interval
+	int _pruning_interval;
 	friend class World;
 
 public:
@@ -33,8 +35,10 @@ public:
 	//void save_agent(ofstream &file);
 	//void copy_test_data(Agent *agent);
 	const int &getT() const;
+	const int &getPruningInterval() const;
 	void setT(int t);
 	const int &getType() const;
+	bool do_pruning();
 
 	const vector<vector<string>> getSnapshotInfo() const;
 	virtual ~Agent();

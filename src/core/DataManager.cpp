@@ -1057,6 +1057,15 @@ const vector<bool> DataManager::getNegligible() {
 	return result;
 }
 
+const vector<bool> DataManager::getTmpBool() {
+	vector<bool> result;
+	data_util::boolD2H(dev_bool_tmp, h_bool_tmp, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
+		result.push_back(h_bool_tmp[i]);
+	}
+	return result;
+}
+
 /*
 The function is getting the union root in union_find
 Output: the union root vector

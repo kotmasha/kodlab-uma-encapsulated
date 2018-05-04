@@ -28,7 +28,7 @@ void WorldHandler::handle_delete(UMARestRequest &request) {
 }
 
 void WorldHandler::get_world(UMARestRequest &request) {
-	vector<vector<string>> agent_ids = World::getAgentInfo();
+	vector<vector<string>> agent_ids = World::instance()->getAgentInfo();
 	request.set_message("Get world info");
 	request.set_data("agent_ids", agent_ids);
 	request.set_data("agent_count", (int)agent_ids.size());

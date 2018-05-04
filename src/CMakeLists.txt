@@ -50,7 +50,7 @@ add_subdirectory(RESTAPI)
 add_subdirectory(utilityTest)
 add_subdirectory(kernelTest)
 add_subdirectory(RESTfulTest)
-add_subdirectory(CoreTest)
+add_subdirectory(coreTest)
 
 if(MSVC)
     add_dependencies(UMAKernel UMAUtil)

@@ -4,13 +4,20 @@
 #include "ConfReader.h"
 #include "UMAException.h"
 
-static std::map<string, Agent*> _agents, _load_agents;
+World *World::_world = NULL;
 static Logger worldLogger("World", "log/world.log");
 
 std::map<string, std::map<string, string>> World::core_info = ConfReader::read_conf("core.ini");
 
 World::World(){
 	worldLogger.info("A new world is created");
+}
+
+World *World::instance() {
+	if (!_world) {
+		_world = new World();
+	}
+	return _world;
 }
 
 Agent *World::add_agent(const string &agent_id, int type) {

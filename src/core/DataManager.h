@@ -10,7 +10,10 @@ using namespace std;
 
 class DLL_PUBLIC DataManager {
 public:
-	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK, CURRENT, OLD_CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL, SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES, DEC_TMP1, DEC_TMP2, SUM, BOOL_TMP };
+	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK,
+		CURRENT, OLD_CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE, SIGNAL,
+		SIGNALS, LSIGNALS, LOAD, DIAG, OLD_DIAG, UNION_ROOT, RES, DEC_TMP1, DEC_TMP2,
+		SUM, BOOL_TMP };
 protected:
 	/*
 	-----------------variables used in kernel.cu--------------------------
@@ -153,6 +156,7 @@ public:
 	const vector<double> getDiagOld();
 	const vector<bool> getMask();
 	const vector<bool> getNegligible();
+	const vector<bool> getTmpBool();
 	const vector < vector<bool> > getSignals(int sig_count);
 	const vector < vector<bool> > getLSignals(int sig_count);
 	const vector<vector<bool> > getNpdirMasks();

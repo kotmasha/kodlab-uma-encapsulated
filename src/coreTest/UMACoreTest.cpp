@@ -12,29 +12,29 @@
 #include "AttrSensorPair.h"
 
 TEST(world_test, world_agent_test) {
-	World::add_agent("test_agent1");
-	World::add_agent("test_agent2");
-	World::add_agent("test_agent3");
-	World::add_agent("test_agent4");
+	World::instance()->add_agent("test_agent1");
+	World::instance()->add_agent("test_agent2");
+	World::instance()->add_agent("test_agent3");
+	World::instance()->add_agent("test_agent4");
 
-	EXPECT_NO_THROW(World::getAgent("test_agent1"));
-	EXPECT_THROW(World::getAgent("test_agent0"), UMAException);
+	EXPECT_NO_THROW(World::instance()->getAgent("test_agent1"));
+	EXPECT_THROW(World::instance()->getAgent("test_agent0"), UMAException);
 	vector<vector<string>> s = { { "test_agent1", "default" },{ "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::getAgentInfo());
+	EXPECT_EQ(s, World::instance()->getAgentInfo());
 
-	World::delete_agent("test_agent1");
+	World::instance()->delete_agent("test_agent1");
 	s = { { "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::getAgentInfo());
+	EXPECT_EQ(s, World::instance()->getAgentInfo());
 
-	World::delete_agent("test_agent3");
+	World::instance()->delete_agent("test_agent3");
 	s = { { "test_agent2", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::getAgentInfo());
+	EXPECT_EQ(s, World::instance()->getAgentInfo());
 
-	EXPECT_THROW(World::getAgent("test_agent3"), UMAException);
-	EXPECT_THROW(World::delete_agent("test_agent3"), UMAException);
+	EXPECT_THROW(World::instance()->getAgent("test_agent3"), UMAException);
+	EXPECT_THROW(World::instance()->delete_agent("test_agent3"), UMAException);
 	
-	World::delete_agent("test_agent2");
-	World::delete_agent("test_agent4");
+	World::instance()->delete_agent("test_agent2");
+	World::instance()->delete_agent("test_agent4");
 }
 
 TEST(agent_test, agent_snapshot_test) {

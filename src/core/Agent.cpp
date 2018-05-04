@@ -1,4 +1,5 @@
 #include "Agent.h"
+#include "World.h"
 #include "Snapshot.h"
 #include "Logger.h"
 #include "UMAException.h"
@@ -30,6 +31,7 @@ Agent::Agent(ifstream &file) {
 
 Agent::Agent(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + _uuid), _type(type) {
 	_t = 0;
+	_pruning_interval = stoi(World::core_info["Agent"]["pruning_interval"]);
 
 	agentLogger.info("An agent " + uuid + " is created, agent type is " + to_string(_type), _dependency);
 }
@@ -120,6 +122,14 @@ void Agent::setT(int t) {
 
 const int &Agent::getType() const {
 	return _type;
+}
+
+const int &Agent::getPruningInterval() const {
+	return _pruning_interval;
+}
+
+bool Agent::do_pruning() {
+	return _t % _pruning_interval == 0;
 }
 
 Agent::~Agent(){
