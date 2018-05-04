@@ -499,6 +499,7 @@ class Experiment(object):
                 if mid in self._AGENTS:  # if mid is an agent...
                     agent_reports[mid]={} #prepare a dictionary for agent's report
                     agent_reports[mid]['entering_decision_cycle']=time.clock()
+
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
