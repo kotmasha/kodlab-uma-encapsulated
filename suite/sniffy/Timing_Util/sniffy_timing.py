@@ -18,15 +18,16 @@ def start_experiment(pickler,size,runs,q):
         return (pos>=0 and pos<=X_BOUND)
 
     # distance function
-    def dist(p,q):
-        return abs(p-q) 
+    def dist(pt1,pt2):
+        return abs(pt1-pt2) 
 
     # agent discount parameters
     Q=1.-pow(2,-q)
-    MOTION_PARAMS=tuple([
-        Q,   #memory discounting coefficient
-        True,          #Auto-targeting mode
-        ])
+    MOTION_PARAMS={
+        'type':'default',
+        'discount':Q,
+        'AutoTarg':True,
+        }
     
     # initialize a new experiment
     EX=Experiment()
@@ -191,13 +192,13 @@ def start_experiment(pickler,size,runs,q):
         #EX._AGENTS[agent_name].validate()
 
     # ONE UPDATE CYCLE (without action) TO "FILL" THE STATE DEQUES
-    ex_report,agent_reports=EX.update_state([cid_rt,cid_lt])
+    #ex_report,agent_reports=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
-    for agent in [RT,LT]:
-        for token in ['plus','minus']:
-            delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
-            agent.delay(delay_sigs,token)
+    #for agent in [RT,LT]:
+    #    for token in ['plus','minus']:
+    #        delay_sigs=[agent.generate_signal(['x'+str(ind)]) for ind in xrange(X_BOUND)]
+    #        agent.delay(delay_sigs,token)
 
     # SET ARTIFICIAL TARGET ONCE AND FOR ALL
     #for agent in [RT,LT]:
@@ -207,7 +208,7 @@ def start_experiment(pickler,size,runs,q):
     #        service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
-    ex_report,agent_reports=EX.update_state([cid_rt,cid_lt])
+    #ex_report,agent_reports=EX.update_state([cid_rt,cid_lt])
 
     #
     ### Run
@@ -215,15 +216,17 @@ def start_experiment(pickler,size,runs,q):
 
     def export_data(my_pickler,ex_report,reports):
         #collect durations and sizes for each agent and for the experiment
-        time_rt=reports['rt']['e_and_p_duration']+reports['rt']['decision_duration']
-        time_lt=reports['lt']['e_and_p_duration']+reports['lt']['decision_duration']
+        time_rt=reports['rt']['exiting_decision_cycle']-reports['rt']['entering_decision_cycle']
+        time_lt=reports['lt']['exiting_decision_cycle']-reports['lt']['entering_decision_cycle']
+        ep_rt=reports['rt']['exiting_enrichment_and_pruning']-reports['rt']['entering_decision_cycle']
+        ep_lt=reports['lt']['exiting_enrichment_and_pruning']-reports['lt']['entering_decision_cycle']
         size_rt=reports['rt']['size']
         size_lt=reports['lt']['size']
         size_total=len(EX._MID)
-        time_total=ex_report['time_elapsed']
+        time_total=ex_report['exiting_update_cycle']-ex_report['entering_update_cycle']
 
         #output as 2-dim np.arrays (points good for matplotlib plotting)
-        my_output=((size_rt,time_rt),(size_lt,time_lt),(size_total,time_total))
+        my_output=((size_rt,time_rt,ep_rt),(size_lt,time_lt,ep_lt),(size_total,time_total))
         #send to the provided pickler
         my_pickler.dump(my_output)
         
