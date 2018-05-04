@@ -481,8 +481,7 @@ class Experiment(object):
         agent_reports={}
 
         #update initiation time:
-        initial_time=time.clock()
-        ex_reports['update_cycle_starts']=initial_time
+        ex_reports['entering_update_cycle']=time.clock()
         
         #purge the experiment's decision variable
         id_dec = 'decision'
@@ -499,8 +498,7 @@ class Experiment(object):
             if agentQ:
                 if mid in self._AGENTS:  # if mid is an agent...
                     agent_reports[mid]={} #prepare a dictionary for agent's report
-                    agent_start_time=time.clock()
-                    agent_reports[mid]['decision_cycle_starts']=agent_start_time
+                    agent_reports[mid]['entering_decision_cycle']=time.clock()
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
@@ -559,14 +557,14 @@ class Experiment(object):
                     ##LEARNING THE SAME STRUCTURE OR AN APPROXIMATION THEREOF
                     
                     ## compute and record e&p duration:
-                    agent_reports[mid]['enrichment_and_pruning_ends']=time.clock()
+                    agent_reports[mid]['exiting_enrichment_and_pruning']=time.clock()
 
                     ## agent enters observation-deliberation-decision stage and reports:
                     agent_reports[mid]['deliberateQ'] = agent.decide()
                     agent_reports[mid]['decision'] = mid if mid in self.this_state(id_dec) else midc
 
                     ## compute and report duration of decision cycle:
-                    agent_reports[mid]['decision_cycle_ends']=time.clock()
+                    agent_reports[mid]['exiting_decision_cycle']=time.clock()
                     
                     ## report the agent size:
                     agent_reports[mid]['size']=max(agent._SIZE['plus'],agent._SIZE['minus'])
@@ -617,8 +615,7 @@ class Experiment(object):
                     # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                     pass
 
-        final_time=time.clock()
-        ex_reports['update_cycle_ends']=final_time
+        ex_reports['exiting_update_cycle']=time.clock()
         return ex_reports,agent_reports
 
 
