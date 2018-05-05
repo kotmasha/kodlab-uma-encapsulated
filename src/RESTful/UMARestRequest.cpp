@@ -8,21 +8,27 @@ static Logger serverLogger("Server", "log/UMA_server.log");
 
 UMARestRequest::UMARestRequest(const http_request &request): _request(request) {
 	_response = http_response();
-	_response_body[U("data")] = json::value();
-	_response.set_body(_response_body);
+	_body[U("data")] = json::value();
+	_response.set_body(_body);
 	//while (!request.extract_json().is_done()) continue;
 	//_data = request.extract_json().get();
 
 	//get the data, due to the data arriving is async, need to use task to get it
-	pplx::task<json::value> extract_task = request.extract_json();
-	pplx::task<void> finished_task = extract_task.then([&](pplx::task<json::value> v) {
+	request.extract_json().then([&](pplx::task<json::value> v){
 		_data = v.get();
-	});
-	finished_task.wait();
+	}).wait();
 
 	//get the query
 	string_t decoded_uri = uri::decode(request.request_uri().query());
 	_query = uri::split_query(decoded_uri);
+}
+
+UMARestRequest::UMARestRequest(const web::uri &u, const http::method m) {
+	_request = http_request(m);
+	_request.set_request_uri(u);
+
+	_body[U("data")] = json::value();
+	_request.set_body(_body);
 }
 
 UMARestRequest::~UMARestRequest() {}
@@ -290,7 +296,7 @@ const string UMARestRequest::get_absolute_url() const{
 
 void UMARestRequest::set_message(const string message) {
 	string_t s = RestUtil::string_to_string_t(message);
-	_response_body[U("message")] = json::value::string(s);
+	_body[U("message")] = json::value::string(s);
 }
 
 void UMARestRequest::set_status_code(const status_code status_code) {
@@ -299,42 +305,42 @@ void UMARestRequest::set_status_code(const status_code status_code) {
 
 void UMARestRequest::set_data(const string &name, int value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = json::value::number(value);
+	_body[U("data")][name_t] = json::value::number(value);
 }
 
 void UMARestRequest::set_data(const string &name, double value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = json::value::number(value);
+	_body[U("data")][name_t] = json::value::number(value);
 }
 
 void UMARestRequest::set_data(const string &name, bool value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = json::value::boolean(value);
+	_body[U("data")][name_t] = json::value::boolean(value);
 }
 
 void UMARestRequest::set_data(const string &name, string value) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = json::value::string(RestUtil::string_to_string_t(value));
+	_body[U("data")][name_t] = json::value::string(RestUtil::string_to_string_t(value));
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<int> &list) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = RestUtil::vector_int_to_json(list);
+	_body[U("data")][name_t] = RestUtil::vector_int_to_json(list);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<bool> &list) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = RestUtil::vector_bool_to_json(list);
+	_body[U("data")][name_t] = RestUtil::vector_bool_to_json(list);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<double> &list) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = RestUtil::vector_double_to_json(list);
+	_body[U("data")][name_t] = RestUtil::vector_double_to_json(list);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<string> &list) {
 	string_t name_t = RestUtil::string_to_string_t(name);
-	_response_body[U("data")][name_t] = RestUtil::vector_string_to_json(list);
+	_body[U("data")][name_t] = RestUtil::vector_string_to_json(list);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<vector<int>> &lists) {
@@ -343,7 +349,7 @@ void UMARestRequest::set_data(const string &name, const std::vector<vector<int>>
 	for (int i = 0; i < lists.size(); ++i) {
 		results.push_back(RestUtil::vector_int_to_json(lists[i]));
 	}
-	_response_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][name_t] = json::value::array(results);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<vector<double>> &lists) {
@@ -352,7 +358,7 @@ void UMARestRequest::set_data(const string &name, const std::vector<vector<doubl
 	for (int i = 0; i < lists.size(); ++i) {
 		results.push_back(RestUtil::vector_double_to_json(lists[i]));
 	}
-	_response_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][name_t] = json::value::array(results);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<vector<bool>> &lists) {
@@ -361,7 +367,7 @@ void UMARestRequest::set_data(const string &name, const std::vector<vector<bool>
 	for (int i = 0; i < lists.size(); ++i) {
 		results.push_back(RestUtil::vector_bool_to_json(lists[i]));
 	}
-	_response_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][name_t] = json::value::array(results);
 }
 
 void UMARestRequest::set_data(const string &name, const std::vector<vector<string>> &lists) {
@@ -370,7 +376,7 @@ void UMARestRequest::set_data(const string &name, const std::vector<vector<strin
 	for (int i = 0; i < lists.size(); ++i) {
 		results.push_back(RestUtil::vector_string_to_json(lists[i]));
 	}
-	_response_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][name_t] = json::value::array(results);
 }
 
 void UMARestRequest::set_data(const string &name, const std::map<string, string> &map) {
@@ -381,7 +387,7 @@ void UMARestRequest::set_data(const string &name, const std::map<string, string>
 		string_t value_t = RestUtil::string_to_string_t(it->second);
 		result[key_t] = json::value::string(value_t);
 	}
-	_response_body[U("data")][name_t] = result;
+	_body[U("data")][name_t] = result;
 }
 
 void UMARestRequest::set_data(const string &name, const std::map<string, int> &map) {
@@ -391,7 +397,7 @@ void UMARestRequest::set_data(const string &name, const std::map<string, int> &m
 		string_t key_t = RestUtil::string_to_string_t(it->first);
 		result[key_t] = json::value::number(it->second);
 	}
-	_response_body[U("data")][name_t] = result;
+	_body[U("data")][name_t] = result;
 }
 
 void UMARestRequest::set_data(const string &name, const std::map<string, double> &map) {
@@ -401,7 +407,7 @@ void UMARestRequest::set_data(const string &name, const std::map<string, double>
 		string_t key_t = RestUtil::string_to_string_t(it->first);
 		result[key_t] = json::value::number(it->second);
 	}
-	_response_body[U("data")][name_t] = result;
+	_body[U("data")][name_t] = result;
 }
 
 void UMARestRequest::set_data(const string &name, const std::map<string, bool> &map) {
@@ -412,7 +418,7 @@ void UMARestRequest::set_data(const string &name, const std::map<string, bool> &
 		string_t value_t = RestUtil::string_to_string_t(to_string(it->second));
 		result[key_t] = json::value::boolean(it->second);
 	}
-	_response_body[U("data")][name_t] = result;
+	_body[U("data")][name_t] = result;
 }
 
 bool UMARestRequest::check_data_field(const string &name) {
@@ -426,7 +432,7 @@ bool UMARestRequest::check_query_field(const string &name) {
 }
 
 void UMARestRequest::reply() {
-	_response.set_body(_response_body);
+	_response.set_body(_body);
 	pplx::task<void> reply_task = _request.reply(_response);
 	reply_task.then([&]() {
 		//do something after reply is succeed

@@ -210,11 +210,11 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
     #        agent.delay(delay_sigs,token)
 
     # SET ARTIFICIAL TARGET ONCE AND FOR ALL
-    for agent in [RT,LT]:
-        for token in ['plus','minus']:
-            tmp_target=agent.generate_signal([id_nav]).value().tolist()
-            service_snapshot = ServiceSnapshot(agent._ID, token, service)
-            service_snapshot.setTarget(tmp_target)
+    #for agent in [RT,LT]:
+        #for token in ['plus','minus']:
+            #tmp_target=agent.generate_signal([id_nav]).value().tolist()
+            #service_snapshot = ServiceSnapshot(agent._ID, token, service)
+            #service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
     reported_data=EX.update_state([cid_rt,cid_lt])
@@ -279,7 +279,7 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
 
         #extract information from reported data:
         ex_report,agent_reports=reported_data
-        elapsed_time=ex_report['exiting_update_cycle']-ex_report['entering_update_counter']
+        elapsed_time=ex_report['exiting_update_cycle']-ex_report['entering_update_cycle']
 
         ## information about experiment update:
         #'entering_update_cycle':           time stamp for beginning of update cycle
@@ -441,6 +441,6 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
 #   - 'nodelay' means no delay between cycles; 'delay' means [spacebar] is 
 #       required to advance the clock.
 #
-curses.wrapper(start_experiment,20,5,1000,'rt','nodelay')
+curses.wrapper(start_experiment,4,5,10,'rt','nodelay')
 print "Aborting at your request...\n\n"
 exit(0)

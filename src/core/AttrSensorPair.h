@@ -28,6 +28,7 @@ private:
 	//friend
 	friend class SensorPair;
 	friend class Snapshot;
+	friend class Snapshot_qualitative;
 
 	friend class AmperAndTestFixture;
 	friend class GenerateDelayedWeightsTestFixture;

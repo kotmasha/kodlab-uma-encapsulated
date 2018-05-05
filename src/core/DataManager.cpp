@@ -48,6 +48,7 @@ void DataManager::init_pointers() {
 	h_diag_ = NULL;
 	h_npdir_mask = NULL;
 	h_signals = NULL;
+	h_bool_tmp = NULL;
 	h_dists = NULL;
 	h_negligible = NULL;
 	h_union_root = NULL;
@@ -60,6 +61,7 @@ void DataManager::init_pointers() {
 	dev_npdirs = NULL;
 	dev_observe = NULL;
 	dev_load = NULL;
+	dev_bool_tmp = NULL;
 	dev_current = NULL;
 	dev_current_ = NULL;
 	dev_mask = NULL;
@@ -166,6 +168,7 @@ void DataManager::init_other_parameter(double &total) {
 		h_observe[i] = false;
 		h_observe_[i] = false;
 		h_load[i] = false;
+		h_bool_tmp[i] = false;
 		h_mask[i] = false;
 		h_current[i] = false;
 		h_current_[i] = false;
@@ -182,6 +185,7 @@ void DataManager::init_other_parameter(double &total) {
 
 	data_util::dev_init(dev_observe, _attr_sensor_size_max);
 	data_util::dev_init(dev_load, _attr_sensor_size_max);
+	data_util::dev_init(dev_bool_tmp, _attr_sensor_size_max);
 	data_util::dev_init(dev_mask, _attr_sensor_size_max);
 	data_util::dev_init(dev_current, _attr_sensor_size_max);
 	data_util::dev_init(dev_current_, _attr_sensor_size_max);
@@ -226,6 +230,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 		delete[] h_npdirs;
 		delete[] h_npdir_mask;
 		delete[] h_signals;
+		delete[] h_bool_tmp;
 		delete[] h_dists;
 		delete[] h_union_root;
 		delete h_res;
@@ -248,6 +253,7 @@ void DataManager::free_all_parameters() {//free data in case of memory leak
 
 		data_util::dev_free(dev_observe);
 		data_util::dev_free(dev_load);
+		data_util::dev_free(dev_bool_tmp);
 
 		data_util::dev_free(dev_prediction);
 		data_util::dev_free(dev_negligible);
@@ -396,6 +402,7 @@ This function generate other parameter
 void DataManager::gen_other_parameters() {
 	h_observe = new bool[_attr_sensor_size_max];
 	h_observe_ = new bool[_attr_sensor_size_max];
+	h_bool_tmp = new bool[_attr_sensor_size_max];
 	h_load = new bool[_attr_sensor_size_max];
 	h_mask = new bool[_attr_sensor_size_max];
 	h_current = new bool[_attr_sensor_size_max];
@@ -410,6 +417,7 @@ void DataManager::gen_other_parameters() {
 
 	data_util::dev_bool(dev_observe, _attr_sensor_size_max);
 	data_util::dev_bool(dev_load, _attr_sensor_size_max);
+	data_util::dev_bool(dev_bool_tmp, _attr_sensor_size_max);
 	data_util::dev_bool(dev_mask, _attr_sensor_size_max);
 	data_util::dev_bool(dev_current, _attr_sensor_size_max);
 	data_util::dev_bool(dev_current_, _attr_sensor_size_max);
@@ -672,12 +680,12 @@ void DataManager::setLoad(const vector<bool> &load) {
 }
 
 void DataManager::setDists(const vector<vector<int> > &dists) {
-	if (dists.size() != _sensor_size) {
-		throw UMAException("The input dists size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (dists.size() > _sensor_size) {
+		throw UMAException("The input dists size is larger than the sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		if (dists[i].size() != _sensor_size) {
-			throw UMAException("The " + to_string(i) + "th input dists size is not matching sensor_size size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+			throw UMAException("The " + to_string(i) + "th input dists size is larger than sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
 	}
@@ -1049,6 +1057,15 @@ const vector<bool> DataManager::getNegligible() {
 	return result;
 }
 
+const vector<bool> DataManager::getTmpBool() {
+	vector<bool> result;
+	data_util::boolD2H(dev_bool_tmp, h_bool_tmp, _attr_sensor_size);
+	for (int i = 0; i < _attr_sensor_size; ++i) {
+		result.push_back(h_bool_tmp[i]);
+	}
+	return result;
+}
+
 /*
 The function is getting the union root in union_find
 Output: the union root vector
@@ -1120,6 +1137,7 @@ bool *DataManager::_dvar_b(int name) {
 	case SIGNALS: return dev_signals;
 	case LSIGNALS: return dev_lsignals;
 	case LOAD: return dev_load;
+	case BOOL_TMP: return dev_bool_tmp;
 	case CURRENT: return dev_current;
 	case OLD_CURRENT: return dev_current_;
 	case MASK: return dev_mask;
@@ -1163,6 +1181,7 @@ bool *DataManager::_hvar_b(int name) {
 	case NPDIRS: return h_npdirs;
 	case SIGNALS: return h_signals;
 	case LOAD: return h_load;
+	case BOOL_TMP: return h_bool_tmp;
 	case CURRENT: return h_current;
 	case OLD_CURRENT: return h_current_;
 	case MASK: return h_mask;

@@ -56,7 +56,7 @@ void AttrSensorHandler::get_attr_sensor(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string attr_sensor_id = request.get_string_query("attr_sensor_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	AttrSensor *attr_sensor = snapshot->getAttrSensor(attr_sensor_id);
 	const double diag = attr_sensor->getDiag();
@@ -76,7 +76,7 @@ void AttrSensorHandler::update_attr_sensor(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string attr_sensor_id = request.get_string_query("attr_sensor_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	AttrSensor *attr_sensor = snapshot->getAttrSensor(attr_sensor_id);
 
@@ -104,7 +104,7 @@ void AttrSensorHandler::get_attr_sensor_pair(UMARestRequest &request) {
 	const string attr_sensor_id1 = request.get_string_query("attr_sensor1");
 	const string attr_sensor_id2 = request.get_string_query("attr_sensor2");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	AttrSensorPair *attr_sensor_pair = snapshot->getAttrSensorPair(attr_sensor_id1, attr_sensor_id2);
 
@@ -121,7 +121,7 @@ void AttrSensorHandler::update_attr_sensor_pair(UMARestRequest &request) {
 	const string attr_sensor_id1 = request.get_string_query("attr_sensor1");
 	const string attr_sensor_id2 = request.get_string_query("attr_sensor2");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	AttrSensorPair *attr_sensor_pair = snapshot->getAttrSensorPair(attr_sensor_id1, attr_sensor_id2);
 

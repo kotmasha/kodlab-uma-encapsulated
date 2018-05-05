@@ -69,8 +69,8 @@ void SnapshotHandler::create_snapshot(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_data("snapshot_id");
 	const string agent_id = request.get_string_data("agent_id");
 
-	Agent *agent = World::getAgent(agent_id);
-	agent->add_snapshot_stationary(snapshot_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
+	agent->add_snapshot(snapshot_id);
 
 	request.set_message("Snapshot created");
 }
@@ -79,7 +79,7 @@ void SnapshotHandler::create_init(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_data("snapshot_id");
 	const string agent_id = request.get_string_data("agent_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	snapshot->setInitialSize();
 
@@ -93,7 +93,7 @@ void SnapshotHandler::create_amper(UMARestRequest &request) {
 	const vector<vector<string> > uuid_lists = request.get_string2d_data("uuid_lists");
 	const vector<pair<string, string>> uuid_pairs = StrUtil::string2d_to_string1d_pair(uuid_lists);
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	snapshot->ampers(amper_lists, uuid_pairs);
 
@@ -107,7 +107,7 @@ void SnapshotHandler::create_delay(UMARestRequest &request) {
 	const vector<vector<string> > uuid_lists = request.get_string2d_data("uuid_lists");
 	const vector<pair<string, string>> uuid_pairs = StrUtil::string2d_to_string1d_pair(uuid_lists);
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	snapshot->delays(amper_lists, uuid_pairs);
 
@@ -119,7 +119,7 @@ void SnapshotHandler::create_pruning(UMARestRequest &request) {
 	const string agent_id = request.get_string_data("agent_id");
 	const vector<bool> signals = request.get_bool1d_data("signals");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	snapshot->pruning(signals);
 	request.set_message("Pruning made succeed");
@@ -129,7 +129,7 @@ void SnapshotHandler::get_snapshot(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string agent_id = request.get_string_query("agent_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 
 	vector<vector<string> > sensor_info = snapshot->getSensorInfo();
@@ -154,7 +154,7 @@ void SnapshotHandler::delete_snapshot(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_data("snapshot_id");
 	const string agent_id = request.get_string_data("agent_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	agent->delete_snapshot(snapshot_id);
 	request.set_message("Snapshot deleted");
 }
@@ -163,7 +163,7 @@ void SnapshotHandler::update_snapshot(UMARestRequest &request) {
 	const string agent_id = request.get_string_query("agent_id");
 	const string snapshot_id = request.get_string_query("snapshot_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 
 	if (request.check_data_field("q")) {

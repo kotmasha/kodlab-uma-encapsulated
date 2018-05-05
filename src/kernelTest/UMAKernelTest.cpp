@@ -637,6 +637,56 @@ TEST(uma_base_test, init_diag) {
 	EXPECT_EQ(v2, v4);
 }
 
+TEST(uma_base_qualitative_test, update_weights) {
+	double *h_weights = new double[21];
+	double *dev_weights;
+	bool *h_observe = new bool[6];
+	bool *dev_observe;
+	vector<double> d0;
+
+	data_util::dev_double(dev_weights, 21);
+	data_util::dev_init(dev_weights, 21);
+	data_util::dev_bool(dev_observe, 6);
+
+	for (int i = 0; i < 21; ++i) h_weights[i] = -1;
+	data_util::doubleH2D(h_weights, dev_weights, 21);
+
+	//1st round
+	h_observe[0] = true; h_observe[1] = true; h_observe[2] = true; h_observe[3] = true; h_observe[4] = true; h_observe[5] = true;
+	data_util::boolH2D(h_observe, dev_observe, 6);
+	uma_base_qualitative::update_weights(dev_weights, dev_observe, 6, 0, 5, true);
+	data_util::doubleD2H(dev_weights, h_weights, 21);
+	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
+	vector<double> d1(21, 5);
+	for (int i = 0; i < 21; ++i) ASSERT_DOUBLE_EQ(d0[i], d1[i]);
+	d0.clear();
+
+	//2nd round
+	h_observe[0] = true; h_observe[1] = false; h_observe[2] = true; h_observe[3] = false; h_observe[4] = true; h_observe[5] = false;
+	data_util::boolH2D(h_observe, dev_observe, 6);
+	uma_base_qualitative::update_weights(dev_weights, dev_observe, 6, 0.5, 3.0, true);
+	data_util::doubleD2H(dev_weights, h_weights, 21);
+	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
+	vector<double> d2 = { 3, 5, 5, 3, 5, 3, 5, 5, 5, 5, 3, 5, 3, 5, 3, 5, 5, 5, 5, 5, 5 };
+	for (int i = 0; i < 21; ++i) ASSERT_DOUBLE_EQ(d0[i], d2[i]);
+	d0.clear();
+
+	//3nd round
+	h_observe[0] = true; h_observe[1] = false; h_observe[2] = true; h_observe[3] = false; h_observe[4] = true; h_observe[5] = false;
+	data_util::boolH2D(h_observe, dev_observe, 6);
+	uma_base_qualitative::update_weights(dev_weights, dev_observe, 6, 0.5, 1.0, false);
+	data_util::doubleD2H(dev_weights, h_weights, 21);
+	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
+	vector<double> d3 = { 3, 5, 5, 3, 5, 3, 5, 5, 5, 5, 3, 5, 3, 5, 3, 5, 5, 5, 5, 5, 5 };
+	for (int i = 0; i < 21; ++i) ASSERT_DOUBLE_EQ(d0[i], d3[i]);
+	d0.clear();
+
+	data_util::dev_free(dev_weights);
+	data_util::dev_free(dev_observe);
+	delete[] h_weights;
+	delete[] h_observe;
+}
+
 TEST(uma_base_test, update_weights) {
 	double *h_weights = new double[21];
 	double *dev_weights;
@@ -651,7 +701,7 @@ TEST(uma_base_test, update_weights) {
 	//1st round
 	h_observe[0] = true; h_observe[1] = true; h_observe[2] = true; h_observe[3] = true; h_observe[4] = true; h_observe[5] = true;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0, 1, true);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0, 1, true);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d1(21, 1);
@@ -661,7 +711,7 @@ TEST(uma_base_test, update_weights) {
 	//2nd round
 	h_observe[0] = true; h_observe[1] = false; h_observe[2] = true; h_observe[3] = false; h_observe[4] = true; h_observe[5] = false;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0.5, 1.0, true);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0.5, 1.0, true);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d2 = {1, 0.5, 0.5, 1, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
@@ -671,7 +721,7 @@ TEST(uma_base_test, update_weights) {
 	//3nd round
 	h_observe[0] = true; h_observe[1] = false; h_observe[2] = true; h_observe[3] = false; h_observe[4] = true; h_observe[5] = false;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0.5, 1.0, false);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0.5, 1.0, false);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d3 = { 1, 0.5, 0.5, 1, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5, 1, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 };
@@ -681,7 +731,7 @@ TEST(uma_base_test, update_weights) {
 	//4th round
 	h_observe[0] = false; h_observe[1] = true; h_observe[2] = false; h_observe[3] = true; h_observe[4] = false; h_observe[5] = true;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0.8, 1.2, true);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0.8, 1.2, true);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d4 = { 0.8, 0.4, 0.64, 0.8, 0.4, 0.8, 0.4, 0.64, 0.4, 0.64, 0.8, 0.4, 0.8, 0.4, 0.8, 0.4, 0.64, 0.4, 0.64, 0.4, 0.64 };
@@ -692,7 +742,7 @@ TEST(uma_base_test, update_weights) {
 	//5th round
 	h_observe[0] = true; h_observe[1] = true; h_observe[2] = false; h_observe[3] = true; h_observe[4] = true; h_observe[5] = false;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0.7, 1, true);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0.7, 1, true);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d5 = { 0.86, 0.58, 0.748, 0.56, 0.28, 0.56, 0.58, 0.748, 0.28, 0.748, 0.86, 0.58, 0.56, 0.58, 0.86, 0.28, 0.448, 0.28, 0.448, 0.28, 0.448 };
@@ -703,7 +753,7 @@ TEST(uma_base_test, update_weights) {
 	//6th round
 	h_observe[0] = true; h_observe[1] = false; h_observe[2] = false; h_observe[3] = false; h_observe[4] = false; h_observe[5] = true;
 	data_util::boolH2D(h_observe, dev_observe, 6);
-	uma_base::update_weights(dev_weights, dev_observe, 21, 0.9, 1, true);
+	uma_base::update_weights(dev_weights, dev_observe, 6, 0.9, 1, true);
 	data_util::doubleD2H(dev_weights, h_weights, 21);
 	for (int i = 0; i < 21; ++i) d0.push_back(h_weights[i]);
 	vector<double> d6 = { 0.874, 0.522, 0.6732, 0.504, 0.252, 0.504, 0.522, 0.6732, 0.252, 0.6732, 0.774, 0.522, 0.504, 0.522, 0.774, 0.352, 0.4032, 0.252, 0.4032, 0.252, 0.5032 };
@@ -809,6 +859,30 @@ TEST(uma_base_test, get_weights_diag) {
 	data_util::dev_free(dev_diag);
 	data_util::dev_free(dev_diag_);
 	data_util::dev_free(dev_weights);
+}
+
+TEST(uma_base_qualitative_test, calculate_target) {
+	double *h_attr_sensor, *dev_attr_sensor;
+	bool *h_target, *dev_target;
+
+	h_attr_sensor = new double[10];
+	h_target = new bool[10];
+	data_util::dev_double(dev_attr_sensor, 10);
+	data_util::dev_bool(dev_target, 10);
+
+	h_attr_sensor[0] = 1.02; h_attr_sensor[2] = -2.21; h_attr_sensor[4] = 10000000; h_attr_sensor[6] = 0.0003; h_attr_sensor[8] = 0.0;
+	h_attr_sensor[1] = 1.01; h_attr_sensor[3] = -2.22; h_attr_sensor[5] = -10000000; h_attr_sensor[7] = 0.0004; h_attr_sensor[9] = -0.01;
+	vector<bool> v_target = { false, true, false, true, false, true, true, false, false, true };
+
+	data_util::doubleH2D(h_attr_sensor, dev_attr_sensor, 10);
+	uma_base_qualitative::calculate_target(dev_attr_sensor, dev_target, 5);
+	data_util::boolD2H(dev_target, h_target, 10);
+
+	for (int i = 0; i < 10; ++i) EXPECT_DOUBLE_EQ(h_target[i], v_target[i]);
+
+	delete[] h_attr_sensor, h_target;
+	data_util::dev_free(dev_attr_sensor);
+	data_util::dev_free(dev_target);
 }
 
 TEST(uma_base_test, calculate_target) {
@@ -922,6 +996,49 @@ TEST(uma_base_test, orient_all) {
 	data_util::dev_free(dev_thresholds);
 }
 
+TEST(orient_all, uma_base_qualitative_test) {
+	double *h_weights, *dev_weights;
+	bool *h_dirs, *dev_dirs;
+	double *h_thresholds, *dev_thresholds;
+	h_weights = new double[36];
+	h_dirs = new bool[36];
+	h_thresholds = new double[10];
+	data_util::dev_double(dev_weights, 36);
+	data_util::dev_bool(dev_dirs, 36);
+	data_util::dev_double(dev_thresholds, 10);
+
+	data_util::dev_init(dev_dirs, 36);
+
+	h_weights[0] = 0.2;
+	h_weights[1] = 0; h_weights[2] = 0.8;
+	h_weights[3] = 0.3; h_weights[4] = 0.2; h_weights[5] = 0.4;
+	h_weights[6] = 0; h_weights[7] = 0.6; h_weights[8] = 0; h_weights[9] = 0.6;
+	h_weights[10] = 0.2; h_weights[11] = 0.4; h_weights[12] = -1; h_weights[13] = -1; h_weights[14] = 0.6;
+	h_weights[15] = 0; h_weights[16] = 0.4; h_weights[17] = 0; h_weights[18] = 0.4; h_weights[19] = 0; h_weights[20] = 0.4;
+	h_weights[21] = -1; h_weights[22] = 0.5; h_weights[23] = 0.4; h_weights[24] = 0.3; h_weights[25] = -1; h_weights[26] = 0.0; h_weights[27] = 0.7;
+	h_weights[28] = 0.1; h_weights[29] = 0.2; h_weights[30] = 0.1; h_weights[31] = 0.2; h_weights[32] = -1; h_weights[33] = 0.4; h_weights[34] = 0; h_weights[35] = 0.3;
+	data_util::doubleH2D(h_weights, dev_weights, 36);
+	h_thresholds[0] = 0.1;
+	h_thresholds[1] = 0.0; h_thresholds[2] = 0.2;
+	h_thresholds[3] = 0.1; h_thresholds[4] = 0.1; h_thresholds[5] = 0.2;
+	h_thresholds[6] = 0.2; h_thresholds[7] = 0.05; h_thresholds[8] = 0.1; h_thresholds[9] = 0.2;
+	data_util::doubleH2D(h_thresholds, dev_thresholds, 10);
+
+	uma_base_qualitative::orient_all(dev_dirs, dev_weights, dev_thresholds, 1, 4);
+	data_util::boolD2H(dev_dirs, h_dirs, 36);
+	vector<bool> v1 = { false, false, false, false, true, false, true, false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, true, false, true, false, false, false, false, false, false, false, false, false, false, false
+	};
+	vector<bool> v2;
+	for (int i = 0; i < 36; ++i) v2.push_back(h_dirs[i]);
+	EXPECT_EQ(v1, v2);
+
+	delete[] h_weights, h_dirs, h_thresholds;
+	data_util::dev_free(dev_weights);
+	data_util::dev_free(dev_dirs);
+	data_util::dev_free(dev_thresholds);
+}
+
 TEST(uma_base_test, floyd) {
 	bool *h_npdirs, *dev_npdirs;
 
@@ -929,15 +1046,15 @@ TEST(uma_base_test, floyd) {
 
 	data_util::dev_bool(dev_npdirs, 60);
 
-	h_npdirs[0] = 1;
+	h_npdirs[0] = 1; h_npdirs[1] = 0;
 	h_npdirs[2] = 0; h_npdirs[3] = 1;
-	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1;
+	h_npdirs[4] = 0; h_npdirs[5] = 0; h_npdirs[6] = 1; h_npdirs[7] = 0;
 	h_npdirs[8] = 0; h_npdirs[9] = 1; h_npdirs[10] = 0; h_npdirs[11] = 1;
-	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1;
+	h_npdirs[12] = 0; h_npdirs[13] = 0; h_npdirs[14] = 0; h_npdirs[15] = 0; h_npdirs[16] = 1; h_npdirs[17] = 0;
 	h_npdirs[18] = 0; h_npdirs[19] = 0; h_npdirs[20] = 0; h_npdirs[21] = 1; h_npdirs[22] = 0; h_npdirs[23] = 1;
-	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1;
+	h_npdirs[24] = 0; h_npdirs[25] = 0; h_npdirs[26] = 0; h_npdirs[27] = 0; h_npdirs[28] = 0; h_npdirs[29] = 0; h_npdirs[30] = 1; h_npdirs[31] = 0;
 	h_npdirs[32] = 0; h_npdirs[33] = 1; h_npdirs[34] = 0; h_npdirs[35] = 0; h_npdirs[36] = 0; h_npdirs[37] = 0; h_npdirs[38] = 0; h_npdirs[39] = 1;
-	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1;
+	h_npdirs[40] = 0; h_npdirs[41] = 0; h_npdirs[42] = 0; h_npdirs[43] = 0; h_npdirs[44] = 1; h_npdirs[45] = 0; h_npdirs[46] = 1; h_npdirs[47] = 0; h_npdirs[48] = 1; h_npdirs[49] = 0;
 	h_npdirs[50] = 0; h_npdirs[51] = 0; h_npdirs[52] = 0; h_npdirs[53] = 1; h_npdirs[54] = 0; h_npdirs[55] = 0; h_npdirs[56] = 0; h_npdirs[57] = 0; h_npdirs[58] = 0; h_npdirs[59] = 1;
 
 	vector<bool> v1 = { 
@@ -1595,38 +1712,24 @@ TEST(uma_base_test, delta_weight_sum) {
 	data_util::dev_free(dev_signal);
 }
 
-TEST(uma_base_test, new_episode) {
-	bool *h_current = new bool[10];
-	bool *dev_current;
+TEST(uma_base_test, init_mask_signal) {
+	bool *h_signal = new bool[10];
+	bool *dev_signal;
 
-	data_util::dev_bool(dev_current, 10);
+	data_util::dev_bool(dev_signal, 10);
 
-	//1st
-	h_current[0] = 0; h_current[1] = 0; h_current[2] = 1; h_current[3] = 1;
-	h_current[4] = 1; h_current[5] = 1; h_current[6] = 1; h_current[7] = 1;
-	h_current[8] = 0; h_current[9] = 0;
-	data_util::boolH2D(h_current, dev_current, 10);
-	uma_base::new_episode(dev_current, 3, 10);
-	data_util::boolD2H(dev_current, h_current, 10);
-	vector<bool> v1 = { 0, 0, 1, 1, 1, 1, 0, 0, 0, 0 };
-	vector<bool> v2;
-	for (int i = 0; i < 10; ++i) v2.push_back(h_current[i]);
-	EXPECT_EQ(v1, v2);
+	data_util::dev_init(dev_signal, 10);
+	kernel_util::init_mask_signal(dev_signal, 3, 10);
+	data_util::boolD2H(dev_signal, h_signal, 10);
 
-	//2nd
-	h_current[0] = 0; h_current[1] = 0; h_current[2] = 1; h_current[3] = 1;
-	h_current[4] = 1; h_current[5] = 1; h_current[6] = 1; h_current[7] = 1;
-	h_current[8] = 0; h_current[9] = 0;
-	data_util::boolH2D(h_current, dev_current, 10);
-	uma_base::new_episode(dev_current, 4, 10);
-	data_util::boolD2H(dev_current, h_current, 10);
-	v1 = { 0, 0, 1, 1, 1, 1, 1, 1, 0, 0 };
-	v2.clear();
-	for (int i = 0; i < 10; ++i) v2.push_back(h_current[i]);
-	EXPECT_EQ(v1, v2);
+	vector<bool> b1 = { 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 };
+	vector<bool> b2;
+	for (int i = 0; i < 10; ++i) b2.push_back(h_signal[i]);
 
-	delete[] h_current;
-	data_util::dev_free(dev_current);
+	EXPECT_EQ(b1, b2);
+
+	delete[] h_signal;
+	data_util::dev_free(dev_signal);
 }
 
 //--------------------------uma_base test----------------------------------

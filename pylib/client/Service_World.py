@@ -5,8 +5,8 @@ class ServiceWorld:
     def __init__(self, service):
         self._service = service
 
-    def add_agent(self, agent_id):
-        data = {'agent_id': agent_id}
+    def add_agent(self, agent_id, type='default'):
+        data = {'agent_id': agent_id, 'type': type}
         result = self._service.post('/UMA/object/agent', data)
         if not result:
             print "add agent failed!"

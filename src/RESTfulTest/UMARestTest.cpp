@@ -6,19 +6,19 @@
 #include "UMARestTestFixture.h"
 #include <thread>
 
-TEST(string_to_string_t, RestUtil_test) {
+TEST(RestUtil_test, string_to_string_t) {
 	string_t x = U("This is a simple test");
 	string_t y = RestUtil::string_to_string_t("This is a simple test");
 	EXPECT_EQ(x, y);
 }
 
-TEST(string_t_to_string, RestUtil_test) {
+TEST(RestUtil_test, string_t_to_string) {
 	string x = "This is a simple test";
 	string y = RestUtil::string_t_to_string(U("This is a simple test"));
 	EXPECT_EQ(x, y);
 }
 
-TEST(string_t_to_bool, RestUtil_test) {
+TEST(RestUtil_test, string_t_to_bool) {
 	string_t t1 = U("True");
 	string_t t2 = U("true");
 	string_t t3 = U("test");
@@ -32,11 +32,11 @@ TEST(string_t_to_bool, RestUtil_test) {
 	EXPECT_EQ(false , RestUtil::string_t_to_bool(t5));
 }
 
-TEST(error_type_to_status_code, RestUtil_test) {
+TEST(RestUtil_test, error_type_to_status_code) {
 	//No test now
 }
 
-TEST(status_code_to_string, RestUtil_test) {
+TEST(RestUtil_test, status_code_to_string) {
 	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::Created), "201");
 	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::OK), "200");
 	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::BadRequest), "400");
@@ -44,7 +44,7 @@ TEST(status_code_to_string, RestUtil_test) {
 	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::Conflict), "409");
 }
 
-TEST(check_field_data, RestUtil_test) {
+TEST(RestUtil_test, check_field_data) {
 	json::value d;
 	d[U("a")] = json::value(1);
 	d[U("b")] = json::value("test");
@@ -59,7 +59,7 @@ TEST(check_field_data, RestUtil_test) {
 	EXPECT_THROW(RestUtil::check_field(d, U("c"), true), UMAException);
 }
 
-TEST(check_field_query, RestUtil_test) {
+TEST(RestUtil_test, check_field_query) {
 	map<string_t, string_t> m;
 	m[U("a")] = U("1");
 	m[U("b")] = U("test");
@@ -74,7 +74,7 @@ TEST(check_field_query, RestUtil_test) {
 	EXPECT_THROW(RestUtil::check_field(m, U("c"), true), UMAException);
 }
 
-TEST(vector_int_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_int_to_json) {
 	vector<int> input = { 0, 1, 2, 3, 4, 5 };
 	json::value output = json::value::array();
 	output[0] = json::value::number(0);
@@ -86,7 +86,7 @@ TEST(vector_int_to_json, RestUtil_test) {
 	EXPECT_EQ(output, RestUtil::vector_int_to_json(input));
 }
 
-TEST(vector_double_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_double_to_json) {
 	vector<double> input = { .0, .1, .2, .3, .4, .5 };
 	json::value output = json::value::array();
 	output[0] = json::value::number(.0);
@@ -98,7 +98,7 @@ TEST(vector_double_to_json, RestUtil_test) {
 	EXPECT_EQ(output, RestUtil::vector_double_to_json(input));
 }
 
-TEST(vector_bool_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_bool_to_json) {
 	vector<bool> input = { 0, 1, 0, 1, 0, 1 };
 	json::value output = json::value::array();
 	//!!!!! DO NOT EVER ASSIGN BASIC TYPE TO json::value, IT WILL PRODUCE UNPREDICTIBLE VALUE, USE json::value::type(basic_type_value) FOR INITIALIZATION
@@ -111,7 +111,7 @@ TEST(vector_bool_to_json, RestUtil_test) {
 	EXPECT_EQ(RestUtil::vector_bool_to_json(input), output);
 }
 
-TEST(vector_string_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_string_to_json) {
 	vector<string> input = { "This", "is", "a", "test" };
 	json::value output = json::value::array();
 	output[0] = json::value::string(U("This"));
@@ -121,7 +121,7 @@ TEST(vector_string_to_json, RestUtil_test) {
 	EXPECT_EQ(RestUtil::vector_string_to_json(input), output);
 }
 
-TEST(vector_bool2d_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_bool2d_to_json) {
 	vector<vector<bool>> input = { { 0, 1, 0, 1, 0, 1 }, {1, 0, 1, 0}, {0, 1, 0, 1, 0} };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -140,7 +140,7 @@ TEST(vector_bool2d_to_json, RestUtil_test) {
 	EXPECT_EQ(RestUtil::vector_bool2d_to_json(input), output);
 }
 
-TEST(vector_string2d_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_string2d_to_json) {
 	vector<vector<string>> input = { { "This", "is", "a", "test" },{ "This", "is", "test", "for", "UMA" },{ "UMA", "test", "is", "here" } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -160,7 +160,7 @@ TEST(vector_string2d_to_json, RestUtil_test) {
 	EXPECT_EQ(RestUtil::vector_string2d_to_json(input), output);
 }
 
-TEST(vector_int2d_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_int2d_to_json) {
 	vector<vector<int>> input = { { 0, 1, 2, 3, 4, 5 },{ 7, 6, 5, 4 },{ 0, 10, 20, 100, 30 } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -179,7 +179,7 @@ TEST(vector_int2d_to_json, RestUtil_test) {
 	EXPECT_EQ(RestUtil::vector_int2d_to_json(input), output);
 }
 
-TEST(vector_double2d_to_json, RestUtil_test) {
+TEST(RestUtil_test, vector_double2d_to_json) {
 	vector<vector<double>> input = { { .0, .1, .8, 2.3, 0.4, 3.1 },{ 1.1, 3.0, 11.1, 0.32 },{ 0.34, 10.02, 0.3, 1.1, 0.005 } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();

@@ -4,7 +4,7 @@
 #include "ConfReader.h"
 #include "UMAException.h"
 
-static std::map<string, Agent*> _agents, _load_agents;
+World *World::_world = NULL;
 static Logger worldLogger("World", "log/world.log");
 
 std::map<string, std::map<string, string>> World::core_info = ConfReader::read_conf("core.ini");
@@ -13,13 +13,26 @@ World::World(){
 	worldLogger.info("A new world is created");
 }
 
-Agent *World::add_agent(const string &agent_id){
+World *World::instance() {
+	if (!_world) {
+		_world = new World();
+	}
+	return _world;
+}
+
+Agent *World::add_agent(const string &agent_id, int type) {
 	if (_agents.find(agent_id) != _agents.end()) {
 		worldLogger.error("Cannot create a duplicate agent " + agent_id);
 		throw UMAException("Cannot create a duplicate agent " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
-	_agents[agent_id] = new Agent(agent_id, "world");
-	worldLogger.info("An agent " + agent_id + " is created");
+	if (AGENT_TYPE::STATIONARY == type) {
+		_agents[agent_id] = new Agent(agent_id, "world");
+	}
+	else {
+		_agents[agent_id] = new Agent_qualitative(agent_id, "world");
+	}
+
+	worldLogger.info("An agent " + agent_id + " is created, with the type " + to_string(type));
 	return _agents[agent_id];
 }
 
@@ -89,10 +102,19 @@ void World::merge_test() {
 }
 */
 
-const vector<string> World::getAgentInfo() {
-	vector<string> results;
+const vector<vector<string>> World::getAgentInfo() {
+	vector<vector<string>> results;
 	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
-		results.push_back(it->first);
+		vector<string> tmp;
+		tmp.push_back(it->first);
+
+		const int type = it->second->getType();
+		string s_type = "";
+		if (AGENT_TYPE::STATIONARY == type) s_type = "default";
+		else if (AGENT_TYPE::QUALITATIVE == type) s_type = "qualitative";
+		tmp.push_back(s_type);
+
+		results.push_back(tmp);
 	}
 	return results;
 }

@@ -22,8 +22,6 @@ All means of operation on Snapshot should go through Agent class
 */
 class DLL_PUBLIC Snapshot{
 public:
-	//the snapshot type, all default type is stationary for now
-	enum Snapshot_type { STATIONARY, FORGETFUL, UNITTEST };
 	//the total sum(a square block sum, wij+wi_j+w_ij+w_i_j), and the value in last iteration
 	double _total, _total_;
 
@@ -56,6 +54,8 @@ protected:
 	const string _dependency;
 	//the delay hash
 	hash<vector<bool>> delay_hash;
+	//snapshot type
+	const int _type;
 	friend class Agent;
 
 	friend class AmperAndTestFixture;
@@ -65,19 +65,21 @@ protected:
 
 public:
 	//Snapshot(ifstream &file, string &log_dir);
-	Snapshot(const string &uuid, const string &dependency);
+	Snapshot(const string &uuid, const string &dependency, const int type = AGENT_TYPE::STATIONARY);
 	Sensor *add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void delete_sensor(const string &sensor_id);
 	vector<vector<string> > getSensorInfo() const;
 
 	void generateObserve(vector<bool> &observe);
+	vector<bool> generateSignal(const vector<string> &mids);
+	vector<bool> generateSignal(const vector<AttrSensor*> &m);
 
 	/*
 	self-enrichment and derichment function
 	*/
-	void ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
-	void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs={});
-	void pruning(const vector<bool> &signal);
+	virtual void ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
+	virtual void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
+	virtual void pruning(const vector<bool> &signal);
 	virtual void update_total(double phi, bool active);
 
 	/*
@@ -100,6 +102,7 @@ public:
 	const bool &getAutoTarget() const;
 	const bool &getPropagateMask() const;
 	const int &getInitialSize() const;
+	const int &getType() const;
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -133,21 +136,18 @@ public:
 protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
 	void amperand(int mid1, int mid2, bool merge, const std::pair<string, string> &id_pair);
-	void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
+	virtual void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
 };
 
 /*
-Stationary Snapshot is not throwing away information when it is not active
+Qualitative Snapshot
 */
-class DLL_PUBLIC Snapshot_Stationary: public Snapshot{
+class DLL_PUBLIC Snapshot_qualitative : public Snapshot {
 public:
-	//Snapshot_Stationary(ifstream &file, string &log_dir);
-	Snapshot_Stationary(string uuid, string dependency);
-	virtual ~Snapshot_Stationary();
-	//virtual void update_weights(bool active);
-	//virtual void update_thresholds();
-	//virtual void orient_all();
+	Snapshot_qualitative(string uuid, string dependency);
+	virtual ~Snapshot_qualitative();
 	virtual void update_total(double phi, bool active);
+	virtual void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
 
 protected:
 	//double q;

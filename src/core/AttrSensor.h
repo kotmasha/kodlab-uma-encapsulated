@@ -37,6 +37,7 @@ protected:
 	//indicate if the measurable is originally a pure
 	bool _isOriginPure;
 	friend class Snapshot;
+	friend class Snapshot_qualitative;
 	friend class Sensor;
 	friend class AttrSensorPair;
 

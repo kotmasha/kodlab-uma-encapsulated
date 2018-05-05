@@ -13,6 +13,7 @@ namespace kernel_util {
 	void conjunction_star(bool *b1, bool *b2, int size);
 	void up2down(bool *b1, bool *b2, int size);
 	double sum(double *d, int size);
+	void init_mask_signal(bool *b, int init_size, int size);
 }
 
 #endif

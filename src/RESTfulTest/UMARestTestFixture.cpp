@@ -5,6 +5,7 @@
 UMARestListener *UMARestTestFixture::listener = NULL;
 UMARestRequest *UMARestTestFixture::request = NULL;
 UMARestHandler *UMARestTestFixture::handler = NULL;
+UMARestClient *UMARestTestFixture::client = NULL;
 
 json::value UMARestTestFixture::clientData = json::value();
 web::uri_builder UMARestTestFixture::clientQuery;
@@ -55,13 +56,23 @@ UMARestTestFixture::UMARestTestFixture() {
 	if (!handler) {
 		handler = new UMARestTestHandler();
 	}
+	if (!client) {
+		const string host = "localhost";
+		const string port = "8001";
+		const string url = "http://" + host + ":" + port + "/UMA/test";
+		client = new UMARestClient(url);
+	}
 	listener->register_handler(handler);
 	listener->add_path_to_handler("/UMA/test", "test_handler");
 }
 
 UMARestTestFixture::~UMARestTestFixture() {
 	delete listener;
+	delete handler;
+	delete client;
 	listener = NULL;
+	handler = NULL;
+	client = NULL;
 }
 
 void UMARestTestFixture::serverAction(string actionName){
@@ -231,7 +242,7 @@ void UMARestTestFixture::testAction(string actionType) {
 		t2 = thread(clientPostAction, "clientPost");
 	else if (actionType == "Get")
 		t2 = thread(clientGetAction, "clientGet");
-	else
+	else if (actionType == "Receiving")
 		t2 = thread(clientReceivingAction, "clientReceiving");
 	t1.join();
 	t2.join();

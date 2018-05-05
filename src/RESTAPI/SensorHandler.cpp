@@ -53,7 +53,7 @@ void SensorHandler::get_sensor(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_query("snapshot_id");
 	const string sensor_id = request.get_string_query("sensor_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	Sensor *sensor = snapshot->getSensor(sensor_id);
 
@@ -75,7 +75,7 @@ void SensorHandler::get_sensor_pair(UMARestRequest &request) {
 	const string sensor_id1 = request.get_string_query("sensor1");
 	const string sensor_id2 = request.get_string_query("sensor2");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	Sensor *sensor1 = snapshot->getSensor(sensor_id1);
 	Sensor *sensor2 = snapshot->getSensor(sensor_id2);
@@ -96,7 +96,7 @@ void SensorHandler::create_sensor(UMARestRequest &request) {
 	vector<vector<bool> > d = request.get_bool2d_data("d");
 	vector<double> diag = request.get_double1d_data("diag");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	std::pair<string, string> id_pair(sensor_id, c_sid);
 	snapshot->add_sensor(id_pair, diag, w, d);
@@ -109,7 +109,7 @@ void SensorHandler::delete_sensor(UMARestRequest &request) {
 	const string snapshot_id = request.get_string_data("snapshot_id");
 	const string sensor_id = request.get_string_data("sensor_id");
 
-	Agent *agent = World::getAgent(agent_id);
+	Agent *agent = World::instance()->getAgent(agent_id);
 	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
 	snapshot->delete_sensor(sensor_id);
 

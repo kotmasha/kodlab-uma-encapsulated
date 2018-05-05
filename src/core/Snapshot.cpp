@@ -63,7 +63,7 @@ Snapshot::Snapshot(ifstream &file, string &log_dir) {
 }
 */
 
-Snapshot::Snapshot(const string &uuid, const string &dependency): _uuid(uuid), _dependency(dependency + ":" + uuid){
+Snapshot::Snapshot(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + uuid), _type(type) {
 	_total = stod(World::core_info["Snapshot"]["total"]);
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), _dependency);
@@ -85,7 +85,7 @@ Snapshot::Snapshot(const string &uuid, const string &dependency): _uuid(uuid), _
 	_dm = new DataManager(_dependency);
 	snapshotLogger.info("Data Manager is created", _dependency);
 
-	snapshotLogger.info("A Snapshot " + _uuid + " is created", _dependency);
+	snapshotLogger.info("A Snapshot " + _uuid + " is created, with type " + to_string(_type), _dependency);
 }
 
 
@@ -261,19 +261,23 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
-	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
-	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
 	const vector<int> idx_list = SignalUtil::bool_signal_to_int_idx(sensor_list);
+	if (idx_list.empty()) {
+		snapshotLogger.info("Empty pruning signal, do nothing", _dependency);
+		return;
+	}
+	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
+	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 
-	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
-		throw UMAException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
+		throw UMAException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 
 	string str_list = "";
-	for (int i = 0; i < sensor_list.size(); ++i) {
-		if (sensor_list[i]) str_list += to_string(i) + ", ";
+	for (int i = 0; i < idx_list.size(); ++i) {
+		str_list += to_string(idx_list[i]) + ", ";
 	}
 	snapshotLogger.info("Will prune id=" + str_list, _dependency);
 
@@ -300,7 +304,7 @@ void Snapshot::pruning(const vector<bool> &signal){
 			vector<int> new_amper_list;
 			for (int j = 0; j < amper_list.size(); ++j) {
 				int idx = ArrayUtil::find_idx_in_sorted_array(idx_list, amper_list[j] / 2);
-				if (idx_list[idx] != amper_list[j] / 2) {//if the value is not to be pruned
+				if (idx >= 0 && idx_list[idx] != amper_list[j] / 2) {//if the value is not to be pruned
 					new_amper_list.push_back(amper_list[j] - 2 * (idx + 1));
 				}
 			}
@@ -411,7 +415,6 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 			p = id_pairs[i];
 		}
 		
-
 		if (list.size() == 1) {
 			try {
 				generate_delayed_weights(list[0], true, p);
@@ -511,7 +514,7 @@ this function is getting the attr_sensor, from the sensor list
 AttrSensor *Snapshot::getAttrSensor(int idx) const{
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is " + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
@@ -614,6 +617,10 @@ const bool &Snapshot::getPropagateMask() const{
 
 const int &Snapshot::getInitialSize() const{
 	return _initial_size;
+}
+
+const int &Snapshot::getType() const {
+	return _type;
 }
 
 DataManager *Snapshot::getDM() const {
@@ -822,6 +829,30 @@ void Snapshot::generateObserve(vector<bool> &observe) {
 	_dm->setObserve(observe);
 }
 
+vector<bool> Snapshot::generateSignal(const vector<string> &mids) {
+	vector<bool> results;
+	for (int i = 0; i < _sensors.size(); ++i) {
+		if (std::find(mids.begin(), mids.end(), _sensors[i]->_m->_uuid) != mids.end())
+			results.push_back(true);
+		else
+			results.push_back(false);
+		if (std::find(mids.begin(), mids.end(), _sensors[i]->_cm->_uuid) != mids.end())
+			results.push_back(true);
+		else
+			results.push_back(false);
+	}
+	return results;
+}
+
+vector<bool> Snapshot::generateSignal(const vector<AttrSensor*> &m) {
+	vector<string> mids;
+	for (int i = 0; i < m.size(); ++i) {
+		mids.push_back(m[i]->_uuid);
+	}
+	
+	return generateSignal(mids);
+}
+
 void Snapshot::update_total(double phi, bool active) {
 	_total_ = _total;
 	if (active) {
@@ -854,23 +885,88 @@ void Snapshot::save_snapshot(ofstream &file) {
 */
 
 /*
-----------------Snapshot_Stationary Class-------------------
+----------------Snapshot_qualitative Class-------------------
 */
 //Snapshot_Stationary::Snapshot_Stationary(ifstream &file, string &log_dir):Snapshot(file, log_dir) {}
 
-Snapshot_Stationary::Snapshot_Stationary(string uuid, string dependency)
-	:Snapshot(uuid, dependency){
+Snapshot_qualitative::Snapshot_qualitative(string uuid, string dependency)
+	:Snapshot(uuid, dependency, AGENT_TYPE::QUALITATIVE) {
 }
 
-void Snapshot_Stationary::update_total(double phi, bool active) {
+Snapshot_qualitative::~Snapshot_qualitative() {}
+
+void Snapshot_qualitative::update_total(double phi, bool active) {
 	_total_ = _total;
 	if (active) {
-		_total = _q * _total + (1 - _q) * phi;
+		_total = _total > phi ? phi : _total;
 	}
 }
 
-Snapshot_Stationary::~Snapshot_Stationary(){}
+void Snapshot_qualitative::generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair) {
+	//create a new delayed sensor
+	Sensor *delayed_sensor = new Sensor(id_pair, _total, _sensors.size());
+	_sensor_idx[id_pair.first] = delayed_sensor;
+	_sensor_idx[id_pair.second] = delayed_sensor;
+	vector<SensorPair *> delayed_sensor_pairs;
+	//the sensor name is TBD, need python input
+	int sid = mid / 2;
+	//get mid and sid
+
+	for (int i = 0; i < _sensors.size() + 1; ++i) {
+		SensorPair *sensor_pair = NULL;
+		if (i == _sensors.size()) {
+			//if this is the last sensor pair, and it is the pair of the delayed sensor itself
+			sensor_pair = new SensorPair(delayed_sensor, delayed_sensor, _threshold, _total);
+			//copy all those diag values first
+			delayed_sensor->_m->_vdiag = -1;
+			delayed_sensor->_cm->_vdiag = -1;
+			delayed_sensor->_m->_vdiag_ = -1;
+			delayed_sensor->_cm->_vdiag_ = -1;
+			//then assign the value to sensor pair
+			sensor_pair->mij->_vw = -1;
+			sensor_pair->mi_j->_vw = -1;
+			sensor_pair->m_ij->_vw = -1;
+			sensor_pair->m_i_j->_vw = -1;
+			delayed_sensor_pairs.push_back(sensor_pair);
+		}
+		else {
+			sensor_pair = new SensorPair(delayed_sensor, _sensors[i], _threshold, _total);
+			sensor_pair->mij->_vw = -1;
+			sensor_pair->mi_j->_vw = -1;
+			sensor_pair->m_ij->_vw = -1;
+			sensor_pair->m_i_j->_vw = -1;
+			delayed_sensor_pairs.push_back(sensor_pair);
+		}
+	}
+
+	if (!merge) {
+		//replace the last one
+		Sensor *old_sensor = _sensors[sid];
+		//set the mask amper of the delayed sensor to be the same as the one that need to be delayed
+		delayed_sensor->setAmperList(old_sensor);
+		//take the idx of the old one, copy it to the new one 
+		delayed_sensor->setIdx(old_sensor->_idx);
+		//delete the old one
+		delete old_sensor;
+		//if no mrege needed, means the last existing sensor and row of sensor_pair need to be removed
+		_sensors.pop_back();
+		//destruct the last row of sensor pair
+		for (int i = ind(_sensors.size(), 0); i < ind(_sensors.size() + 1, 0); ++i) {
+			delete _sensor_pairs[i];
+		}
+		_sensor_pairs.erase(_sensor_pairs.begin() + ind(_sensors.size(), 0), _sensor_pairs.end());
+		//also need to remove the n-1 position of delayed_sensor_pair
+		delete delayed_sensor_pairs[_sensors.size()];
+		delayed_sensor_pairs.erase(delayed_sensor_pairs.end() - 2, delayed_sensor_pairs.end() - 1);
+	}
+	else {
+		delayed_sensor->setAmperList(mid);
+	}
+	_sensors.push_back(delayed_sensor);
+	_sensor_pairs.insert(_sensor_pairs.end(), delayed_sensor_pairs.begin(), delayed_sensor_pairs.end());
+}
 
 /*
-----------------Snapshot_Stationary Class-------------------
+----------------Snapshot_qualitative Class-------------------
 */
+

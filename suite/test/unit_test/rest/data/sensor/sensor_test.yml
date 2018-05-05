@@ -7,6 +7,7 @@ create agent:
   status_code: 201
   data:
     agent_id: test_agent
+    type: default
 
 create snapshot:
   method: POST

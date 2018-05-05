@@ -64,6 +64,7 @@ protected:
 
 	friend class SensorPair;
 	friend class Snapshot;
+	friend class Snapshot_qualitative;
 	friend class Simulation;
 
 	friend class UMACoreDataFlowTestFixture;

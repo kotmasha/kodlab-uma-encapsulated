@@ -8,6 +8,7 @@
 #include "UMARestListener.h"
 #include "UMARestHandler.h"
 #include "UMARestRequest.h"
+#include "UMARestClient.h"
 
 using namespace std;
 using namespace web;
@@ -30,6 +31,7 @@ protected:
 	static UMARestListener *listener;
 	static UMARestRequest *request;
 	static UMARestHandler *handler;
+	static UMARestClient *client;
 public:
 	static json::value clientData;
 	static web::uri_builder clientQuery;

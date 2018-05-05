@@ -4,6 +4,8 @@
 #include "Global.h"
 #include "UMARest.h"
 
+enum REQUEST_TYPE {GET, POST, PUT, DELETE};
+
 namespace RestUtil {
 	DLL_PUBLIC string_t string_to_string_t(const string &s);
 	DLL_PUBLIC string string_t_to_string(const string_t &s);
