@@ -20,6 +20,8 @@ namespace simulation {
 	int DLL_PUBLIC distance(DataManager *dm, bool *b1, bool *b2, int size);
 	float DLL_PUBLIC divergence(DataManager *dm);
 	void DLL_PUBLIC enrichment(Snapshot *snapshot, bool doPruning);
+	void DLL_PUBLIC abduction_over_negligible(Snapshot *snapshot, vector<vector<bool>> &sensors_to_be_added, vector<bool> &sensors_to_be_removed);
+	void DLL_PUBLIC abduction_over_delayed_sensors(Snapshot *snapshot, vector<vector<bool>> &sensors_to_be_added, vector<bool> &sensors_to_be_removed);
 	float DLL_PUBLIC decide(Snapshot *snapshot, vector<bool> &signal, const double &phi, const bool active);
 	vector<float> DLL_PUBLIC decide(Agent *agent, vector<bool> &obs_plus, vector<bool> &obs_minus, const double &phi, const bool &active);
 	void DLL_PUBLIC ups_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count, int attr_sensor_size);

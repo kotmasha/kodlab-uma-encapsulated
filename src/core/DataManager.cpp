@@ -680,12 +680,12 @@ void DataManager::setLoad(const vector<bool> &load) {
 }
 
 void DataManager::setDists(const vector<vector<int> > &dists) {
-	if (dists.size() != _sensor_size) {
-		throw UMAException("The input dists size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (dists.size() > _sensor_size) {
+		throw UMAException("The input dists size is larger than the sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		if (dists[i].size() != _sensor_size) {
-			throw UMAException("The " + to_string(i) + "th input dists size is not matching sensor_size size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+			throw UMAException("The " + to_string(i) + "th input dists size is larger than sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensor_size + j] = dists[i][j];
 	}

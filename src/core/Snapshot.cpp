@@ -267,13 +267,13 @@ void Snapshot::pruning(const vector<bool> &signal){
 	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
 	const vector<int> idx_list = SignalUtil::bool_signal_to_int_idx(sensor_list);
 
-	if (sensor_list[0] < 0 || sensor_list.back() >= _sensors.size()) {
-		throw UMAException("Pruning range is from " + to_string(sensor_list[0]) + "~" + to_string(sensor_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
-	}
+	//if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
+		//throw UMAException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	//}
 
 	string str_list = "";
-	for (int i = 0; i < sensor_list.size(); ++i) {
-		if (sensor_list[i]) str_list += to_string(i) + ", ";
+	for (int i = 0; i < idx_list.size(); ++i) {
+		str_list += to_string(idx_list[i]) + ", ";
 	}
 	snapshotLogger.info("Will prune id=" + str_list, _dependency);
 
@@ -300,7 +300,7 @@ void Snapshot::pruning(const vector<bool> &signal){
 			vector<int> new_amper_list;
 			for (int j = 0; j < amper_list.size(); ++j) {
 				int idx = ArrayUtil::find_idx_in_sorted_array(idx_list, amper_list[j] / 2);
-				if (idx_list[idx] != amper_list[j] / 2) {//if the value is not to be pruned
+				if (idx >= 0 && idx_list[idx] != amper_list[j] / 2) {//if the value is not to be pruned
 					new_amper_list.push_back(amper_list[j] - 2 * (idx + 1));
 				}
 			}
@@ -510,7 +510,7 @@ this function is getting the attr_sensor, from the sensor list
 AttrSensor *Snapshot::getAttrSensor(int idx) const{
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is" + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is " + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;

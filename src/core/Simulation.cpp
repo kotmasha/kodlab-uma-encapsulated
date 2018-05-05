@@ -12,39 +12,16 @@
 extern int ind(int row, int col);
 static Logger simulationLogger("Simulation", "log/simulation.log");
 
-void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
+void simulation::abduction_over_negligible(Snapshot *snapshot, vector<vector<bool>> &sensors_to_be_added, vector<bool> &sensors_to_be_removed) {
 	DataManager *dm = snapshot->getDM();
-	int initial_size = snapshot->getInitialSize();
-	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
 	int sensor_size = dm->getSizeInfo().at("_sensor_size");
-	vector<vector<bool>> sensors_to_be_added;
-	vector<bool> sensors_to_be_removed;
-	vector<bool> sensors_not_to_be_removed;
 
-	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
-	kernel_util::subtraction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
-	kernel_util::bool2double(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_d(DataManager::SUM), attr_sensor_size);
-	int sum = (int)kernel_util::sum(dm->_dvar_d(DataManager::SUM), attr_sensor_size);
-	if (sum > 0) {
-		kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size, attr_sensor_size);
-		kernel_util::conjunction(dm->_dvar_b(DataManager::OLD_CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
-		sensors_to_be_added = { dm->getOldCurrent() };
-	}
-	//moving this line to other place?
-	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::OLD_CURRENT), attr_sensor_size);
-
-	if (!do_pruning) {
-		vector<std::pair<string, string>> p;
-		snapshot->delays(sensors_to_be_added, p);
-		return;
-	}
-
-	simulation::propagate_mask(dm);
 	vector<bool> negligible = dm->getNegligible();
 	vector<int> lists;
 	for (int i = 0; i < negligible.size(); i += 2) {
 		if (negligible[i]) lists.push_back(i / 2);
 	}
+
 	vector<vector<int> > dist;
 	for (int i = 0; i < lists.size(); ++i) {
 		vector<int> tmp;
@@ -65,9 +42,10 @@ void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 	dm->setDists(dist);
 	vector<vector<int> > groups = simulation::blocks_GPU(dm, 1);
 	vector<vector<bool>> inputs;
+
 	for (int i = 0; i < groups.size(); ++i) {
 		vector<AttrSensor*> m;
-		for (int j = 0; i < groups[i].size(); ++j) m.push_back(snapshot->getAttrSensor(2 * groups[i][j]));
+		for (int j = 0; j < groups[i].size(); ++j) m.push_back(snapshot->getAttrSensor(2 * groups[i][j]));
 		inputs.push_back(snapshot->generateSignal(m));
 	}
 	vector<vector<vector<bool>>> results = simulation::abduction(dm, inputs);
@@ -76,7 +54,14 @@ void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 			sensors_to_be_added.push_back(results[i][j]);
 	}
 
-	//
+	sensors_to_be_removed = negligible;
+}
+
+void simulation::abduction_over_delayed_sensors(Snapshot *snapshot, vector<vector<bool>> &sensors_to_be_added, vector<bool> &sensors_to_be_removed) {
+	DataManager *dm = snapshot->getDM();
+	int initial_size = snapshot->getInitialSize();
+	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
+	
 	vector<vector<bool>> downs;
 	for (int i = 0; i < initial_size * 2; ++i) {
 		vector<AttrSensor*> m(1, snapshot->getAttrSensor(i));
@@ -91,7 +76,7 @@ void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 	}
 	vector<vector<bool>> delayed_downs = dm->getSignals(initial_size * 2);
 
-	results = simulation::abduction(dm, delayed_downs);
+	vector<vector<vector<bool>>> results = simulation::abduction(dm, delayed_downs);
 	for (int i = 0; i < results.size(); ++i) {
 		for (int j = 0; j < results[i].size(); ++j)
 			sensors_to_be_added.push_back(results[i][j]);
@@ -103,6 +88,38 @@ void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 		kernel_util::disjunction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::SIGNALS) + i * attr_sensor_size, attr_sensor_size);
 	}
 	sensors_to_be_removed = dm->getTmpBool();
+}
+
+void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
+	DataManager *dm = snapshot->getDM();
+	int initial_size = snapshot->getInitialSize();
+	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
+	int sensor_size = dm->getSizeInfo().at("_sensor_size");
+	vector<vector<bool>> sensors_to_be_added;
+	vector<bool> sensors_to_be_removed;
+	//vector<bool> sensors_not_to_be_removed;
+
+	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
+	kernel_util::subtraction(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_b(DataManager::PREDICTION), attr_sensor_size);
+	kernel_util::bool2double(dm->_dvar_b(DataManager::BOOL_TMP), dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	int sum = (int)kernel_util::sum(dm->_dvar_d(DataManager::SUM), attr_sensor_size);
+	if (sum > 0) {
+		kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size, attr_sensor_size);
+		kernel_util::conjunction(dm->_dvar_b(DataManager::OLD_CURRENT), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
+		sensors_to_be_added = { dm->getOldCurrent() };
+	}
+	//moving this line to other place?
+	data_util::boolD2D(dm->_dvar_b(DataManager::CURRENT), dm->_dvar_b(DataManager::OLD_CURRENT), attr_sensor_size);
+
+	if (!do_pruning) {
+		vector<std::pair<string, string>> p;
+		snapshot->delays(sensors_to_be_added, p);
+		return;
+	}
+
+	simulation::propagate_mask(dm);
+	simulation::abduction_over_negligible(snapshot, sensors_to_be_added, sensors_to_be_removed);
+	simulation::abduction_over_delayed_sensors(snapshot, sensors_to_be_added, sensors_to_be_removed);
 
 	std::set<size_t> sensors_to_be_added_hash;
 	hash<vector<bool>> h;
