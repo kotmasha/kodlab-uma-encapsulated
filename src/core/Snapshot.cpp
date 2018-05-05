@@ -261,15 +261,19 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
-	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
-	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
 	const vector<int> idx_list = SignalUtil::bool_signal_to_int_idx(sensor_list);
+	if (idx_list.empty()) {
+		snapshotLogger.info("Empty pruning signal, do nothing", _dependency);
+		return;
+	}
+	_dm->copy_arrays_to_sensors(0, _sensors.size(), _sensors);
+	_dm->copy_arrays_to_sensor_pairs(0, _sensors.size(), _sensor_pairs);
 
-	//if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
-		//throw UMAException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
-	//}
+	if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
+		throw UMAException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
 
 	string str_list = "";
 	for (int i = 0; i < idx_list.size(); ++i) {
