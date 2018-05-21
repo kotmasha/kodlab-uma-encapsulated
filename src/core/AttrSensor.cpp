@@ -30,6 +30,7 @@ AttrSensor::AttrSensor(const string &uuid, int idx, bool isOriginPure, double di
 	_vdiag_ = diag;
 	_vobserve = false;
 	_vobserve_ = false;
+	_vtarget = false;
 
 	//attrSensorLogger.debug("A new attr sensor is created with id=" + uuid);
 }
@@ -51,13 +52,14 @@ void AttrSensor::pointers_to_null(){
 The function is copying the pointer value to values in the object
 */
 void AttrSensor::pointers_to_values(){
-	if (!_diag || !_diag_ || !_observe || !_observe_) {
-		throw UMAException("The diag or observe pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
+		throw UMAException("The diag or observe or target pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	_vdiag = *_diag;
 	_vdiag_ = *_diag_;
 	_vobserve = *_observe;
 	_vobserve_ = *_observe_;
+	_vtarget = *_target;
 
 	attrSensorLogger.debug("Pointer values copied to object values for attr sensor=" + _uuid);
 }
@@ -66,13 +68,14 @@ void AttrSensor::pointers_to_values(){
 The function is copying values to pointer in the object
 */
 void AttrSensor::values_to_pointers(){
-	if (!_diag || !_diag_ || !_observe || !_observe_) {
-		throw UMAException("The diag or observe pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
+		throw UMAException("The diag or observe or target pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	*_diag = _vdiag;
 	*_diag_ = _vdiag_;
 	*_observe = _vobserve;
 	*_observe_ = _vobserve_;
+	*_target = _vtarget;
 
 	attrSensorLogger.debug("Object values copied to pointer values for attr sensor=" + _uuid);
 }
@@ -183,6 +186,13 @@ const bool &AttrSensor::getObserve() const{
 		throw UMAException("The observe pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	return *_observe;
+}
+
+const bool &AttrSensor::getTarget() const {
+	if (!_target) {
+		throw UMAException("The target pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
+	return *_target;
 }
 
 const bool &AttrSensor::getOldObserve() const{

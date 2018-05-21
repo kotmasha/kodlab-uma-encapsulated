@@ -201,7 +201,7 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
         #EX._AGENTS[agent_name].validate()
 
     # ONE UPDATE CYCLE (without action) TO "FILL" THE STATE DEQUES
-    reported_data=EX.update_state([cid_rt,cid_lt])
+    #reported_data=EX.update_state([cid_rt,cid_lt])
 
     # INTRODUCE DELAYED GPS SENSORS:
     #for agent in [RT,LT]:
@@ -210,11 +210,11 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
     #        agent.delay(delay_sigs,token)
 
     # SET ARTIFICIAL TARGET ONCE AND FOR ALL
-    #for agent in [RT,LT]:
-        #for token in ['plus','minus']:
-            #tmp_target=agent.generate_signal([id_nav]).value().tolist()
-            #service_snapshot = ServiceSnapshot(agent._ID, token, service)
-            #service_snapshot.setTarget(tmp_target)
+    for agent in [RT,LT]:
+        for token in ['plus','minus']:
+            tmp_target=agent.generate_signal([id_nav]).value().tolist()
+            service_snapshot = ServiceSnapshot(agent._ID, token, service)
+            service_snapshot.setTarget(tmp_target)
 
     # ANOTHER UPDATE CYCLE (without action)
     reported_data=EX.update_state([cid_rt,cid_lt])
@@ -441,6 +441,6 @@ def start_experiment(stdscr,env_length,discount,burn_in,agent_to_examine,delay_s
 #   - 'nodelay' means no delay between cycles; 'delay' means [spacebar] is 
 #       required to advance the clock.
 #
-curses.wrapper(start_experiment,4,5,10,'rt','nodelay')
+curses.wrapper(start_experiment,4,5,10,'rt','nodelay1')
 print "Aborting at your request...\n\n"
 exit(0)

@@ -294,17 +294,13 @@ Input: attr_sensor list, target signal, sensor size
 __global__ void calculate_target_kernel_qualitative(double *attr_sensor, bool *target, int sensor_size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < sensor_size) {
-		if (attr_sensor[2 * index] - attr_sensor[2 * index + 1] < 1e-12) {
+		if (qless(attr_sensor[2 * index], attr_sensor[2 * index + 1])) {
 			target[2 * index] = true;
 			target[2 * index + 1] = false;
 		}
-		else if (attr_sensor[2 * index] - attr_sensor[2 * index + 1] > 1e-12) {
-			target[2 * index] = false;
-			target[2 * index + 1] = true;
-		}
 		else {
 			target[2 * index] = false;
-			target[2 * index + 1] = false;
+			target[2 * index + 1] = true;
 		}
 	}
 }
@@ -691,101 +687,121 @@ __global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size
 void uma_base::init_mask(bool *mask, int initial_size, int attr_sensor_size) {
 	init_mask_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (mask, initial_size, attr_sensor_size);
 	umaBaseLogger.debug("init_mask_kernel invoked!");
+	cudaCheckErrors("check init_mask error");
 }
 
 void uma_base::init_diag(double *diag, double *diag_, double total, double total_, int attr_sensor_size_max) {
 	init_diag_kernel << <GRID1D(attr_sensor_size_max), BLOCK1D >> > (diag, diag_, total, total_, attr_sensor_size_max);
 	umaBaseLogger.debug("init_diag_kernel invoked!");
+	cudaCheckErrors("check init_diag error");
 }
 
 void uma_base::update_weights(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool active) {
 	update_weights_kernel << <GRID2D(attr_sensor_size, attr_sensor_size), BLOCK2D >> > (weights, observe, attr_sensor_size, q, phi, active);
 	umaBaseLogger.debug("update_weights invoked!");
+	cudaCheckErrors("check_update_weights error");
 }
 
 void uma_base::get_weights_diag(double *weights, double *diag, double *diag_, int attr_sensor_size) {
 	get_weights_diag_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (weights, diag, diag_, attr_sensor_size);
 	umaBaseLogger.debug("get_weights_diag_kernel invoked!");
+	cudaCheckErrors("check get_weights_diag error");
 }
 
 void uma_base::calculate_target(double *diag, bool *target, int sensor_size) {
 	calculate_target_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
 	umaBaseLogger.debug("calculate_target_kernel invoked!");
+	cudaCheckErrors("check calculate_target error");
 }
 
 void uma_base::update_thresholds(bool *dirs, double *thresholds, double total_, double q, double phi, int sensor_size) {
 	update_thresholds_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> > (dirs, thresholds, total_, q, phi, sensor_size);
 	umaBaseLogger.debug("update_thresholds_kernel invoked!");
+	cudaCheckErrors("check update_thresholds error");
 }
 
 void uma_base::orient_all(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
 	orient_all_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
 	umaBaseLogger.debug("orient_all_kernel invoked!");
+	cudaCheckErrors("check orient_all error");
 }
 
 void uma_base::dfs(bool *signal, bool *dirs, double *thresholds, double q, int attr_sensor_size) {
 	dfs_kernel << <1, BLOCK1D, 2 * attr_sensor_size * sizeof(bool) >> >(signal, dirs, thresholds, false, 1 - q, attr_sensor_size);
 	umaBaseLogger.debug("dfs_kernel invoked!");
+	cudaCheckErrors("check dfs error");
 }
 
 void uma_base::floyd(bool *npdirs, int attr_sensor_size) {
 	floyd_kernel << <GRID2D(1, 1), BLOCK2D >> >(npdirs, attr_sensor_size);
 	umaBaseLogger.debug("floyd_kernel invoked!");
+	cudaCheckErrors("check floyd error");
 }
 
 void uma_base::dioid_square(int *dists, int sensor_size) {
 	dioid_square_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dists, sensor_size);
 	umaBaseLogger.debug("diod_square_kernel invoked!");
+	cudaCheckErrors("check diod_square error");
 }
 
 void uma_base::transpose_multiply(bool *npdirs, bool *signals, int attr_sensor_size, int sig_count) {
 	transpose_multiply_kernel << <GRID2D(sig_count, attr_sensor_size), BLOCK2D >> >(npdirs, signals, attr_sensor_size, sig_count);
 	umaBaseLogger.debug("transpose_multiply_kernel invoked!");
+	cudaCheckErrors("check transpose_multiply error");
 }
 
 void uma_base::multiply(bool *npdirs, bool *signals, int attr_sensor_size, int sig_count) {
 	multiply_kernel << <GRID2D(sig_count, attr_sensor_size), BLOCK2D >> >(npdirs, signals, attr_sensor_size, sig_count);
 	umaBaseLogger.debug("multiply_kernel invoked!");
+	cudaCheckErrors("check multiply error");
 }
 
 void uma_base::mask(bool *mask_amper, bool *mask, bool *current, int sensor_size){
 	mask_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(mask_amper, mask, current, sensor_size);
 	umaBaseLogger.debug("mask_kernel invoked!");
+	cudaCheckErrors("check mask error");
 }
 
 void uma_base::check_mask(bool *mask, int sensor_size) {
 	check_mask_kernel << <GRID1D(sensor_size), BLOCK1D >> > (mask, sensor_size);
 	umaBaseLogger.debug("check_mask_kernel invoked!");
+	cudaCheckErrors("check check_mask error");
 }
 
 void uma_base::delta_weight_sum(double *diag, bool *d1, float *result, int attr_sensor_size) {
 	delta_weight_sum_kernel << <GRID1D(attr_sensor_size), BLOCK1D >> > (diag, d1, result, attr_sensor_size);
 	umaBaseLogger.debug("delta_weight_sum_kernel invoked!");
+	cudaCheckErrors("check delta_weight_sum error");
 }
 
 void uma_base::union_init(int *union_root, int sensor_size){
 	union_init_kernel << <GRID1D(sensor_size), BLOCK1D >> >(union_root, sensor_size);
 	umaBaseLogger.debug("union_init_kernel invoked!");
+	cudaCheckErrors("check union_init error");
 }
 
 void uma_base::check_dist(int *dists, float delta, int sensor_size) {
 	check_dist_kernel << <GRID1D(sensor_size * sensor_size), BLOCK1D >> >(dists, delta, sensor_size * sensor_size);
 	umaBaseLogger.debug("check_dist_kernel invoked!");
+	cudaCheckErrors("check check_dist error");
 }
 
 void uma_base::union_GPU(int *dists, int *union_root, int sensor_size) {
 	union_GPU_kernel << <GRID1D(1), BLOCK1D >> > (dists, union_root, sensor_size);
 	umaBaseLogger.debug("union_GPU_kernel invoked!");
+	cudaCheckErrors("check union_GPU error");
 }
 
 void uma_base::copy_npdir(bool *npdir, bool *dir, int attr_sensor_size) {
 	copy_npdir_kernel << <GRID2D(attr_sensor_size, attr_sensor_size), BLOCK2D >> > (npdir, dir, attr_sensor_size);
 	umaBaseLogger.debug("copy_npdir_kernel invoked!");
+	cudaCheckErrors("check copy_npdir error");
 }
 
 void uma_base::negligible(bool *npdir, bool *negligible, int sensor_size) {
 	negligible_kernel << <GRID1D(sensor_size), BLOCK1D >> > (npdir, negligible, sensor_size);
 	umaBaseLogger.debug("negligible_kernel invoked!");
+	cudaCheckErrors("check neligible error");
 }
 
 void uma_base_qualitative::update_weights(double *weights, bool *observe, int attr_sensor_size, double q, double phi, bool active) {
