@@ -67,6 +67,8 @@ Snapshot::Snapshot(const string &uuid, const string &dependency, const int type)
 	_total = stod(World::core_info["Snapshot"]["total"]);
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), _dependency);
+
+	_delay_count = 0;
 	
 	_q = stod(World::core_info["Snapshot"]["q"]);
 	snapshotLogger.debug("Setting q value to " + to_string(_q), _dependency);
@@ -261,6 +263,10 @@ The function is pruning the sensor and sensor pair list, also adjust their corre
 Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
+	if (signal.size() > _dm->_attr_sensor_size) {
+		cout << signal.size() << ",,," << _dm->_attr_sensor_size << endl;
+		throw UMAException("Input signal size for pruning is larger than attr_sensor_size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	}
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attr_sensor_signal_to_sensor_signal(signal);
 	const vector<int> idx_list = SignalUtil::bool_signal_to_int_idx(sensor_list);
@@ -403,13 +409,17 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 			continue;
 		}
 
+		if (lists[i].size() > _sensors.size() * 2) {
+			throw UMAException("The " + to_string(i) + "th input signal size is larger than 2 * sensors.size()", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		}
 		const vector<int> list = SignalUtil::bool_signal_to_int_idx(lists[i]);
 		if (list.size() < 1) {
 			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i), _dependency);
 			continue;
 		}
 		if(generate_default_id){
-			p = { "delay" + to_string(_sensors.size() + success_delay), "c_delay" + to_string(_sensors.size() + success_delay) };
+			int delay_count = getDealyCount();
+			p = { "delay" + to_string(delay_count), "c_delay" + to_string(delay_count) };
 		}
 		else {
 			p = id_pairs[i];
@@ -621,6 +631,10 @@ const int &Snapshot::getInitialSize() const{
 
 const int &Snapshot::getType() const {
 	return _type;
+}
+
+const int Snapshot::getDealyCount() {
+	return _delay_count++;
 }
 
 DataManager *Snapshot::getDM() const {

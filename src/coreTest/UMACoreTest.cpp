@@ -797,6 +797,7 @@ TEST(attr_sensor_test, attr_sensor_test) {
 	double *diag_ = new double[2];
 	bool *observe = new bool[2];
 	bool *observe_ = new bool[2];
+	bool *target = new bool[2];
 
 	EXPECT_EQ(as->getIdx(), 0);
 	as->setIdx(1);
@@ -808,10 +809,12 @@ TEST(attr_sensor_test, attr_sensor_test) {
 
 	as->setDiagPointers(diag, diag_);
 	as->setObservePointers(observe, observe_);
+	as->setTargetPointers(target);
 	as->values_to_pointers();
 
 	EXPECT_EQ(as->getDiag(), 0.5);
 	EXPECT_EQ(as->getOldDiag(), 0.5);
+	EXPECT_EQ(as->getTarget(), false);
 
 	as->setDiag(0.6);
 	as->setOldDiag(0.7);

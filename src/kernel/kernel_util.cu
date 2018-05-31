@@ -154,53 +154,64 @@ __global__ void init_mask_signal_kernel(bool *b, int init_size, int size) {
 }
 
 void kernel_util::alltrue(bool *b, int size) {
+	cudaCheckErrors("check alltrue error");
 	alltrue_kernel << <GRID1D(size), BLOCK1D >> > (b, size);
 	kernelUtilLogger.debug("alltrue_kernel invoked");
+	cudaCheckErrors("check alltrue error");
 }
 
 void kernel_util::allfalse(bool *b, int size) {
 	allfalse_kernel << <GRID1D(size), BLOCK1D >> > (b, size);
 	kernelUtilLogger.debug("allfalse_kernel invoked");
+	cudaCheckErrors("check allfalse error");
 }
 
 void kernel_util::bool2int(bool *b, int *i, int size) {
 	bool2int_kernel << <GRID1D(size), BLOCK1D >> > (b, i, size);
 	kernelUtilLogger.debug("bool2int_kernel invoked");
+	cudaCheckErrors("check bool2int error");
 }
 
 void kernel_util::bool2double(bool *b, double *d, int size) {
 	bool2double_kernel << <GRID1D(size), BLOCK1D >> > (b, d, size);
 	kernelUtilLogger.debug("bool2double_kernel invoked");
+	cudaCheckErrors("check bool2double error");
 }
 
 void kernel_util::conjunction(bool *b1, bool *b2, int size) {
 	conjunction_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("conjunction_kernel invoked");
+	cudaCheckErrors("check conjunction error");
 }
 
 void kernel_util::disjunction(bool *b1, bool *b2, int size) {
 	disjunction_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("disjunction_kernel invoked");
+	cudaCheckErrors("check disjunction error");
 }
 
 void kernel_util::subtraction(bool *b1, bool *b2, int size) {
 	subtraction_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("subtraction_kernel invoked");
+	cudaCheckErrors("check subtraction error");
 }
 
 void kernel_util::negate_conjunction_star(bool *b1, bool *b2, int size) {
 	negate_conjunction_star_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("negate_conjunction_kernel invoked");
+	cudaCheckErrors("check negate_conjunction_star error");
 }
 
 void kernel_util::conjunction_star(bool *b1, bool *b2, int size) {
 	conjunction_star_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("conjunction_star_kernel invoked");
+	cudaCheckErrors("check conjunction_star error");
 }
 
 void kernel_util::up2down(bool *b1, bool *b2, int size) {
 	up2down_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("up2down_kernel invoked");
+	cudaCheckErrors("check up2down error");
 }
 
 double kernel_util::sum(double *d, int size) {
@@ -208,11 +219,12 @@ double kernel_util::sum(double *d, int size) {
 	double r;
 	cudaMemcpy(&r, d, sizeof(double), cudaMemcpyDeviceToHost);
 	kernelUtilLogger.debug("sum_kernel invoked");
-
+	cudaCheckErrors("check sum error");
 	return r;
 }
 
 void kernel_util::init_mask_signal(bool *b, int init_size, int size) {
 	init_mask_signal_kernel << <GRID1D(size), BLOCK1D >> > (b, init_size, size);
 	kernelUtilLogger.debug("init_mask_signal_kernel invoked");
+	cudaCheckErrors("check init_mask_signal error");
 }

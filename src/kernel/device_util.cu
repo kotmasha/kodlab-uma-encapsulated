@@ -41,5 +41,15 @@ __host__ __device__ int npdir_ind(int row, int col) {
 }
 
 /*
+This function is checking whether d1 is smaller than d2
+-1 means infinity
+*/
+__host__ __device__ bool qless(double d1, double d2) {
+	if (d1 < -0.5) return false;
+	if (d2 < -0.5) return true;
+	return d1 - d2 < -1e-12;
+}
+
+/*
 ----------------------HOST DEVICE---------------------
 */

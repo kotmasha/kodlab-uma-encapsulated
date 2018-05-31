@@ -56,6 +56,8 @@ protected:
 	hash<vector<bool>> delay_hash;
 	//snapshot type
 	const int _type;
+	//delay count
+	int _delay_count;
 	friend class Agent;
 
 	friend class AmperAndTestFixture;
@@ -103,6 +105,7 @@ public:
 	const bool &getPropagateMask() const;
 	const int &getInitialSize() const;
 	const int &getType() const;
+	const int getDealyCount();
 	/*
 	---------------------GET FUNCTION----------------------
 	*/

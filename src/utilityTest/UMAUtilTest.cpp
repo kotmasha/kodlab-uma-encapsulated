@@ -63,7 +63,7 @@ TEST(SignalUtil_test, attr_sensor_signal_to_sensor_signal) {
 
 TEST(ArrayUtil_test, find_idx_in_sorted_array) {
 	vector<int> input = { 1, 3, 5, 6, 10, 11 };
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 0), 0);
+	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 0), -1);
 	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 1), 0);
 	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 2), 0);
 	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 3), 1);

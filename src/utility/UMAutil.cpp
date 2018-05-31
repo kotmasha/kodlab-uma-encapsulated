@@ -108,7 +108,8 @@ Output: the index of target
 */
 int ArrayUtil::find_idx_in_sorted_array(const vector<int> &input, int target) {
 	if (input.empty()) return -1;
-	if (target <= input[0]) return -1;
+	if (target < input[0]) return -1;
+	if (target == input[0]) return 0;
 	if (target >= input.back()) return input.size() - 1;
 	int start_idx = 0;
 	int end_idx = input.size();

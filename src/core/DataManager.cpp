@@ -479,8 +479,9 @@ void DataManager::create_sensor_pairs_to_arrays_index(const int start_idx, const
 */
 void DataManager::copy_arrays_to_sensors(const int start_idx, const int end_idx, const vector<Sensor*> &_sensors) {
 	//copy necessary info back from cpu array to GPU array first
-	data_util::doubleD2H(dev_diag, h_diag, end_idx - start_idx, start_idx, start_idx);
-	data_util::doubleD2H(dev_diag_, h_diag_, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleD2H(dev_diag, h_diag, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
+	data_util::doubleD2H(dev_diag_, h_diag_, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
+	data_util::boolD2H(dev_target, h_target, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from GPU arrays to CPU arrays", _dependency);
 	for (int i = start_idx; i < end_idx; ++i) {
 		//bring all sensor and attr_sensor info into the object
@@ -511,8 +512,9 @@ void DataManager::copy_sensors_to_arrays(const int start_idx, const int end_idx,
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from sensor to CPU arrays", _dependency);
 	//copy data from cpu array to GPU array
 	data_util::boolH2D(h_mask_amper, dev_mask_amper, 2 * (ind(end_idx, 0) - ind(start_idx, 0)), 2 * ind(start_idx, 0), 2 * ind(start_idx, 0));
-	data_util::doubleH2D(h_diag, dev_diag, end_idx - start_idx, start_idx, start_idx);
-	data_util::doubleH2D(h_diag_, dev_diag_, end_idx - start_idx, start_idx, start_idx);
+	data_util::doubleH2D(h_diag, dev_diag, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
+	data_util::doubleH2D(h_diag_, dev_diag_, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
+	data_util::boolH2D(h_target, dev_target, 2 * (end_idx - start_idx), 2 * start_idx, 2 * start_idx);
 	dataManagerLogger.debug("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied from CPU arrays to GPU arrays", _dependency);
 	dataManagerLogger.info("Sensor data from idx " + to_string(start_idx) + " to " + to_string(end_idx) + " are copied to arrays", _dependency);
 }
@@ -588,6 +590,7 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attr_sensor_size) {
+		cout << observe.size() << "," << _attr_sensor_size << endl;
 		throw UMAException("The input observe size is not the size of attr sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attr_sensor_size);

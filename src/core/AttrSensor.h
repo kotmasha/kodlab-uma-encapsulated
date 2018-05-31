@@ -30,8 +30,8 @@ protected:
 	bool*_observe_, _vobserve_;
 	//the current pointer
 	bool *_current;
-	//the target pointer
-	bool *_target;
+	//the target pointer, and the value
+	bool *_target, _vtarget;
 	//the prediction pointer
 	bool *_prediction;
 	//indicate if the measurable is originally a pure
@@ -72,6 +72,7 @@ public:
 	const bool &getOldObserve() const;
 	const bool &getCurrent() const;
 	const int &getIdx() const;
+	const bool &getTarget() const;
 
 	void setDiag(const double &diag);
 	void setOldDiag(const double &diag_);
