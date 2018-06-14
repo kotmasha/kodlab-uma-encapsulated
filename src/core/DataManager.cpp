@@ -590,7 +590,6 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attr_sensor_size) {
-		cout << observe.size() << "," << _attr_sensor_size << endl;
 		throw UMAException("The input observe size is not the size of attr sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attr_sensor_size);

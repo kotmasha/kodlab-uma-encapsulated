@@ -10,18 +10,18 @@ protected:
 
 public:
 	SnapshotHandler(const string &handler_name);
-	virtual void handle_create(UMARestRequest &request);
-	virtual void handle_update(UMARestRequest &request);
-	virtual void handle_read(UMARestRequest &request);
-	virtual void handle_delete(UMARestRequest &request);
-	void create_snapshot(UMARestRequest &request);
-	void create_init(UMARestRequest &request);
-	void get_snapshot(UMARestRequest &request);
-	void delete_snapshot(UMARestRequest &request);
-	void update_snapshot(UMARestRequest &request);
-	void create_amper(UMARestRequest &request);
-	void create_delay(UMARestRequest &request);
-	void create_pruning(UMARestRequest &request);
+	virtual void handleCreate(UMARestRequest &request);
+	virtual void handleUpdate(UMARestRequest &request);
+	virtual void handleRead(UMARestRequest &request);
+	virtual void handleDelete(UMARestRequest &request);
+	void createSnapshot(UMARestRequest &request);
+	void createInit(UMARestRequest &request);
+	void getSnapshot(UMARestRequest &request);
+	void deleteSnapshot(UMARestRequest &request);
+	void updateSnapshot(UMARestRequest &request);
+	void createAmper(UMARestRequest &request);
+	void createDelay(UMARestRequest &request);
+	void createPruning(UMARestRequest &request);
 	virtual ~SnapshotHandler();
 };
 

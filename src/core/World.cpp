@@ -1,5 +1,5 @@
 #include "World.h"
-#include "Agent.h"
+#include "Experiment.h"
 #include "Logger.h"
 #include "ConfReader.h"
 #include "UMAException.h"
@@ -9,49 +9,53 @@ static Logger worldLogger("World", "log/world.log");
 
 std::map<string, std::map<string, string>> World::core_info = ConfReader::read_conf("core.ini");
 
-World::World(){
-	worldLogger.info("A new world is created");
-}
-
 World *World::instance() {
 	if (!_world) {
 		_world = new World();
+		worldLogger.info("A new world is created");
 	}
 	return _world;
 }
 
-Agent *World::add_agent(const string &agent_id, int type) {
-	if (_agents.find(agent_id) != _agents.end()) {
-		worldLogger.error("Cannot create a duplicate agent " + agent_id);
-		throw UMAException("Cannot create a duplicate agent " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
-	}
-	if (AGENT_TYPE::STATIONARY == type) {
-		_agents[agent_id] = new Agent(agent_id, "world");
-	}
-	else {
-		_agents[agent_id] = new Agent_qualitative(agent_id, "world");
+Experiment *World::createExperiment(const string &experimentId) {
+	if (_experiments.end() != _experiments.find(experimentId)) {
+		worldLogger.error("The experiment=" + experimentId + " already exist!");
+		throw UMAException("The experiment=" + experimentId + " already exist!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
 
-	worldLogger.info("An agent " + agent_id + " is created, with the type " + to_string(type));
-	return _agents[agent_id];
+	_experiments[experimentId] = new Experiment(experimentId, "world");
+	worldLogger.info("A new experiment=" + experimentId + " is created!");
+	return _experiments[experimentId];
 }
 
-Agent *World::getAgent(const string &agent_id) {
-	if (_agents.find(agent_id) != _agents.end()) {
-		return _agents[agent_id];
+Experiment *World::getExperiment(const string &experimentId) {
+	if (_experiments.end() == _experiments.find(experimentId)) {
+		worldLogger.error("Cannot find experiment=" + experimentId);
+		throw UMAException("Cannot find experiment=" + experimentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
-	worldLogger.warn("No agent " + agent_id + " is found");
-	throw UMAException("Cannot find the agent id!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+
+	worldLogger.verbose("Experiment=" + experimentId + " is accessed");
+	return _experiments[experimentId];
 }
 
-void World::delete_agent(const string &agent_id) {
-	if (_agents.find(agent_id) == _agents.end()) {
-		throw UMAException("Cannot find the agent to delete " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+void World::deleteExperiment(const string &experimentId) {
+	if (_experiments.end() == _experiments.find(experimentId)) {
+		worldLogger.error("Cannot find experiment=" + experimentId);
+		throw UMAException("Cannot find experiment=" + experimentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
-	delete _agents[agent_id];
-	_agents[agent_id] = NULL;
-	_agents.erase(agent_id);
-	worldLogger.info("Agent deleted");
+
+	delete _experiments[experimentId];
+	_experiments[experimentId] = nullptr;
+	_experiments.erase(experimentId);
+	worldLogger.info("Experiment=" + experimentId + " is deleted");
+}
+
+vector<string> World::getExperimentInfo() {
+	vector<string> results;
+	for (auto it = _experiments.begin(); it != _experiments.end(); ++it) {
+		results.push_back(it->first);
+	}
+	return results;
 }
 
 /*
@@ -101,22 +105,5 @@ void World::merge_test() {
 	//TBD delete load_agent data
 }
 */
-
-const vector<vector<string>> World::getAgentInfo() {
-	vector<vector<string>> results;
-	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
-		vector<string> tmp;
-		tmp.push_back(it->first);
-
-		const int type = it->second->getType();
-		string s_type = "";
-		if (AGENT_TYPE::STATIONARY == type) s_type = "default";
-		else if (AGENT_TYPE::QUALITATIVE == type) s_type = "qualitative";
-		tmp.push_back(s_type);
-
-		results.push_back(tmp);
-	}
-	return results;
-}
 
 World::~World(){}

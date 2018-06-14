@@ -1,11 +1,20 @@
 #This is the test script for testing existing snapshot endpoint
 #Test CRUD functionality
 
+create an experiment:
+  method: POST
+  url: /UMA/object/experiment
+  status_code: 201
+  message: Experiment=test_experiment is created
+  data:
+    experiment_id: test_experiment
+
 create an agent:
   method: POST
   url: /UMA/object/agent
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -15,6 +24,7 @@ create an snapshot without id:
   status_code: 400
   message: Coming request is missing necessary fields
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
 create an snapshot with an invalid id(number):
@@ -23,6 +33,7 @@ create an snapshot with an invalid id(number):
   status_code: 400
   message: Cannot parsing the field
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: 123.45
 
@@ -32,6 +43,7 @@ create an snapshot without agent_id:
   status_code: 400
   message: Coming request is missing necessary fields
   data:
+    experiment_id: test_experiment
     snapshot_id: test_snapshot
 
 create an snapshot with an invalid agent_id:
@@ -40,6 +52,7 @@ create an snapshot with an invalid agent_id:
   status_code: 404
   message: Cannot find the agent id
   data:
+    experiment_id: test_experiment
     agent_id: abc
     snapshot_id: test_snapshot
 
@@ -48,6 +61,7 @@ create an snapshot:
   url: /UMA/object/snapshot
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -57,6 +71,7 @@ create snapshot duplicate:
   status_code: 409
   message: Cannot create a duplicate snapshot
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -66,6 +81,7 @@ get snapshot info before:
   status_code: 200
   message: Get snapshot info
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -80,6 +96,7 @@ create sensor1:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor1
@@ -93,6 +110,7 @@ create sensor2:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor2
@@ -107,6 +125,7 @@ change q without giving snapshot id:
   status_code: 400
   message: Coming request is missing necessary fields
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
   data:
     q: 0.123
@@ -117,6 +136,7 @@ chagne q to 'abc':
   status_code: 400
   message: Cannot parsing the field
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -127,6 +147,7 @@ change q to 0.123:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -137,6 +158,7 @@ change threshold to 1.222:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -148,6 +170,7 @@ change auto target to 2.2:
   status_code: 400
   message: Cannot parsing the field
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -158,6 +181,7 @@ change auto target to True:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -168,6 +192,7 @@ change propagate mask to True:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -178,6 +203,7 @@ change initial size to 1:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -189,6 +215,7 @@ get snapshot info after:
   status_code: 200
   message: Get snapshot info
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -206,6 +233,7 @@ snapshot init:
   url: /UMA/object/snapshot/init
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -215,6 +243,7 @@ get snapshot info after init:
   status_code: 200
   message: Get snapshot info
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -233,6 +262,7 @@ delete snapshot without snapshot id:
   status_code: 400
   message: Coming request is missing necessary fields
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
 delete snapshot with invalid id:
@@ -241,6 +271,7 @@ delete snapshot with invalid id:
   status_code: 404
   message: Cannot find the snapshot to delete
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot1
 
@@ -249,6 +280,7 @@ delete snapshot:
   url: /UMA/object/snapshot
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -257,6 +289,7 @@ put request after delete:
   url: /UMA/object/snapshot
   status_code: 404
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -269,6 +302,7 @@ get request after delete:
   status_code: 404
   message: Cannot find the snapshot id
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -277,12 +311,22 @@ clean up agent:
   url: /UMA/object/agent
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
+
+delete experiment:
+  method: DELETE
+  url: /UMA/object/experiment
+  status_code: 200
+  message: Experiment=test_experiment is deleted
+  data:
+    experiment_id: test_experiment
 
 
 #######################
 
 tests:
+  - create an experiment
   - create an agent
   - create an snapshot without id
   - create an snapshot with an invalid id(number)
@@ -310,3 +354,4 @@ tests:
   - put request after delete
   - get request after delete
   - clean up agent
+  - delete experiment

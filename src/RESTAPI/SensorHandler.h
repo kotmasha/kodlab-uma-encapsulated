@@ -7,15 +7,15 @@
 class SensorHandler : public UMARestHandler {
 public:
 	SensorHandler(const string &handler_name);
-	virtual void handle_create(UMARestRequest &request);
-	virtual void handle_update(UMARestRequest &request);
-	virtual void handle_read(UMARestRequest &request);
-	virtual void handle_delete(UMARestRequest &request);
+	virtual void handleCreate(UMARestRequest &request);
+	virtual void handleUpdate(UMARestRequest &request);
+	virtual void handleRead(UMARestRequest &request);
+	virtual void handleDelete(UMARestRequest &request);
 
-	void create_sensor(UMARestRequest &request);
-	void get_sensor(UMARestRequest &request);
-	void get_sensor_pair(UMARestRequest &request);
-	void delete_sensor(UMARestRequest &request);
+	void createSensor(UMARestRequest &request);
+	void getSensor(UMARestRequest &request);
+	void getSensorPair(UMARestRequest &request);
+	void deleteSensor(UMARestRequest &request);
 	~SensorHandler();
 };
 

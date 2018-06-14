@@ -1,8 +1,17 @@
+create an experiment:
+  method: POST
+  url: /UMA/object/experiment
+  status_code: 201
+  message: Experiment=test_experiment is created
+  data:
+    experiment_id: test_experiment
+
 create agent:
   method: POST
   url: /UMA/object/agent
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -11,6 +20,7 @@ create snapshot:
   url: /UMA/object/snapshot
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -19,6 +29,7 @@ create sensor0:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor0
@@ -32,6 +43,7 @@ create sensor1:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor1
@@ -45,6 +57,7 @@ create sensor2:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor2
@@ -58,6 +71,7 @@ create sensor3:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor3
@@ -72,6 +86,7 @@ set observe signal 0:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -79,9 +94,10 @@ set observe signal 0:
 
 delay 0, 0=true:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[True, False, False, False, False, False, False, False]]
@@ -92,6 +108,7 @@ get weights after 0, 0=true:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -112,6 +129,7 @@ get sensorX 0:
   url: /UMA/object/sensor
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -126,6 +144,7 @@ get snapshot 5 sensor:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -144,9 +163,10 @@ get snapshot 5 sensor:
 
 get data size 5 sensor:
   method: GET
-  url: /UMA/data/data_size
+  url: /UMA/data/dataSize
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -166,9 +186,10 @@ get data size 5 sensor:
 
 pruning X:
   method: POST
-  url: /UMA/snapshot/pruning
+  url: /UMA/object/snapshot/pruning
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals: [False, False, False, False, False, False, False, False, True, True]
@@ -178,6 +199,7 @@ get snapshot 4 sensor:
   url: /UMA/object/snapshot
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -195,9 +217,10 @@ get snapshot 4 sensor:
 
 get data size 4 sensor:
   method: GET
-  url: /UMA/data/data_size
+  url: /UMA/data/dataSize
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -222,6 +245,7 @@ set observe signal 1:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -229,9 +253,10 @@ set observe signal 1:
 
 delay 0, 0=false:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[True, False, False, False, False, False, False, False]]
@@ -242,6 +267,7 @@ get weights after 0, 0=false:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -263,6 +289,7 @@ set observe signal 7:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -270,9 +297,10 @@ set observe signal 7:
 
 delay 7, 7=true:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[False, False, False, False, False, False, False, True]]
@@ -283,6 +311,7 @@ get weights after 7, 7=true:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -303,6 +332,7 @@ get sensorX 7:
   url: /UMA/object/sensor
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -318,6 +348,7 @@ set observe signal 6:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -325,9 +356,10 @@ set observe signal 6:
 
 delay 7, 7=false:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[False, False, False, False, False, False, False, True]]
@@ -338,6 +370,7 @@ get weights after 7, 7=false:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -360,6 +393,7 @@ set observe signal 0&2&4:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -367,9 +401,10 @@ set observe signal 0&2&4:
 
 delay 0&2&4, 0&2&4=true:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[True, False, True, False, True, False, False, False]]
@@ -380,6 +415,7 @@ get weights after 0&2&4, 0&2&4=true:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -400,6 +436,7 @@ get sensorX 0&2&4:
   url: /UMA/object/sensor
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensorX
@@ -415,6 +452,7 @@ set observe signal 0&2&5:
   url: /UMA/data/observe
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   data:
@@ -422,9 +460,10 @@ set observe signal 0&2&5:
 
 delay 0&2&4, 0&2&4=false:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[True, False, True, False, True, False, False, False]]
@@ -435,6 +474,7 @@ get weights after 0&2&4, 0&2&4=false:
   url: /UMA/data/weights
   status_code: 200
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -455,9 +495,19 @@ delete agent:
   url: /UMA/object/agent
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
+delete experiment:
+  method: DELETE
+  url: /UMA/object/experiment
+  status_code: 200
+  data:
+    experiment_id: test_experiment
+  message: Experiment=test_experiment is deleted
+
 tests:
+  - create an experiment
   - create agent
   - create snapshot
   - create sensor0
@@ -538,3 +588,4 @@ tests:
   - get snapshot 4 sensor
   - get data size 4 sensor
   - delete agent
+  - delete experiment

@@ -252,7 +252,7 @@ UMARestTestHandler::UMARestTestHandler(): UMARestHandler("test_handler") {}
 
 UMARestTestHandler::~UMARestTestHandler() {}
 
-void UMARestTestHandler::handle_create(UMARestRequest &request) {
+void UMARestTestHandler::handleCreate(UMARestRequest &request) {
 	const string type = request.get_string_data("type");
 	const string p_name = request.get_string_data("p_name");
 
@@ -360,7 +360,7 @@ void UMARestTestHandler::handle_create(UMARestRequest &request) {
 	}
 }
 
-void UMARestTestHandler::handle_read(UMARestRequest &request) {
+void UMARestTestHandler::handleRead(UMARestRequest &request) {
 	const string type = request.get_string_query("type");
 	const string p_name = request.get_string_query("p_name");
 
@@ -384,5 +384,5 @@ void UMARestTestHandler::handle_read(UMARestRequest &request) {
 		throw UMAException("cannot find any matching test case", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
 	}
 }
-void UMARestTestHandler::handle_update(UMARestRequest &request) {}
-void UMARestTestHandler::handle_delete(UMARestRequest &request) {}
+void UMARestTestHandler::handleUpdate(UMARestRequest &request) {}
+void UMARestTestHandler::handleDelete(UMARestRequest &request) {}

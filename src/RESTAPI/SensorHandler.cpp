@@ -1,5 +1,6 @@
 #include "SensorHandler.h"
 #include "World.h"
+#include "Experiment.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "Sensor.h"
@@ -9,109 +10,117 @@
 SensorHandler::SensorHandler(const string &handler_name) :UMARestHandler(handler_name) {
 }
 
-void SensorHandler::handle_create(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/sensor") {
-		create_sensor(request);
+void SensorHandler::handleCreate(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/sensor") {
+		createSensor(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle POST " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SensorHandler::handle_update(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	throw UMAException("Cannot handle PUT " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+void SensorHandler::handleUpdate(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SensorHandler::handle_read(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/sensor") {
-		get_sensor(request);
+void SensorHandler::handleRead(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/sensor") {
+		getSensor(request);
 		return;
 	}
-	else if (request_url == "/UMA/object/sensor_pair") {
-		get_sensor_pair(request);
-		return;
-	}
-
-	throw UMAException("Cannot handle GET " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
-}
-
-void SensorHandler::handle_delete(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/sensor") {
-		delete_sensor(request);
+	else if (requestUrl == "/UMA/object/sensorPair") {
+		getSensorPair(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle DELETE " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SensorHandler::get_sensor(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string sensor_id = request.get_string_query("sensor_id");
+void SensorHandler::handleDelete(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/sensor") {
+		deleteSensor(request);
+		return;
+	}
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	Sensor *sensor = snapshot->getSensor(sensor_id);
+	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+}
+
+void SensorHandler::getSensor(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string sensorId = request.get_string_query("sensor_id");
+
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	Sensor *sensor = snapshot->getSensor(sensorId);
 
 	const int idx = sensor->getIdx();
-	vector<int> amper_list_idx = sensor->getAmperList();
-	vector<bool> amper_list = snapshot->getAmperList(sensor_id);
-	vector<string> amper_list_ids = snapshot->getAmperListID(sensor_id);
+	vector<int> amperListIdx = sensor->getAmperList();
+	vector<bool> amperList = snapshot->getAmperList(sensorId);
+	vector<string> amperListIds = snapshot->getAmperListID(sensorId);
 
 	request.set_message("Sensor info get");
-	request.set_data("amper_list_idx", amper_list_idx);
-	request.set_data("amper_list", amper_list);
-	request.set_data("amper_list_ids", amper_list_ids);
+	request.set_data("amper_list_idx", amperListIdx);
+	request.set_data("amper_list", amperList);
+	request.set_data("amper_list_ids", amperListIds);
 	request.set_data("idx", idx);
 }
 
-void SensorHandler::get_sensor_pair(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string sensor_id1 = request.get_string_query("sensor1");
-	const string sensor_id2 = request.get_string_query("sensor2");
+void SensorHandler::getSensorPair(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string sensorId1 = request.get_string_query("sensor1");
+	const string sensorId2 = request.get_string_query("sensor2");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	Sensor *sensor1 = snapshot->getSensor(sensor_id1);
-	Sensor *sensor2 = snapshot->getSensor(sensor_id2);
-	SensorPair *sensor_pair = snapshot->getSensorPair(sensor1, sensor2);
-	const double threshold = sensor_pair->getThreshold();
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	Sensor *sensor1 = snapshot->getSensor(sensorId1);
+	Sensor *sensor2 = snapshot->getSensor(sensorId2);
+	SensorPair *sensorPair = snapshot->getSensorPair(sensor1, sensor2);
+	const double threshold = sensorPair->getThreshold();
 
 	request.set_message("Sensor Pair info get");
 	request.set_data("threshold", threshold);
 }
 
-void SensorHandler::create_sensor(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
-	const string sensor_id = request.get_string_data("sensor_id");
-	const string c_sid = request.get_string_data("c_sid");
+void SensorHandler::createSensor(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
+	const string sensorId = request.get_string_data("sensor_id");
+	const string cSid = request.get_string_data("c_sid");
 
 	vector<vector<double> > w = request.get_double2d_data("w");
 	vector<vector<bool> > d = request.get_bool2d_data("d");
 	vector<double> diag = request.get_double1d_data("diag");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	std::pair<string, string> id_pair(sensor_id, c_sid);
-	snapshot->add_sensor(id_pair, diag, w, d);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	std::pair<string, string> idPair(sensorId, cSid);
+	snapshot->add_sensor(idPair, diag, w, d);
 
 	request.set_message("Sensor created");
 }
 
-void SensorHandler::delete_sensor(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
-	const string sensor_id = request.get_string_data("sensor_id");
+void SensorHandler::deleteSensor(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
+	const string sensorId = request.get_string_data("sensor_id");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	snapshot->delete_sensor(sensor_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	snapshot->delete_sensor(sensorId);
 
 	request.set_message("Sensor deleted");
 }

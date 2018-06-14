@@ -8,15 +8,15 @@ class AttrSensorHandler: public UMARestHandler {
 public:
 	AttrSensorHandler(const string &handler_name);
 
-	virtual void handle_create(UMARestRequest &request);
-	virtual void handle_update(UMARestRequest &request);
-	virtual void handle_read(UMARestRequest &request);
-	virtual void handle_delete(UMARestRequest &request);
+	virtual void handleCreate(UMARestRequest &request);
+	virtual void handleUpdate(UMARestRequest &request);
+	virtual void handleRead(UMARestRequest &request);
+	virtual void handleDelete(UMARestRequest &request);
 
-	void get_attr_sensor(UMARestRequest &request);
-	void get_attr_sensor_pair(UMARestRequest &request);
-	void update_attr_sensor_pair(UMARestRequest &request);
-	void update_attr_sensor(UMARestRequest &request);
+	void getAttrSensor(UMARestRequest &request);
+	void getAttrSensorPair(UMARestRequest &request);
+	void updateAttrSensorPair(UMARestRequest &request);
+	void updateAttrSensor(UMARestRequest &request);
 	~AttrSensorHandler();
 };
 

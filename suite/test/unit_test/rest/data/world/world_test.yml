@@ -1,29 +1,29 @@
-#This is the test script for testing existing agent endpoint
+#This is the test script for testing existing experiment endpoint
 #Test CRUD functionality
 
-create agent1:
+create test_experiment1:
   method: POST
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 201
+  message: Experiment=test_experiment1 is created
   data:
-    agent_id: test_agent1
-    type: default
+    experiment_id: test_experiment1
 
-create agent2:
+create test_experiment2:
   method: POST
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 201
+  message: Experiment=test_experiment2 is created
   data:
-    agent_id: test_agent2
-    type: default
+    experiment_id: test_experiment2
 
-create agent3:
+create test_experiment3:
   method: POST
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 201
+  message: Experiment=test_experiment3 is created
   data:
-    agent_id: test_agent3
-    type: qualitative
+    experiment_id: test_experiment3
 
 get world:
   method: GET
@@ -31,32 +31,34 @@ get world:
   status_code: 200
   message: Get world info
   kwargs:
-    agent_ids:
-      - [test_agent1, default]
-      - [test_agent2, default]
-      - [test_agent3, qualitative]
-    agent_count: 3
+    experiment_ids:
+      - test_experiment1
+      - test_experiment2
+      - test_experiment3
 
-delete agent1:
+delete test_experiment1:
   method: DELETE
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 200
+  message: Experiment=test_experiment1 is deleted
   data:
-    agent_id: test_agent1
+    experiment_id: test_experiment1
 
-delete agent2:
+delete test_experiment2:
   method: DELETE
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 200
+  message: Experiment=test_experiment2 is deleted
   data:
-    agent_id: test_agent2
+    experiment_id: test_experiment2
 
-delete agent3:
+delete test_experiment3:
   method: DELETE
-  url: /UMA/object/agent
+  url: /UMA/object/experiment
   status_code: 200
+  message: Experiment=test_experiment3 is deleted
   data:
-    agent_id: test_agent3
+    experiment_id: test_experiment3
 
 get world after delete:
   method: GET
@@ -64,15 +66,14 @@ get world after delete:
   status_code: 200
   message: Get world info
   kwargs:
-    agent_ids: []
-    agent_count: 0
+    experiment_ids: []
 
 tests:
-  - create agent1
-  - create agent2
-  - create agent3
+  - create test_experiment1
+  - create test_experiment2
+  - create test_experiment3
   - get world
-  - delete agent1
-  - delete agent2
-  - delete agent3
+  - delete test_experiment1
+  - delete test_experiment2
+  - delete test_experiment3
   - get world after delete

@@ -1,71 +1,77 @@
 #include "AgentHandler.h"
 #include "World.h"
+#include "Experiment.h"
 #include "Agent.h"
 #include "UMAException.h"
 
 AgentHandler::AgentHandler(const string &handler_name): UMARestHandler(handler_name) {}
 
-void AgentHandler::handle_create(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/agent") {
-		create_agent(request);
+void AgentHandler::handleCreate(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/agent") {
+		createAgent(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle POST " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AgentHandler::handle_update(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	throw UMAException("Cannot handle PUT " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+void AgentHandler::handleUpdate(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AgentHandler::handle_read(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/agent") {
-		get_agent(request);
+void AgentHandler::handleRead(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/agent") {
+		getAgent(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AgentHandler::handle_delete(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/agent") {
-		delete_agent(request);
+void AgentHandler::handleDelete(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/agent") {
+		deleteAgent(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle DELETE" + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle DELETE" + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AgentHandler::create_agent(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string agent_type = request.get_string_data("type");
+void AgentHandler::createAgent(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string agentType = request.get_string_data("type");
 	int type = 0;
-	if (agent_type == "default") type = AGENT_TYPE::STATIONARY;
+	if (agentType == "default") type = AGENT_TYPE::STATIONARY;
 	else type = AGENT_TYPE::QUALITATIVE;
-	World::instance()->add_agent(agent_id, type);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	experiment->createAgent(agentId, type);
 
-	request.set_message("Agent created");
+	request.set_message("Agent=" + agentId + " is created");
 }
 
-void AgentHandler::get_agent(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	Agent *agent = World::instance()->getAgent(agent_id);
-	vector<vector<string>> snapshot_ids = agent->getSnapshotInfo();
+void AgentHandler::getAgent(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	vector<vector<string>> snapshotIds = agent->getSnapshotInfo();
 
 	request.set_message("Get agent info");
-	request.set_data("snapshot_ids", snapshot_ids);
-	request.set_data("snapshot_count", (int)snapshot_ids.size());
+	request.set_data("snapshot_ids", snapshotIds);
 }
 
-void AgentHandler::delete_agent(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	World::instance()->delete_agent(agent_id);
+void AgentHandler::deleteAgent(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	experiment->deleteAgent(agentId);
 
-	request.set_message("Agent deleted");
+	request.set_message("Agent=" + agentId + " is deleted");
 }
 
 AgentHandler::~AgentHandler() {}

@@ -18,7 +18,6 @@ void simulation::abduction_over_negligible(Snapshot *snapshot, vector<vector<boo
 	int sensor_size = size_info.at("_sensor_size");
 	int attr_sensor_size = size_info.at("_attr_sensor_size");
 	int initial_size = snapshot->getInitialSize();
-	cout << "attr_sensor_size in negligible:" << attr_sensor_size << endl;
 
 	kernel_util::init_mask_signal(dm->_dvar_b(DataManager::BOOL_TMP), initial_size * 2, attr_sensor_size);
 	kernel_util::subtraction(dm->_dvar_b(DataManager::NEGLIGIBLE), dm->_dvar_b(DataManager::BOOL_TMP), attr_sensor_size);
@@ -56,6 +55,7 @@ void simulation::abduction_over_negligible(Snapshot *snapshot, vector<vector<boo
 		inputs.push_back(snapshot->generateSignal(m));
 	}
 	vector<vector<vector<bool>>> results = simulation::abduction(dm, inputs);
+
 	for (int i = 0; i < results.size(); ++i) {
 		for (int j = 0; j < results[i].size(); ++j)
 			sensors_to_be_added.push_back(results[i][j]);
@@ -68,7 +68,7 @@ void simulation::abduction_over_delayed_sensors(Snapshot *snapshot, vector<vecto
 	DataManager *dm = snapshot->getDM();
 	int initial_size = snapshot->getInitialSize();
 	int attr_sensor_size = dm->getSizeInfo().at("_attr_sensor_size");
-	cout << "attr_sensor_size in delayed sensor:" << attr_sensor_size << endl;
+
 	vector<vector<bool>> downs;
 	for (int i = 0; i < initial_size * 2; ++i) {
 		vector<AttrSensor*> m(1, snapshot->getAttrSensor(i));
@@ -125,7 +125,7 @@ void simulation::enrichment(Snapshot *snapshot, bool do_pruning) {
 		snapshot->delays(sensors_to_be_added, p);
 		return;
 	}
-	
+
 	simulation::propagate_mask(dm);
 	simulation::abduction_over_negligible(snapshot, sensors_to_be_added, sensors_to_be_removed);
 	simulation::abduction_over_delayed_sensors(snapshot, sensors_to_be_added, sensors_to_be_removed);
@@ -177,14 +177,12 @@ vector<float> simulation::decide(Agent *agent, vector<bool> &obs_plus, vector<bo
 	Snapshot *snapshot_plus = agent->getSnapshot("plus");
 	Snapshot *snapshot_minus = agent->getSnapshot("minus");
 
-	//bool do_pruning = agent->do_pruning();
+	bool do_pruning = agent->do_pruning();
 	//if (active) simulation::enrichment(snapshot_plus, do_pruning);
 	//else simulation::enrichment(snapshot_minus, do_pruning);
 
 	const float res_plus = simulation::decide(snapshot_plus, obs_plus, phi, active);
 	const float res_minus = simulation::decide(snapshot_minus, obs_minus, phi, !active);
-
-	cout << "divergence result: " <<res_plus << "," << res_minus << endl;
 	
 	results.push_back(res_plus);
 	results.push_back(res_minus);
@@ -284,9 +282,6 @@ void simulation::halucinate(DataManager *dm, int &initial_size) {
 	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::PREDICTION), 1, attr_sensor_size);
 	data_util::boolD2H(dm->_dvar_b(DataManager::PREDICTION), dm->_hvar_b(DataManager::PREDICTION), attr_sensor_size);
 
-	//data_util::boolD2H(dm->_dvar_b(DataManager::MASK), dm->_hvar_b(DataManager::MASK), attr_sensor_size);
-	//for (int i = 0; i < attr_sensor_size; ++i) cout << dm->_hvar_b(DataManager::MASK)[i] << ",";
-	//cout << endl;
 	simulationLogger.debug("Halucniate is done");
 }
 
@@ -340,10 +335,6 @@ float simulation::divergence(DataManager *dm) {
 
 	data_util::boolD2H(dm->_dvar_b(DataManager::PREDICTION), dm->_hvar_b(DataManager::PREDICTION), attr_sensor_size);
 	data_util::boolD2H(dm->_dvar_b(DataManager::TARGET), dm->_hvar_b(DataManager::TARGET), attr_sensor_size);
-	//for (int i = 0; i < attr_sensor_size; ++i) cout << dm->_hvar_b(DataManager::PREDICTION)[i] << ",";
-	//cout << endl;
-	//for (int i = 0; i < attr_sensor_size; ++i) cout << dm->_hvar_b(DataManager::TARGET)[i] << ",";
-	//cout << endl;
 
 	data_util::boolD2D(dm->_dvar_b(DataManager::PREDICTION), dm->_dvar_b(DataManager::DEC_TMP1), attr_sensor_size);
 	data_util::boolD2D(dm->_dvar_b(DataManager::TARGET), dm->_dvar_b(DataManager::DEC_TMP2), attr_sensor_size);
@@ -400,7 +391,6 @@ void simulation::downs_GPU(bool *npdirs, bool *signals, bool *dst, int sig_count
 vector<vector<vector<bool> > > simulation::abduction(DataManager *dm, const vector<vector<bool> > &signals) {
 	std::map<string, int> size_info = dm->getSizeInfo();
 	int attr_sensor_size = size_info["_attr_sensor_size"];
-	cout << "attr_sensor_size:" << attr_sensor_size << endl;
 
 	vector<vector<vector<bool> > > results;
 	vector<vector<bool> > even_results, odd_results;

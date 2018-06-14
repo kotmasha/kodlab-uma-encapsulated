@@ -9,22 +9,22 @@ using namespace std;
 class SimulationHandler: public UMARestHandler {
 public:
 	SimulationHandler(const string &handler_name);
-	virtual void handle_create(UMARestRequest &request);
-	virtual void handle_update(UMARestRequest &request);
-	virtual void handle_read(UMARestRequest &request);
-	virtual void handle_delete(UMARestRequest &request);
+	virtual void handleCreate(UMARestRequest &request);
+	virtual void handleUpdate(UMARestRequest &request);
+	virtual void handleRead(UMARestRequest &request);
+	virtual void handleDelete(UMARestRequest &request);
 	~SimulationHandler();
 
 protected:
-	void create_decision(UMARestRequest &request);
-	void create_propagation(UMARestRequest &request);
-	void create_npdirs(UMARestRequest &request);
-	void create_up(UMARestRequest &request);
-	void create_ups(UMARestRequest &request);
-	void create_downs(UMARestRequest &request);
-	void create_blocks(UMARestRequest &request);
-	void create_abduction(UMARestRequest &request);
-	void create_propagate_masks(UMARestRequest &request);
+	void createDecision(UMARestRequest &request);
+	void createPropagation(UMARestRequest &request);
+	void createNpdirs(UMARestRequest &request);
+	void createUp(UMARestRequest &request);
+	void createUps(UMARestRequest &request);
+	void createDowns(UMARestRequest &request);
+	void createBlocks(UMARestRequest &request);
+	void createAbduction(UMARestRequest &request);
+	void createPropagateMasks(UMARestRequest &request);
 	//void create_saving(World *world, json::value &data, http_request &request);
 	//void create_loading(World *world, json::value &data, http_request &request);
 	//void create_merging(World *world, json::value &data, http_request &request);

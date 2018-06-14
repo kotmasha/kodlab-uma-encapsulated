@@ -1,9 +1,17 @@
+create an experiment:
+  method: POST
+  url: /UMA/object/experiment
+  status_code: 201
+  message: Experiment=test_experiment is created
+  data:
+    experiment_id: test_experiment
 
 create an agent:
   method: POST
   url: /UMA/object/agent
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -12,6 +20,7 @@ create an snapshot:
   url: /UMA/object/snapshot
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -20,6 +29,7 @@ create sensor0:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor0
@@ -33,6 +43,7 @@ create sensor1:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor1
@@ -46,6 +57,7 @@ create sensor2:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor2
@@ -59,6 +71,7 @@ create sensor3:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor3
@@ -72,6 +85,7 @@ create sensor4:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor4
@@ -82,9 +96,10 @@ create sensor4:
 
 delay 0&2:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[True, False, True, False, False, False, False, False, False, False]]
@@ -92,9 +107,10 @@ delay 0&2:
 
 delay 3&5&7:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[False, False, False, True, False, True, False, True, False, False, False, False]]
@@ -102,9 +118,10 @@ delay 3&5&7:
 
 delay 1&5&10&13:
   method: POST
-  url: /UMA/snapshot/delay
+  url: /UMA/object/snapshot/delay
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delay_lists: [[False, True, False, False, False, True, False, False, False, False, True, False, False, True]]
@@ -115,14 +132,16 @@ npdirs:
   url: /UMA/simulation/npdirs
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
 propagate mask:
   method: POST
-  url: /UMA/simulation/propagate_masks
+  url: /UMA/simulation/propagateMasks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -141,6 +160,7 @@ abduction even:
   url: /UMA/simulation/abduction
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -169,6 +189,7 @@ abduction odd:
   url: /UMA/simulation/abduction
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -197,6 +218,7 @@ abduction mix:
   url: /UMA/simulation/abduction
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -221,9 +243,19 @@ delete agent:
   url: /UMA/object/agent
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
+delete experiment:
+  method: DELETE
+  url: /UMA/object/experiment
+  status_code: 200
+  data:
+    experiment_id: test_experiment
+  message: Experiment=test_experiment is deleted
+
 tests:
+  - create an experiment
   - create an agent
   - create an snapshot
   - create sensor0
@@ -240,3 +272,4 @@ tests:
   - abduction odd
   - abduction mix
   - delete agent
+  - delete experiment

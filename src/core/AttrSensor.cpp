@@ -5,7 +5,7 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 
-static Logger attrSensorLogger("attrSensor", "log/attrSensor.log");
+static Logger attrSensorLogger("AttrSensor", "log/attrSensor.log");
 
 /*
 AttrSensor::AttrSensor(ifstream &file) {
