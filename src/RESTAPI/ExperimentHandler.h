@@ -1,5 +1,5 @@
-#ifndef _AGENTHANDLER_
-#define _AGENTHANDLER_
+#ifndef _EXPERIMENTHANDLER_
+#define _EXPERIMENTHANDLER_
 
 #include "Global.h"
 #include "UMARestHandler.h"
@@ -8,17 +8,17 @@
 class World;
 class Agent;
 
-class AgentHandler: public UMARestHandler {
+class ExperimentHandler : public UMARestHandler {
 public:
-	AgentHandler(const string &handler_name);
+	ExperimentHandler(const string &handler_name);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);
 	virtual void handleDelete(UMARestRequest &request);
-	void createAgent(UMARestRequest &request);
-	void getAgent(UMARestRequest &request);
-	void deleteAgent(UMARestRequest &request);
-	virtual ~AgentHandler();
+	void createExperiment(UMARestRequest &request);
+	void getExperiment(UMARestRequest &request);
+	void deleteExperiment(UMARestRequest &request);
+	virtual ~ExperimentHandler();
 };
 
 #endif

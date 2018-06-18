@@ -1,6 +1,7 @@
 #include "AttrSensorHandler.h"
 #include "UMAException.h"
 #include "World.h"
+#include "Experiment.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "Sensor.h"
@@ -11,85 +12,89 @@
 AttrSensorHandler::AttrSensorHandler(const string &handler_name) : UMARestHandler(handler_name) {
 }
 
-void AttrSensorHandler::handle_create(UMARestRequest &request) {
+void AttrSensorHandler::handleCreate(UMARestRequest &request) {
 	//no post call available for attr_sensor or attr_sensor pair, as they are created by sensor
-	const string request_url = request.get_request_url();
-	throw UMAException("Cannot handle POST " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	const string requestUrl = request.get_request_url();
+	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AttrSensorHandler::handle_update(UMARestRequest &request) {
+void AttrSensorHandler::handleUpdate(UMARestRequest &request) {
 	//only for test purpose
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/attr_sensor") {
-		update_attr_sensor(request);
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/attrSensor") {
+		updateAttrSensor(request);
 		return;
 	}
-	else if (request_url == "/UMA/object/attr_sensor_pair") {
-		update_attr_sensor_pair(request);
+	else if (requestUrl == "/UMA/object/attrSensorPair") {
+		updateAttrSensorPair(request);
 		return;
 	}
-	throw UMAException("Cannot handle PUT " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AttrSensorHandler::handle_read(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/object/attr_sensor") {
-		get_attr_sensor(request);
+void AttrSensorHandler::handleRead(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/object/attrSensor") {
+		getAttrSensor(request);
 		return;
 	}
-	else if (request_url == "/UMA/object/attr_sensor_pair") {
-		get_attr_sensor_pair(request);
+	else if (requestUrl == "/UMA/object/attrSensorPair") {
+		getAttrSensorPair(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AttrSensorHandler::handle_delete(UMARestRequest &request) {
-	//no delete call for attr_sensor attr_sensor_pair, they are handled in sensor
-	const string request_url = request.get_request_url();
-	throw UMAException("Cannot handle DELETE " + request_url, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+void AttrSensorHandler::handleDelete(UMARestRequest &request) {
+	//no delete call for attrSensor attrSensorPair, they are handled in sensor
+	const string requestUrl = request.get_request_url();
+	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AttrSensorHandler::get_attr_sensor(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string attr_sensor_id = request.get_string_query("attr_sensor_id");
+void AttrSensorHandler::getAttrSensor(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string attrSensorId = request.get_string_query("attr_sensor_id");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	AttrSensor *attr_sensor = snapshot->getAttrSensor(attr_sensor_id);
-	const double diag = attr_sensor->getDiag();
-	const double old_diag = attr_sensor->getOldDiag();
-	bool current = attr_sensor->getCurrent();
-	bool isOriginPure = attr_sensor->getIsOriginPure();
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	AttrSensor *attrSensor = snapshot->getAttrSensor(attrSensorId);
+	const double diag = attrSensor->getDiag();
+	const double old_diag = attrSensor->getOldDiag();
+	bool current = attrSensor->getCurrent();
+	bool isOriginPure = attrSensor->getIsOriginPure();
 
 	request.set_message("AttrSensor info get");
 	request.set_data("diag", diag);
 	request.set_data("old_diag", old_diag);
 	request.set_data("status", current);
-	request.set_data("isOriginPure", isOriginPure);
+	request.set_data("is_origin_pure", isOriginPure);
 }
 
-void AttrSensorHandler::update_attr_sensor(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string attr_sensor_id = request.get_string_query("attr_sensor_id");
+void AttrSensorHandler::updateAttrSensor(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string attrSensorId = request.get_string_query("attr_sensor_id");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	AttrSensor *attr_sensor = snapshot->getAttrSensor(attr_sensor_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	AttrSensor *attrSensor = snapshot->getAttrSensor(attrSensorId);
 
 	if (request.check_data_field("diag")) {
 		const double diag = request.get_double_data("diag");
-		attr_sensor->setDiag(diag);
+		attrSensor->setDiag(diag);
 
 		request.set_message("Diag updated");
 		return;
 	}
 	else if (request.check_data_field("old_diag")) {
 		const double old_diag = request.get_double_data("old_diag");
-		attr_sensor->setOldDiag(old_diag);
+		attrSensor->setOldDiag(old_diag);
 
 		request.set_message("Old diag updated");
 		return;
@@ -98,43 +103,47 @@ void AttrSensorHandler::update_attr_sensor(UMARestRequest &request) {
 	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void AttrSensorHandler::get_attr_sensor_pair(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string attr_sensor_id1 = request.get_string_query("attr_sensor1");
-	const string attr_sensor_id2 = request.get_string_query("attr_sensor2");
+void AttrSensorHandler::getAttrSensorPair(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string attrSensorId1 = request.get_string_query("attr_sensor1");
+	const string attrSensorId2 = request.get_string_query("attr_sensor2");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	AttrSensorPair *attr_sensor_pair = snapshot->getAttrSensorPair(attr_sensor_id1, attr_sensor_id2);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	AttrSensorPair *attrSensorPair = snapshot->getAttrSensorPair(attrSensorId1, attrSensorId2);
 
-	const double w = attr_sensor_pair->getW();
-	const bool d = attr_sensor_pair->getD();
+	const double w = attrSensorPair->getW();
+	const bool d = attrSensorPair->getD();
 	request.set_message("AttrSensor pair info get");
 	request.set_data("w", w);
 	request.set_data("d", d);
 }
 
-void AttrSensorHandler::update_attr_sensor_pair(UMARestRequest &request) {
-	const string agent_id = request.get_string_query("agent_id");
-	const string snapshot_id = request.get_string_query("snapshot_id");
-	const string attr_sensor_id1 = request.get_string_query("attr_sensor1");
-	const string attr_sensor_id2 = request.get_string_query("attr_sensor2");
+void AttrSensorHandler::updateAttrSensorPair(UMARestRequest &request) {
+	const string experimentId = request.get_string_query("experiment_id");
+	const string agentId = request.get_string_query("agent_id");
+	const string snapshotId = request.get_string_query("snapshot_id");
+	const string attrSensorId1 = request.get_string_query("attr_sensor1");
+	const string attrSensorId2 = request.get_string_query("attr_sensor2");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
-	AttrSensorPair *attr_sensor_pair = snapshot->getAttrSensorPair(attr_sensor_id1, attr_sensor_id2);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
+	AttrSensorPair *attrSensorPair = snapshot->getAttrSensorPair(attrSensorId1, attrSensorId2);
 
 	if (request.check_data_field("w")) {
 		const double w = request.get_double_data("w");
-		attr_sensor_pair->setW(w);
+		attrSensorPair->setW(w);
 
 		request.set_message("w updated");
 		return;
 	}
 	else if (request.check_data_field("d")) {
 		const bool d = request.get_bool_data("d");
-		attr_sensor_pair->setD(d);
+		attrSensorPair->setD(d);
 
 		request.set_message("d updated");
 		return;

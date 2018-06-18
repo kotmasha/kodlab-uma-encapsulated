@@ -46,7 +46,7 @@ void UMARestListener::add_path_to_handler(const string &path, const string &hand
 }
 
 void UMARestListener::listen() {
-	_listener.open().wait();
+	_listener.open().then([](pplx::task<void> t) {});
 }
 
 void UMARestListener::handle(http_request &request, string request_type) {
@@ -66,22 +66,22 @@ void UMARestListener::handle(http_request &request, string request_type) {
 
 	try {
 		if (request_type == "POST") {
-			handler->handle_create(uma_request);
+			handler->handleCreate(uma_request);
 			uma_request.set_status_code(status_codes::Created);
 			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::Created));
 		}
 		else if (request_type == "PUT") {
-			handler->handle_update(uma_request);
+			handler->handleUpdate(uma_request);
 			uma_request.set_status_code(status_codes::OK);
 			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
 		}
 		else if (request_type == "GET") {
-			handler->handle_read(uma_request);
+			handler->handleRead(uma_request);
 			uma_request.set_status_code(status_codes::OK);
 			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
 		}
 		else {
-			handler->handle_delete(uma_request);
+			handler->handleDelete(uma_request);
 			uma_request.set_status_code(status_codes::OK);
 			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
 		}

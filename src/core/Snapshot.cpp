@@ -264,7 +264,6 @@ Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
 	if (signal.size() > _dm->_attr_sensor_size) {
-		cout << signal.size() << ",,," << _dm->_attr_sensor_size << endl;
 		throw UMAException("Input signal size for pruning is larger than attr_sensor_size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	//get converted sensor list, from attr_sensor signal

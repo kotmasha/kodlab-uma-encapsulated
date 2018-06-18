@@ -1,6 +1,7 @@
 #include "Global.h"
 #include "UMARestListener.h"
 #include "WorldHandler.h"
+#include "ExperimentHandler.h"
 #include "AgentHandler.h"
 #include "SnapshotHandler.h"
 #include "DataHandler.h"
@@ -12,32 +13,35 @@
 
 using namespace std;
 
-static WorldHandler *world_handler = NULL;
-static AgentHandler *agent_handler = NULL;
-static SnapshotHandler *snapshot_handler = NULL;
-static DataHandler *data_handler = NULL;
-static SensorHandler *sensor_handler = NULL;
-static AttrSensorHandler *attr_sensor_handler = NULL;
-static SimulationHandler *simulation_handler = NULL;
+static WorldHandler *worldHandler = nullptr;
+static ExperimentHandler *experimentHandler = nullptr;
+static AgentHandler *agentHandler = nullptr;
+static SnapshotHandler *snapshotHandler = nullptr;
+static DataHandler *dataHandler = nullptr;
+static SensorHandler *sensorHandler = nullptr;
+static AttrSensorHandler *attrSensorHandler = nullptr;
+static SimulationHandler *simulationHandler = nullptr;
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 
 static void init_handlers(UMARestListener &listener) {
-	world_handler = new WorldHandler("world");
-	agent_handler = new AgentHandler("agent");
-	snapshot_handler = new SnapshotHandler("snapshot");
-	data_handler = new DataHandler("data");
-	sensor_handler = new SensorHandler("sensor");
-	attr_sensor_handler = new AttrSensorHandler("attr_sensor");
-	simulation_handler = new SimulationHandler("simulation");
+	worldHandler = new WorldHandler("world");
+	experimentHandler = new ExperimentHandler("experiment");
+	agentHandler = new AgentHandler("agent");
+	snapshotHandler = new SnapshotHandler("snapshot");
+	dataHandler = new DataHandler("data");
+	sensorHandler = new SensorHandler("sensor");
+	attrSensorHandler = new AttrSensorHandler("attrSensor");
+	simulationHandler = new SimulationHandler("simulation");
 
-	listener.register_handler(world_handler);
-	listener.register_handler(agent_handler);
-	listener.register_handler(snapshot_handler);
-	listener.register_handler(data_handler);
-	listener.register_handler(sensor_handler);
-	listener.register_handler(attr_sensor_handler);
-	listener.register_handler(simulation_handler);
+	listener.register_handler(worldHandler);
+	listener.register_handler(experimentHandler);
+	listener.register_handler(agentHandler);
+	listener.register_handler(snapshotHandler);
+	listener.register_handler(dataHandler);
+	listener.register_handler(sensorHandler);
+	listener.register_handler(attrSensorHandler);
+	listener.register_handler(simulationHandler);
 }
 
 

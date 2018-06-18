@@ -232,7 +232,7 @@ bool Sensor::generateDelayedSignal() {
 	}
 	for (int i = 0; i < _amper.size(); ++i) {
 		int j = _amper[i];
-		if (!_observe_[j]) return false;
+		if (!_observe[j]) return false;
 	}
 	return true;
 }

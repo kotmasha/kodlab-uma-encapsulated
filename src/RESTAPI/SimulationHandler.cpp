@@ -1,5 +1,6 @@
 #include "SimulationHandler.h"
 #include "World.h"
+#include "Experiment.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "DataManager.h"
@@ -9,136 +10,81 @@
 SimulationHandler::SimulationHandler(const string &handler_name): UMARestHandler(handler_name) {
 }
 
-void SimulationHandler::handle_create(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/simulation/decision") {
-		create_decision(request);
+void SimulationHandler::handleCreate(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/simulation/decision") {
+		createDecision(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/up") {
-		create_up(request);
+	else if (requestUrl == "/UMA/simulation/up") {
+		createUp(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/ups") {
-		create_ups(request);
+	else if (requestUrl == "/UMA/simulation/ups") {
+		createUps(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/propagation") {
-		create_propagation(request);
+	else if (requestUrl == "/UMA/simulation/propagation") {
+		createPropagation(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/npdirs") {
-		create_npdirs(request);
+	else if (requestUrl == "/UMA/simulation/npdirs") {
+		createNpdirs(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/downs") {
-		create_downs(request);
+	else if (requestUrl == "/UMA/simulation/downs") {
+		createDowns(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/blocks") {
-		create_blocks(request);
+	else if (requestUrl == "/UMA/simulation/blocks") {
+		createBlocks(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/abduction") {
-		create_abduction(request);
+	else if (requestUrl == "/UMA/simulation/abduction") {
+		createAbduction(request);
 		return;
 	}
-	else if (request_url == "/UMA/simulation/propagate_masks") {
-		create_propagate_masks(request);
+	else if (requestUrl == "/UMA/simulation/propagateMasks") {
+		createPropagateMasks(request);
 		return;
 	}
 
 	throw UMAException("Cannot handle POST " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SimulationHandler::handle_update(UMARestRequest &request) {
+void SimulationHandler::handleUpdate(UMARestRequest &request) {
 	throw UMAException("Cannot handle PUT " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SimulationHandler::handle_read(UMARestRequest &request) {
+void SimulationHandler::handleRead(UMARestRequest &request) {
 	throw UMAException("Cannot handle GET " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void SimulationHandler::handle_delete(UMARestRequest &request) {
+void SimulationHandler::handleDelete(UMARestRequest &request) {
 	throw UMAException("Cannot handle DELETE " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-/*
-//this version is on snapshot layer
-void SimulationHandler::create_decision(World *world, json::value &data, http_request &request) {
-	string agent_id, snapshot_id;
-	double phi;
-	bool active;
-	vector<bool> signals;
-	try {
-		agent_id = get_string_input(data, UMA_AGENT_ID, request);
-		snapshot_id = get_string_input(data, UMA_SNAPSHOT_ID, request);
-		phi = get_double_input(data, UMA_PHI, request);
-		active = get_bool_input(data, UMA_ACTIVE, request);
-		signals = get_bool1d_input(data, UMA_SIGNALS, request);
-	}
-	catch (exception &e) {
-		cout << e.what() << endl;
-		return;
-	}
-
-	Agent *agent = NULL;
-	Snapshot *snapshot = NULL;
-	if (!get_agent_by_id(world, agent_id, agent, request)) return;
-	if (!get_snapshot_by_id(agent, snapshot_id, snapshot, request)) return;
-	try {
-		float res = snapshot->decide(signals, phi, active);
-		vector<bool> current = snapshot->getCurrent();
-		vector<json::value> json_current;
-		vector_bool_to_array(current, json_current);
-
-		vector<bool> prediction = snapshot->getPrediction();
-		vector<json::value> json_prediction;
-		vector_bool_to_array(prediction, json_prediction);
-
-		vector<bool> target = snapshot->getTarget();
-		vector<json::value> json_target;
-		vector_bool_to_array(target, json_target);
-
-		json::value return_data;
-		json::value message;
-		message[MESSAGE] = json::value::string(U("decision made"));
-		return_data[U("res")] = json::value::number(res);
-		return_data[U("current")] = json::value::array(json_current);
-		return_data[U("prediction")] = json::value::array(json_prediction);
-		return_data[U("target")] = json::value::array(json_target);
-		message[U("data")] = return_data;
-		_log_access->info() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 201");
-		request.reply(status_codes::Created, message);
-	}
-	catch (exception &e) {
-		_log_access->error() << REQUEST_MODE + request.absolute_uri().to_string() + U(" 400"0;
-		request.reply(status_codes::BadRequest, json::value::string(U("decision made error!")));
-	}
-}
-
-*/
-
-
-void SimulationHandler::create_decision(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
+void SimulationHandler::createDecision(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
 	const double phi = request.get_double_data("phi");
 	const bool active = request.get_bool_data("active");
-	vector<bool> obs_plus = request.get_bool1d_data("obs_plus");
-	vector<bool> obs_minus = request.get_bool1d_data("obs_minus");
+	vector<bool> obsPlus = request.get_bool1d_data("obs_plus");
+	vector<bool> obsMinus = request.get_bool1d_data("obs_minus");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot_plus = agent->getSnapshot("plus");
-	Snapshot *snapshot_minus = agent->getSnapshot("minus");
-	vector<float> res = simulation::decide(agent, obs_plus, obs_minus, phi, active);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshotPlus = agent->getSnapshot("plus");
+	Snapshot *snapshotMinus = agent->getSnapshot("minus");
+	vector<float> res = simulation::decide(agent, obsPlus, obsMinus, phi, active);
 
 	vector<vector<bool>> current, prediction, target;
-	current.push_back(snapshot_plus->getDM()->getCurrent());
-	current.push_back(snapshot_minus->getDM()->getCurrent());
-	prediction.push_back(snapshot_plus->getDM()->getPrediction());
-	prediction.push_back(snapshot_minus->getDM()->getPrediction());
-	target.push_back(snapshot_plus->getDM()->getTarget());
-	target.push_back(snapshot_minus->getDM()->getTarget());
+	current.push_back(snapshotPlus->getDM()->getCurrent());
+	current.push_back(snapshotMinus->getDM()->getCurrent());
+	prediction.push_back(snapshotPlus->getDM()->getPrediction());
+	prediction.push_back(snapshotMinus->getDM()->getPrediction());
+	target.push_back(snapshotPlus->getDM()->getTarget());
+	target.push_back(snapshotMinus->getDM()->getTarget());
 
 	request.set_data("res_plus", res[0]);
 	request.set_data("res_minus", res[1]);
@@ -258,19 +204,21 @@ request.reply(status_codes::BadRequest, message);
 */
 
 
-void SimulationHandler::create_up(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createUp(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<bool> signal = request.get_bool1d_data("signal");
 	vector<vector<bool> > signals(1, signal);
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
-	std::map<string, int> size_info = dm->getSizeInfo();
-	int attr_sensor_size = size_info["_attr_sensor_size"];
+	std::map<string, int> sizeInfo = dm->getSizeInfo();
+	int attrSensorSize = sizeInfo["_attr_sensor_size"];
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, attr_sensor_size);
+	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(1);
 
@@ -278,20 +226,22 @@ void SimulationHandler::create_up(UMARestRequest &request) {
 	request.set_data("signal", results[0]);
 }
 
-void SimulationHandler::create_ups(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createUps(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 	int sig_count = signals.size();
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
-	std::map<string, int> size_info = dm->getSizeInfo();
-	int attr_sensor_size = size_info["_attr_sensor_size"];
+	std::map<string, int> sizeInfo = dm->getSizeInfo();
+	int attrSensorSize = sizeInfo["_attr_sensor_size"];
 
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attr_sensor_size);
+	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -299,20 +249,22 @@ void SimulationHandler::create_ups(UMARestRequest &request) {
 	request.set_data("signals", results);
 }
 
-void SimulationHandler::create_downs(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createDowns(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
-	int sig_count = signals.size();
+	int sigCount = signals.size();
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
-	std::map<string, int> size_info = dm->getSizeInfo();
-	int attr_sensor_size = size_info["_attr_sensor_size"];
+	std::map<string, int> sizeInfo = dm->getSizeInfo();
+	int attrSensorSize = sizeInfo["_attr_sensor_size"];
 
 	dm->setSignals(signals);
-	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attr_sensor_size);
+	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sigCount, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -320,35 +272,39 @@ void SimulationHandler::create_downs(UMARestRequest &request) {
 	request.set_data("signals", results);
 }
 
-void SimulationHandler::create_propagation(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createPropagation(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 	const vector<bool> load = request.get_bool1d_data("load");
-	int sig_count = signals.size();
+	int sigCount = signals.size();
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
-	std::map<string, int> size_info = dm->getSizeInfo();
-	int attr_sensor_size = size_info["_attr_sensor_size"];
+	std::map<string, int> sizeInfo = dm->getSizeInfo();
+	int attrSensorSize = sizeInfo["_attr_sensor_size"];
 
 	dm->setSignals(signals);
 	dm->setLoad(load);
 
-	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), NULL, sig_count, attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), NULL, sigCount, attrSensorSize);
 	vector<vector<bool> > results = dm->getLSignals(signals.size());
 
 	request.set_message("Propagation created");
 	request.set_data("signals", results);
 }
 
-void SimulationHandler::create_npdirs(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createNpdirs(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	simulation::floyd(dm);
 	vector<bool> npdirs = dm->getNPDir();
@@ -357,14 +313,16 @@ void SimulationHandler::create_npdirs(UMARestRequest &request) {
 	request.set_data("npdirs", npdirs);
 }
 
-void SimulationHandler::create_blocks(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createBlocks(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const double delta = request.get_double_data("delta");
 	const vector<vector<int> > dists = request.get_int2d_data("dists");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	dm->setDists(dists);
 	vector<vector<int> > results = simulation::blocks_GPU(dm, delta);
@@ -373,13 +331,15 @@ void SimulationHandler::create_blocks(UMARestRequest &request) {
 	request.set_data("blocks", results);
 }
 
-void SimulationHandler::create_abduction(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createAbduction(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > signals = request.get_bool2d_data("signals");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	vector<vector<vector<bool> > > results = simulation::abduction(dm, signals);
 
@@ -388,12 +348,14 @@ void SimulationHandler::create_abduction(UMARestRequest &request) {
 	request.set_data("abduction_odd", results[1]);
 }
 
-void SimulationHandler::create_propagate_masks(UMARestRequest &request) {
-	const string agent_id = request.get_string_data("agent_id");
-	const string snapshot_id = request.get_string_data("snapshot_id");
+void SimulationHandler::createPropagateMasks(UMARestRequest &request) {
+	const string experimentId = request.get_string_data("experiment_id");
+	const string agentId = request.get_string_data("agent_id");
+	const string snapshotId = request.get_string_data("snapshot_id");
 
-	Agent *agent = World::instance()->getAgent(agent_id);
-	Snapshot *snapshot = agent->getSnapshot(snapshot_id);
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	Agent *agent = experiment->getAgent(agentId);
+	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	simulation::propagate_mask(dm);
 	vector<vector<bool> > results = dm->getNpdirMasks();

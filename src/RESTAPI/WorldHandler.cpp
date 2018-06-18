@@ -5,31 +5,30 @@
 
 WorldHandler::WorldHandler(const string &handler_name): UMARestHandler(handler_name) {}
 
-void WorldHandler::handle_create(UMARestRequest &request) {
+void WorldHandler::handleCreate(UMARestRequest &request) {
 	throw UMAException("Cannot handle POST " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void WorldHandler::handle_update(UMARestRequest &request) {
+void WorldHandler::handleUpdate(UMARestRequest &request) {
 	throw UMAException("Cannot handle PUT " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void WorldHandler::handle_read(UMARestRequest &request) {
-	const string request_url = request.get_request_url();
-	if (request_url == "/UMA/world") {
-		get_world(request);
+void WorldHandler::handleRead(UMARestRequest &request) {
+	const string requestUrl = request.get_request_url();
+	if (requestUrl == "/UMA/world") {
+		getWorld(request);
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void WorldHandler::handle_delete(UMARestRequest &request) {
+void WorldHandler::handleDelete(UMARestRequest &request) {
 	throw UMAException("Cannot handle DELETE " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 }
 
-void WorldHandler::get_world(UMARestRequest &request) {
-	vector<vector<string>> agent_ids = World::instance()->getAgentInfo();
+void WorldHandler::getWorld(UMARestRequest &request) {
+	vector<string> experimentIds = World::instance()->getExperimentInfo();
 	request.set_message("Get world info");
-	request.set_data("agent_ids", agent_ids);
-	request.set_data("agent_count", (int)agent_ids.size());
+	request.set_data("experiment_ids", experimentIds);
 }

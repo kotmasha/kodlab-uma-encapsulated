@@ -3,6 +3,7 @@
 #include "UMACoreTestFixture.h"
 #include "UMAException.h"
 #include "World.h"
+#include "Experiment.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "DataManager.h"
@@ -11,30 +12,54 @@
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
 
-TEST(world_test, world_agent_test) {
-	World::instance()->add_agent("test_agent1");
-	World::instance()->add_agent("test_agent2");
-	World::instance()->add_agent("test_agent3");
-	World::instance()->add_agent("test_agent4");
+TEST(world_test, world_experiment_test) {
+	Experiment *ex1 = World::instance()->createExperiment("ex1");
+	Experiment *ex2 = World::instance()->createExperiment("ex2");
+	Experiment *ex3 = World::instance()->createExperiment("ex3");
+	Experiment *ex4 = World::instance()->createExperiment("ex4");
 
-	EXPECT_NO_THROW(World::instance()->getAgent("test_agent1"));
-	EXPECT_THROW(World::instance()->getAgent("test_agent0"), UMAException);
-	vector<vector<string>> s = { { "test_agent1", "default" },{ "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::instance()->getAgentInfo());
+	EXPECT_NO_THROW(World::instance()->getExperiment("ex2"));
+	EXPECT_THROW(World::instance()->getExperiment("ex5"), UMAException);
 
-	World::instance()->delete_agent("test_agent1");
-	s = { { "test_agent2", "default" },{ "test_agent3", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::instance()->getAgentInfo());
+	vector<string> s = { "ex1", "ex2", "ex3", "ex4" };
+	EXPECT_EQ(s, World::instance()->getExperimentInfo());
 
-	World::instance()->delete_agent("test_agent3");
-	s = { { "test_agent2", "default" },{ "test_agent4", "default" } };
-	EXPECT_EQ(s, World::instance()->getAgentInfo());
+	EXPECT_NO_THROW(World::instance()->deleteExperiment("ex1"));
+	EXPECT_THROW(World::instance()->deleteExperiment("ex5"), UMAException);
 
-	EXPECT_THROW(World::instance()->getAgent("test_agent3"), UMAException);
-	EXPECT_THROW(World::instance()->delete_agent("test_agent3"), UMAException);
+	s = { "ex2", "ex3", "ex4" };
+	EXPECT_EQ(s, World::instance()->getExperimentInfo());
+
+	World::instance()->deleteExperiment("ex2");
+	World::instance()->deleteExperiment("ex3");
+	World::instance()->deleteExperiment("ex4");
+}
+
+TEST(experiment_test, experiment_agent_test) {
+	Experiment *experiment = World::instance()->createExperiment("testExperiment");
+	experiment->createAgent("testAgent1");
+	experiment->createAgent("testAgent2");
+	experiment->createAgent("testAgent3");
+	experiment->createAgent("testAgent4");
+
+	EXPECT_NO_THROW(experiment->getAgent("testAgent1"));
+	EXPECT_THROW(experiment->getAgent("testAgent0"), UMAException);
+	vector<vector<string>> s = { { "testAgent1", "default" },{ "testAgent2", "default" },{ "testAgent3", "default" },{ "testAgent4", "default" } };
+	EXPECT_EQ(s, experiment->getAgentInfo());
+
+	experiment->deleteAgent("testAgent1");
+	s = { { "testAgent2", "default" },{ "testAgent3", "default" },{ "testAgent4", "default" } };
+	EXPECT_EQ(s, experiment->getAgentInfo());
+
+	experiment->deleteAgent("testAgent3");
+	s = { { "testAgent2", "default" },{ "testAgent4", "default" } };
+	EXPECT_EQ(s, experiment->getAgentInfo());
+
+	EXPECT_THROW(experiment->getAgent("testAgent3"), UMAException);
+	EXPECT_THROW(experiment->deleteAgent("testAgent3"), UMAException);
 	
-	World::instance()->delete_agent("test_agent2");
-	World::instance()->delete_agent("test_agent4");
+	experiment->deleteAgent("testAgent2");
+	experiment->deleteAgent("testAgent4");
 }
 
 TEST(agent_test, agent_snapshot_test) {

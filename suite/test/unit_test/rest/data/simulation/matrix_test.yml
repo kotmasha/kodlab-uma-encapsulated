@@ -1,10 +1,17 @@
-
+create an experiment:
+  method: POST
+  url: /UMA/object/experiment
+  status_code: 201
+  message: Experiment=test_experiment is created
+  data:
+    experiment_id: test_experiment
 
 create an agent:
   method: POST
   url: /UMA/object/agent
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -13,6 +20,7 @@ create an snapshot:
   url: /UMA/object/snapshot
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
 
@@ -21,6 +29,7 @@ create sensor0:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor0
@@ -34,6 +43,7 @@ create sensor1:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor1
@@ -47,6 +57,7 @@ create sensor2:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor2
@@ -60,6 +71,7 @@ create sensor3:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor3
@@ -73,6 +85,7 @@ create sensor4:
   url: /UMA/object/sensor
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor4
@@ -86,6 +99,7 @@ npdirs:
   url: /UMA/simulation/npdirs
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
   kwargs:
@@ -99,6 +113,7 @@ ups 0 2 4 6 8:
   url: /UMA/simulation/ups
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -120,6 +135,7 @@ ups 0&8:
   url: /UMA/simulation/ups
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -133,6 +149,7 @@ downs 0 2 4 6 8:
   url: /UMA/simulation/downs
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -154,6 +171,7 @@ downs 0&8:
   url: /UMA/simulation/downs
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -167,6 +185,7 @@ propagation 0 2 4 6 8:
   url: /UMA/simulation/propagation
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -189,6 +208,7 @@ propagation 0&8:
   url: /UMA/simulation/propagation
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     signals:
@@ -203,6 +223,7 @@ blocks case1 0.7:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 0.7
@@ -225,6 +246,7 @@ blocks case1 1.5:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 1.5
@@ -246,6 +268,7 @@ blocks case1 2.2:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 2.2
@@ -266,6 +289,7 @@ blocks case1 3.1:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 3.1
@@ -285,6 +309,7 @@ delete sensor4:
   url: /UMA/object/sensor
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     sensor_id: sensor4
@@ -294,6 +319,7 @@ blocks case0 0.5:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 0.5
@@ -314,6 +340,7 @@ blocks case0 1.5:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 1.5
@@ -332,6 +359,7 @@ blocks case0 2.0:
   url: /UMA/simulation/blocks
   status_code: 201
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot
     delta: 2.01
@@ -349,9 +377,19 @@ delete agent:
   url: /UMA/object/agent
   status_code: 200
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
+delete experiment:
+  method: DELETE
+  url: /UMA/object/experiment
+  status_code: 200
+  data:
+    experiment_id: test_experiment
+  message: Experiment=test_experiment is deleted
+
 tests:
+  - create an experiment
   - create an agent
   - create an snapshot
   - create sensor0
@@ -375,3 +413,4 @@ tests:
   - blocks case0 1.5
   - blocks case0 2.0
   - delete agent
+  - delete experiment

@@ -77,10 +77,10 @@ public:
 	UMARestTestHandler();
 	~UMARestTestHandler();
 
-	void handle_create(UMARestRequest &request);
-	void handle_update(UMARestRequest &request);
-	void handle_read(UMARestRequest &request);
-	void handle_delete(UMARestRequest &request);
+	void handleCreate(UMARestRequest &request);
+	void handleUpdate(UMARestRequest &request);
+	void handleRead(UMARestRequest &request);
+	void handleDelete(UMARestRequest &request);
 };
 
 #endif

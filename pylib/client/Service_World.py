@@ -1,44 +1,15 @@
 from UMA_service import *
-from Service_Agent import *
+from Service_Experiment import *
 
 class ServiceWorld:
     def __init__(self, service):
         self._service = service
 
-    def add_agent(self, agent_id, type='default'):
-        data = {'agent_id': agent_id, 'type': type}
-        result = self._service.post('/UMA/object/agent', data)
+    def add_experiment(self, experiment_id):
+        data = {'experiment_id': experiment_id}
+        result = self._service.post('/UMA/object/experiment', data)
         if not result:
-            print "add agent failed!"
+            print "create experiment=%s failed!" % experiment_id
             return None
         else:
-            return ServiceAgent(agent_id, self._service)
-
-    def save(self, filename):
-        data = {'filename': filename}
-        result = self._service.post('/UMA/simulation/saving', data)
-        if not result:
-            print "data saving failed!"
-            return None
-        else:
-            return result
-
-    def load(self, filename):
-        data = {'filename': filename}
-        result = self._service.post('/UMA/simulation/loading', data)
-        if not result:
-            print "data loading failed!"
-            return None
-        else:
-            return result
-
-    def get_agent_count(self):
-        return
-
-    def merge(self):
-        data =  {}
-        result = self._service.post('/UMA/simulation/merge', data)
-        if not result:
-            return None
-        else:
-            return result
+            return ServiceExperiment(experiment_id, self._service)

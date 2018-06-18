@@ -1,6 +1,14 @@
 #This is the test script for testing existing agent endpoint
 #Test CRUD functionality
 
+create experiment:
+  method: POST
+  url: /UMA/object/experiment
+  status_code: 201
+  message: Experiment=test_experiment is created
+  data:
+    experiment_id: test_experiment
+
 create agent without agent_id:
   method: POST
   url: /UMA/object/agent
@@ -13,13 +21,16 @@ create agent with invalid id:
   status_code: 400
   message: Cannot parsing the field
   data:
+    experiment_id: test_experiment
     agent_id: 123.45
 
 create an agent:
   method: POST
   url: /UMA/object/agent
   status_code: 201
+  message: Agent=test_agent is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -29,6 +40,7 @@ create an agent duplicate:
   status_code: 409
   message: Cannot create a duplicate agent
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: default
 
@@ -36,7 +48,9 @@ create snapshot1:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
+  message: Snapshot=test_snapshot1 is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot1
 
@@ -44,7 +58,9 @@ create snapshot2:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
+  message: Snapshot=test_snapshot2 is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot2
 
@@ -52,13 +68,16 @@ create snapshot3:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
+  message: Snapshot=test_snapshot3 is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot3
 
 get agent without id:
   method: GET
   url: /UMA/object/agent
+  message: Coming request is missing necessary fields
   status_code: 400
 
 get agent:
@@ -67,13 +86,13 @@ get agent:
   status_code: 200
   message: Get agent info
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
   kwargs:
     snapshot_ids:
       - [test_snapshot1, default]
       - [test_snapshot2, default]
       - [test_snapshot3, default]
-    snapshot_count: 3
 
 delete agent without agent_id:
   method: DELETE
@@ -87,13 +106,16 @@ delete agent with invlid agent_id:
   status_code: 404
   message: Cannot find the agent to delete
   data:
+    experiment_id: test_experiment
     agent_id: test_agent1
 
 delete agent:
   method: DELETE
   url: /UMA/object/agent
   status_code: 200
+  message: Agent=test_agent is deleted
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
 
 get agent after delete:
@@ -101,6 +123,7 @@ get agent after delete:
   url: /UMA/object/agent
   status_code: 404
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
   messaage: Cannot find the agent id
 
@@ -108,7 +131,9 @@ create an agent qualitative:
   method: POST
   url: /UMA/object/agent
   status_code: 201
+  message: Agent=test_agent is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     type: qualitative
 
@@ -116,7 +141,9 @@ create snapshot1 qualitative:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
+  message: Snapshot=test_snapshot1 is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot1
 
@@ -124,7 +151,9 @@ create snapshot2 qualitative:
   method: POST
   url: /UMA/object/snapshot
   status_code: 201
+  message: Snapshot=test_snapshot2 is created
   data:
+    experiment_id: test_experiment
     agent_id: test_agent
     snapshot_id: test_snapshot2
 
@@ -134,14 +163,23 @@ get agent qualitative:
   status_code: 200
   message: Get agent info
   query:
+    experiment_id: test_experiment
     agent_id: test_agent
   kwargs:
     snapshot_ids:
       - [test_snapshot1, qualitative]
       - [test_snapshot2, qualitative]
-    snapshot_count: 2
+
+delete experiment:
+  method: DELETE
+  url: /UMA/object/experiment
+  status_code: 200
+  data:
+    experiment_id: test_experiment
+  message: Experiment=test_experiment is deleted
 
 tests:
+  - create experiment
   - create agent without agent_id
   - create agent with invalid id
   - create an agent
@@ -160,3 +198,4 @@ tests:
   - create snapshot2 qualitative
   - get agent qualitative
   - delete agent
+  - delete experiment

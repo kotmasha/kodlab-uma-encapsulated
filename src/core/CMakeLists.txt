@@ -14,6 +14,10 @@ set(WORLD
     "World.h"
     "World.cpp"
 )
+set(EXPERIMENT
+    "Experiment.h"
+    "Experiment.cpp"
+)
 set(AGENT
     "Agent.h"
     "Agent.cpp"
@@ -48,6 +52,7 @@ file(GLOB_RECURSE SOURCE
 )
 
 source_group("world" FILES ${WORLD})
+source_group("expriment" FILES ${EXPERIMENT})
 source_group("agent" FILES ${AGENT})
 source_group("snapshot" FILES ${SNAPSHOT})
 source_group("dataManager" FILES ${DATAMANAGER})

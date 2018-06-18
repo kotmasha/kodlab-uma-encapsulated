@@ -870,15 +870,15 @@ TEST(uma_base_qualitative_test, calculate_target) {
 	data_util::dev_double(dev_attr_sensor, 10);
 	data_util::dev_bool(dev_target, 10);
 
-	h_attr_sensor[0] = 1.02; h_attr_sensor[2] = -2.21; h_attr_sensor[4] = 10000000; h_attr_sensor[6] = 0.0003; h_attr_sensor[8] = 0.0;
-	h_attr_sensor[1] = 1.01; h_attr_sensor[3] = -2.22; h_attr_sensor[5] = -10000000; h_attr_sensor[7] = 0.0004; h_attr_sensor[9] = -0.01;
+	h_attr_sensor[0] = 1.02; h_attr_sensor[2] = 2.22; h_attr_sensor[4] = 10000000; h_attr_sensor[6] = 0.0003; h_attr_sensor[8] = 0.0;
+	h_attr_sensor[1] = 1.01; h_attr_sensor[3] = 2.22; h_attr_sensor[5] = 1000000; h_attr_sensor[7] = 0.0004; h_attr_sensor[9] = 0.00;
 	vector<bool> v_target = { false, true, false, true, false, true, true, false, false, true };
 
 	data_util::doubleH2D(h_attr_sensor, dev_attr_sensor, 10);
 	uma_base_qualitative::calculate_target(dev_attr_sensor, dev_target, 5);
 	data_util::boolD2H(dev_target, h_target, 10);
 
-	for (int i = 0; i < 10; ++i) EXPECT_DOUBLE_EQ(h_target[i], v_target[i]);
+	for (int i = 0; i < 10; ++i) EXPECT_EQ(h_target[i], v_target[i]);
 
 	delete[] h_attr_sensor, h_target;
 	data_util::dev_free(dev_attr_sensor);
@@ -902,7 +902,7 @@ TEST(uma_base_test, calculate_target) {
 	uma_base::calculate_target(dev_attr_sensor, dev_target, 5);
 	data_util::boolD2H(dev_target, h_target, 10);
 
-	for (int i = 0; i < 10; ++i) EXPECT_DOUBLE_EQ(h_target[i], v_target[i]);
+	for (int i = 0; i < 10; ++i) EXPECT_EQ(h_target[i], v_target[i]);
 
 	delete[] h_attr_sensor, h_target;
 	data_util::dev_free(dev_attr_sensor);
