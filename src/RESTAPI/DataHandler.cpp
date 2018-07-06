@@ -106,9 +106,10 @@ void DataHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 	else if (requestUrl == "/UMA/data/dataSize") {
-		std::map<string, int> size_info = dm->getSizeInfo();
+		std::map<string, int> sizeInfo = dm->getSizeInfo();
+		std::map<string, int> convertedSizeInfo = dm->convertSizeInfo(sizeInfo);
 		request.set_message("get size info");
-		request.set_data("sizes", size_info);
+		request.set_data("sizes", convertedSizeInfo);
 		return;
 	}
 

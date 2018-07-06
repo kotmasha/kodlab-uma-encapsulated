@@ -21,7 +21,7 @@ SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
 	mi_j = new AttrSensorPair(file, _sensor_i->_m, _sensor_j->_cm);
 	m_ij = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_m);
 	m_i_j = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_cm);
-	pointers_to_null();
+	pointersToNull();
 }
 */
 
@@ -34,7 +34,7 @@ SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double 
 	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
 	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
 	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
-	pointers_to_null();
+	pointersToNull();
 	this->_vthreshold = threshold;
 
 	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
@@ -46,7 +46,7 @@ SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double 
 	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
 	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
 	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
-	pointers_to_null();
+	pointersToNull();
 	this->_vthreshold = threshold;
 
 	sensorPairLogger.info("Sensor pair is constructed with weights and dirs, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
@@ -84,31 +84,31 @@ void SensorPair::setThresholdPointers(double *thresholds){
 /*
 This function is validating the SensorPair value from the pointer, used before deleting the h_matrix to retain all necessary data
 */
-void SensorPair::pointers_to_values(){	
+void SensorPair::pointersToValues(){	
 	_vthreshold = *_threshold;
-	mij->pointers_to_values();
-	mi_j->pointers_to_values();
-	m_ij->pointers_to_values();
-	m_i_j->pointers_to_values();
+	mij->pointersToValues();
+	mi_j->pointersToValues();
+	m_ij->pointersToValues();
+	m_i_j->pointersToValues();
 }
 
 /*
 This function is copying the value back to pointer, used when copying sensor value back to GPU
 */
-void SensorPair::values_to_pointers(){
+void SensorPair::valuesToPointers(){
 	*_threshold = _vthreshold;
-	mij->values_to_pointers();
-	mi_j->values_to_pointers();
-	m_ij->values_to_pointers();
-	m_i_j->values_to_pointers();
+	mij->valuesToPointers();
+	mi_j->valuesToPointers();
+	m_ij->valuesToPointers();
+	m_i_j->valuesToPointers();
 }
 
-void SensorPair::pointers_to_null(){
+void SensorPair::pointersToNull(){
 	_threshold = NULL;
-	mij->pointers_to_null();
-	mi_j->pointers_to_null();
-	m_ij->pointers_to_null();
-	m_i_j->pointers_to_null();
+	mij->pointersToNull();
+	mi_j->pointersToNull();
+	m_ij->pointersToNull();
+	m_i_j->pointersToNull();
 }
 
 /*
@@ -180,7 +180,7 @@ const double &SensorPair::getThreshold() const{
 destruct sensorpair, sensor destruction is a different process
 */
 SensorPair::~SensorPair(){
-	pointers_to_null();
+	pointersToNull();
 	delete mij;
 	delete mi_j;
 	delete m_ij;

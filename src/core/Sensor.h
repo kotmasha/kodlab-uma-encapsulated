@@ -16,16 +16,16 @@ class DLL_PUBLIC Sensor{
 public:
 	//constructors
 	//Sensor(ifstream &file);
-	Sensor(const std::pair<string, string> &id_pair, const double &total, int idx);
-	Sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, int idx);
+	Sensor(const std::pair<string, string> &idPair, const double &total, int idx);
+	Sensor(const std::pair<string, string> &idPair, const vector<double> &diag, int idx);
 
 	//values and pointer operation
-	void values_to_pointers();
-	void pointers_to_values();
-	void pointers_to_null();
+	void valuesToPointers();
+	void pointersToValues();
+	void pointersToNull();
 
 	//set pointers
-	void setAttrSensorDiagPointers(double *_diags, double *_diags_);
+	void setAttrSensorDiagPointers(double *diags, double *diags_);
 	void setAttrSensorObservePointers(bool *observe, bool *observe_);
 	void setAttrSensorCurrentPointers(bool *current, bool *current_);
 	void setAttrSensorTargetPointers(bool *target);
@@ -64,7 +64,7 @@ protected:
 
 	friend class SensorPair;
 	friend class Snapshot;
-	friend class Snapshot_qualitative;
+	friend class SnapshotQualitative;
 	friend class Simulation;
 
 	friend class UMACoreDataFlowTestFixture;

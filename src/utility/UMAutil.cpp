@@ -7,7 +7,7 @@
 /*
 input: string path
 */
-string SysUtil::UMA_mkdir(string path) {
+string SysUtil::UMAMkdir(string path) {
 #if defined(_WIN64)
 	_mkdir(path.c_str());
 #else 
@@ -27,7 +27,7 @@ string SysUtil::UMA_mkdir(string path) {
 input: string level
 output: int level
 */
-int StrUtil::string_to_log_level(const string &s) {
+int StrUtil::stringToLogLevel(const string &s) {
 	if (s == "ERROR") return 0;
 	if (s == "WARN") return 1;
 	if (s == "INFO") return 2;
@@ -35,7 +35,7 @@ int StrUtil::string_to_log_level(const string &s) {
 	if (s == "VERBOSE") return 4;
 }
 
-vector<std::pair<string, string>> StrUtil::string2d_to_string1d_pair(const vector<vector<string>> &pairs) {
+vector<std::pair<string, string>> StrUtil::string2dToString1dPair(const vector<vector<string>> &pairs) {
 	vector<std::pair<string, string> > results;
 	for (int i = 0; i < pairs.size(); ++i) {
 		const vector<string> p = pairs[i];
@@ -60,12 +60,12 @@ This function is converting the list, from bool to int
 Input: a bool signal
 Output: a int vector
 */
-const vector<int> SignalUtil::bool_signal_to_int_idx(const vector<bool> &list){
-	vector<int> converted_list;
+const vector<int> SignalUtil::boolSignalToIntIdx(const vector<bool> &list){
+	vector<int> convertedList;
 	for (int i = 0; i < list.size(); ++i) {
-		if (list[i]) converted_list.push_back(i);
+		if (list[i]) convertedList.push_back(i);
 	}
-	return converted_list;
+	return convertedList;
 }
 
 /*
@@ -73,12 +73,12 @@ This function is converting the idx, from int to bool list
 Input: a int vector, size of output bool signal
 Output: a bool signal
 */
-const vector<bool> SignalUtil::int_idx_to_bool_signal(const vector<int> &idx, int size) {
-	vector<bool> converted_list(size, false);
+const vector<bool> SignalUtil::intIdxToBoolSignal(const vector<int> &idx, int size) {
+	vector<bool> convertedList(size, false);
 	for (int i = 0; i < idx.size(); ++i) {
-		converted_list[idx[i]] = true;
+		convertedList[idx[i]] = true;
 	}
-	return converted_list;
+	return convertedList;
 }
 
 /*
@@ -86,7 +86,7 @@ This function is converting the attr_sensor signal to sensor signal, any of the 
 Input: attr_sensor signal
 Output: sensor signal
 */
-const vector<bool> SignalUtil::attr_sensor_signal_to_sensor_signal(const vector<bool> &signal) {
+const vector<bool> SignalUtil::attrSensorToSensorSignal(const vector<bool> &signal) {
 	vector<bool> result;
 	for (int i = 0; i < signal.size() / 2; ++i) {
 		if (signal[2 * i] || signal[2 * i + 1]) result.push_back(true);
@@ -106,25 +106,25 @@ ex: [1,2,4],3 = 1
 Input: input int signal, target int to find
 Output: the index of target
 */
-int ArrayUtil::find_idx_in_sorted_array(const vector<int> &input, int target) {
+int ArrayUtil::findIdxInSortedArray(const vector<int> &input, int target) {
 	if (input.empty()) return -1;
 	if (target < input[0]) return -1;
 	if (target == input[0]) return 0;
 	if (target >= input.back()) return input.size() - 1;
-	int start_idx = 0;
-	int end_idx = input.size();
-	int mid_idx = (start_idx + end_idx) / 2;
+	int startIdx = 0;
+	int endIdx = input.size();
+	int midIdx = (startIdx + endIdx) / 2;
 	while (true) {
-		if (input[mid_idx] == target) return mid_idx;
-		if (input[mid_idx] > target) {
-			if (input[mid_idx - 1] < target) return mid_idx - 1;
-			end_idx = mid_idx;
+		if (input[midIdx] == target) return midIdx;
+		if (input[midIdx] > target) {
+			if (input[midIdx - 1] < target) return midIdx - 1;
+			endIdx = midIdx;
 		}
 		else {
-			if (input[mid_idx + 1] > target) return mid_idx;
-			start_idx = mid_idx;
+			if (input[midIdx + 1] > target) return midIdx;
+			startIdx = midIdx;
 		}
-		mid_idx = (start_idx + end_idx) / 2;
+		midIdx = (startIdx + endIdx) / 2;
 	}
 
 }

@@ -216,9 +216,9 @@ void SimulationHandler::createUp(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> sizeInfo = dm->getSizeInfo();
-	int attrSensorSize = sizeInfo["_attr_sensor_size"];
+	int attrSensorSize = sizeInfo["_attrSensorSize"];
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, attrSensorSize);
+	simulation::upsGPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, 1, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(1);
 
@@ -238,10 +238,10 @@ void SimulationHandler::createUps(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> sizeInfo = dm->getSizeInfo();
-	int attrSensorSize = sizeInfo["_attr_sensor_size"];
+	int attrSensorSize = sizeInfo["_attrSensorSize"];
 
 	dm->setSignals(signals);
-	simulation::ups_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attrSensorSize);
+	simulation::upsGPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sig_count, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -261,10 +261,10 @@ void SimulationHandler::createDowns(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> sizeInfo = dm->getSizeInfo();
-	int attrSensorSize = sizeInfo["_attr_sensor_size"];
+	int attrSensorSize = sizeInfo["_attrSensorSize"];
 
 	dm->setSignals(signals);
-	simulation::downs_GPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sigCount, attrSensorSize);
+	simulation::downsGPU(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::SIGNALS), NULL, sigCount, attrSensorSize);
 
 	vector<vector<bool> > results = dm->getSignals(signals.size());
 
@@ -285,7 +285,7 @@ void SimulationHandler::createPropagation(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	std::map<string, int> sizeInfo = dm->getSizeInfo();
-	int attrSensorSize = sizeInfo["_attr_sensor_size"];
+	int attrSensorSize = sizeInfo["_attrSensorSize"];
 
 	dm->setSignals(signals);
 	dm->setLoad(load);
@@ -325,7 +325,7 @@ void SimulationHandler::createBlocks(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	dm->setDists(dists);
-	vector<vector<int> > results = simulation::blocks_GPU(dm, delta);
+	vector<vector<int> > results = simulation::blocksGPU(dm, delta);
 	
 	request.set_message("block GPU created");
 	request.set_data("blocks", results);
@@ -357,7 +357,7 @@ void SimulationHandler::createPropagateMasks(UMARestRequest &request) {
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
-	simulation::propagate_mask(dm);
+	simulation::propagateMask(dm);
 	vector<vector<bool> > results = dm->getNpdirMasks();
 
 	request.set_message("Mask propagated");

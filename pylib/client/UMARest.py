@@ -11,7 +11,7 @@ class UMARestService:
         #self.logger = logging.getLogger("RestService")
         #self.logger.setLevel(logging.DEBUG)
         self._headers = {'Content-type': 'application/json', 'Accpet': 'text/plain'}
-        #self._log = open('./client.txt', 'w')
+        self._log = open('./client.txt', 'w')
 
     def post(self, uri, data):
         uri = UMA_CORE_BASE_URL + uri
@@ -70,7 +70,14 @@ class UMARestService:
     def delete(self):
         pass
 
-class UMAClientWorld:
+class UMAClientObject:
+    def __init__(self):
+        self._service = UMARestService()
+
+    def get_service(self):
+        return self._service
+
+class UMAClientWorld(UMAClientObject):
     def __init__(self):
         #self.logger = logging.getLogger("ClientWorld")
         self._service = UMARestService()
@@ -84,11 +91,14 @@ class UMAClientWorld:
         else:
             return UMAClientExperiment(experiment_id)
 
-class UMAClientExperiment:
+class UMAClientExperiment(UMAClientObject):
     def __init__(self, experiment_id):
         #self.logger = logging.getLogger("ClientExperiment")
         self._service = UMARestService()
         self._experiment_id = experiment_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
 
     def add_agent(self, agent_id, type='default'):
         data = {'experiment_id': self._experiment_id, 'agent_id': agent_id, 'type': type}
@@ -99,12 +109,18 @@ class UMAClientExperiment:
         else:
             return UMAClientAgent(self._experiment_id, agent_id)
 
-class UMAClientAgent:
+class UMAClientAgent(UMAClientObject):
     def __init__(self, experiment_id, agent_id):
         #self.logger = logging.getLogger("ClientAgent")
         self._service = UMARestService()
         self._experiment_id = experiment_id
         self._agent_id = agent_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
 
     def add_snapshot(self, snapshot_id):
         data = {'snapshot_id': snapshot_id, 'agent_id': self._agent_id, 'experiment_id': self._experiment_id}
@@ -115,27 +131,22 @@ class UMAClientAgent:
         else:
             return UMAClientSnapshot(self._experiment_id, self._agent_id, snapshot_id)
 
-    def make_decision(self, obs_plus, obs_minus, phi, active):
-        #post to service:
-        data =  {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'phi': phi,
-                 'active': active, 'obs_plus': obs_plus, 'obs_minus': obs_minus}
-        result = self._service.post('/UMA/simulation/decision', data)
-        if not result:
-            return None
-        result = result['data']
-        plus = {'res': float(result['res_plus']), 'current': result['current_plus'],
-                'prediction': result['prediction_plus'], 'target': result['target_plus']}
-        minus = {'res': float(result['res_minus']), 'current': result['current_minus'],
-                 'prediction': result['prediction_minus'], 'target': result['target_minus']}
-        return {'plus': plus, 'minus': minus}
-
-class UMAClientSnapshot:
+class UMAClientSnapshot(UMAClientObject):
     def __init__(self, experiment_id, agent_id, snapshot_id):
         #self.logger = logging.getLogger("ClientSnapshot")
         self._service = UMARestService()
         self._experiment_id = experiment_id
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
 
     def add_sensor(self, sensor_id, c_sensor_id):
         data = {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id,
@@ -198,6 +209,15 @@ class UMAClientData:
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
 
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
+
     def getCurrent(self):
         return self._service.get('/UMA/data/current', {'experiment_id': self._experiment_id,
                                     'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
@@ -226,6 +246,18 @@ class UMAClientSensor:
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
         self._sensor_id = sensor_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
+
+    def get_sensor_id(self):
+        return self._sensor_id
 
     def getAmperList(self):
         result = self._service.get('/UMA/object/sensor', {'experiment_id': self._experiment_id,
@@ -257,12 +289,27 @@ class UMAClientAttrSensor:
         pass
 
 class UMAClientSimulation:
-    def __init__(self, experiment_id, agent_id, snapshot_id):
+    def __init__(self, experiment_id):
         #self.logger = logging.getLogger("ClientSimulation")
         self._service = UMARestService()
         self._experiment_id = experiment_id
-        self._agent_id = agent_id
-        self._snapshot_id = snapshot_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def make_decision(self, agent_id, obs_plus, obs_minus, phi, active):
+        #post to service:
+        data =  {'experiment_id': self._experiment_id, 'agent_id': agent_id, 'phi': phi,
+                 'active': active, 'obs_plus': obs_plus, 'obs_minus': obs_minus}
+        result = self._service.post('/UMA/simulation/decision', data)
+        if not result:
+            return None
+        result = result['data']
+        plus = {'res': float(result['res_plus']), 'current': result['current_plus'],
+                'prediction': result['prediction_plus'], 'target': result['target_plus']}
+        minus = {'res': float(result['res_minus']), 'current': result['current_minus'],
+                 'prediction': result['prediction_minus'], 'target': result['target_minus']}
+        return {'plus': plus, 'minus': minus}
 
     def make_up(self, signal):
         data =  {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id,

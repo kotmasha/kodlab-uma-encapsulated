@@ -46,7 +46,7 @@ static void init_handlers(UMARestListener &listener) {
 
 
 void init_handler_path(UMARestListener &listener) {
-	std::map < string, vector<string>> rest_map = ConfReader::read_restmap();
+	std::map < string, vector<string>> rest_map = ConfReader::readRestmap();
 	try {
 		for (auto it = rest_map.begin(); it != rest_map.end(); ++it) {
 			string handler_name = it->first;
@@ -64,7 +64,7 @@ void init_handler_path(UMARestListener &listener) {
 
 
 int main() {
-	std::map<string, std::map<string, string>> server_info = ConfReader::read_conf("server.ini");
+	std::map<string, std::map<string, string>> server_info = ConfReader::readConf("server.ini");
 	string port = server_info["Server"]["port"];
 	string host = server_info["Server"]["host"];
 

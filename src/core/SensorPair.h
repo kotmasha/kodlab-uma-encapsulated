@@ -26,7 +26,7 @@ private:
 	
 	//Snapshot class should be able to access all SensorPair value
 	friend class Snapshot;
-	friend class Snapshot_qualitative;
+	friend class SnapshotQualitative;
 
 	friend class UMACoreDataFlowTestFixture;
 
@@ -39,9 +39,9 @@ public:
 	void setDirPointers(bool *dirs);
 	void setThresholdPointers(double *thresholds);
 
-	void pointers_to_null();
-	void pointers_to_values();
-	void values_to_pointers();
+	void pointersToNull();
+	void pointersToValues();
+	void valuesToPointers();
 	void setAllPointers(double *weights, bool *dirs, double *thresholds);
 
 	void setThreshold(const double &threshold);

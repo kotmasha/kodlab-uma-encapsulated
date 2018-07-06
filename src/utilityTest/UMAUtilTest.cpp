@@ -4,20 +4,20 @@
 #include "UMAException.h"
 
 //test string to log level
-TEST(StrUtil_test, string_to_log_level) {
+TEST(StrUtil_test, stringToLogLevel) {
 	const string error = "ERROR";
 	const string warn = "WARN";
 	const string info = "INFO";
 	const string debug = "DEBUG";
 	const string verbose = "VERBOSE";
-	EXPECT_EQ(StrUtil::string_to_log_level(error), 0);
-	EXPECT_EQ(StrUtil::string_to_log_level(warn), 1);
-	EXPECT_EQ(StrUtil::string_to_log_level(info), 2);
-	EXPECT_EQ(StrUtil::string_to_log_level(debug), 3);
-	EXPECT_EQ(StrUtil::string_to_log_level(verbose), 4);
+	EXPECT_EQ(StrUtil::stringToLogLevel(error), 0);
+	EXPECT_EQ(StrUtil::stringToLogLevel(warn), 1);
+	EXPECT_EQ(StrUtil::stringToLogLevel(info), 2);
+	EXPECT_EQ(StrUtil::stringToLogLevel(debug), 3);
+	EXPECT_EQ(StrUtil::stringToLogLevel(verbose), 4);
 }
 
-TEST(StrUtil_test, string2d_to_string1d_pair) {
+TEST(StrUtil_test, string2dToString1dPair) {
 	vector<vector<string>> inputs1, inputs2, inputs3;
 	vector<pair<string, string>> outputs1, outputs2, outputs3;
 	vector<string> v1 = { "test1", "test2" };
@@ -32,50 +32,50 @@ TEST(StrUtil_test, string2d_to_string1d_pair) {
 	outputs2.push_back(p3);
 	inputs3.push_back(v1); inputs3.push_back(v2);
 	outputs3.push_back(p1); outputs3.push_back(p3);
-	EXPECT_EQ(StrUtil::string2d_to_string1d_pair(inputs1), outputs1);
-	EXPECT_THROW(StrUtil::string2d_to_string1d_pair(inputs2), UMAException);
-	EXPECT_NE(StrUtil::string2d_to_string1d_pair(inputs3), outputs3);
+	EXPECT_EQ(StrUtil::string2dToString1dPair(inputs1), outputs1);
+	EXPECT_THROW(StrUtil::string2dToString1dPair(inputs2), UMAException);
+	EXPECT_NE(StrUtil::string2dToString1dPair(inputs3), outputs3);
 }
 
-TEST(SignalUtil_test, bool_signal_to_int_idx) {
+TEST(SignalUtil_test, boolSignalToIntIdx) {
 	vector<bool> signal1 = { 1, 0, 0, 1, 0, 0, 1 };
 	vector<bool> signal2 = { 0, 0, 1, 1, 0, 1, 1, 1, 0, 0 };
 	vector<bool> signal3 = { 0, 0, 1, 1 };
 	vector<int> list1 = { 0, 3, 6 };
 	vector<int> list2 = { 2, 3, 5, 6, 7 };
 	vector<int> list3 = { 2 };
-	EXPECT_EQ(SignalUtil::bool_signal_to_int_idx(signal1), list1);
-	EXPECT_EQ(SignalUtil::bool_signal_to_int_idx(signal2), list2);
-	EXPECT_NE(SignalUtil::bool_signal_to_int_idx(signal3), list3);
+	EXPECT_EQ(SignalUtil::boolSignalToIntIdx(signal1), list1);
+	EXPECT_EQ(SignalUtil::boolSignalToIntIdx(signal2), list2);
+	EXPECT_NE(SignalUtil::boolSignalToIntIdx(signal3), list3);
 }
 
-TEST(SignalUtil_test, attr_sensor_signal_to_sensor_signal) {
+TEST(SignalUtil_test, attrSensorToSensorSignal) {
 	vector<bool> signal1 = { 1, 0, 0, 1, 0, 0, 1, 1 };
 	vector<bool> signal2 = { 0, 0, 1, 1, 0, 1, 1, 1, 0, 0 };
 	vector<bool> signal3 = { 0, 1, 0, 1, 1, 1 };
 	vector<bool> list1 = { 1, 1, 0, 1 };
 	vector<bool> list2 = { 0, 1, 1, 1, 0 };
 	vector<bool> list3 = { 1, 1, 1, 1, 1 };
-	EXPECT_EQ(SignalUtil::attr_sensor_signal_to_sensor_signal(signal1), list1);
-	EXPECT_EQ(SignalUtil::attr_sensor_signal_to_sensor_signal(signal2), list2);
-	EXPECT_NE(SignalUtil::attr_sensor_signal_to_sensor_signal(signal3), list3);
+	EXPECT_EQ(SignalUtil::attrSensorToSensorSignal(signal1), list1);
+	EXPECT_EQ(SignalUtil::attrSensorToSensorSignal(signal2), list2);
+	EXPECT_NE(SignalUtil::attrSensorToSensorSignal(signal3), list3);
 }
 
-TEST(ArrayUtil_test, find_idx_in_sorted_array) {
+TEST(ArrayUtil_test, findIdxInSortedArray) {
 	vector<int> input = { 1, 3, 5, 6, 10, 11 };
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 0), -1);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 1), 0);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 2), 0);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 3), 1);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 4), 1);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 5), 2);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 6), 3);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 7), 3);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 8), 3);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 9), 3);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 10), 4);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 11), 5);
-	EXPECT_EQ(ArrayUtil::find_idx_in_sorted_array(input, 12), 5);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 0), -1);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 1), 0);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 2), 0);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 3), 1);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 4), 1);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 5), 2);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 6), 3);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 7), 3);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 8), 3);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 9), 3);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 10), 4);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 11), 5);
+	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 12), 5);
 }
 
 int main(int argc, char** argv)

@@ -754,7 +754,8 @@ class Agent(object):
         for token in ['plus', 'minus']:
             self._SNAPSHOTS[token]._LAST = self.report_current(token)
 
-        res = self._AGENT_SERVICE.make_decision(
+        res = UMAClientSimulation(self._AGENT_SERVICE.get_experiment_id()).make_decision(
+            self._AGENT_SERVICE.get_agent_id(),
             self._SNAPSHOTS['plus']._OBSERVE.out(),
             self._SNAPSHOTS['minus']._OBSERVE.out(),
             self._EXPERIMENT.this_state(self._MOTIVATION),

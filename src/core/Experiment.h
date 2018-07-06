@@ -9,9 +9,9 @@ class DLL_PUBLIC Experiment {
 public:
 	Experiment(const string &name, const string &dependency="");
 	~Experiment();
-	Agent *createAgent(const string &agent_id, int type = AGENT_TYPE::STATIONARY);
-	Agent *getAgent(const string &agent_id);
-	void deleteAgent(const string &agent_id);
+	Agent *createAgent(const string &agentId, int type = AGENT_TYPE::STATIONARY);
+	Agent *getAgent(const string &agentId);
+	void deleteAgent(const string &agentId);
 	const vector<vector<string>> getAgentInfo();
 
 protected:

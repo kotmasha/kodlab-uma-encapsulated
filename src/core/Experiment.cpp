@@ -9,37 +9,37 @@ Experiment::Experiment(const string &name, const string &dependency) : _name(nam
 
 }
 
-Agent *Experiment::createAgent(const string &agent_id, int type) {
-	if (_agents.find(agent_id) != _agents.end()) {
-		experimentLogger.error("Cannot create a duplicate agent " + agent_id);
-		throw UMAException("Cannot create a duplicate agent " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+Agent *Experiment::createAgent(const string &agentId, int type) {
+	if (_agents.find(agentId) != _agents.end()) {
+		experimentLogger.error("Cannot create a duplicate agent " + agentId);
+		throw UMAException("Cannot create a duplicate agent " + agentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
 	if (AGENT_TYPE::STATIONARY == type) {
-		_agents[agent_id] = new Agent(agent_id, _dependency + "::" + _name);
+		_agents[agentId] = new Agent(agentId, _dependency + "::" + _name);
 	}
 	else {
-		_agents[agent_id] = new Agent_qualitative(agent_id, _dependency + "::" + _name);
+		_agents[agentId] = new AgentQualitative(agentId, _dependency + "::" + _name);
 	}
 
-	experimentLogger.info("An agent " + agent_id + " is created, with the type " + to_string(type));
-	return _agents[agent_id];
+	experimentLogger.info("An agent " + agentId + " is created, with the type " + to_string(type));
+	return _agents[agentId];
 }
 
-Agent *Experiment::getAgent(const string &agent_id) {
-	if (_agents.find(agent_id) != _agents.end()) {
-		return _agents[agent_id];
+Agent *Experiment::getAgent(const string &agentId) {
+	if (_agents.find(agentId) != _agents.end()) {
+		return _agents[agentId];
 	}
-	experimentLogger.warn("No agent " + agent_id + " is found");
+	experimentLogger.warn("No agent " + agentId + " is found");
 	throw UMAException("Cannot find the agent id!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 }
 
-void Experiment::deleteAgent(const string &agent_id) {
-	if (_agents.find(agent_id) == _agents.end()) {
-		throw UMAException("Cannot find the agent to delete " + agent_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+void Experiment::deleteAgent(const string &agentId) {
+	if (_agents.find(agentId) == _agents.end()) {
+		throw UMAException("Cannot find the agent to delete " + agentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
-	delete _agents[agent_id];
-	_agents[agent_id] = nullptr;
-	_agents.erase(agent_id);
+	delete _agents[agentId];
+	_agents[agentId] = nullptr;
+	_agents.erase(agentId);
 	experimentLogger.info("Agent deleted");
 }
 
@@ -50,10 +50,10 @@ const vector<vector<string>> Experiment::getAgentInfo() {
 		tmp.push_back(it->first);
 
 		const int type = it->second->getType();
-		string s_type = "";
-		if (AGENT_TYPE::STATIONARY == type) s_type = "default";
-		else if (AGENT_TYPE::QUALITATIVE == type) s_type = "qualitative";
-		tmp.push_back(s_type);
+		string sType = "";
+		if (AGENT_TYPE::STATIONARY == type) sType = "default";
+		else if (AGENT_TYPE::QUALITATIVE == type) sType = "qualitative";
+		tmp.push_back(sType);
 
 		results.push_back(tmp);
 	}

@@ -22,10 +22,10 @@ AmperAndTestFixture::AmperAndTestFixture(){
 	std::pair<string, string> p2 = { "s2", "cs2" };
 	std::pair<string, string> p3 = { "s3", "cs3" };
 	vector<double> diag;
-	snapshot->add_sensor(p0, diag, w0, b0);
-	snapshot->add_sensor(p1, diag, w1, b1);
-	snapshot->add_sensor(p2, diag, w2, b2);
-	snapshot->add_sensor(p3, diag, w3, b3);
+	snapshot->createSensor(p0, diag, w0, b0);
+	snapshot->createSensor(p1, diag, w1, b1);
+	snapshot->createSensor(p2, diag, w2, b2);
+	snapshot->createSensor(p3, diag, w3, b3);
 }
 
 AmperAndTestFixture::~AmperAndTestFixture() {
@@ -63,10 +63,10 @@ GenerateDelayedWeightsTestFixture::GenerateDelayedWeightsTestFixture() {
 	std::pair<string, string> p2 = { "s2", "cs2" };
 	std::pair<string, string> p3 = { "s3", "cs3" };
 	vector<double> diag;
-	Sensor *s0 = snapshot->add_sensor(p0, diag, w0, b0);
-	Sensor *s1 = snapshot->add_sensor(p1, diag, w1, b1);
-	Sensor *s2 = snapshot->add_sensor(p2, diag, w2, b2);
-	Sensor *s3 = snapshot->add_sensor(p3, diag, w3, b3);
+	Sensor *s0 = snapshot->createSensor(p0, diag, w0, b0);
+	Sensor *s1 = snapshot->createSensor(p1, diag, w1, b1);
+	Sensor *s2 = snapshot->createSensor(p2, diag, w2, b2);
+	Sensor *s3 = snapshot->createSensor(p3, diag, w3, b3);
 	
 	snapshot->getAttrSensor(0)->_vdiag = 0.2;
 	snapshot->getAttrSensor(1)->_vdiag = 0.8;
@@ -87,7 +87,7 @@ vector<vector<double>> GenerateDelayedWeightsTestFixture::test_generate_delayed_
 		*(snapshot->getAttrSensor(i)->_observe) = observe[i];
 		*(snapshot->getAttrSensor(i)->_observe_) = observe[i];
 	}
-	snapshot->generate_delayed_weights(mid, merge, id_pair);
+	snapshot->generateDelayedWeights(mid, merge, id_pair);
 
 	vector<vector<double>> w;
 	for (int i = 0; i < 2 * snapshot->_sensors.size(); ++i) {
@@ -117,10 +117,10 @@ AmperTestFixture::AmperTestFixture() {
 	std::pair<string, string> p2 = { "s2", "cs2" };
 	std::pair<string, string> p3 = { "s3", "cs3" };
 	vector<double> diag;
-	snapshot->add_sensor(p0, diag, w0, b0);
-	snapshot->add_sensor(p1, diag, w1, b1);
-	snapshot->add_sensor(p2, diag, w2, b2);
-	snapshot->add_sensor(p3, diag, w3, b3);
+	snapshot->createSensor(p0, diag, w0, b0);
+	snapshot->createSensor(p1, diag, w1, b1);
+	snapshot->createSensor(p2, diag, w2, b2);
+	snapshot->createSensor(p3, diag, w3, b3);
 }
 
 AmperTestFixture::~AmperTestFixture() {
@@ -191,7 +191,7 @@ UMACoreDataFlowTestFixture::UMACoreDataFlowTestFixture() {
 	sensors[3]->_cm->_vobserve = false; sensors[3]->_cm->_vobserve_ = false;
 
 	double total = 1.0;
-	dm->reallocate_memory(total, 4);
+	dm->reallocateMemory(total, 4);
 }
 
 UMACoreDataFlowTestFixture::~UMACoreDataFlowTestFixture(){
@@ -207,8 +207,8 @@ UMACoreDataFlowTestFixture::~UMACoreDataFlowTestFixture(){
 }
 
 void UMACoreDataFlowTestFixture::test_uma_core_dataflow(int start_idx, int end_idx) {
-	dm->create_sensors_to_arrays_index(start_idx, end_idx, sensors);
-	dm->create_sensor_pairs_to_arrays_index(start_idx, end_idx, sensorPairs);
+	dm->createSensorsToArraysIndex(start_idx, end_idx, sensors);
+	dm->createSensorPairsToArraysIndex(start_idx, end_idx, sensorPairs);
 
 	for (int i = start_idx; i < end_idx; ++i) {
 		EXPECT_EQ(sensors[i]->_m->_diag, dm->h_diag + 2 * i);
@@ -242,10 +242,10 @@ void UMACoreDataFlowTestFixture::test_uma_core_dataflow(int start_idx, int end_i
 		EXPECT_EQ(sensorPairs[i]->_threshold, dm->h_thresholds + ind(idx_i / 2, idx_j / 2));
 	}
 
-	dm->copy_sensors_to_arrays(start_idx, end_idx, sensors);
-	dm->copy_sensor_pairs_to_arrays(start_idx, end_idx, sensorPairs);
-	dm->copy_arrays_to_sensors(start_idx, end_idx, sensors);
-	dm->copy_arrays_to_sensor_pairs(start_idx, end_idx, sensorPairs);
+	dm->copySensorsToArrays(start_idx, end_idx, sensors);
+	dm->copySensorPairsToArrays(start_idx, end_idx, sensorPairs);
+	dm->copyArraysToSensors(start_idx, end_idx, sensors);
+	dm->copyArraysToSensorPairs(start_idx, end_idx, sensorPairs);
 
 	for (int i = start_idx; i < end_idx; ++i) {
 		EXPECT_EQ(diag[2 * i], sensors[i]->_m->_vdiag);

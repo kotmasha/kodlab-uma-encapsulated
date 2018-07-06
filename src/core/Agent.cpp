@@ -31,12 +31,13 @@ Agent::Agent(ifstream &file) {
 
 Agent::Agent(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + _uuid), _type(type) {
 	_t = 0;
-	_pruning_interval = stoi(World::core_info["Agent"]["pruning_interval"]);
+	_pruningInterval = stoi(World::coreInfo["Agent"]["pruning_interval"]);
+	_enableEnrichment = stoi(World::coreInfo["Agent"]["enable_enrichment"]);
 
 	agentLogger.info("An agent " + uuid + " is created, agent type is " + to_string(_type), _dependency);
 }
 
-Snapshot *Agent::add_snapshot(const string &uuid) {
+Snapshot *Agent::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
 		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
@@ -91,45 +92,57 @@ const vector<vector<string>> Agent::getSnapshotInfo() const {
 		tmp.push_back(it->first);
 
 		const int type = it->second->getType();
-		string s_type = "";
-		if (AGENT_TYPE::STATIONARY == type) s_type = "default";
-		else if (AGENT_TYPE::QUALITATIVE == type) s_type = "qualitative";
+		string sType = "";
+		if (AGENT_TYPE::STATIONARY == type) sType = "default";
+		else if (AGENT_TYPE::QUALITATIVE == type) sType = "qualitative";
 
-		tmp.push_back(s_type);
+		tmp.push_back(sType);
 
 		results.push_back(tmp);
 	}
 	return results;
 }
 
-void Agent::delete_snapshot(const string &snapshot_id) {
-	if (_snapshots.find(snapshot_id) == _snapshots.end()) {
-		throw UMAException("Cannot find the snapshot to delete " + snapshot_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+void Agent::deleteSnapshot(const string &snapshotId) {
+	if (_snapshots.find(snapshotId) == _snapshots.end()) {
+		throw UMAException("Cannot find the snapshot to delete " + snapshotId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
-	delete _snapshots[snapshot_id];
-	_snapshots[snapshot_id] = NULL;
-	_snapshots.erase(snapshot_id);
+	delete _snapshots[snapshotId];
+	_snapshots[snapshotId] = NULL;
+	_snapshots.erase(snapshotId);
 	agentLogger.info("Snapshot deleted", _dependency);
-}
-
-const int &Agent::getT() const {
-	return _t;
 }
 
 void Agent::setT(int t) {
 	_t = t;
 }
 
+void Agent::setEnableEnrichment(bool enableEnrichment) {
+	_enableEnrichment = enableEnrichment;
+}
+
+void Agent::setPruningInterval(int pruningInterval) {
+	_pruningInterval = pruningInterval;
+}
+
+const int &Agent::getT() const {
+	return _t;
+}
+
 const int &Agent::getType() const {
 	return _type;
 }
 
-const int &Agent::getPruningInterval() const {
-	return _pruning_interval;
+const bool &Agent::getEnableEnrichment() const {
+	return _enableEnrichment;
 }
 
-bool Agent::do_pruning() {
-	return _t % _pruning_interval == 0;
+const int &Agent::getPruningInterval() const {
+	return _pruningInterval;
+}
+
+bool Agent::doPruning() {
+	return _pruningInterval && _t % _pruningInterval == 0;
 }
 
 Agent::~Agent(){
@@ -146,16 +159,16 @@ Agent::~Agent(){
 	agentLogger.info("Deleted the agent " + _uuid);
 }
 
-Agent_qualitative::Agent_qualitative(const string &uuid, const string &dependency) : Agent(uuid, dependency, AGENT_TYPE::QUALITATIVE) {}
+AgentQualitative::AgentQualitative(const string &uuid, const string &dependency) : Agent(uuid, dependency, AGENT_TYPE::QUALITATIVE) {}
 
-Agent_qualitative::~Agent_qualitative() {}
+AgentQualitative::~AgentQualitative() {}
 
-Snapshot *Agent_qualitative::add_snapshot(const string &uuid) {
+Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
 		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
 	}
-	_snapshots[uuid] = new Snapshot_qualitative(uuid, _dependency);
+	_snapshots[uuid] = new SnapshotQualitative(uuid, _dependency);
 	agentLogger.info("A Snapshot Qualitative " + uuid + " is created", _dependency);
 	return _snapshots[uuid];
 }

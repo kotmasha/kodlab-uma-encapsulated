@@ -36,20 +36,20 @@ Sensor::Sensor(ifstream &file) {
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
-Sensor::Sensor(const std::pair<string, string> &id_pair, const double &total, int idx): _uuid(id_pair.first){
+Sensor::Sensor(const std::pair<string, string> &idPair, const double &total, int idx): _uuid(idPair.first){
 	_idx = idx;
-	_m = new AttrSensor(id_pair.first, 2 * idx, true, total / 2);
-	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, total / 2);
+	_m = new AttrSensor(idPair.first, 2 * idx, true, total / 2);
+	_cm = new AttrSensor(idPair.second, 2 * idx + 1, false, total / 2);
 	_observe = NULL;
 	_observe_ = NULL;
 
 	sensorLogger.info("New sensor created with total value, id=" + _uuid);
 }
 
-Sensor::Sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, int idx): _uuid(id_pair.first) {
+Sensor::Sensor(const std::pair<string, string> &idPair, const vector<double> &diag, int idx): _uuid(idPair.first) {
 	_idx = idx;
-	_m = new AttrSensor(id_pair.first, 2 * idx, true, diag[0]);
-	_cm = new AttrSensor(id_pair.second, 2 * idx + 1, false, diag[1]);
+	_m = new AttrSensor(idPair.first, 2 * idx, true, diag[0]);
+	_cm = new AttrSensor(idPair.second, 2 * idx + 1, false, diag[1]);
 	_observe = NULL;
 	_observe_ = NULL;
 
@@ -59,34 +59,34 @@ Sensor::Sensor(const std::pair<string, string> &id_pair, const vector<double> &d
 /*
 This function is copying the diag value of _m and _cm to the pointer
 */
-void Sensor::values_to_pointers() {
-	_m->values_to_pointers();
-	_cm->values_to_pointers();
+void Sensor::valuesToPointers() {
+	_m->valuesToPointers();
+	_cm->valuesToPointers();
 }
 
 /*
 This function is copying the pointer of _m and _cm to value
 */
-void Sensor::pointers_to_values() {
-	_m->pointers_to_values();
-	_cm->pointers_to_values();
+void Sensor::pointersToValues() {
+	_m->pointersToValues();
+	_cm->pointersToValues();
 }
 
 /*
 This function is setting pointers to NULL
 */
-void Sensor::pointers_to_null() {
-	_m->pointers_to_null();
-	_cm->pointers_to_null();
+void Sensor::pointersToNull() {
+	_m->pointersToNull();
+	_cm->pointersToNull();
 }
 
 /*
 This function is setting the diag pointers of _m and _cm through the sensor object
 Input: weight matrix diagonal value of this and last iteration
 */
-void Sensor::setAttrSensorDiagPointers(double *_diags, double *_diags_) {
-	_m->setDiagPointers(_diags, _diags_);
-	_cm->setDiagPointers(_diags, _diags_);
+void Sensor::setAttrSensorDiagPointers(double *diags, double *diags_) {
+	_m->setDiagPointers(diags, diags_);
+	_cm->setDiagPointers(diags, diags_);
 }
 
 /*

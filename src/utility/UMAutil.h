@@ -11,23 +11,23 @@ This is the UMA utility class, please add all utility functions inside
 
 namespace SysUtil {
 	//mkdir under different platform
-	string UMA_mkdir(std::string path);
+	string UMAMkdir(std::string path);
 }
 
 namespace StrUtil {
 	//conversion of string to log_level
-	int string_to_log_level(const string &s);
-	vector<std::pair<string, string>> string2d_to_string1d_pair(const vector<vector<string>> &pairs);
+	int stringToLogLevel(const string &s);
+	vector<std::pair<string, string>> string2dToString1dPair(const vector<vector<string>> &pairs);
 }
 
 namespace SignalUtil {
-	const vector<int> bool_signal_to_int_idx(const vector<bool> &list);
-	const vector<bool> int_idx_to_bool_signal(const vector<int> &idx, int size);
-	const vector<bool> attr_sensor_signal_to_sensor_signal(const vector<bool> &signal);
+	const vector<int> boolSignalToIntIdx(const vector<bool> &list);
+	const vector<bool> intIdxToBoolSignal(const vector<int> &idx, int size);
+	const vector<bool> attrSensorToSensorSignal(const vector<bool> &signal);
 }
 
 namespace ArrayUtil {
-	int find_idx_in_sorted_array(const vector<int> &input, int target);
+	int findIdxInSortedArray(const vector<int> &input, int target);
 }
 
 #endif

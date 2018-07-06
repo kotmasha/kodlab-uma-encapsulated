@@ -4,7 +4,7 @@ from UMA_sniffy import *
 import sys
 
 if __name__ == "__main__":
-    NUM = 40
+    NUM = 1
     test_name = ['test%s' % i for i in xrange(NUM)]
     test_x = [20 for i in xrange(NUM)]
     test_burn_in = [150 for i in xrange(NUM)]

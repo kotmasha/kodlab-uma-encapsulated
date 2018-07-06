@@ -73,7 +73,7 @@ void SnapshotHandler::createSnapshot(UMARestRequest &request) {
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
-	agent->add_snapshot(snapshotId);
+	agent->createSnapshot(snapshotId);
 
 	request.set_message("Snapshot=" + snapshotId + " is created");
 }
@@ -97,7 +97,7 @@ void SnapshotHandler::createAmper(UMARestRequest &request) {
 	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > amperLists = request.get_bool2d_data("amper_lists");
 	const vector<vector<string> > uuidLists = request.get_string2d_data("uuid_lists");
-	const vector<pair<string, string>> uuidPairs = StrUtil::string2d_to_string1d_pair(uuidLists);
+	const vector<pair<string, string>> uuidPairs = StrUtil::string2dToString1dPair(uuidLists);
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
@@ -113,7 +113,7 @@ void SnapshotHandler::createDelay(UMARestRequest &request) {
 	const string snapshotId = request.get_string_data("snapshot_id");
 	const vector<vector<bool> > amperLists = request.get_bool2d_data("delay_lists");
 	const vector<vector<string> > uuidLists = request.get_string2d_data("uuid_lists");
-	const vector<pair<string, string>> uuidPairs = StrUtil::string2d_to_string1d_pair(uuidLists);
+	const vector<pair<string, string>> uuidPairs = StrUtil::string2dToString1dPair(uuidLists);
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
@@ -170,7 +170,7 @@ void SnapshotHandler::deleteSnapshot(UMARestRequest &request) {
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
-	agent->delete_snapshot(snapshotId);
+	agent->deleteSnapshot(snapshotId);
 	request.set_message("Snapshot=" + snapshotId + " is deleted");
 }
 
