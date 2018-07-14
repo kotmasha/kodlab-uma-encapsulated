@@ -1,17 +1,24 @@
 import numpy as np
 from numpy.random import randint as rnd
 from collections import deque
-import curses
+#import curses
 import time
 from som2_noEP import *
 import sys
+import os
+import cPickle
 
-
-def start_experiment(stdscr, env_length, burn_in, total, test_name):
-    # Number of decision cycles for burn-in period:
-    BURN_IN = burn_in
-    # experiment parameters and definitions
-    X_BOUND = env_length  # length
+def start_experiment(run_params, test_name):
+    # Decision cycles:
+    TOTAL_CYCLES = run_params['total_cycles']
+    BURN_IN_CYCLES = run_params['burn_in_cycles']
+    # Recording options:
+    record_mids=run_params['mids_to_record'] #[id_count,id_dist,id_sig]
+    record_global=run_params['ex_dataQ'] #True
+    record_agents=run_params['agent_dataQ'] #True
+                
+    # Parameters and definitions
+    X_BOUND = run_params['env_length']  # length
 
     def in_bounds(pos):
         return (pos >= 0 and pos <= X_BOUND)
@@ -185,36 +192,48 @@ def start_experiment(stdscr, env_length, burn_in, total, test_name):
             delay_sigs = [agent.generate_signal(['x' + str(ind)], token) for ind in xrange(X_BOUND)]
             agent.delay(delay_sigs, token)
 
-    f = open(test_name + '.txt', 'w+')
+
+    # -------------------------------------RUN--------------------------------------------
+    recorder=experiment_output(EX,run_params)
 
     ## Random walk period
-    while EX.this_state(id_count) < BURN_IN:
+    while EX.this_state(id_count) < BURN_IN_CYCLES:
         # update the state
         instruction=[(id_lt if rnd(2) else cid_lt),(id_rt if rnd(2) else cid_rt)]
         #instruction = [(id_lt if (EX.this_state(id_count) / X_BOUND) % 2 == 0 else cid_lt),
                        #(id_rt if (EX.this_state(id_count) / X_BOUND) % 2 == 1 else cid_rt)]
-        reported_data = EX.update_state(instruction)
-        context = "%s, %s\n" % (EX.this_state(id_count), EX.this_state(id_dist))
-        f.write(context)
-
+        EX.update_state(instruction)
+        recorder.record()
 
     ## Main loop
-    while EX.this_state(id_count) < total:
+    while EX.this_state(id_count) < TOTAL_CYCLES:
         # make decisions, update the state
-        reported_data = EX.update_state()
-        context = "%s, %s\n" % (EX.this_state(id_count), EX.this_state(id_dist))
-        f.write(context)
+        EX.update_state()
+        recorder.record()
 
-    f.close()
-    print "test=%s is done!" % test_name
+    recorder.close()
 
-def main(x, burn_in, total, test_name):
-    curses.wrapper(start_experiment, x, burn_in, total, test_name)
+    #print "%s is done!\n" % test_name
+
 
 if __name__ == "__main__":
-    x = int(sys.argv[1])
-    burn_in = int(sys.argv[2])
-    total = int(sys.argv[3])
-    test_name = sys.argv[4]
-    main(x, burn_in, total, test_name)
-
+    RUN_PARAMS={
+        'env_length':int(sys.argv[1]),
+        'total_cycles':int(sys.argv[3]),
+        'burn_in_cycles':int(sys.argv[2]),
+        'name':sys.argv[4],
+        'ex_dataQ':True,
+        'agent_dataQ':True,
+        'mids_to_record':['count','dist','sig'],
+        'Nruns':1
+        }
+    
+    DIRECTORY=".\\"+RUN_PARAMS['name']
+    TEST_NAME=RUN_PARAMS['name']+'_0'
+    
+    os.mkdir(DIRECTORY)
+    preamblef=open(DIRECTORY+"\\"+RUN_PARAMS['name']+'.pre','wb')
+    cPickle.dump(RUN_PARAMS,preamblef)
+    preamblef.close()
+        
+    start_experiment(RUN_PARAMS,TEST_NAME)
