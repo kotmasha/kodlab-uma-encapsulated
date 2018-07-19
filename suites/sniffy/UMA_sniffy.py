@@ -7,6 +7,7 @@ from som2_noEP import *
 import sys
 import os
 import cPickle
+from UMARest import *
 
 def start_experiment(run_params, test_name):
     # Decision cycles:
@@ -16,6 +17,8 @@ def start_experiment(run_params, test_name):
     record_mids=run_params['mids_to_record'] #[id_count,id_dist,id_sig]
     record_global=run_params['ex_dataQ'] #True
     record_agents=run_params['agent_dataQ'] #True
+    host = run_params['host']
+    port = run_params['port']
                 
     # Parameters and definitions
     X_BOUND = run_params['env_length']  # length
@@ -35,7 +38,7 @@ def start_experiment(run_params, test_name):
     }
 
     # initialize a new experiment
-    EX = Experiment(test_name)
+    EX = Experiment(test_name, UMARestService(host, port))
     id_dec = 'decision'
 
     # register basic motion agents;
@@ -222,6 +225,8 @@ if __name__ == "__main__":
         'total_cycles':int(sys.argv[3]),
         'burn_in_cycles':int(sys.argv[2]),
         'name':sys.argv[4],
+        'host': str(sys.argv[5]),
+        'port': str(sys.argv[6]),
         'ex_dataQ':True,
         'agent_dataQ':True,
         'mids_to_record':['count','dist','sig'],

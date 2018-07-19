@@ -716,18 +716,18 @@ void Snapshot::generateDelayedWeights(int mid, bool merge, const std::pair<strin
 	int sid = mid / 2;
 	//get mid and sid
 
-	bool is_sensor_active;
+	bool isSensorActive;
 	if(merge){
 		//if need to merge, means just a single sensor delay
-		is_sensor_active = _sensors[sid]->getObserve();
+		isSensorActive = _sensors[sid]->getObserve();
 	}
 	else{
 		//means not a single sensor delay
 		_sensors[sid]->setObserveList(_dm->h_observe, _dm->h_observe_);
-		is_sensor_active = _sensors[sid]->generateDelayedSignal();
+		isSensorActive = _sensors[sid]->generateDelayedSignal();
 	}
 	//reverse for compi
-	if (mid % 2 == 1) is_sensor_active = !is_sensor_active;
+	if (mid % 2 == 1) isSensorActive = !isSensorActive;
 
 	for(int i = 0; i < _sensors.size() + 1; ++i){
 		SensorPair *sensor_pair = NULL;
@@ -748,10 +748,10 @@ void Snapshot::generateDelayedWeights(int mid, bool merge, const std::pair<strin
 		}
 		else{
 			sensor_pair = new SensorPair(delayedSensor, _sensors[i], _threshold, _total);
-			sensor_pair->mij->_vw = is_sensor_active * _sensors[i]->_m->_vdiag;
-			sensor_pair->mi_j->_vw = is_sensor_active * _sensors[i]->_cm->_vdiag;
-			sensor_pair->m_ij->_vw = !is_sensor_active * _sensors[i]->_m->_vdiag;
-			sensor_pair->m_i_j->_vw = !is_sensor_active * _sensors[i]->_cm->_vdiag;
+			sensor_pair->mij->_vw = isSensorActive * _sensors[i]->_m->_vdiag;
+			sensor_pair->mi_j->_vw = isSensorActive * _sensors[i]->_cm->_vdiag;
+			sensor_pair->m_ij->_vw = !isSensorActive * _sensors[i]->_m->_vdiag;
+			sensor_pair->m_i_j->_vw = !isSensorActive * _sensors[i]->_cm->_vdiag;
 			delayedSensorPairs.push_back(sensor_pair);
 		}
 	}
@@ -879,29 +879,66 @@ void SnapshotQualitative::generateDelayedWeights(int mid, bool merge, const std:
 	int sid = mid / 2;
 	//get mid and sid
 
+	bool isSensorActive;
+	if (merge) {
+		//if need to merge, means just a single sensor delay
+		isSensorActive = _sensors[sid]->getObserve();
+	}
+	else {
+		//means not a single sensor delay
+		_sensors[sid]->setObserveList(_dm->h_observe, _dm->h_observe_);
+		isSensorActive = _sensors[sid]->generateDelayedSignal();
+	}
+	//reverse for compi
+	if (mid % 2 == 1) isSensorActive = !isSensorActive;
+
 	for (int i = 0; i < _sensors.size() + 1; ++i) {
 		SensorPair *sensor_pair = NULL;
 		if (i == _sensors.size()) {
 			//if this is the last sensor pair, and it is the pair of the delayed sensor itself
 			sensor_pair = new SensorPair(delayedSensor, delayedSensor, _threshold, _total);
 			//copy all those diag values first
+			
+			delayedSensor->_m->_vdiag = delayedSensorPairs[0]->mij->_vw + delayedSensorPairs[0]->mi_j->_vw;
+			delayedSensor->_cm->_vdiag = delayedSensorPairs[0]->m_ij->_vw + delayedSensorPairs[0]->m_i_j->_vw;
+			if (delayedSensorPairs[0]->mij->_vw < 0 || delayedSensorPairs[0]->mi_j->_vw < 0) delayedSensor->_m->_vdiag = -1;
+			if (delayedSensorPairs[0]->m_ij->_vw < 0 || delayedSensorPairs[0]->m_i_j->_vw < 0) delayedSensor->_cm->_vdiag = -1;
+			delayedSensor->_m->_vdiag_ = delayedSensor->_m->_vdiag;
+			delayedSensor->_cm->_vdiag_ = delayedSensor->_cm->_vdiag;
+			//Dan: switch the formulat to see the diff
+			/*
 			delayedSensor->_m->_vdiag = -1;
 			delayedSensor->_cm->_vdiag = -1;
 			delayedSensor->_m->_vdiag_ = -1;
 			delayedSensor->_cm->_vdiag_ = -1;
+			*/
 			//then assign the value to sensor pair
+			//Dan: switch the formulat to see the diff
+			sensor_pair->mij->_vw = delayedSensor->_m->_vdiag;
+			sensor_pair->mi_j->_vw = 0;
+			sensor_pair->m_ij->_vw = 0;
+			sensor_pair->m_i_j->_vw = delayedSensor->_cm->_vdiag;
+			/*
 			sensor_pair->mij->_vw = -1;
 			sensor_pair->mi_j->_vw = -1;
 			sensor_pair->m_ij->_vw = -1;
 			sensor_pair->m_i_j->_vw = -1;
+			*/
 			delayedSensorPairs.push_back(sensor_pair);
 		}
 		else {
 			sensor_pair = new SensorPair(delayedSensor, _sensors[i], _threshold, _total);
+			//Dan: switch the formulat to see the diff
+			sensor_pair->mij->_vw = isSensorActive * _sensors[i]->_m->_vdiag + !isSensorActive * -1;
+			sensor_pair->mi_j->_vw = isSensorActive * _sensors[i]->_cm->_vdiag + !isSensorActive * -1;
+			sensor_pair->m_ij->_vw = !isSensorActive * _sensors[i]->_m->_vdiag + isSensorActive * -1;
+			sensor_pair->m_i_j->_vw = !isSensorActive * _sensors[i]->_cm->_vdiag + isSensorActive * -1;
+			/*
 			sensor_pair->mij->_vw = -1;
 			sensor_pair->mi_j->_vw = -1;
 			sensor_pair->m_ij->_vw = -1;
 			sensor_pair->m_i_j->_vw = -1;
+			*/
 			delayedSensorPairs.push_back(sensor_pair);
 		}
 	}

@@ -181,10 +181,11 @@ class Signal(object):
 ### with the agents
 
 class Experiment(object):
-    def __init__(self, experiment_id):
+    def __init__(self, experiment_id, service):
         # dictionary of agents in this experiment, by uuid
         self._AGENTS = {}
         self._EXPERIMENT_ID = experiment_id
+        self._service = service
 
         # registering the decision observable
         self._ID = set()
@@ -204,7 +205,7 @@ class Experiment(object):
         # - the trivial measurables initialized:
         self._STATE = {'decision': deque([[]], 1)}
 
-        self._EXPERIMENT_SERVICE = UMAClientWorld().add_experiment(self._EXPERIMENT_ID)
+        self._EXPERIMENT_SERVICE = UMAClientWorld(self._service).add_experiment(self._EXPERIMENT_ID)
 
         ### ID-based representation of the currently evolving decision
 
@@ -758,7 +759,7 @@ class Agent(object):
         for token in ['plus', 'minus']:
             self._SNAPSHOTS[token]._LAST = self.report_current(token)
 
-        res = UMAClientSimulation(self._AGENT_SERVICE.get_experiment_id()).make_decision(
+        res = UMAClientSimulation(self._AGENT_SERVICE.get_experiment_id(), self._AGENT_SERVICE.get_service()).make_decision(
             self._AGENT_SERVICE.get_agent_id(),
             self._SNAPSHOTS['plus']._OBSERVE.out(),
             self._SNAPSHOTS['minus']._OBSERVE.out(),

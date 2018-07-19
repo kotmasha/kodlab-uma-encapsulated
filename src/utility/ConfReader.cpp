@@ -60,6 +60,9 @@ std::map<string, std::map<string, string>> ConfReader::readConf(const string &co
 			else {
 				string key = s.substr(0, s.find("="));
 				string value = s.substr(s.find("=") + 1);
+				//nasty way to trim spaces, need to improve it as common lib
+				if (key.back() == ' ') key = key.substr(0, key.size() - 1);
+				if (value.front() == ' ') value = value.substr(1, value.size());
 				results[currentComponent][key] = value;
 			}
 		}

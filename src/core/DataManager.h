@@ -170,6 +170,7 @@ public:
 	~DataManager();
 
 	friend class Snapshot;
+	friend class SnapshotQualitative;
 
 	friend class UMACoreDataFlowTestFixture;
 
