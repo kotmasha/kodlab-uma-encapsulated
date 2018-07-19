@@ -106,7 +106,7 @@ void SensorHandler::createSensor(UMARestRequest &request) {
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	std::pair<string, string> idPair(sensorId, cSid);
-	snapshot->add_sensor(idPair, diag, w, d);
+	snapshot->createSensor(idPair, diag, w, d);
 
 	request.set_message("Sensor created");
 }
@@ -120,7 +120,7 @@ void SensorHandler::deleteSensor(UMARestRequest &request) {
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
-	snapshot->delete_sensor(sensorId);
+	snapshot->deleteSensor(sensorId);
 
 	request.set_message("Sensor deleted");
 }

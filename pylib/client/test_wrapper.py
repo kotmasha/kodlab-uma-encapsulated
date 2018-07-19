@@ -1,4 +1,4 @@
-#This is the wrapper file for the unit test
+#This is the wrapper file for the python functional test
 import requests
 import json
 import yaml

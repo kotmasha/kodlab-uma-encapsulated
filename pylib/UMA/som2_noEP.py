@@ -3,6 +3,7 @@ from collections import deque
 from itertools import *
 from numpy.random import randint as rnd
 import numpy as np
+import cPickle
 
 from UMARest import *
 
@@ -180,10 +181,11 @@ class Signal(object):
 ### with the agents
 
 class Experiment(object):
-    def __init__(self, experiment_id):
+    def __init__(self, experiment_id, service):
         # dictionary of agents in this experiment, by uuid
         self._AGENTS = {}
         self._EXPERIMENT_ID = experiment_id
+        self._service = service
 
         # registering the decision observable
         self._ID = set()
@@ -203,7 +205,7 @@ class Experiment(object):
         # - the trivial measurables initialized:
         self._STATE = {'decision': deque([[]], 1)}
 
-        self._EXPERIMENT_SERVICE = UMAClientWorld().add_experiment(self._EXPERIMENT_ID)
+        self._EXPERIMENT_SERVICE = UMAClientWorld(self._service).add_experiment(self._EXPERIMENT_ID)
 
         ### ID-based representation of the currently evolving decision
 
@@ -215,6 +217,7 @@ class Experiment(object):
             return state['decision'][0]
 
         self._DEFS = {'decision': ex_decision}
+        self._UPDATE_CYCLE_REPORTS={}
 
     # The register function, just do id register.
     # If id is None, generate a new one, if not just add it
@@ -358,13 +361,17 @@ class Experiment(object):
 
     ## Update the experiment state and output a summary of decisions
     def update_state(self, instruction='decide'):
-        #additional date reported about the experiment update:
-        ex_reports={}
+        #Additional data reported about the experiment update:
+        self._UPDATE_CYCLE_REPORTS.clear()
+        #prepare for experiment-level data:
+        self._UPDATE_CYCLE_REPORTS['experiment']={}
+        #prepare for agent-level data:
+        for mid in self._AGENTS:
+            self._UPDATE_CYCLE_REPORTS[mid]={}
         #additional data reported to the experiment, by agent id:
-        agent_reports={}
 
         #update initiation time:
-        ex_reports['entering_update_cycle']=time.clock()
+        self._UPDATE_CYCLE_REPORTS['experiment']['entering_update_cycle']=time.clock()
         
         #purge the experiment's decision variable
         id_dec = 'decision'
@@ -380,20 +387,19 @@ class Experiment(object):
 
             if agentQ:
                 if mid in self._AGENTS:  # if mid is an agent...
-                    agent_reports[mid]={} #prepare a dictionary for agent's report
-                    agent_reports[mid]['entering_decision_cycle']=time.clock()
+                    self._UPDATE_CYCLE_REPORTS[mid]['entering_decision_cycle']=time.clock()
                     ## agent activity set to current reading
                     agent = self._AGENTS[mid]
                     agent._ACTIVE = self.this_state(mid)
                     activity = 'plus' if agent._ACTIVE else 'minus'
-                    agent_reports[mid]['activity']=activity #report active snapshot
+                    self._UPDATE_CYCLE_REPORTS[mid]['activity']=activity #report active snapshot
 
                     ## ENRICHMENT
                     # agent analyzes outcomes of preceding decision
                     # cycle; if the prediction was too broad, add a
                     # sensor corresponding to the episode last observed
                     # and acknowledged by the active snapshot of the agent:
-                    agent_reports[mid]['pred_too_general']=agent.report_current().subtract(agent.report_predicted()).weight()
+                    self._UPDATE_CYCLE_REPORTS[mid]['pred_too_general']=agent.report_current().subtract(agent.report_predicted()).weight()
                     #if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
                     #    new_episode = agent.report_last().intersect(agent.report_initmask())
                     #    sensors_to_be_added = [new_episode]
@@ -440,28 +446,28 @@ class Experiment(object):
                     ##LEARNING THE SAME STRUCTURE OR AN APPROXIMATION THEREOF
                     
                     ## compute and record e&p duration:
-                    agent_reports[mid]['exiting_enrichment_and_pruning']=time.clock()
+                    self._UPDATE_CYCLE_REPORTS[mid]['exiting_enrichment_and_pruning']=time.clock()
 
                     ## agent enters observation-deliberation-decision stage and reports:
-                    agent_reports[mid]['deliberateQ'] = agent.decide()
-                    agent_reports[mid]['decision'] = mid if mid in self.this_state(id_dec) else midc
+                    self._UPDATE_CYCLE_REPORTS[mid]['deliberateQ'] = agent.decide()
+                    self._UPDATE_CYCLE_REPORTS[mid]['decision'] = mid if mid in self.this_state(id_dec) else midc
 
                     ## compute and report duration of decision cycle:
-                    agent_reports[mid]['exiting_decision_cycle']=time.clock()
+                    self._UPDATE_CYCLE_REPORTS[mid]['exiting_decision_cycle']=time.clock()
                     
                     ## report the agent size:
-                    agent_reports[mid]['size']=max(agent._SNAPSHOTS['plus']._SIZE,agent._SNAPSHOTS['minus']._SIZE)
+                    self._UPDATE_CYCLE_REPORTS[mid]['size']=max(agent._SNAPSHOTS['plus']._SIZE,agent._SNAPSHOTS['minus']._SIZE)
                     
                     ## possible overriding instruction is considered
                     if instruction != 'decide':
                         if mid in instruction or midc in instruction:
                             # append override information to message
-                            agent_reports[mid]['override']=mid if mid in instruction else midc
+                            self._UPDATE_CYCLE_REPORTS[mid]['override']=mid if mid in instruction else midc
                             # replace last decision with provided instruction
                             self.this_state(id_dec).pop()
                             self.this_state(id_dec).append(mid if mid in instruction else midc)
                     else:
-                        agent_reports[mid]['override']=''
+                        self._UPDATE_CYCLE_REPORTS[mid]['override']=''
 
                 else:  
                     # if midc is an agent, a decision has already been reached, so no action is required
@@ -486,7 +492,7 @@ class Experiment(object):
                     self.set_state(mid, (self._DEFS[mid](self._STATE)))
                     #report final decision for mid
                     if mid in self._AGENTS:
-                        agent_reports[mid]['final'] = mid if self.this_state(mid) else midc
+                        self._UPDATE_CYCLE_REPORTS[mid]['final'] = mid if self.this_state(mid) else midc
                 except:  
                     # if no definition, set the value according to $action_signal$
                     self.set_state(mid, (mid in action_signal))
@@ -498,8 +504,7 @@ class Experiment(object):
                     # if no definition available then do nothing; this is a state variable evolving independently of the agent's actions, e.g., a pointer to a data structure.
                     pass
 
-        ex_reports['exiting_update_cycle']=time.clock()
-        return ex_reports,agent_reports
+        self._UPDATE_CYCLE_REPORTS['experiment']['exiting_update_cycle']=time.clock()
 
 # The snapshot class that hold the snapshot shell on python side
 class Snapshot(object):
@@ -754,7 +759,8 @@ class Agent(object):
         for token in ['plus', 'minus']:
             self._SNAPSHOTS[token]._LAST = self.report_current(token)
 
-        res = self._AGENT_SERVICE.make_decision(
+        res = UMAClientSimulation(self._AGENT_SERVICE.get_experiment_id(), self._AGENT_SERVICE.get_service()).make_decision(
+            self._AGENT_SERVICE.get_agent_id(),
             self._SNAPSHOTS['plus']._OBSERVE.out(),
             self._SNAPSHOTS['minus']._OBSERVE.out(),
             self._EXPERIMENT.this_state(self._MOTIVATION),
@@ -803,4 +809,97 @@ class Agent(object):
         for i in range(len(signals)):
             uuids.append(['predelay' + str(i), 'c_delay' + str(i)])
         affected_snapshot.delay([signal.out() for signal in signals], uuids)
+
+
+### Standardized I/O options
+
+### --------- THE USE OF THIS CLASS ASSUMES THE PRESENCE OF A PREAMBLE ------------ ###
+#
+# - All output files will be located inside a subdir of the working dir named <name>
+#
+# - The subdir <name> contains a preamble file named "name.pre"
+#
+# - The UMA run is recorded in a file named "name_i.dat", where $i$ is the run index
+#
+# - The preamble format is a Python DICT with the following standard keys:
+#   'Nruns'             -   the number of runs recorded in this directory
+#   'name'              -   the string identifier <name>
+#   'ex_dataQ'          -   Boolean indicating whether or not experiment update cycle
+#                           data was recorded in addition to the experiment state
+#   'agent_dataQ'       -   Boolean indicating whether or not per-agent update cycle
+#                           data was recorded in addition to the experiment state
+#   'mids_to_record'    -   List of mids (belonging to the experiment) whose values
+#                           were recorded (for each cycle of each run)
+#
+# - Additional preamble values are experiment-dependent, e.g. For SNIFFY, we have:
+#   'env_length'        -   The size of SNIFFY's environment
+#   'burn_in_cycles'    -   Length (in cycles) of initial period of randomized behavior
+#   'total_cycles'      -   Length (in cycles) of the whole run   
+#--------------------------------------------------------------------------------------
+
+
+class experiment_output():
+    def __init__(self, experiment, preamble, unbufferedQ=True):
+        #Experiment to be recorded
+        self._ex=experiment
+        self._preamble=preamble
+
+        #Append mid info from experiment to preamble for overwriting
+        preamble_file_name=".\\"+preamble['name']+"\\"+preamble['name']+".pre"
+        preamblef=open(preamble_file_name,'wb')
+
+        #Add list of agents to preamble
+        self._preamble['agents']=experiment._AGENTS.keys()
+
+        #- record all mids unless a mid_list is specified in the preamble
+        try:
+            self._mids=self._preamble['mids_to_record']
+        except KeyError:
+            self._mids=self._ex._MID
+        self._preamble['mids_recorded']=self._mids
+                    
+        #-record all experiment update cycle data imtes (e.g. time stamps) in preamble 
+        self._ex_dataQ=self._preamble['ex_dataQ']
+        if self._ex_dataQ:
+            self._preamble['ex_data_recorded']=self._ex._UPDATE_CYCLE_REPORTS['experiment'].keys()
+        else:
+            self._preamble['ex_data_recorded']=[]
+
+        #-record the list of update cycle data items per agent in preamble 
+        self._agent_dataQ=self._preamble['agent_dataQ']
+        if self._agent_dataQ:
+            self._preamble['agent_data_recorded']=self._ex._UPDATE_CYCLE_REPORTS[self._ex._AGENTS.keys()[0]].keys()
+        else:
+            self._preamble['agent_data_recorded']=[]
+
+        #Update the preamble file
+        cPickle.dump(self._preamble,preamblef,protocol=cPickle.HIGHEST_PROTOCOL)
+        preamblef.close()
+
+        #Designated filename for UNBUFFERED recording in binary mode
+        output_file_name=".\\"+preamble['name']+"\\"+experiment._EXPERIMENT_ID+".dat" 
+        self._outfile=open(output_file_name,'wb',int(unbufferedQ))
+
+    def record(self):
+        out_dict={}
+        #- form the list of current state values to be recorded:
+        out_dict['mids_recorded']=[self._ex.this_state(mid) for mid in self._preamble['mids_recorded']]
+
+        #-form the list of global experiment update cycle values:
+        if self._ex_dataQ:
+            out_dict['ex_data_recorded']=[self._ex._UPDATE_CYCLE_REPORTS['experiment'][tag] for tag in self._preamble['ex_data_recorded']]
+
+        #-form the lists of per-agent update cycle values and dump as a dictionary:
+        if self._agent_dataQ:
+            out_dict['agent_data_recorded']={}
+            for mid in self._ex._AGENTS.keys():
+                out_dict['agent_data_recorded'][mid]=[self._ex._UPDATE_CYCLE_REPORTS[mid][tag] for tag in self._preamble['agent_data_recorded']]
+
+        cPickle.dump(out_dict,self._outfile,protocol=cPickle.HIGHEST_PROTOCOL)
+
+
+    def close(self):
+        #close the output file
+        #recording past this point will produce an error
+        self._outfile.close()
 

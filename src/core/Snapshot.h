@@ -31,33 +31,33 @@ protected:
 	//q value, used in simulation
 	double _q;
 	//the initial sensor size, initial sensor is the basic sensor without amper/delay, the value is initiated
-	int _initial_size;
+	int _initialSize;
 	//the snapshot id, not changable
 	const string _uuid;
 	//the sensor pointer vector
 	vector<Sensor*> _sensors;
 	//the sensor pair pointer vector
-	vector<SensorPair*> _sensor_pairs;
+	vector<SensorPair*> _sensorPairs;
 	//the map of sensor id to sensor
-	std::map<string, Sensor*> _sensor_idx;
+	std::map<string, Sensor*> _sensorIdx;
 	//the set of existing delay sensor hash
-	std::set<size_t> _delay_sensor_hash;
+	std::set<size_t> _delaySensorHash;
 	//record current sensor num in the current Snapshot
 	int t;
 	//the bool indicating whether auto-target is on or off
-	bool _auto_target;
+	bool _autoTarget;
 	//the bool indicating whether mask will be propagated automatically
-	bool _propagate_mask;
+	bool _propagateMask;
 	//the dataManager of the snapshot
 	DataManager *_dm;
 	//the snapshot's dependency chain
 	const string _dependency;
 	//the delay hash
-	hash<vector<bool>> delay_hash;
+	hash<vector<bool>> delayHash;
 	//snapshot type
 	const int _type;
 	//delay count
-	int _delay_count;
+	int _delayCount;
 	friend class Agent;
 
 	friend class AmperAndTestFixture;
@@ -68,8 +68,8 @@ protected:
 public:
 	//Snapshot(ifstream &file, string &log_dir);
 	Snapshot(const string &uuid, const string &dependency, const int type = AGENT_TYPE::STATIONARY);
-	Sensor *add_sensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
-	void delete_sensor(const string &sensor_id);
+	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
+	void deleteSensor(const string &sensorId);
 	vector<vector<string> > getSensorInfo() const;
 
 	void generateObserve(vector<bool> &observe);
@@ -79,22 +79,22 @@ public:
 	/*
 	self-enrichment and derichment function
 	*/
-	virtual void ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
-	virtual void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs);
+	virtual void ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &idPairs);
+	virtual void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &idPairs);
 	virtual void pruning(const vector<bool> &signal);
-	virtual void update_total(double phi, bool active);
+	virtual void updateTotal(double phi, bool active);
 
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
 	SensorPair *getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const;
 	AttrSensor *getAttrSensor(int idx) const;
-	AttrSensor *getAttrSensor(const string &measurable_id) const;
-	AttrSensorPair *getAttrSensorPair(int m_idx1, int m_idx2) const;
+	AttrSensor *getAttrSensor(const string &measurableId) const;
+	AttrSensorPair *getAttrSensorPair(int mIdx1, int mIdx2) const;
 	AttrSensorPair *getAttrSensorPair(const string &mid1, const string &mid2) const;
-	vector<bool> getAmperList(const string &sensor_id) const;
-	vector<string> getAmperListID(const string &sensor_id) const;
-	Sensor *getSensor(const string &sensor_id) const;
+	vector<bool> getAmperList(const string &sensorId) const;
+	vector<string> getAmperListID(const string &sensorId) const;
+	Sensor *getSensor(const string &sensorId) const;
 	DataManager *getDM() const;
 
 	const double &getTotal() const;
@@ -115,9 +115,9 @@ public:
 	*/
 	void setThreshold(const double &threshold);
 	void setQ(const double &q);
-	void setAutoTarget(const bool &auto_target);
-	void setPropagateMask(const bool &propagate_mask);
-	void setInitialSize(const int &initial_size);
+	void setAutoTarget(const bool &autoTarget);
+	void setPropagateMask(const bool &propagateMask);
+	void setInitialSize(const int &initialSize);
 	void setInitialSize();
 	void setTotal(const double &total);
 	void setOldTotal(const double &total_);
@@ -138,19 +138,19 @@ public:
 
 protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
-	void amperand(int mid1, int mid2, bool merge, const std::pair<string, string> &id_pair);
-	virtual void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
+	void amperand(int mid1, int mid2, bool merge, const std::pair<string, string> &idPair);
+	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
 };
 
 /*
 Qualitative Snapshot
 */
-class DLL_PUBLIC Snapshot_qualitative : public Snapshot {
+class DLL_PUBLIC SnapshotQualitative : public Snapshot {
 public:
-	Snapshot_qualitative(string uuid, string dependency);
-	virtual ~Snapshot_qualitative();
-	virtual void update_total(double phi, bool active);
-	virtual void generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair);
+	SnapshotQualitative(string uuid, string dependency);
+	virtual ~SnapshotQualitative();
+	virtual void updateTotal(double phi, bool active);
+	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
 
 protected:
 	//double q;

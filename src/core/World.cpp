@@ -7,7 +7,7 @@
 World *World::_world = NULL;
 static Logger worldLogger("World", "log/world.log");
 
-std::map<string, std::map<string, string>> World::core_info = ConfReader::read_conf("core.ini");
+std::map<string, std::map<string, string>> World::coreInfo = ConfReader::readConf("core.ini");
 
 World *World::instance() {
 	if (!_world) {

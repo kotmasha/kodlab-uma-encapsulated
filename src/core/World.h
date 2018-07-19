@@ -15,7 +15,7 @@ private:
 	std::map<string, Experiment*> _experiments;
 
 public:
-	static std::map<string, std::map<string, string>> core_info;
+	static std::map<string, std::map<string, string>> coreInfo;
 
 public:
 	static World *instance();

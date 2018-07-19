@@ -43,7 +43,7 @@ protected:
 	bool *h_load, *dev_load;
 	//mask array, will be calculated during init_mask, which will be used in halucinate
 	bool *h_mask, *dev_mask;
-	//target array, used to hold the target result from calculate_target
+	//target array, used to hold the target result from calculateTarget
 	bool *h_target, *dev_target;
 	//the negligible sensor
 	bool *h_negligible, *dev_negligible;
@@ -79,31 +79,31 @@ protected:
 
 protected:
 	//the current sensor size, this value is changable during the test due to amper/delay/pruning
-	int _sensor_size;
+	int _sensorSize;
 	//the current sensor max size
-	int _sensor_size_max;
-	//the attr_sensor size, also changable
-	int _attr_sensor_size;
-	//the attr_sensor max size
-	int _attr_sensor_size_max;
+	int _sensorSizeMax;
+	//the attr sensor size, also changable
+	int _attrSensorSize;
+	//the attr sensor max size
+	int _attrSensorSizeMax;
 	//the sensor 2 dimensional size, hold the size of the threshold
-	int _sensor2d_size;
-	//the _sensor2d_size max value
-	int _sensor2d_size_max;
-	//the attr_sensor 2 dimensional size, hold the size of weight and dir matrix
-	int _attr_sensor2d_size;
-	//the _attr_sensor2d_size max value
-	int _attr_sensor2d_size_max;
+	int _sensor2dSize;
+	//the sensor2d size max value
+	int _sensor2dSizeMax;
+	//the attr sensor 2 dimensional size, hold the size of weight and dir matrix
+	int _attrSensor2dSize;
+	//the attr sensor2d size max value
+	int _attrSensor2dSizeMax;
 	//the mask amper size, used to hold the mask amper
-	int _mask_amper_size;
-	//the _mask_amper_size max value
-	int _mask_amper_size_max;
-	//the npdir matrix size, npdir_size = _attr_sensor2d_size + sensor_size(increase value on y=2i, x=2i)
-	int _npdir_size;
+	int _maskAmperSize;
+	//the mask amper size max value
+	int _maskAmperSizeMax;
+	//the npdir matrix size, npdirSize = attrSensor2dSize + sensorSize(increase value on y=2i, x=2i)
+	int _npdirSize;
 	//the npdir max size
-	int _npdir_size_max;
+	int _npdirSizeMax;
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
-	double _memory_expansion;
+	double _memoryExpansion;
 	//the dataManager's dependency chain
 	const string _dependency;
 	//the cublas handle
@@ -145,8 +145,8 @@ public:
 	const vector<vector<bool> > getDir2D();
 	const vector<vector<bool> > getNPDir2D();
 	const vector<vector<double> > getThreshold2D();
-	const vector<vector<bool> > getMask_amper2D();
-	const vector<bool> getMask_amper();
+	const vector<vector<bool> > getMaskAmper2D();
+	const vector<bool> getMaskAmper();
 	const vector<double> getWeight();
 	const vector<bool> getDir();
 	const vector<bool> getNPDir();
@@ -157,46 +157,48 @@ public:
 	const vector<bool> getMask();
 	const vector<bool> getNegligible();
 	const vector<bool> getTmpBool();
-	const vector < vector<bool> > getSignals(int sig_count);
-	const vector < vector<bool> > getLSignals(int sig_count);
+	const vector < vector<bool> > getSignals(int sigCount);
+	const vector < vector<bool> > getLSignals(int sigCount);
 	const vector<vector<bool> > getNpdirMasks();
 	const vector<bool> getLoad();
 	const vector<int> getUnionRoot();
 	const std::map<string, int> getSizeInfo();
+	const std::map<string, int> convertSizeInfo(std::map<string, int> &sizeInfo);
 	//Get Functions
 	//#############
 
 	~DataManager();
 
 	friend class Snapshot;
+	friend class SnapshotQualitative;
 
 	friend class UMACoreDataFlowTestFixture;
 
 protected:
-	void init_pointers();
-	void reallocate_memory(double &total, int sensor_size);
-	void set_size(int sensor_size, bool change_max=true);
-	void free_all_parameters();
+	void initPointers();
+	void reallocateMemory(double &total, int sensorSize);
+	void setSize(int sensorSize, bool changeMax=true);
+	void freeAllParameters();
 
-	void gen_direction();
-	void gen_weight();
-	void gen_thresholds();
-	void gen_mask_amper();
-	void gen_np_direction();
-	void gen_signals();
-	void gen_npdir_mask();
-	void gen_dists();
-	void gen_other_parameters();
+	void genDirection();
+	void genWeight();
+	void genThresholds();
+	void genMaskAmper();
+	void genNpDirection();
+	void genSignals();
+	void genNpdirMask();
+	void genDists();
+	void genOtherParameters();
 
-	void init_other_parameter(double &total);
+	void initOtherParameter(double &total);
 
-	void create_sensors_to_arrays_index(const int start_idx, const int end_idx, const vector<Sensor*> &sensors);
-	void create_sensor_pairs_to_arrays_index(const int start_idx, const int end_idx, const vector<SensorPair*> &sensors);
+	void createSensorsToArraysIndex(const int startIdx, const int endIdx, const vector<Sensor*> &sensors);
+	void createSensorPairsToArraysIndex(const int startIdx, const int endIdx, const vector<SensorPair*> &sensors);
 
-	void copy_sensor_pairs_to_arrays(const int start_idx, const int end_idx, const vector<SensorPair*> &_sensor_pairs);
-	void copy_sensors_to_arrays(const int start_idx, const int end_idx, const vector<Sensor*> &sensors);
-	void copy_arrays_to_sensors(const int start_idx, const int end_idx, const vector<Sensor*> &sensors);
-	void copy_arrays_to_sensor_pairs(const int start_idx, const int end_idx, const vector<SensorPair*> &_sensor_pairs);
+	void copySensorPairsToArrays(const int startIdx, const int endIdx, const vector<SensorPair*> &_sensorPairs);
+	void copySensorsToArrays(const int startIdx, const int endIdx, const vector<Sensor*> &sensors);
+	void copyArraysToSensors(const int startIdx, const int endIdx, const vector<Sensor*> &sensors);
+	void copyArraysToSensorPairs(const int startIdx, const int endIdx, const vector<SensorPair*> &_sensorPairs);
 };
 
 #endif

@@ -37,7 +37,7 @@ protected:
 	//indicate if the measurable is originally a pure
 	bool _isOriginPure;
 	friend class Snapshot;
-	friend class Snapshot_qualitative;
+	friend class SnapshotQualitative;
 	friend class Sensor;
 	friend class AttrSensorPair;
 
@@ -49,9 +49,9 @@ public:
 	//AttrSensor(ifstream &file);
 	AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag);
 
-	void pointers_to_null();
-	void pointers_to_values();
-	void values_to_pointers();
+	void pointersToNull();
+	void pointersToValues();
+	void valuesToPointers();
 
 	void setDiagPointers(double *_diags, double *_diags_);
 	void setObservePointers(bool *observe, bool *observe_);

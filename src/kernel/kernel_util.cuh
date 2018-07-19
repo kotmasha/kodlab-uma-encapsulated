@@ -9,11 +9,11 @@ namespace kernel_util {
 	void conjunction(bool *b1, bool *b2, int size);
 	void disjunction(bool *b1, bool *b2, int size);
 	void subtraction(bool *b1, bool *b2, int size);
-	void negate_conjunction_star(bool *b1, bool *b2, int size);
-	void conjunction_star(bool *b1, bool *b2, int size);
+	void negateConjunctionStar(bool *b1, bool *b2, int size);
+	void ConjunctionStar(bool *b1, bool *b2, int size);
 	void up2down(bool *b1, bool *b2, int size);
 	double sum(double *d, int size);
-	void init_mask_signal(bool *b, int init_size, int size);
+	void initMaskSignal(bool *b, int initSize, int size);
 }
 
 #endif

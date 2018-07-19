@@ -11,9 +11,9 @@ UMA Exception class
 */
 class UMAException: public std::runtime_error {
 private:
-	int _error_level;
-	int _error_type;
-	string _error_message;
+	int _errorLevel;
+	int _errorType;
+	string _errorMessage;
 
 public:
 	enum ERROR_LEVEL {WARN, ERROR, FATAL};
@@ -21,7 +21,7 @@ public:
 
 public:
 	UMAException();
-	UMAException(string message, int error_level, int error_type);
+	UMAException(string message, int errorLevel, int errorType);
 	string getErrorMessage() const;
 	int getErrorLevel() const;
 	int getErrorType() const;

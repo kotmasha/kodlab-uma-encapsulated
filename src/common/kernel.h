@@ -5,8 +5,8 @@
 #include <cuda_runtime.h>
 
 //marco for GPU kernel function, change those value according to your own GPU
-#define THREAD1D 256
-#define THREAD2D 16
+#define THREAD1D 1024
+#define THREAD2D 32
 #define GRID1D(X) dim3((X + THREAD1D - 1) / THREAD1D)
 #define BLOCK1D dim3(THREAD1D)
 #define GRID2D(X, Y) dim3((X + THREAD2D - 1) / THREAD2D, (Y + THREAD2D - 1) / THREAD2D)

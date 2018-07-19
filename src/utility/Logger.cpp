@@ -8,11 +8,11 @@
 
 Logger::Logger(const string component, const string output) : _component(component) {
 	//level is changable in runtime
-	static std::map < string, std::map<string, string>> _log_level = ConfReader::read_conf("log.ini");
-	SysUtil::UMA_mkdir("log");
+	static std::map < string, std::map<string, string>> _logLevel = ConfReader::readConf("log.ini");
+	SysUtil::UMAMkdir("log");
 
 	try {
-		_level = StrUtil::string_to_log_level(_log_level[component]["level"]);
+		_level = StrUtil::stringToLogLevel(_logLevel[component]["level"]);
 	}
 	catch (UMAException &e) {
 		cout << "Cannot find the component " + component << endl;
@@ -25,10 +25,10 @@ Logger::Logger(const string component, const string output) : _component(compone
 string Logger::getTime() const{
 	auto current_time = std::chrono::system_clock::now();
 	std::time_t t = std::chrono::system_clock::to_time_t(current_time);
-	char t_str[26];
+	char tStr[26];
 #if defined(_WIN64)
-	ctime_s(t_str, sizeof t_str, &t);
-	return string(t_str).substr(0, 24);
+	ctime_s(tStr, sizeof tStr, &t);
+	return string(tStr).substr(0, 24);
 #else
 	return string(ctime(&t)).substr(0, 24);
 #endif

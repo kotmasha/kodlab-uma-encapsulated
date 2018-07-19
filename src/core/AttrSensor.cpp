@@ -18,14 +18,14 @@ AttrSensor::AttrSensor(ifstream &file) {
 	else _uuid = "";
 	file.read((char *)&_idx, sizeof(int));
 	file.read((char *)&_isOriginPure, sizeof(bool));
-	pointers_to_null();
+	pointersToNull();
 }
 */
 
 AttrSensor::AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag): _uuid(uuid){
 	_idx = idx;
 	_isOriginPure = isOriginPure;
-	pointers_to_null();
+	pointersToNull();
 	_vdiag = diag;
 	_vdiag_ = diag;
 	_vobserve = false;
@@ -38,7 +38,7 @@ AttrSensor::AttrSensor(const string &uuid, int idx, bool isOriginPure, double di
 /*
 The function is setting all pointers to NULL
 */
-void AttrSensor::pointers_to_null(){
+void AttrSensor::pointersToNull(){
 	_diag = NULL;
 	_diag_ = NULL;
 	_observe = NULL;
@@ -51,7 +51,7 @@ void AttrSensor::pointers_to_null(){
 /*
 The function is copying the pointer value to values in the object
 */
-void AttrSensor::pointers_to_values(){
+void AttrSensor::pointersToValues(){
 	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
 		throw UMAException("The diag or observe or target pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
@@ -67,7 +67,7 @@ void AttrSensor::pointers_to_values(){
 /*
 The function is copying values to pointer in the object
 */
-void AttrSensor::values_to_pointers(){
+void AttrSensor::valuesToPointers(){
 	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
 		throw UMAException("The diag or observe or target pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
@@ -232,5 +232,5 @@ void AttrSensor::setIsOriginPure(const bool &isOriginPure) {
 }
 
 AttrSensor::~AttrSensor(){
-	pointers_to_null();
+	pointersToNull();
 }

@@ -4,17 +4,16 @@ import sys
 import os
 import json
 
-UMA_CORE_BASE_URL = "http://localhost:8000"
-
 class UMARestService:
-    def __init__(self):
+    def __init__(self, host='localhost', port='8000'):
         #self.logger = logging.getLogger("RestService")
         #self.logger.setLevel(logging.DEBUG)
         self._headers = {'Content-type': 'application/json', 'Accpet': 'text/plain'}
+        self._base_url = "http://%s:%s" % (host, port)
         #self._log = open('./client.txt', 'w')
 
     def post(self, uri, data):
-        uri = UMA_CORE_BASE_URL + uri
+        uri = self._base_url + uri
         try:
             r = requests.post(uri, data=json.dumps(data), headers=self._headers)
         except Exception, e:
@@ -30,7 +29,7 @@ class UMARestService:
         return r.json()
 
     def get(self, uri, query):
-        uri = UMA_CORE_BASE_URL + uri
+        uri = self._base_url + uri
         retry = 0
         while retry < 5:
             try:
@@ -52,7 +51,7 @@ class UMARestService:
         return r.json()
 
     def put(self, uri, data, query):
-        uri = UMA_CORE_BASE_URL + uri
+        uri = self._base_url + uri
         try:
             r = requests.put(uri, data=json.dumps(data), params=query, headers=self._headers)
         except:
@@ -70,10 +69,18 @@ class UMARestService:
     def delete(self):
         pass
 
-class UMAClientWorld:
-    def __init__(self):
-        #self.logger = logging.getLogger("ClientWorld")
-        self._service = UMARestService()
+class UMAClientObject:
+    def __init__(self, service):
+        self._service = service
+
+    def get_service(self):
+        return self._service
+
+class UMAClientWorld(UMAClientObject):
+    def __init__(self, service):
+        # self.logger = logging.getLogger("ClientWorld")
+        self._service = service
+        pass
 
     def add_experiment(self, experiment_id):
         data = {'experiment_id': experiment_id}
@@ -82,13 +89,16 @@ class UMAClientWorld:
             print "create experiment=%s failed!" % experiment_id
             return None
         else:
-            return UMAClientExperiment(experiment_id)
+            return UMAClientExperiment(experiment_id, self.get_service())
 
-class UMAClientExperiment:
-    def __init__(self, experiment_id):
+class UMAClientExperiment(UMAClientObject):
+    def __init__(self, experiment_id, service):
         #self.logger = logging.getLogger("ClientExperiment")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
 
     def add_agent(self, agent_id, type='default'):
         data = {'experiment_id': self._experiment_id, 'agent_id': agent_id, 'type': type}
@@ -97,14 +107,20 @@ class UMAClientExperiment:
             print "create agent=%s failed!" % agent_id
             return None
         else:
-            return UMAClientAgent(self._experiment_id, agent_id)
+            return UMAClientAgent(self._experiment_id, agent_id, self.get_service())
 
-class UMAClientAgent:
-    def __init__(self, experiment_id, agent_id):
+class UMAClientAgent(UMAClientObject):
+    def __init__(self, experiment_id, agent_id, service):
         #self.logger = logging.getLogger("ClientAgent")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
         self._agent_id = agent_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
 
     def add_snapshot(self, snapshot_id):
         data = {'snapshot_id': snapshot_id, 'agent_id': self._agent_id, 'experiment_id': self._experiment_id}
@@ -113,29 +129,24 @@ class UMAClientAgent:
             print "create snapshot=%s failed!" % snapshot_id
             return None
         else:
-            return UMAClientSnapshot(self._experiment_id, self._agent_id, snapshot_id)
+            return UMAClientSnapshot(self._experiment_id, self._agent_id, snapshot_id, self.get_service())
 
-    def make_decision(self, obs_plus, obs_minus, phi, active):
-        #post to service:
-        data =  {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'phi': phi,
-                 'active': active, 'obs_plus': obs_plus, 'obs_minus': obs_minus}
-        result = self._service.post('/UMA/simulation/decision', data)
-        if not result:
-            return None
-        result = result['data']
-        plus = {'res': float(result['res_plus']), 'current': result['current_plus'],
-                'prediction': result['prediction_plus'], 'target': result['target_plus']}
-        minus = {'res': float(result['res_minus']), 'current': result['current_minus'],
-                 'prediction': result['prediction_minus'], 'target': result['target_minus']}
-        return {'plus': plus, 'minus': minus}
-
-class UMAClientSnapshot:
-    def __init__(self, experiment_id, agent_id, snapshot_id):
+class UMAClientSnapshot(UMAClientObject):
+    def __init__(self, experiment_id, agent_id, snapshot_id, service):
         #self.logger = logging.getLogger("ClientSnapshot")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
 
     def add_sensor(self, sensor_id, c_sensor_id):
         data = {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id,
@@ -145,7 +156,7 @@ class UMAClientSnapshot:
             print "add sensor=%s failed!" % sensor_id
             return None
         else:
-            return UMAClientSensor(self._experiment_id, self._agent_id, self._snapshot_id, sensor_id)
+            return UMAClientSensor(self._experiment_id, self._agent_id, self._snapshot_id, sensor_id, self.get_service())
 
     def init(self):
         data = {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id}
@@ -191,12 +202,21 @@ class UMAClientSnapshot:
         return True
 
 class UMAClientData:
-    def __init__(self, experiment_id, agent_id, snapshot_id):
+    def __init__(self, experiment_id, agent_id, snapshot_id, service):
         #self.logger = logging.getLogger("ClientData")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
 
     def getCurrent(self):
         return self._service.get('/UMA/data/current', {'experiment_id': self._experiment_id,
@@ -219,13 +239,25 @@ class UMAClientData:
                         'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id})
 
 class UMAClientSensor:
-    def __init__(self, experiment_id, agent_id, snapshot_id, sensor_id):
+    def __init__(self, experiment_id, agent_id, snapshot_id, sensor_id, service):
         #self.logger = logging.getLogger("ClientSensor")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
         self._agent_id = agent_id
         self._snapshot_id = snapshot_id
         self._sensor_id = sensor_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def get_agent_id(self):
+        return self._agent_id
+
+    def get_snapshot_id(self):
+        return self._snapshot_id
+
+    def get_sensor_id(self):
+        return self._sensor_id
 
     def getAmperList(self):
         result = self._service.get('/UMA/object/sensor', {'experiment_id': self._experiment_id,
@@ -257,12 +289,27 @@ class UMAClientAttrSensor:
         pass
 
 class UMAClientSimulation:
-    def __init__(self, experiment_id, agent_id, snapshot_id):
+    def __init__(self, experiment_id, service):
         #self.logger = logging.getLogger("ClientSimulation")
-        self._service = UMARestService()
+        self._service = service
         self._experiment_id = experiment_id
-        self._agent_id = agent_id
-        self._snapshot_id = snapshot_id
+
+    def get_experiment_id(self):
+        return self._experiment_id
+
+    def make_decision(self, agent_id, obs_plus, obs_minus, phi, active):
+        #post to service:
+        data =  {'experiment_id': self._experiment_id, 'agent_id': agent_id, 'phi': phi,
+                 'active': active, 'obs_plus': obs_plus, 'obs_minus': obs_minus}
+        result = self._service.post('/UMA/simulation/decision', data)
+        if not result:
+            return None
+        result = result['data']
+        plus = {'res': float(result['res_plus']), 'current': result['current_plus'],
+                'prediction': result['prediction_plus'], 'target': result['target_plus']}
+        minus = {'res': float(result['res_minus']), 'current': result['current_minus'],
+                 'prediction': result['prediction_minus'], 'target': result['target_minus']}
+        return {'plus': plus, 'minus': minus}
 
     def make_up(self, signal):
         data =  {'experiment_id': self._experiment_id, 'agent_id': self._agent_id, 'snapshot_id': self._snapshot_id,

@@ -4,7 +4,7 @@
 #include "Global.h"
 using namespace std;
 class Snapshot;
-class Snapshot_Qualitative;
+class SnapshotQualitative;
 class World;
 
 /*
@@ -23,33 +23,38 @@ protected:
 	//agent type
 	const int _type;
 	//pruning interval
-	int _pruning_interval;
+	int _pruningInterval;
+	bool _enableEnrichment;
 	friend class World;
 
 public:
 	//Agent(ifstream &file);
 	Agent(const string &uuid, const string &dependency, const int type = AGENT_TYPE::STATIONARY);
-	virtual Snapshot *add_snapshot(const string &uuid);
-	Snapshot *getSnapshot(const string &snapshot_id);
-	void delete_snapshot(const string &snapshot_id);
+	virtual Snapshot *createSnapshot(const string &uuid);
+	Snapshot *getSnapshot(const string &snapshotId);
+	void deleteSnapshot(const string &snapshotId);
 	//void save_agent(ofstream &file);
 	//void copy_test_data(Agent *agent);
 	const int &getT() const;
 	const int &getPruningInterval() const;
-	void setT(int t);
+	const bool &getEnableEnrichment() const;
 	const int &getType() const;
-	bool do_pruning();
+
+	void setT(int t);
+	void setEnableEnrichment(bool enableEnrichment);
+	void setPruningInterval(int pruningInterval);
+	bool doPruning();
 
 	const vector<vector<string>> getSnapshotInfo() const;
 	virtual ~Agent();
 };
 
-class DLL_PUBLIC Agent_qualitative : public Agent {
+class DLL_PUBLIC AgentQualitative : public Agent {
 public:
-	Agent_qualitative(const string &uuid, const string &dependency);
-	~Agent_qualitative();
+	AgentQualitative(const string &uuid, const string &dependency);
+	~AgentQualitative();
 
-	virtual Snapshot *add_snapshot(const string &uuid);
+	virtual Snapshot *createSnapshot(const string &uuid);
 };
 
 #endif

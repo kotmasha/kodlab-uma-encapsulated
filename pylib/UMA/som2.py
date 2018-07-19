@@ -511,14 +511,15 @@ class Experiment(object):
                     # cycle; if the prediction was too broad, add a
                     # sensor corresponding to the episode last observed
                     # and acknowledged by the active snapshot of the agent:
-                    agent_reports[mid]['pred_too_general']=agent.report_current().subtract(agent.report_predicted()).weight()
-                    if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
-                        new_episode = agent.report_last().intersect(agent.report_initmask())
-                        sensors_to_be_added = [new_episode]
-                    else:
-                        sensors_to_be_added = []
+                    agent_reports[mid]['pred_too_general'] = 0
+                    #agent_reports[mid]['pred_too_general']=agent.report_current().subtract(agent.report_predicted()).weight()
+                    #if agent.report_current().subtract(agent.report_predicted()).weight() > 0:
+                        #new_episode = agent.report_last().intersect(agent.report_initmask())
+                        #sensors_to_be_added = [new_episode]
+                    #else:
+                        #sensors_to_be_added = []
 
-                    sensors_not_to_be_removed = agent.ALL_FALSE()
+                    #sensors_not_to_be_removed = agent.ALL_FALSE()
 
                     ## PRUNING
                     # abduction over negligible sensors
@@ -539,7 +540,7 @@ class Experiment(object):
                     # STEP 1. Add new delayed sensors:
                     #sensors_to_be_added.extend(new_masks)
                     #ENRICHMENT DONE HERE
-                    agent.delay(sensors_to_be_added)
+                    #agent.delay(sensors_to_be_added)
                     
                     # Step 2. Remove old sensors:
                     #sensors_to_be_removed = agent.ALL_FALSE()
@@ -951,84 +952,4 @@ class Agent(object):
         token = ('plus' if self._ACTIVE else 'minus') if token is None else token
         return Signal([(tmp_mid in mid_list) for tmp_mid in self._SENSORS[token]])
 
-    ### FORM NEW CONJUNCTIONS
-    ### - $signals$ is a list of signals, each describing a conjunction
-    ###   that needs to be added to the snapshot
-    def amper(self, signals, token=None):
-        token = ('plus' if self._ACTIVE else 'minus') if token == None else token
-        new_signals = []
-        for signal in signals:
-            # if signal is trivial (1 or no sensors), skip it
-            if sum(signal.value()) < 2:
-                continue
-            # transform signal into a list of mids
-            mid_list = self.select(signal)
-            # new name as a means of verifying redundancy (CHANGE THIS!!)
-            new_name = name_ampersand([self._EXPERIMENT.din(mid) for mid in mid_list])
-            # construct definition for new sensor
-            new_def = func_amper(self._EXPERIMENT, mid_list)
-            # determine dependency on initial decisions
-            new_dep = any([self._EXPERIMENT._ID_TO_DEP[mid] for mid in mid_list])
-            # register/construct/assign new sensor to self
-            try:  # in case the sensor is not even registered...
-                # register the new sensor
-                new_mid, new_midc = self._EXPERIMENT.register_sensor(new_name, new_dep)
-                # construct the new sensor
-                self._EXPERIMENT.construct_sensor(new_mid, new_def)
-                # add the new sensor to this agent as non-initial
-                self.add_sensor(new_mid, token)
-                new_signals.append(signal)
-            except:  # if the sensor was registered
-                new_mid = self._EXPERIMENT.nid(new_name)
-                if new_mid in self._SENSORS:
-                    pass
-                else:
-                    self.add_sensor(new_mid, token)
-                    new_signals.append(signal)
-        if new_signals:
-            self.brain.amper(new_signals)
-        else:
-            pass
-        return None
-
-    ### Form a delayed sensor
-    ### - $signals$ is a list of signals, each describing a delayed
-    ###   conjunction which must be added to the agent's snapshot $token$ / currently active snapshot
-    def delay(self, signals, token=None):
-        token = ('plus' if self._ACTIVE else 'minus') if token == None else token
-        new_signals = []
-        new_uuids = []
-        for signal in signals:
-            # if signal is trivial (no sensors), skip it
-            if signal.weight() < 1:
-                continue
-            # transform signal into a list of mids
-            mid_list = self.select(signal)
-            # new name as a means of verifying redundancy (CHANGE THIS!!)
-            new_mid = name_delay(name_ampersand(mid_list))
-            new_midc = name_comp(new_mid)
-            # construct definition for new sensor
-            new_def = func_delay(mid_list)
-            # determine dependency on initial decisions
-            new_dep = any([self._EXPERIMENT._ID_TO_DEP[mid] for mid in mid_list])
-            # register/construct/assign new sensor to self
-            if new_mid not in self._EXPERIMENT._ID:  # in case the sensor is not even registered...
-                # construct the new sensor
-                self._EXPERIMENT.register_sensor(new_mid)
-                self._EXPERIMENT.construct_sensor(new_mid, new_def, decdep=new_dep)
-                # add the new sensor to this agent as non-initial
-                self.add_sensor(new_mid, token)
-                new_signals.append(signal.out())
-                new_uuids.append([new_mid, new_midc])
-            else:  # if the sensor was registered
-                if new_mid not in self._SENSORS[token]:
-                    self.add_sensor(new_mid, token)
-                    new_signals.append(signal.out())
-                    new_uuids.append([new_mid, new_midc])
-        if new_signals:
-            affected_snapshot = ServiceSnapshot(self._ID, token, service)
-            affected_snapshot.delay(new_signals, new_uuids)
-        else:
-            pass
-        return None
 

@@ -5,8 +5,8 @@
 using namespace std;
 
 namespace ConfReader {
-	std::map<string, vector<string>> read_restmap();
-	std::map<string, std::map<string, string>> read_conf(const string &conf_name);
+	std::map<string, vector<string>> readRestmap();
+	std::map<string, std::map<string, string>> readConf(const string &conf_name);
 }
 
 #endif

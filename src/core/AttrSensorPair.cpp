@@ -15,18 +15,18 @@ AttrSensorPair::AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_
 }
 */
 
-AttrSensorPair::AttrSensorPair(AttrSensor * const _a_i, AttrSensor * const _a_j, double w, bool d)
-	:_attr_sensor_i(_a_i), _attr_sensor_j(_a_j){
+AttrSensorPair::AttrSensorPair(AttrSensor * const _attrSensorI, AttrSensor * const _attrSensorJ, double w, bool d)
+	:_attrSensorI(_attrSensorI), _attrSensorJ(_attrSensorJ){
 	_vw = w;
 	_vd = d;
-	attrSensorPairLogger.debug("A new attr sensor pair is created with, attrSensor1=" + to_string(_a_i->getIdx()) +
-		", attrSensor2=" + to_string(_a_j->getIdx()));
+	attrSensorPairLogger.debug("A new attr sensor pair is created with, attrSensor1=" + to_string(_attrSensorI->getIdx()) +
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
 }
 
 /*
 This function is setting pointers to null
 */
-void AttrSensorPair::pointers_to_null(){
+void AttrSensorPair::pointersToNull(){
 	_w = NULL;
 	_d = NULL;
 }
@@ -35,8 +35,8 @@ void AttrSensorPair::pointers_to_null(){
 This function is setting the weight matrix pointer
 */
 void AttrSensorPair::setWeightPointers(double *weights){
-	int idx_i = _attr_sensor_i->_idx;
-	int idx_j = _attr_sensor_j->_idx;
+	int idx_i = _attrSensorI->_idx;
+	int idx_j = _attrSensorJ->_idx;
 	_w = weights + ind(idx_i, idx_j);
 }
 
@@ -44,35 +44,35 @@ void AttrSensorPair::setWeightPointers(double *weights){
 This function is setting the dir matrix pointer
 */
 void AttrSensorPair::setDirPointers(bool *dirs){
-	int idx_i = _attr_sensor_i->_idx;
-	int idx_j = _attr_sensor_j->_idx;
+	int idx_i = _attrSensorI->_idx;
+	int idx_j = _attrSensorJ->_idx;
 	_d = dirs + ind(idx_i, idx_j);
 }
 
 /*
 This function is copying pointer values to value
 */
-void AttrSensorPair::pointers_to_values(){
+void AttrSensorPair::pointersToValues(){
 	if (!_w || !_d) {
 		throw UMAException("The weights or dirs pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	_vw = *_w;
 	_vd = *_d;
-	attrSensorPairLogger.debug("Pointer values copied to object values attrSensor1 = " + to_string(_attr_sensor_i->getIdx()) +
-		", attrSensor2=" + to_string(_attr_sensor_j->getIdx()));
+	attrSensorPairLogger.debug("Pointer values copied to object values attrSensor1 = " + to_string(_attrSensorI->getIdx()) +
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
 }
 
 /*
 This function is copying value to pointer value
 */
-void AttrSensorPair::values_to_pointers(){
+void AttrSensorPair::valuesToPointers(){
 	if (!_w || !_d) {
 		throw UMAException("The weights or dirs pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	*_w = _vw;
 	*_d = _vd;
-	attrSensorPairLogger.debug("Pointer object values copied to sensor values attrSensor1 = " + to_string(_attr_sensor_i->getIdx()) +
-		", attrSensor2=" + to_string(_attr_sensor_j->getIdx()));
+	attrSensorPairLogger.debug("Pointer object values copied to sensor values attrSensor1 = " + to_string(_attrSensorI->getIdx()) +
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
 }
 
 /*
@@ -124,5 +124,5 @@ void AttrSensorPair::setD(const bool d) {
 }
 
 AttrSensorPair::~AttrSensorPair(){
-	pointers_to_null();
+	pointersToNull();
 }

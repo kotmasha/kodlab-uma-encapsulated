@@ -96,7 +96,7 @@ This function does compi, conjunction together
 Input: two boolean lists
 Output: None
 */
-__global__ void negate_conjunction_star_kernel(bool *b1, bool *b2, int size) {
+__global__ void negateConjunctionStar_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
 		b1[index] = b1[index] && !b2[compi(index)];
@@ -107,7 +107,7 @@ __global__ void negate_conjunction_star_kernel(bool *b1, bool *b2, int size) {
 Conjuncate the start of array, store the result in first array
 Input: two bool array, and size of both
 */
-__global__ void conjunction_star_kernel(bool *b1, bool *b2, int size) {
+__global__ void conjunctionStar_kernel(bool *b1, bool *b2, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
 		b1[index] = b1[index] && b2[compi(index)];
@@ -141,10 +141,10 @@ __global__ void sum_kernel(double *d, int size) {
 	}
 }
 
-__global__ void init_mask_signal_kernel(bool *b, int init_size, int size) {
+__global__ void initMaskSignal_kernel(bool *b, int initSize, int size) {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if (index < size) {
-		if (index < 2 * init_size) {
+		if (index < 2 * initSize) {
 			b[index] = true;
 		}
 		else {
@@ -196,16 +196,16 @@ void kernel_util::subtraction(bool *b1, bool *b2, int size) {
 	cudaCheckErrors("check subtraction error");
 }
 
-void kernel_util::negate_conjunction_star(bool *b1, bool *b2, int size) {
-	negate_conjunction_star_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
+void kernel_util::negateConjunctionStar(bool *b1, bool *b2, int size) {
+	negateConjunctionStar_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
 	kernelUtilLogger.debug("negate_conjunction_kernel invoked");
-	cudaCheckErrors("check negate_conjunction_star error");
+	cudaCheckErrors("check negateConjunctionStar error");
 }
 
-void kernel_util::conjunction_star(bool *b1, bool *b2, int size) {
-	conjunction_star_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
-	kernelUtilLogger.debug("conjunction_star_kernel invoked");
-	cudaCheckErrors("check conjunction_star error");
+void kernel_util::ConjunctionStar(bool *b1, bool *b2, int size) {
+	conjunctionStar_kernel << <GRID1D(size), BLOCK1D >> > (b1, b2, size);
+	kernelUtilLogger.debug("conjunctionStar_kernel invoked");
+	cudaCheckErrors("check ConjunctionStar error");
 }
 
 void kernel_util::up2down(bool *b1, bool *b2, int size) {
@@ -223,8 +223,8 @@ double kernel_util::sum(double *d, int size) {
 	return r;
 }
 
-void kernel_util::init_mask_signal(bool *b, int init_size, int size) {
-	init_mask_signal_kernel << <GRID1D(size), BLOCK1D >> > (b, init_size, size);
-	kernelUtilLogger.debug("init_mask_signal_kernel invoked");
-	cudaCheckErrors("check init_mask_signal error");
+void kernel_util::initMaskSignal(bool *b, int initSize, int size) {
+	initMaskSignal_kernel << <GRID1D(size), BLOCK1D >> > (b, initSize, size);
+	kernelUtilLogger.debug("initMaskSignal_kernel invoked");
+	cudaCheckErrors("check initMaskSignal error");
 }

@@ -65,30 +65,65 @@ TEST(experiment_test, experiment_agent_test) {
 TEST(agent_test, agent_snapshot_test) {
 	Agent *agent = new Agent("agent", "");
 
-	agent->add_snapshot("snapshot1");
-	agent->add_snapshot("snapshot2");
-	agent->add_snapshot("snapshot3");
-	agent->add_snapshot("snapshot4");
+	agent->createSnapshot("snapshot1");
+	agent->createSnapshot("snapshot2");
+	agent->createSnapshot("snapshot3");
+	agent->createSnapshot("snapshot4");
 
 	EXPECT_NO_THROW(agent->getSnapshot("snapshot2"));
 	EXPECT_THROW(agent->getSnapshot("snapshot0"), UMAException);
 	vector<vector<string>> s = { { "snapshot1", "default" },{ "snapshot2", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
-	agent->delete_snapshot("snapshot2");
+	agent->deleteSnapshot("snapshot2");
 	s = { { "snapshot1", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
-	agent->delete_snapshot("snapshot4");
+	agent->deleteSnapshot("snapshot4");
 	s = { { "snapshot1", "default" },{ "snapshot3", "default" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	EXPECT_THROW(agent->getSnapshot("snapshot2"), UMAException);
-	EXPECT_THROW(agent->delete_snapshot("snapshot2"), UMAException);
+	EXPECT_THROW(agent->deleteSnapshot("snapshot2"), UMAException);
+
+	delete agent;
+}
+
+TEST(agent_test, get_set_test) {
+	Agent *agent = new Agent("agent", "");
 
 	EXPECT_EQ(agent->getT(), 0);
 	agent->setT(100);
 	EXPECT_EQ(agent->getT(), 100);
+
+	agent->setEnableEnrichment(1);
+	EXPECT_EQ(agent->getEnableEnrichment(), true);
+
+	agent->setEnableEnrichment(0);
+	EXPECT_EQ(agent->getEnableEnrichment(), false);
+
+	agent->setPruningInterval(100);
+	EXPECT_EQ(agent->getPruningInterval(), 100);
+
+	agent->setPruningInterval(5);
+	EXPECT_EQ(agent->getPruningInterval(), 5);
+
+	delete agent;
+}
+
+TEST(agent_test, do_pruning_test) {
+	Agent *agent = new Agent("agent", "");
+
+	agent->setPruningInterval(3);
+
+	agent->setT(agent->getT() + 1);
+	EXPECT_EQ(agent->doPruning(), false);
+	
+	agent->setT(agent->getT() + 1);
+	EXPECT_EQ(agent->doPruning(), false);
+
+	agent->setT(agent->getT() + 1);
+	EXPECT_EQ(agent->doPruning(), true);
 
 	delete agent;
 }
@@ -103,32 +138,32 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 	vector<double> diag;
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
-	snapshot->add_sensor(sensor1, diag, w, b);
-	snapshot->add_sensor(sensor2, diag, w, b);
-	snapshot->add_sensor(sensor3, diag, w, b);
-	snapshot->add_sensor(sensor4, diag, w, b);
+	snapshot->createSensor(sensor1, diag, w, b);
+	snapshot->createSensor(sensor2, diag, w, b);
+	snapshot->createSensor(sensor3, diag, w, b);
+	snapshot->createSensor(sensor4, diag, w, b);
 
 	EXPECT_NO_THROW(snapshot->getSensor("s1"));
 	EXPECT_NO_THROW(snapshot->getSensor("cs2"));
 	EXPECT_THROW(snapshot->getSensor("s0"), UMAException);
 
-	snapshot->delete_sensor("s1");
+	snapshot->deleteSensor("s1");
 	vector<vector<string>> s = { {"s2", "cs2"}, {"s3", "cs3"}, {"s4", "cs4"} };
 	EXPECT_EQ(s, snapshot->getSensorInfo());
-	snapshot->delete_sensor("cs3");
+	snapshot->deleteSensor("cs3");
 	s = { { "s2", "cs2" }, { "s4", "cs4" } };
 	EXPECT_EQ(s, snapshot->getSensorInfo());
 
 	EXPECT_THROW(snapshot->getSensor("s1"), UMAException);
 	EXPECT_THROW(snapshot->getSensor("cs3"), UMAException);
-	EXPECT_THROW(snapshot->delete_sensor("s1"), UMAException);
-	EXPECT_THROW(snapshot->delete_sensor("cs3"), UMAException);
+	EXPECT_THROW(snapshot->deleteSensor("s1"), UMAException);
+	EXPECT_THROW(snapshot->deleteSensor("cs3"), UMAException);
 
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("s2")->getDiag(), 0.5);
 
 	diag = { 0.32, 0.68 };
 	std::pair<string, string> sensor5 = { "s5", "cs5" };
-	snapshot->add_sensor(sensor5, diag, w, b);
+	snapshot->createSensor(sensor5, diag, w, b);
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("s5")->getDiag(), 0.32);
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("cs5")->getDiag(), 0.68);
 
@@ -149,11 +184,11 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 	vector<vector<bool>> b1, b3;
 	vector<vector<bool>> b0 = { {true, false, true, false} };
 	vector<vector<bool>> b2 = { { true, false, false, true }, {false, false, false, false}, {true, true, true, true} };
-	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w0, b0);
-	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w1, b1);
-	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w2, b2);
+	Sensor *s1 = snapshot->createSensor(sensor1, diag, w0, b0);
+	Sensor *s2 = snapshot->createSensor(sensor2, diag, w1, b1);
+	Sensor *s3 = snapshot->createSensor(sensor3, diag, w2, b2);
 	snapshot->setThreshold(0.501);
-	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w3, b3);
+	Sensor *s4 = snapshot->createSensor(sensor4, diag, w3, b3);
 
 	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("cs3")));
 	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s0"), snapshot->getSensor("cs3")), UMAException);
@@ -192,7 +227,7 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 	EXPECT_DOUBLE_EQ(snapshot->getSensorPair(s1, s1)->getThreshold(), 0.125);
 	EXPECT_DOUBLE_EQ(snapshot->getSensorPair(s4, s1)->getThreshold(), 0.501);
 
-	snapshot->delete_sensor("s2");
+	snapshot->deleteSensor("s2");
 	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s2"), snapshot->getSensor("s4")), UMAException);
 	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("s3")), UMAException);
 
@@ -223,19 +258,19 @@ TEST(snapshot_test, snapshot_get_set_attribute_test, ) {
 	EXPECT_EQ(snapshot->getPropagateMask(), true);
 	EXPECT_DOUBLE_EQ(snapshot->getQ(), 0.8);
 
-	snapshot->update_total(1.1, true);
+	snapshot->updateTotal(1.1, true);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.82);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 2.0);
 
-	snapshot->update_total(1.2, false);
+	snapshot->updateTotal(1.2, false);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.82);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.82);
 
 	delete snapshot;
 }
 
-TEST(snapshot_qualitative_test, update_total, ) {
-	Snapshot *snapshot = new Snapshot_qualitative("snapshot", "");
+TEST(snapshot_qualitative_test, updateTotal, ) {
+	Snapshot *snapshot = new SnapshotQualitative("snapshot", "");
 
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
@@ -246,15 +281,15 @@ TEST(snapshot_qualitative_test, update_total, ) {
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 2.0);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 0.31);
 
-	snapshot->update_total(1.1, true);
+	snapshot->updateTotal(1.1, true);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 2.0);
 
-	snapshot->update_total(1.2, false);
+	snapshot->updateTotal(1.2, false);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.1);
 
-	snapshot->update_total(1.2, true);
+	snapshot->updateTotal(1.2, true);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.1);
 
@@ -271,10 +306,10 @@ TEST(snapshot_test, snapshot_get_entity) {
 	vector<double> diag;
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
-	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w, b);
-	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w, b);
-	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w, b);
-	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w, b);
+	Sensor *s1 = snapshot->createSensor(sensor1, diag, w, b);
+	Sensor *s2 = snapshot->createSensor(sensor2, diag, w, b);
+	Sensor *s3 = snapshot->createSensor(sensor3, diag, w, b);
+	Sensor *s4 = snapshot->createSensor(sensor4, diag, w, b);
 
 	EXPECT_EQ(s1, snapshot->getSensor("s1"));
 	EXPECT_EQ(s2, snapshot->getSensor("cs2"));
@@ -304,10 +339,10 @@ TEST(snapshot_test, generateDelayedObservations) {
 	vector<double> diag;
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
-	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w, b);
-	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w, b);
-	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w, b);
-	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w, b);
+	Sensor *s1 = snapshot->createSensor(sensor1, diag, w, b);
+	Sensor *s2 = snapshot->createSensor(sensor2, diag, w, b);
+	Sensor *s3 = snapshot->createSensor(sensor3, diag, w, b);
+	Sensor *s4 = snapshot->createSensor(sensor4, diag, w, b);
 	snapshot->setInitialSize();
 
 	vector<vector<bool>> list1 = { { true, false, false, true, false, true, true, false },{ false, true, false, false, false, true, false, false, false, false } };
@@ -341,10 +376,10 @@ TEST(snapshot_test, generateSignal) {
 	vector<double> diag;
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
-	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w, b);
-	Sensor *s2 = snapshot->add_sensor(sensor2, diag, w, b);
-	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w, b);
-	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w, b);
+	Sensor *s1 = snapshot->createSensor(sensor1, diag, w, b);
+	Sensor *s2 = snapshot->createSensor(sensor2, diag, w, b);
+	Sensor *s3 = snapshot->createSensor(sensor3, diag, w, b);
+	Sensor *s4 = snapshot->createSensor(sensor4, diag, w, b);
 
 	vector<AttrSensor*> m;
 	m.push_back(snapshot->getAttrSensor(0));
@@ -401,7 +436,7 @@ TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
 	}
 }
 
-TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generate_delayed_weights_test1) {
+TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test1) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<bool> observe = { true, false, false, false, false, false, false, false };
 	vector<vector<double>> target = test_generate_delayed_weights(0, true, p, observe);
@@ -425,7 +460,7 @@ TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generate_delayed_weights_test
 	}
 }
 
-TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generate_delayed_weights_test2) {
+TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test2) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<bool> observe = { false, true, false, false, false, false, false, false };
 	vector<vector<double>> target = test_generate_delayed_weights(0, true, p, observe);
@@ -490,11 +525,11 @@ TEST(dataManager_test, get_set_test) {
 	vector<vector<bool>> b1, b3;
 	vector<vector<bool>> b0 = { { true, false, true, false } };
 	vector<vector<bool>> b2 = { { true, false, false, true },{ false, false, false, false },{ true, true, true, true } };
-	Sensor *s1 = snapshot->add_sensor(sensor1, diag, w0, b0);
-	Sensor *s2 = snapshot->add_sensor(sensor2, diag1, w1, b1);
-	Sensor *s3 = snapshot->add_sensor(sensor3, diag, w2, b2);
+	Sensor *s1 = snapshot->createSensor(sensor1, diag, w0, b0);
+	Sensor *s2 = snapshot->createSensor(sensor2, diag1, w1, b1);
+	Sensor *s3 = snapshot->createSensor(sensor3, diag, w2, b2);
 	snapshot->setThreshold(0.501);
-	Sensor *s4 = snapshot->add_sensor(sensor4, diag, w3, b3);
+	Sensor *s4 = snapshot->createSensor(sensor4, diag, w3, b3);
 
 	DataManager *dm = snapshot->getDM();
 	//mask test
@@ -698,10 +733,10 @@ TEST(sensor_test, generateDelayedSensor) {
 	vector<std::pair<string, string>> p4 = { { "s4", "cs4" } };
 	vector<std::pair<string, string>> p5 = { { "s5", "cs5" } };
 	vector<double> diag;
-	snapshot->add_sensor(p0, diag, w, b);
-	snapshot->add_sensor(p1, diag, w, b);
-	snapshot->add_sensor(p2, diag, w, b);
-	snapshot->add_sensor(p3, diag, w, b);
+	snapshot->createSensor(p0, diag, w, b);
+	snapshot->createSensor(p1, diag, w, b);
+	snapshot->createSensor(p2, diag, w, b);
+	snapshot->createSensor(p3, diag, w, b);
 
 	vector<vector<bool>> list1 = { { 0, 0, 0, 1, 0, 1, 0, 1 } };
 	vector<vector<bool>> list2 = { { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0 } };
@@ -792,7 +827,7 @@ TEST(sensor_pair_test, sensor_pair_test) {
 	SensorPair *sp = new SensorPair(s1, s1, 0.25, 1.0);
 
 	sp->setAllPointers(weights, dirs, thresholds);
-	sp->values_to_pointers();
+	sp->valuesToPointers();
 
 	EXPECT_DOUBLE_EQ(sp->getThreshold(), 0.25);
 	sp->setThreshold(0.5);
@@ -835,7 +870,7 @@ TEST(attr_sensor_test, attr_sensor_test) {
 	as->setDiagPointers(diag, diag_);
 	as->setObservePointers(observe, observe_);
 	as->setTargetPointers(target);
-	as->values_to_pointers();
+	as->valuesToPointers();
 
 	EXPECT_EQ(as->getDiag(), 0.5);
 	EXPECT_EQ(as->getOldDiag(), 0.5);
