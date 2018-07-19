@@ -3,6 +3,7 @@ import yaml
 import sys
 import shutil
 from ConfigParser import SafeConfigParser
+import ConfigParser
 import shutil
 import errno
 
@@ -36,6 +37,13 @@ if __name__ == "__main__":
         print 'base_url read from conf is: %s' % base_url
         print 'port read from conf is: %s' % port
 
+    cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
+    try:
+        shutil.rmtree(cluster_path)
+    except Exception as ex:
+        print "Error when trying to remove any existing cluster, error: %s" % str(ex)
+    print "removed old UMA cluster successfully"
+
     for i in range(instance):
         src = os.path.join(UMA_HOME, 'bin')
         dst = os.path.join(UMA_HOME, 'deployment', 'cluster', 'UMA' + str(i))
@@ -44,7 +52,6 @@ if __name__ == "__main__":
         try:
             ini_path = os.path.join(dst, 'ini', 'server.ini')
             update_server_ini(ini_path, base_url, str(port + i))
+            print "%dth UMA copied" % i
         except Exception as ex:
             print "Error when trying to updating the server.ini for %dth UMA deployment, error: %s" % (i, str(ex))
-
-        print "%dth UMA copied" % i
