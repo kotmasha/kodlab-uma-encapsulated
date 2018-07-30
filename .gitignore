@@ -11,3 +11,4 @@ dependency/build/
 *.pdb
 *.exp
 *vcpkg
+deployment/cluster

@@ -1,10 +1,9 @@
 import os
 import subprocess
 import yaml
+from cluster_setting import *
 
-DEPLOY_YML = 'deploy.yml'
-UMA_HOME = os.path.dirname(os.getcwd())
-
+# save the pid to file, just in case process cannot be stopped normally.
 def save_UMA_pid(path):
     os.chdir(path)
     p = subprocess.Popen("UMA.exe", shell=False)

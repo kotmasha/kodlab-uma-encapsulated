@@ -32,6 +32,7 @@ private:
 
 public:
 	// SensorPair(ifstream &file, vector<Sensor *> &sensors);
+	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold);
 	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, double total);
 	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, const vector<double> &w, const vector<bool> &b);
 	//init functions
