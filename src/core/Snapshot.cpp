@@ -14,6 +14,7 @@
 */
 extern int ind(int row, int col);
 extern int compi(int x);
+extern bool qless(double d1, double d2);
 //extern std::map<string, std::map<string, string>> server_cfg;
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
@@ -88,11 +89,16 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 	//creating sensor pairs
 	for (int i = 0; i < _sensors.size(); ++i) {
 		SensorPair *sensor_pair = NULL;
-		if (w.empty()) {
-			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, _total);
+		if (AGENT_TYPE::QUALITATIVE == _type) {
+			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold);
 		}
 		else {
-			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, w[i], b[i]);
+			if (w.empty()) {
+				sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, _total);
+			}
+			else {
+				sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, w[i], b[i]);
+			}
 		}
 		snapshotLogger.debug("A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created", _dependency);
 		_sensorPairs.push_back(sensor_pair);
@@ -898,47 +904,23 @@ void SnapshotQualitative::generateDelayedWeights(int mid, bool merge, const std:
 			//if this is the last sensor pair, and it is the pair of the delayed sensor itself
 			sensor_pair = new SensorPair(delayedSensor, delayedSensor, _threshold, _total);
 			//copy all those diag values first
-			
-			delayedSensor->_m->_vdiag = delayedSensorPairs[0]->mij->_vw + delayedSensorPairs[0]->mi_j->_vw;
-			delayedSensor->_cm->_vdiag = delayedSensorPairs[0]->m_ij->_vw + delayedSensorPairs[0]->m_i_j->_vw;
-			if (delayedSensorPairs[0]->mij->_vw < 0 || delayedSensorPairs[0]->mi_j->_vw < 0) delayedSensor->_m->_vdiag = -1;
-			if (delayedSensorPairs[0]->m_ij->_vw < 0 || delayedSensorPairs[0]->m_i_j->_vw < 0) delayedSensor->_cm->_vdiag = -1;
+			delayedSensor->_m->_vdiag = qless(delayedSensorPairs[0]->mij->_vw, delayedSensorPairs[0]->mi_j->_vw) ? delayedSensorPairs[0]->mij->_vw : delayedSensorPairs[0]->mi_j->_vw;
+			delayedSensor->_cm->_vdiag = qless(delayedSensorPairs[0]->m_ij->_vw, delayedSensorPairs[0]->m_i_j->_vw) ? delayedSensorPairs[0]->m_ij->_vw : delayedSensorPairs[0]->m_i_j->_vw;
 			delayedSensor->_m->_vdiag_ = delayedSensor->_m->_vdiag;
 			delayedSensor->_cm->_vdiag_ = delayedSensor->_cm->_vdiag;
-			//Dan: switch the formulat to see the diff
-			/*
-			delayedSensor->_m->_vdiag = -1;
-			delayedSensor->_cm->_vdiag = -1;
-			delayedSensor->_m->_vdiag_ = -1;
-			delayedSensor->_cm->_vdiag_ = -1;
-			*/
-			//then assign the value to sensor pair
-			//Dan: switch the formulat to see the diff
+			
 			sensor_pair->mij->_vw = delayedSensor->_m->_vdiag;
-			sensor_pair->mi_j->_vw = 0;
-			sensor_pair->m_ij->_vw = 0;
-			sensor_pair->m_i_j->_vw = delayedSensor->_cm->_vdiag;
-			/*
-			sensor_pair->mij->_vw = -1;
 			sensor_pair->mi_j->_vw = -1;
 			sensor_pair->m_ij->_vw = -1;
-			sensor_pair->m_i_j->_vw = -1;
-			*/
+			sensor_pair->m_i_j->_vw = delayedSensor->_cm->_vdiag;
 			delayedSensorPairs.push_back(sensor_pair);
 		}
 		else {
 			sensor_pair = new SensorPair(delayedSensor, _sensors[i], _threshold, _total);
-			//Dan: switch the formulat to see the diff
 			sensor_pair->mij->_vw = isSensorActive * _sensors[i]->_m->_vdiag + !isSensorActive * -1;
 			sensor_pair->mi_j->_vw = isSensorActive * _sensors[i]->_cm->_vdiag + !isSensorActive * -1;
 			sensor_pair->m_ij->_vw = !isSensorActive * _sensors[i]->_m->_vdiag + isSensorActive * -1;
 			sensor_pair->m_i_j->_vw = !isSensorActive * _sensors[i]->_cm->_vdiag + isSensorActive * -1;
-			/*
-			sensor_pair->mij->_vw = -1;
-			sensor_pair->mi_j->_vw = -1;
-			sensor_pair->m_ij->_vw = -1;
-			sensor_pair->m_i_j->_vw = -1;
-			*/
 			delayedSensorPairs.push_back(sensor_pair);
 		}
 	}

@@ -1590,7 +1590,7 @@ TEST(uma_base_test, copyNpdir) {
 	h_dirs[45] = 0; h_dirs[46] = 1; h_dirs[47] = 0; h_dirs[48] = 1; h_dirs[49] = 0; h_dirs[50] = 0; h_dirs[51] = 0; h_dirs[52] = 0; h_dirs[53] = 0; h_dirs[54] = 1;
 	data_util::boolH2D(h_dirs, dev_dirs, 55);
 
-	uma_base::copyNpdir(dev_npdirs, dev_dirs, 55);
+	uma_base::copyNpdir(dev_npdirs, dev_dirs, 10);
 
 	h_npdirs[0] = 1; h_npdirs[1] = 0;
 	h_npdirs[2] = 0; h_npdirs[3] = 1;

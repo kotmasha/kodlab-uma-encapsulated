@@ -1,15 +1,10 @@
-import os
 import yaml
-import sys
-import shutil
-from ConfigParser import SafeConfigParser
-import ConfigParser
 import shutil
 import errno
+from ConfigParser import SafeConfigParser
+from cluster_setting import *
 
-DEPLOY_YML = 'deploy.yml'
-UMA_HOME = os.path.dirname(os.getcwd())
-
+# copy the folder from 1 to another
 def copy_folder(src, dst):
     try:
         shutil.copytree(src, dst)
@@ -18,6 +13,7 @@ def copy_folder(src, dst):
             shutil.copy(src, dst)
         else: raise
 
+# update the server ini file, including changing the url, and port
 def update_server_ini(ini_path, base_url, port):
     parser = SafeConfigParser()
     parser.read(ini_path)

@@ -26,7 +26,22 @@ SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
 */
 
 /*
-init function use sensor pointer, measurable pointer to create measurable pairs
+init function use sensor pointer, attr_sensor pointer to create measurable pairs
+*/
+SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold) :
+	_sensor_i(_sensor_i), _sensor_j(_sensor_j) {
+	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, -1, _sensor_i == _sensor_j);
+	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, -1, false);
+	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, -1, false);
+	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, -1, _sensor_i == _sensor_j);
+	pointersToNull();
+	this->_vthreshold = threshold;
+
+	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
+}
+
+/*
+init function use sensor pointer, attr_sensor pointer to create measurable pairs
 */
 SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, double total):
 	_sensor_i(_sensor_i),_sensor_j(_sensor_j){
