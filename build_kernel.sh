@@ -9,7 +9,7 @@ NVCC_FLAG="-std=c++11 -Xcompiler -fPIC"
 TARGET=libUMAKernel.a
 
 cd $KERNEL_PATH
-nvcc $NVCC_FLAG *.cu -dc -I $COMMON_PATH -I $UTILITY_PATH
+nvcc $NVCC_FLAG *.cu *.cpp -dc -I $COMMON_PATH -I $UTILITY_PATH
 echo "Device code compiled"
 nvcc $NVCC_FLAG *.o -dlink -o device_link.o
 echo "Generate tmp link obj"

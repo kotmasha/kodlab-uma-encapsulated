@@ -1,0 +1,1 @@
+export UMA_HOME=$PWD

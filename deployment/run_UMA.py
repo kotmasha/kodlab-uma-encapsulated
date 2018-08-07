@@ -1,12 +1,18 @@
 import os
 import subprocess
 import yaml
+import platform
 from cluster_setting import *
+
+# for now just assume running on either linux or windows
+def is_running_on_windows():
+    return 'Windows' == platform.system()
 
 # save the pid to file, just in case process cannot be stopped normally.
 def save_UMA_pid(path):
     os.chdir(path)
-    p = subprocess.Popen("UMA.exe", shell=False)
+    binary_name = "UMA.exe" if is_running_on_windows() else "./UMA"
+    p = subprocess.Popen(binary_name, shell=False)
     with open('uma_pid.txt', 'w') as f:
         try:
             f.write(str(p.pid))
