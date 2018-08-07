@@ -229,12 +229,12 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 
 	snapshot->deleteSensor("s2");
 	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s2"), snapshot->getSensor("s4")), UMAException);
-	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("s3")), UMAException);
+	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("s3")));
 
 	delete snapshot;
 }
 
-TEST(snapshot_test, snapshot_get_set_attribute_test, ) {
+TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	Snapshot *snapshot = new Snapshot("snapshot", "");
 	
 	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.125);
@@ -269,7 +269,7 @@ TEST(snapshot_test, snapshot_get_set_attribute_test, ) {
 	delete snapshot;
 }
 
-TEST(snapshot_qualitative_test, updateTotal, ) {
+TEST(snapshot_qualitative_test, updateTotal) {
 	Snapshot *snapshot = new SnapshotQualitative("snapshot", "");
 
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
