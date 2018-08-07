@@ -256,7 +256,7 @@ void Snapshot::pruning(const vector<bool> &signal){
 			_sensorIdx.erase(_sensors[i]->_cm->_uuid);
 			vector<int> amper_list = _sensors[i]->getAmperList();
 			vector<bool> amper_signal = SignalUtil::intIdxToBoolSignal(amper_list, _sensors.size() * 2);
-			size_t delay_list_hash = delayHash(amper_signal);
+			size_t delay_list_hash = delayHash(SignalUtil::trimSignal(amper_signal));
 			_delaySensorHash.erase(delay_list_hash);
 
 			delete _sensors[i];
@@ -274,8 +274,8 @@ void Snapshot::pruning(const vector<bool> &signal){
 				}
 			}
 
-			size_t old_delayHash = delayHash(SignalUtil::intIdxToBoolSignal(amper_list, _sensors.size() * 2));
-			size_t new_delayHash = delayHash(SignalUtil::intIdxToBoolSignal(new_amper_list, _sensors.size() * 2));
+			size_t old_delayHash = delayHash(SignalUtil::trimSignal(SignalUtil::intIdxToBoolSignal(amper_list, _sensors.size() * 2)));
+			size_t new_delayHash = delayHash(SignalUtil::trimSignal(SignalUtil::intIdxToBoolSignal(new_amper_list, _sensors.size() * 2)));
 			_delaySensorHash.erase(old_delayHash);
 			_delaySensorHash.insert(new_delayHash);
 
@@ -362,7 +362,7 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 	int success_delay = 0;
 	//record how many delay are successful
 	for (int i = 0; i < lists.size(); ++i) {
-		size_t v = delayHash(lists[i]);
+		size_t v = delayHash(SignalUtil::trimSignal(lists[i]));
 		if (_delaySensorHash.end() != _delaySensorHash.find(v)) {
 			snapshotLogger.info("Find an existing delayed sensor, will skip creating current one", _dependency);
 			continue;

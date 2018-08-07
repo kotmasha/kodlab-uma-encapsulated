@@ -24,6 +24,7 @@ namespace SignalUtil {
 	const vector<int> boolSignalToIntIdx(const vector<bool> &list);
 	const vector<bool> intIdxToBoolSignal(const vector<int> &idx, int size);
 	const vector<bool> attrSensorToSensorSignal(const vector<bool> &signal);
+	const vector<bool> trimSignal(const vector<bool> &signal);
 }
 
 namespace ArrayUtil {

@@ -61,6 +61,25 @@ TEST(SignalUtil_test, attrSensorToSensorSignal) {
 	EXPECT_NE(SignalUtil::attrSensorToSensorSignal(signal3), list3);
 }
 
+TEST(SignalUtil_test, trimSignal) {
+	vector<bool> signal1 = { 0, 1, 0, 1, 1, 0, 0 };
+	vector<bool> signal2 = { 0, 1, 0 ,1, 1 };
+	vector<bool> signal3 = { 1, 1, 0, 0, 1 };
+	vector<bool> signal4 = { 1, 1, 0, 0, 1 };
+	vector<bool> signal5 = { 1, 0, 1, 0, 0, 1, 0, 0, 0, 0 };
+	vector<bool> signal6 = { 1, 0, 1, 0, 0, 1 };
+
+	signal1 = SignalUtil::trimSignal(signal1);
+	signal2 = SignalUtil::trimSignal(signal2);
+	signal3 = SignalUtil::trimSignal(signal3);
+	signal4 = SignalUtil::trimSignal(signal4);
+	signal5 = SignalUtil::trimSignal(signal5);
+	signal6 = SignalUtil::trimSignal(signal6);
+	EXPECT_EQ(signal1, signal2);
+	EXPECT_EQ(signal3, signal4);
+	EXPECT_EQ(signal5, signal6);
+}
+
 TEST(ArrayUtil_test, findIdxInSortedArray) {
 	vector<int> input = { 1, 3, 5, 6, 10, 11 };
 	EXPECT_EQ(ArrayUtil::findIdxInSortedArray(input, 0), -1);

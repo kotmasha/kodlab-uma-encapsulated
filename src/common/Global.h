@@ -14,6 +14,7 @@
 #include <exception>
 #include <typeinfo>
 #include <math.h>
+#include <algorithm>
 
 using namespace std;
 

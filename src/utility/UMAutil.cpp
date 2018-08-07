@@ -94,6 +94,19 @@ const vector<bool> SignalUtil::attrSensorToSensorSignal(const vector<bool> &sign
 	}
 	return result;
 }
+
+/*
+This function is trimming the signal value, removing all false value in the BACK of the signal only
+Input: signal to trim
+*/
+const vector<bool> SignalUtil::trimSignal(const vector<bool> &signal) {
+	vector<bool> result = signal;
+	while (!result.empty()) {
+		if (false == result.back()) result.pop_back();
+		else break;
+	}
+	return result;
+}
 /*
 ##################SignalUtil####################
 */
