@@ -1,5 +1,5 @@
 # This is the deployment yaml file
 Cluster:
-  instance: 5
+  Ninstances: 3
   base_url: localhost
   port: 8000
