@@ -105,7 +105,9 @@ const vector<vector<string>> Agent::getSnapshotInfo() const {
 
 void Agent::deleteSnapshot(const string &snapshotId) {
 	if (_snapshots.find(snapshotId) == _snapshots.end()) {
-		throw UMAException("Cannot find the snapshot to delete " + snapshotId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		string s = "Cannot find the snapshot to delete " + snapshotId;
+		agentLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	delete _snapshots[snapshotId];
 	_snapshots[snapshotId] = NULL;

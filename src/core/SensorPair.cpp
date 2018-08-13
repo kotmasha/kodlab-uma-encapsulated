@@ -179,14 +179,18 @@ void SensorPair::copy_data(SensorPair *sp) {
 
 void SensorPair::setThreshold(const double &threshold) {
 	if (!_threshold) {
-		throw UMAException("The threshold pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The threshold pointer is not initiated!";
+		sensorPairLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	*_threshold = threshold;
 }
 
 const double &SensorPair::getThreshold() const{
 	if (!_threshold) {
-		throw UMAException("The threshold pointer is not initiated!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The threshold pointer is not initiated!";
+		sensorPairLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	return *_threshold;
 }
