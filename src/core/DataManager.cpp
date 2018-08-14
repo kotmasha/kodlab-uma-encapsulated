@@ -440,7 +440,9 @@ void DataManager::genOtherParameters() {
 void DataManager::createSensorsToArraysIndex(const int startIdx, const int endIdx, const vector<Sensor*> &sensors) {
 	//create idx for diag and current
 	if (startIdx < 0 || endIdx > _sensorSize) {
-		throw UMAException("The input index range of sensor is illegal!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+		string s = "The input index range of sensor is illegal!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
 	}
 	for (int i = startIdx; i < endIdx; ++i) {
 		try {
@@ -460,7 +462,9 @@ void DataManager::createSensorsToArraysIndex(const int startIdx, const int endId
 
 void DataManager::createSensorPairsToArraysIndex(const int startIdx, const int endIdx, const vector<SensorPair*> &sensorPairs) {
 	if (startIdx < 0 || endIdx > _sensorSize) {
-		throw UMAException("The input index range of sensor is illegal!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+		string s = "The input index range of sensor is illegal!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
 	}
 	for (int i = ind(startIdx, 0); i < ind(endIdx, 0); ++i) {
 		try {
@@ -577,7 +581,9 @@ Input: mask vector, size of mask have to be the _attrSensorSize
 */
 void DataManager::setMask(const vector<bool> &mask) {
 	if (mask.size() != _attrSensorSize) {
-		throw UMAException("Input mask size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Input mask size not matching attr_sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
 	data_util::boolH2D(h_mask, dev_mask, mask.size());
@@ -590,7 +596,9 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attrSensorSize) {
-		throw UMAException("The input observe size is not the size of attr sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		string s = "The input observe size is not the size of attr sensor size";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attrSensorSize);
 	for (int i = 0; i < observe.size(); ++i) {
@@ -606,7 +614,9 @@ Input: current signal
 */
 void DataManager::setCurrent(const vector<bool> &current) {//this is where data comes in in every frame
 	if (current.size() != _attrSensorSize) {
-		throw UMAException("Input current size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Input current size not matching attr_sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current[i] = current[i];
@@ -621,7 +631,9 @@ Input: current signal
 */
 void DataManager::setOldCurrent(const vector<bool> &current) {//this is where data comes in in every frame
 	if (current.size() != _attrSensorSize) {
-		throw UMAException("Input old current size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Input old current size not matching attr_sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current_[i] = current[i];
@@ -636,7 +648,9 @@ Input: target signal
 */
 void DataManager::setTarget(const vector<bool> &target) {
 	if (target.size() != _attrSensorSize) {
-		throw UMAException("Input target size not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Input target size not matching attr_sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		h_target[i] = target[i];
@@ -652,11 +666,15 @@ Input: 2d vector of signals, first dimension should not exceed sensor size, seco
 void DataManager::setSignals(const vector<vector<bool> > &signals) {
 	int sigCount = signals.size();
 	if (sigCount > _attrSensorSizeMax) {
-		throw UMAException("The input sensor size is larger than current sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The input sensor size is larger than current sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < sigCount; ++i) {
 		if (signals[i].size() != _attrSensorSize) {
-			throw UMAException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+			string s = "The " + to_string(i) + "th input string size is not matching attr_sensor size!";
+			dataManagerLogger.error(s);
+			throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < signals[i].size(); ++j) {
 			h_signals[i * _attrSensorSize + j] = signals[i][j];
@@ -672,7 +690,9 @@ Input: list of load in bool, list size has to be attr_sensor size
 */
 void DataManager::setLoad(const vector<bool> &load) {
 	if (load.size() != _attrSensorSize) {
-		throw UMAException("The input load size is not matching the attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The input load size is not matching the attr_sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		h_load[i] = load[i];
@@ -683,11 +703,15 @@ void DataManager::setLoad(const vector<bool> &load) {
 
 void DataManager::setDists(const vector<vector<int> > &dists) {
 	if (dists.size() > _sensorSize) {
-		throw UMAException("The input dists size is larger than the sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The input dists size is larger than the sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		if (dists[i].size() != _sensorSize) {
-			throw UMAException("The " + to_string(i) + "th input dists size is larger than sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+			string s = "The " + to_string(i) + "th input dists size is larger than sensor size!";
+			dataManagerLogger.error(s);
+			throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensorSize + j] = dists[i][j];
 	}
@@ -703,11 +727,15 @@ input: 2d signals vector
 void DataManager::setLSignals(const vector<vector<bool> > &signals) {
 	int sigCount = signals.size();
 	if (sigCount > _attrSensorSizeMax) {
-		throw UMAException("The input sensor size is larger than current sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "The input sensor size is larger than current sensor size!";
+		dataManagerLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	for (int i = 0; i < sigCount; ++i) {
 		if (signals[i].size() != _attrSensorSize) {
-			throw UMAException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+			string s = "The " + to_string(i) + "th input string size is not matching attr_sensor size!";
+			dataManagerLogger.error(s);
+			throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 		}
 		for (int j = 0; j < signals[i].size(); ++j) {
 			h_lsignals[i * _attrSensorSize + j] = signals[i][j];
