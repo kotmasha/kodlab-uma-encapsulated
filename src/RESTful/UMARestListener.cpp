@@ -92,6 +92,7 @@ void UMARestListener::handle(http_request &request, string request_type) {
 		const status_code code = RestUtil::error_type_to_status_code(error_type);
 		uma_request.set_status_code(code);
 		uma_request.set_message(e.getErrorMessage());
+		serverLogger.error(e.getErrorMessage());
 		accessLogger.error(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(code));
 
 		uma_request.reply();

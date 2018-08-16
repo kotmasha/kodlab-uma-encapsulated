@@ -35,7 +35,9 @@ Agent *Experiment::getAgent(const string &agentId) {
 
 void Experiment::deleteAgent(const string &agentId) {
 	if (_agents.find(agentId) == _agents.end()) {
-		throw UMAException("Cannot find the agent to delete " + agentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		string s = "Cannot find the agent to delete " + agentId;
+		experimentLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	delete _agents[agentId];
 	_agents[agentId] = nullptr;

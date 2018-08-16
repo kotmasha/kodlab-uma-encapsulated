@@ -224,7 +224,9 @@ Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
 	if (signal.size() > _dm->_attrSensorSize) {
-		throw UMAException("Input signal size for pruning is larger than attr_sensorSize", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Input signal size for pruning is larger than attr_sensorSize";
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attrSensorToSensorSignal(signal);
@@ -237,7 +239,9 @@ void Snapshot::pruning(const vector<bool> &signal){
 	_dm->copyArraysToSensorPairs(0, _sensors.size(), _sensorPairs);
 
 	if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
-		throw UMAException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!";
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 
 	string str_list = "";
@@ -369,7 +373,9 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 		}
 
 		if (lists[i].size() > _sensors.size() * 2) {
-			throw UMAException("The " + to_string(i) + "th input signal size is larger than 2 * sensors.size()", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+			string s = "The " + to_string(i) + "th input signal size is larger than 2 * sensors.size()";
+			snapshotLogger.error(s);
+			throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
 		}
 		const vector<int> list = SignalUtil::boolSignalToIntIdx(lists[i]);
 		if (list.size() < 1) {
@@ -389,7 +395,9 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 				generateDelayedWeights(list[0], true, p);
 			}
 			catch (UMAException &e) {
-				throw UMAException("Fatal error in generateDelayedWeights", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+				string s = "Fatal error in generateDelayedWeights";
+				snapshotLogger.error(s);
+				throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 			}
 		}
 		else {
@@ -398,7 +406,9 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 				generateDelayedWeights(_sensors.back()->_m->_idx, false, p);
 			}
 			catch (UMAException &e) {
-				throw UMAException("Fatal error in generateDelayedWeights", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+				string s = "Fatal error in generateDelayedWeights";
+				snapshotLogger.error(s);
+				throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 			}
 		}
 		success_delay++;
@@ -483,7 +493,9 @@ this function is getting the attr_sensor, from the sensor list
 AttrSensor *Snapshot::getAttrSensor(int idx) const{
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		throw UMAException("the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is " + to_string(idx), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		string s = "the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is " + to_string(idx);
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
@@ -497,7 +509,10 @@ AttrSensor *Snapshot::getAttrSensor(const string &attr_sensor_id) const{
 	Sensor *sensor = getSensor(attr_sensor_id);
 	if (attr_sensor_id == sensor->_m->_uuid) return sensor->_m;
 	else if(attr_sensor_id == sensor->_cm->_uuid) return sensor->_cm;
-	throw UMAException("Cannot find the attr_sensor id " + attr_sensor_id, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+
+	string s = "Cannot find the attr_sensor id " + attr_sensor_id;
+	snapshotLogger.error(s);
+	throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 }
 
 SensorPair *Snapshot::getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const{
@@ -528,7 +543,9 @@ AttrSensorPair *Snapshot::getAttrSensorPair(const string &mid1, const string &mi
 
 vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		throw UMAException("Cannot find the sensor id " + sensor_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		string s = "Cannot find the sensor id " + sensor_id;
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	Sensor *sensor = _sensorIdx.at(sensor_id);
 	vector<bool> result(_dm->_attrSensorSize, false);
@@ -540,7 +557,9 @@ vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
 
 vector<string> Snapshot::getAmperListID(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		throw UMAException("Cannot find the sensor id " + sensor_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		string s = "Cannot find the sensor id " + sensor_id;
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	Sensor * const sensor = _sensorIdx.at(sensor_id);
 	vector<string> result;
@@ -555,7 +574,9 @@ vector<string> Snapshot::getAmperListID(const string &sensor_id) const{
 
 Sensor *Snapshot::getSensor(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		throw UMAException("Cannot find the sensor id " + sensor_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		string s = "Cannot find the sensor id " + sensor_id;
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
 	}
 	return _sensorIdx.at(sensor_id);
 }
@@ -616,7 +637,9 @@ void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &u
 		}
 	}
 	catch (UMAException &e) {
-		throw UMAException("Fatal error while doing amper and", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+		string s = "Fatal error while doing amper and";
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
 	}
 }
 
@@ -791,7 +814,9 @@ void Snapshot::generateDelayedWeights(int mid, bool merge, const std::pair<strin
 
 void Snapshot::generateObserve(vector<bool> &observe) {
 	if (observe.size() != 2 * _initialSize) {
-		throw UMAException("The input observe signal size is not the 2x initial sensor size", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
+		string s = "The input observe signal size is not the 2x initial sensor size";
+		snapshotLogger.error(s);
+		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
 	}
 	for (int i = _initialSize; i < _sensors.size(); ++i) {
 		bool b = _sensors[i]->generateDelayedSignal();
