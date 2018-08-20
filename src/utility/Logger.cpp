@@ -9,7 +9,7 @@
 Logger::Logger(const string component, const string output) : _component(component) {
 	//level is changable in runtime
 	static std::map < string, std::map<string, string>> _logLevel = ConfReader::readConf("log.ini");
-	SysUtil::UMAMkdir("log");
+	SysUtil::UMAMkdir(string("log"));
 
 	try {
 		_level = StrUtil::stringToLogLevel(_logLevel[component]["level"]);
@@ -34,47 +34,37 @@ string Logger::getTime() const{
 #endif
 }
 
-void Logger::verbose(string message, string dependency) const{
+void Logger::verbose(string message) const{
 	if (_level < LOG_VERBOSE) return;
-	string dep = "[" + dependency + "]";
-	if (dependency == "") dep = "";
-	message = getTime() + " VERBOSE " + _component + " - " + dep + message + "\n";
+	message = getTime() + " VERBOSE " + _component + " - " + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::debug(string message, string dependency) const{
+void Logger::debug(string message) const{
 	if (_level < LOG_DEBUG) return;
-	string dep = "[" + dependency + "]";
-	if (dependency == "") dep = "";
-	message = getTime() + " DEBUG " + _component + " - " + dep + message + "\n";
+	message = getTime() + " DEBUG " + _component + " - " + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::info(string message, string dependency) const{
+void Logger::info(string message) const{
 	if (_level < LOG_INFO) return;
-	string dep = "[" + dependency + "]";
-	if (dependency == "") dep = "";
-	message = getTime() + " INFO " + _component + " - " + dep + message + "\n";
+	message = getTime() + " INFO " + _component + " - " + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::warn(string message, string dependency) const{
+void Logger::warn(string message) const{
 	if (_level < LOG_WARN) return;
-	string dep = "[" + dependency + "]";
-	if (dependency == "") dep = "";
-	message = getTime() + " WARN " + _component + " - " + dep + message + "\n";
+	message = getTime() + " WARN " + _component + " - " + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::error(string message, string dependency) const{
+void Logger::error(string message) const{
 	if (_level < LOG_ERROR) return;
-	string dep = "[" + dependency + "]";
-	if (dependency == "") dep = "";
-	message = getTime() + " ERROR " + _component + " - " + dep + message + "\n";
+	message = getTime() + " ERROR " + _component + " - " + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }

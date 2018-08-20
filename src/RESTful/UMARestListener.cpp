@@ -104,6 +104,7 @@ void UMARestListener::handle(http_request &request, string request_type) {
 	}
 	catch (exception &e) {
 		status_code code = status_codes::InternalError;
+		serverLogger.error(e.what());
 		accessLogger.error("POST " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(code));
 		uma_request.set_status_code(code);
 		uma_request.set_message(string(e.what()));

@@ -18,31 +18,31 @@ extern bool qless(double d1, double d2);
 //extern std::map<string, std::map<string, string>> server_cfg;
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
-Snapshot::Snapshot(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + uuid), _type(type) {
+Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, const UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
 	_total = stod(World::coreInfo["Snapshot"]["total"]);
 	_total_ = _total;
-	snapshotLogger.debug("Setting init total value to " + to_string(_total), _dependency);
+	snapshotLogger.debug("Setting init total value to " + to_string(_total));
 
 	_delayCount = 0;
 	
 	_q = stod(World::coreInfo["Snapshot"]["q"]);
-	snapshotLogger.debug("Setting q value to " + to_string(_q), _dependency);
+	snapshotLogger.debug("Setting q value to " + to_string(_q));
 
 	_threshold = stod(World::coreInfo["Snapshot"]["threshold"]);
-	snapshotLogger.debug("Setting threshold value to " + to_string(_threshold), _dependency);
+	snapshotLogger.debug("Setting threshold value to " + to_string(_threshold));
 
 	_autoTarget = stoi(World::coreInfo["Snapshot"]["auto_target"]);
-	snapshotLogger.debug("Setting auto target value to " + to_string(_autoTarget), _dependency);
+	snapshotLogger.debug("Setting auto target value to " + to_string(_autoTarget));
 
 	_propagateMask = stoi(World::coreInfo["Snapshot"]["propagate_mask"]);
-	snapshotLogger.debug("Setting propagate mask value to " + to_string(_propagateMask), _dependency);
+	snapshotLogger.debug("Setting propagate mask value to " + to_string(_propagateMask));
 
 	_initialSize = 0;
 
-	_dm = new DataManager(_dependency);
-	snapshotLogger.info("Data Manager is created", _dependency);
+	_dm = new DataManager(this);
+	snapshotLogger.info("Data Manager is created");
 
-	snapshotLogger.info("A Snapshot " + _uuid + " is created, with type " + to_string(_type), _dependency);
+	snapshotLogger.info("A Snapshot " + _uuid + " is created, with type " + to_string(_type));
 }
 
 
@@ -52,28 +52,26 @@ Snapshot::~Snapshot(){
 			delete _sensors[i];
 			_sensors[i] = NULL;
 		}
-		snapshotLogger.debug("All snapshot sensors deleted", _dependency);
+		snapshotLogger.debug("All snapshot sensors are deleted");
 		for (int i = 0; i < _sensorPairs.size(); ++i) {
 			delete _sensorPairs[i];
 			_sensorPairs[i] = NULL;
 		}
-		snapshotLogger.debug("All snapshot sensor pairs deleted", _dependency);
+		snapshotLogger.debug("All snapshot sensor pairs are deleted");
 		delete _dm;
-		snapshotLogger.debug("Data Manager deleted", _dependency);
+		snapshotLogger.debug("Data Manager is deleted");
 	}
 	catch (exception &e) {
-		snapshotLogger.error("Fatal error when trying to delete snapshot: " + _uuid, _dependency);
-		throw UMAException("Fatal error in Snapshot destruction function", UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+		throw UMAInternalException("Fatal error in Snapshot destruction function, snapshotId=" + _uuid, true, &snapshotLogger);
 	}
-	snapshotLogger.info("Deleted the snapshot: " + _uuid, _dependency);
+	snapshotLogger.info("Snapshot is deleted, snapshotId=" + _uuid);
 }
 
 Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector<bool> > &b) {
 	_dm->copyArraysToSensors(0, _sensors.size(), _sensors);
 	_dm->copyArraysToSensorPairs(0, _sensors.size(), _sensorPairs);
 	if (_sensorIdx.find(id_pair.first) != _sensorIdx.end() && _sensorIdx.find(id_pair.second) != _sensorIdx.end()) {
-		snapshotLogger.error("Cannot create a duplicate sensor!", _dependency);
-		throw UMAException("Cannot create a duplicate sensor!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+		throw UMADuplicationException("Cannot create a duplicate sensor, sensorId=[" + id_pair.first + ", " + id_pair.second + "]", false, &snapshotLogger);
 	}
 	Sensor *sensor = NULL;
 	if (diag.empty()) {
@@ -85,11 +83,11 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 	_sensorIdx[id_pair.first] = sensor;
 	_sensorIdx[id_pair.second] = sensor;
 	_sensors.push_back(sensor);
-	snapshotLogger.debug("A Sensor " + id_pair.first + " is created with idx " + to_string(sensor->_idx), _dependency);
+	snapshotLogger.debug("A Sensor is created, sensorId=" + id_pair.first + ", sensorIdx=" + to_string(sensor->_idx));
 	//creating sensor pairs
 	for (int i = 0; i < _sensors.size(); ++i) {
 		SensorPair *sensor_pair = NULL;
-		if (AGENT_TYPE::QUALITATIVE == _type) {
+		if (UMA_AGENT::AGENT_QUALITATIVE == _type) {
 			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold);
 		}
 		else {
@@ -100,13 +98,13 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 				sensor_pair = new SensorPair(sensor, _sensors[i], _threshold, w[i], b[i]);
 			}
 		}
-		snapshotLogger.debug("A sensor pair with sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid + " is created", _dependency);
+		snapshotLogger.debug("A sensor pair with is created, sensor1=" + sensor->_uuid + " sensor2=" + _sensors[i]->_uuid);
 		_sensorPairs.push_back(sensor_pair);
 	}
-	snapshotLogger.info(to_string(_sensors.size()) + " Sensor Pairs are created, total is " + to_string(ind(_sensors.size(), 0)), _dependency);
+	snapshotLogger.info(to_string(_sensors.size()) + " Sensor Pairs are created, total is " + to_string(ind(_sensors.size(), 0)));
 	
 	if (_sensors.size() > _dm->_sensorSizeMax) {
-		snapshotLogger.debug("Need allocate more space after adding a sensor", _dependency);
+		snapshotLogger.debug("Need allocate more space after adding a sensor");
 		_dm->reallocateMemory(_total, _sensors.size());
 		_dm->createSensorsToArraysIndex(0, _sensors.size(), _sensors);
 		_dm->createSensorPairsToArraysIndex(0, _sensors.size(), _sensorPairs);
@@ -114,7 +112,7 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 		_dm->copySensorPairsToArrays(0, _sensors.size(), _sensorPairs);
 	}
 	else {
-		snapshotLogger.debug("Have enough space, will not do remalloc", _dependency);
+		snapshotLogger.debug("Have enough space, will not do remalloc");
 		_dm->setSize(_sensors.size(), false);
 		_dm->createSensorsToArraysIndex(_sensors.size() - 1, _sensors.size(), _sensors);
 		_dm->createSensorPairsToArraysIndex(_sensors.size() - 1, _sensors.size(), _sensorPairs);
@@ -126,15 +124,14 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 
 void Snapshot::deleteSensor(const string &sensor_id) {
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		snapshotLogger.error("Cannot find the sensor " + sensor_id, _dependency);
-		throw UMAException("Cannot find the sensor " + sensor_id, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMANoResourceException("Cannot find the sensor, sensorId=" + sensor_id, false, &snapshotLogger);
 	}
 
 	int sensor_idx = _sensorIdx.at(sensor_id)->_idx;
 	vector<bool> pruning_list(_dm->_attrSensorSize, false);
 	pruning_list[2 * sensor_idx] = true;
 	pruning(pruning_list);
-	snapshotLogger.info("Sensor " + sensor_id + " deleted", _dependency);
+	snapshotLogger.info("Sensor is deleted, sensorId=" + sensor_id);
 }
 
 vector<vector<string> > Snapshot::getSensorInfo() const {
@@ -224,31 +221,29 @@ Input: the signal of all attr_sensor
 */
 void Snapshot::pruning(const vector<bool> &signal){
 	if (signal.size() > _dm->_attrSensorSize) {
-		string s = "Input signal size for pruning is larger than attr_sensorSize";
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAInvalidArgsException("Input signal size for pruning is larger than attr_sensor_size, input_size="
+			+ to_string(signal.size()) + ", attr_sensor_size=" + to_string(_dm->_attrSensorSize), false, &snapshotLogger);
 	}
 	//get converted sensor list, from attr_sensor signal
 	const vector<bool> sensor_list = SignalUtil::attrSensorToSensorSignal(signal);
 	const vector<int> idx_list = SignalUtil::boolSignalToIntIdx(sensor_list);
 	if (idx_list.empty()) {
-		snapshotLogger.info("Empty pruning signal, do nothing", _dependency);
+		snapshotLogger.info("Empty pruning signal, do nothing");
 		return;
 	}
 	_dm->copyArraysToSensors(0, _sensors.size(), _sensors);
 	_dm->copyArraysToSensorPairs(0, _sensors.size(), _sensorPairs);
 
 	if (idx_list[0] < 0 || idx_list.back() >= _sensors.size()) {
-		string s = "Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back()) + ", illegal range!";
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("Pruning range is from " + to_string(idx_list[0]) + "~" + to_string(idx_list.back())
+			+ ", illegal range!", false, &snapshotLogger);
 	}
 
 	string str_list = "";
 	for (int i = 0; i < idx_list.size(); ++i) {
 		str_list += to_string(idx_list[i]) + ", ";
 	}
-	snapshotLogger.info("Will prune id=" + str_list, _dependency);
+	snapshotLogger.info("Will prune id=" + str_list);
 
 	int row_escape = 0;
 	int total_escape = 0;
@@ -314,7 +309,7 @@ void Snapshot::pruning(const vector<bool> &signal){
 	_dm->copySensorsToArrays(0, _sensors.size(), _sensors);
 	_dm->copySensorPairsToArrays(0, _sensors.size(), _sensorPairs);
 
-	snapshotLogger.info("Pruning done successful", _dependency);
+	snapshotLogger.info("Pruning done successful, snapshot_id=" + _uuid);
 }
 
 void Snapshot::ampers(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &id_pairs){
@@ -326,17 +321,17 @@ void Snapshot::ampers(const vector<vector<bool> > &lists, const vector<std::pair
 	for(int i = 0; i < lists.size(); ++i){
 		const vector<int> list = SignalUtil::boolSignalToIntIdx(lists[i]);
 		if (list.size() < 2) {
-			snapshotLogger.warn("The amper vector size is less than 2, will abort this amper operation, list id: " + to_string(i), _dependency);
+			snapshotLogger.warn("The amper vector size is less than 2, will abort this amper operation, snapshotId=" + _uuid + " listId=" + to_string(i));
 			continue;
 		}
 		amper(list, id_pairs[i]);
 		success_amper++;
 	}
 
-	snapshotLogger.info(to_string(success_amper) + " out of " + to_string(lists.size()) + " amper successfully done", _dependency);
+	snapshotLogger.info(to_string(success_amper) + " out of " + to_string(lists.size()) + " amper successfully done, snapshotId=" + _uuid);
 
 	if(_sensors.size() > _dm->_sensorSizeMax){
-		snapshotLogger.info("New sensor size larger than current max, will resize", _dependency);
+		snapshotLogger.info("New sensor size larger than current max, will resize");
 		//if need to reallocate
 		_dm->reallocateMemory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
@@ -368,18 +363,16 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 	for (int i = 0; i < lists.size(); ++i) {
 		size_t v = delayHash(SignalUtil::trimSignal(lists[i]));
 		if (_delaySensorHash.end() != _delaySensorHash.find(v)) {
-			snapshotLogger.info("Find an existing delayed sensor, will skip creating current one", _dependency);
+			snapshotLogger.info("Find an existing delayed sensor, will skip creating current one, snapshotId=" + _uuid);
 			continue;
 		}
 
 		if (lists[i].size() > _sensors.size() * 2) {
-			string s = "The " + to_string(i) + "th input signal size is larger than 2 * sensors.size()";
-			snapshotLogger.error(s);
-			throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+			throw UMAInvalidArgsException("The " + to_string(i) + "th input signal size is larger than 2 * sensors.size()", false, &snapshotLogger);
 		}
 		const vector<int> list = SignalUtil::boolSignalToIntIdx(lists[i]);
 		if (list.size() < 1) {
-			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i), _dependency);
+			snapshotLogger.warn("The amper vector size is less than 1, will abort this amper operation, list id: " + to_string(i));
 			continue;
 		}
 		if(generate_default_id){
@@ -395,9 +388,7 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 				generateDelayedWeights(list[0], true, p);
 			}
 			catch (UMAException &e) {
-				string s = "Fatal error in generateDelayedWeights";
-				snapshotLogger.error(s);
-				throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+				throw UMAInternalException("Fatal error in generateDelayedWeights, snapshotId=" + _uuid, true, &snapshotLogger);
 			}
 		}
 		else {
@@ -406,24 +397,22 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 				generateDelayedWeights(_sensors.back()->_m->_idx, false, p);
 			}
 			catch (UMAException &e) {
-				string s = "Fatal error in generateDelayedWeights";
-				snapshotLogger.error(s);
-				throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+				throw UMAInternalException("Fatal error in generateDelayedWeights, snapshotId=" + _uuid, true, &snapshotLogger);
 			}
 		}
 		success_delay++;
 		_delaySensorHash.insert(v);
 
-		snapshotLogger.info("A delayed sensor is generated " + p.first, _dependency);
+		snapshotLogger.info("A delayed sensor is generated, sensorId=" + p.first + ", snapshotId=" + _uuid);
 		string delay_list = "";
 		for (int j = 0; j < list.size(); ++j) delay_list += (to_string(list[j]) + ",");
-		snapshotLogger.verbose("The delayed sensor generated from " + delay_list, _dependency);
+		snapshotLogger.verbose("The delayed sensor, sensorId= " + _uuid + " is generated from " + delay_list);
 	}
 
-	snapshotLogger.info(to_string(success_delay) + " out of " + to_string(lists.size()) + " delay successfully done", _dependency);
+	snapshotLogger.info(to_string(success_delay) + " out of " + to_string(lists.size()) + " delay successfully done");
 
 	if (_sensors.size() > _dm->_sensorSizeMax) {
-		snapshotLogger.info("New sensor size larger than current max, will resize", _dependency);
+		snapshotLogger.info("New sensor size larger than current max, will resize");
 		//if need to reallocate
 		_dm->reallocateMemory(_total, _sensors.size());
 		//copy every sensor back, since the memory is new
@@ -448,12 +437,12 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 
 void Snapshot::setThreshold(const double &threshold) {
 	_threshold = threshold;
-	snapshotLogger.info("snapshot threshold changed to " + to_string(threshold), _dependency);
+	snapshotLogger.info("snapshot threshold changed to " + to_string(threshold));
 }
 
 void Snapshot::setQ(const double &q) {
 	_q = q;
-	snapshotLogger.info("snapshot q changed to " + to_string(q), _dependency);
+	snapshotLogger.info("snapshot q changed to " + to_string(q));
 }
 
 void Snapshot::setAutoTarget(const bool &auto_target) {
@@ -493,9 +482,8 @@ this function is getting the attr_sensor, from the sensor list
 AttrSensor *Snapshot::getAttrSensor(int idx) const{
 	int s_idx = idx / 2;
 	if (s_idx >= _sensors.size() || s_idx <0) {
-		string s = "the input attr_sensor index is out of range, input is " + to_string(s_idx) + " sensor num is " + to_string(idx);
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMAInvalidArgsException("the input attr_sensor index is out of range, input is " + to_string(s_idx) +
+			" sensor num is " + to_string(idx), false, &snapshotLogger);
 	}
 	if(idx % 2 == 0){
 		return _sensors[s_idx]->_m;
@@ -510,9 +498,7 @@ AttrSensor *Snapshot::getAttrSensor(const string &attr_sensor_id) const{
 	if (attr_sensor_id == sensor->_m->_uuid) return sensor->_m;
 	else if(attr_sensor_id == sensor->_cm->_uuid) return sensor->_cm;
 
-	string s = "Cannot find the attr_sensor id " + attr_sensor_id;
-	snapshotLogger.error(s);
-	throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+	throw UMANoResourceException("Cannot find the attr_sensor id " + attr_sensor_id, false, &snapshotLogger);
 }
 
 SensorPair *Snapshot::getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const{
@@ -543,9 +529,7 @@ AttrSensorPair *Snapshot::getAttrSensorPair(const string &mid1, const string &mi
 
 vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		string s = "Cannot find the sensor id " + sensor_id;
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find the sensor id " + sensor_id, false, &snapshotLogger);
 	}
 	Sensor *sensor = _sensorIdx.at(sensor_id);
 	vector<bool> result(_dm->_attrSensorSize, false);
@@ -557,9 +541,7 @@ vector<bool> Snapshot::getAmperList(const string &sensor_id) const{
 
 vector<string> Snapshot::getAmperListID(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		string s = "Cannot find the sensor id " + sensor_id;
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find the sensor id " + sensor_id, false, &snapshotLogger);
 	}
 	Sensor * const sensor = _sensorIdx.at(sensor_id);
 	vector<string> result;
@@ -574,9 +556,7 @@ vector<string> Snapshot::getAmperListID(const string &sensor_id) const{
 
 Sensor *Snapshot::getSensor(const string &sensor_id) const{
 	if (_sensorIdx.find(sensor_id) == _sensorIdx.end()) {
-		string s = "Cannot find the sensor id " + sensor_id;
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find the sensor id " + sensor_id, false, &snapshotLogger);
 	}
 	return _sensorIdx.at(sensor_id);
 }
@@ -609,7 +589,7 @@ const int &Snapshot::getInitialSize() const{
 	return _initialSize;
 }
 
-const int &Snapshot::getType() const {
+const UMA_SNAPSHOT &Snapshot::getType() const {
 	return _type;
 }
 
@@ -627,7 +607,7 @@ DataManager *Snapshot::getDM() const {
 //the input list size should be larger than 2
 void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &uuid) {
 	if (list.size() < 2) {
-		snapshotLogger.warn("Amper list size is smaller than 2, will not continue", _dependency);
+		snapshotLogger.warn("Amper list size is smaller than 2, will not continue");
 		return;
 	}
 	try {
@@ -637,9 +617,7 @@ void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &u
 		}
 	}
 	catch (UMAException &e) {
-		string s = "Fatal error while doing amper and";
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::FATAL, UMAException::ERROR_TYPE::SERVER);
+		throw UMAInternalException("Fatal error while doing amperand", true, &snapshotLogger);
 	}
 }
 
@@ -814,9 +792,7 @@ void Snapshot::generateDelayedWeights(int mid, bool merge, const std::pair<strin
 
 void Snapshot::generateObserve(vector<bool> &observe) {
 	if (observe.size() != 2 * _initialSize) {
-		string s = "The input observe signal size is not the 2x initial sensor size";
-		snapshotLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
+		throw UMAInvalidArgsException("The input observe signal size is not the 2x initial sensor size", false, &snapshotLogger);
 	}
 	for (int i = _initialSize; i < _sensors.size(); ++i) {
 		bool b = _sensors[i]->generateDelayedSignal();
@@ -887,8 +863,8 @@ void Snapshot::save_snapshot(ofstream &file) {
 */
 //Snapshot_Stationary::Snapshot_Stationary(ifstream &file, string &log_dir):Snapshot(file, log_dir) {}
 
-SnapshotQualitative::SnapshotQualitative(string uuid, string dependency)
-	:Snapshot(uuid, dependency, AGENT_TYPE::QUALITATIVE) {
+SnapshotQualitative::SnapshotQualitative(const string &uuid, UMACoreObject *parent)
+	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE) {
 }
 
 SnapshotQualitative::~SnapshotQualitative() {}

@@ -1,15 +1,37 @@
 #include "UMAException.h"
 
+/*#######################UMAException#########################*/
+
 //default constructor
-UMAException::UMAException(): std::runtime_error("") {}
+UMAException::UMAException(): std::runtime_error("") {
+	_isFatal = false;
+}
 
 /*
-Another constructor, without status code, if the error is not caused by client rest call
+Another constructor, with error msg only
 */
-UMAException::UMAException(string message, int errorLevel, int errorType) : std::runtime_error(message) {
-	_errorLevel = errorLevel;
+UMAException::UMAException(string message) : std::runtime_error(message) {
 	_errorMessage = message;
-	_errorType = errorType;
+	_isFatal = false;
+	_log = nullptr;
+}
+
+/*
+Another constructor, with error msg and isFatal bool
+*/
+UMAException::UMAException(string message, bool isFatal) : std::runtime_error(message) {
+	_errorMessage = message;
+	_isFatal = isFatal;
+	_log = nullptr;
+}
+
+/*
+Another constructor, with error msg, isFatal bool and log pointer
+*/
+UMAException::UMAException(string message, bool isFatal, Logger *log) : std::runtime_error(message) {
+	_errorMessage = message;
+	_isFatal = isFatal;
+	_log = log;
 }
 
 /*
@@ -21,19 +43,58 @@ string UMAException::getErrorMessage() const{
 }
 
 /*
-get the error level
-output: error level
+function to get the isFatal variable
 */
-int UMAException::getErrorLevel() const{
-	return _errorLevel;
-}
-
-/*
-get the error type
-output: error type
-*/
-int UMAException::getErrorType() const {
-	return _errorType;
+const bool UMAException::isFatal() const {
+	return _isFatal;
 }
 
 UMAException::~UMAException() {}
+
+/*#######################UMAException#########################*/
+
+/*#######################OTHER Exception#########################*/
+
+UMAInternalException::UMAInternalException(string message, bool isFatal, Logger *log) : UMAException(message, isFatal, nullptr) {}
+
+UMAInternalException::~UMAInternalException() {}
+
+string UMAInternalException::getErrorMessage() const {
+	return "Internal Error Caught: " + UMAException::getErrorMessage();
+}
+
+
+UMAInvalidArgsException::UMAInvalidArgsException(string message, bool isFatal, Logger *log) : UMAException(message, isFatal, nullptr) {}
+
+UMAInvalidArgsException::~UMAInvalidArgsException() {}
+
+string UMAInvalidArgsException::getErrorMessage() const {
+	return "Invalid Argument Error Caught: " + UMAException::getErrorMessage();
+}
+
+
+UMANoResourceException::UMANoResourceException(string message, bool isFatal, Logger *log) : UMAException(message, isFatal, nullptr) {}
+
+UMANoResourceException::~UMANoResourceException() {}
+
+string UMANoResourceException::getErrorMessage() const {
+	return "No Resource Error Caught: " + UMAException::getErrorMessage();
+}
+
+UMADuplicationException::UMADuplicationException(string message, bool isFatal, Logger *log) : UMAException(message, isFatal, nullptr) {}
+
+UMADuplicationException::~UMADuplicationException() {}
+
+string UMADuplicationException::getErrorMessage() const {
+	return "Duplication Record Error Caught: " + UMAException::getErrorMessage();
+}
+
+UMABadOperationException::UMABadOperationException(string message, bool isFatal, Logger *log) : UMAException(message, isFatal, nullptr) {}
+
+UMABadOperationException::~UMABadOperationException() {}
+
+string UMABadOperationException::getErrorMessage() const {
+	return "Duplication Record Error Caught: " + UMAException::getErrorMessage();
+}
+
+/*#######################OTHER Exception#########################*/

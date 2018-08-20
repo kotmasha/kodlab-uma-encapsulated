@@ -31,7 +31,7 @@ std::map<string, vector<string>> ConfReader::readRestmap() {
 		return results;
 	}
 	catch (exception &e) {
-		throw UMAException("Having some problem reading restmap.ini file!", UMAException::FATAL, UMAException::CONF_ERROR);
+		throw UMAInternalException("Having some problem reading restmap.ini file!");
 	}
 }
 
@@ -45,7 +45,7 @@ std::map<string, std::map<string, string>> ConfReader::readConf(const string &co
 		ifstream iniFile("ini/" + confName);
 		if (!iniFile.good()) {
 			cout << "The ini/" + confName + " does not exist!" << endl;
-			throw UMAException("The ini/" + confName + " does not exist!", UMAException::FATAL, UMAException::CONF_ERROR);
+			throw UMAInternalException("The ini/" + confName + " does not exist!");
 		}
 		string s;
 		string currentComponent;
@@ -70,7 +70,7 @@ std::map<string, std::map<string, string>> ConfReader::readConf(const string &co
 		return results;
 	}
 	catch (exception &e) {
-		throw UMAException("Having some problem reading " + confName, UMAException::FATAL, UMAException::CONF_ERROR);
+		throw UMAInternalException("Having some problem reading " + confName);
 	}
 }
 

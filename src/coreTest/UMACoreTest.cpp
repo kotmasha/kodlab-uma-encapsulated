@@ -11,6 +11,7 @@
 #include "SensorPair.h"
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
+#include "UMACoreConstant.h"
 
 TEST(world_test, world_experiment_test) {
 	Experiment *ex1 = World::instance()->createExperiment("ex1");
@@ -37,14 +38,14 @@ TEST(world_test, world_experiment_test) {
 
 TEST(experiment_test, experiment_agent_test) {
 	Experiment *experiment = World::instance()->createExperiment("testExperiment");
-	experiment->createAgent("testAgent1");
-	experiment->createAgent("testAgent2");
-	experiment->createAgent("testAgent3");
-	experiment->createAgent("testAgent4");
+	experiment->createAgent("testAgent1", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent2", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent3", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent4", UMA_AGENT::AGENT_STATIONARY);
 
 	EXPECT_NO_THROW(experiment->getAgent("testAgent1"));
 	EXPECT_THROW(experiment->getAgent("testAgent0"), UMAException);
-	vector<vector<string>> s = { { "testAgent1", "default" },{ "testAgent2", "default" },{ "testAgent3", "default" },{ "testAgent4", "default" } };
+	vector<vector<string>> s = { { "testAgent1", "stationary" },{ "testAgent2", "stationary" },{ "testAgent3", "stationary" },{ "testAgent4", "stationary" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
 	experiment->deleteAgent("testAgent1");

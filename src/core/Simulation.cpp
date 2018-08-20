@@ -1,4 +1,5 @@
 #include "Simulation.h"
+#include "UMACoreConstant.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "DataManager.h"
@@ -162,7 +163,7 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 
 	snapshot->updateTotal(phi, active);
 	
-	if (AGENT_TYPE::STATIONARY == snapshot->getType())
+	if (UMA_AGENT::AGENT_STATIONARY == snapshot->getType())
 		simulation::updateState(dm, q, phi, total, total_, active);
 	else
 		simulation::updateStateQualitative(dm, q, phi, total, total_, active);
@@ -318,7 +319,7 @@ void simulation::calculateTarget(DataManager *dm, const int type) {
 	int sensor_size = size_info["_sensorSize"];
 	int attr_sensor_size = size_info["_attrSensorSize"];
 
-	if (AGENT_TYPE::STATIONARY == type)
+	if (UMA_AGENT::AGENT_STATIONARY == type)
 		uma_base::calculateTarget(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
 	else {
 		data_util::doubleD2H(dm->_dvar_d(DataManager::DIAG), dm->_hvar_d(DataManager::DIAG), attr_sensor_size);

@@ -2,6 +2,7 @@
 #define _WORLD_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 using namespace std;
 
 class Experiment;
@@ -9,15 +10,19 @@ class Experiment;
 /*
 This is the world class, it maintains all the agent object
 */
-class DLL_PUBLIC World{
+class DLL_PUBLIC World: public UMACoreObject{
 private:
+	// the singleton object
 	static World *_world;
+	// the map for all experiments
 	std::map<string, Experiment*> _experiments;
 
 public:
+	// the map to hold all core info, need to replace with conf obj singleton
 	static std::map<string, std::map<string, string>> coreInfo;
 
 public:
+	World();
 	static World *instance();
 	Experiment *createExperiment(const string &experimentId);
 	Experiment *getExperiment(const string &experimentId);

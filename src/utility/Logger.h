@@ -15,11 +15,11 @@ public:
 
 public:
 	Logger(const string component, const string output);
-	void verbose(string message, string dependency="") const;
-	void debug(string message, string dependency="") const;
-	void info(string message, string dependency="") const;
-	void warn(string message, string dependency="") const;
-	void error(string message, string dependency="") const;
+	void verbose(string message) const;
+	void debug(string message) const;
+	void info(string message) const;
+	void warn(string message) const;
+	void error(string message) const;
 	string getTime() const;
 	void setLogLevel(int level);
 };
