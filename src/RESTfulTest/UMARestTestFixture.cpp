@@ -356,7 +356,7 @@ void UMARestTestHandler::handleCreate(UMARestRequest &request) {
 		request.set_data("map_string_bool", UMARestTestFixture::serverMapStringBool);
 	}
 	else {
-		throw UMAException("cannot find any matching test case", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
+		throw UMAInvalidArgsException("cannot find any matching test case");
 	}
 }
 
@@ -381,7 +381,7 @@ void UMARestTestHandler::handleRead(UMARestRequest &request) {
 		UMARestTestFixture::serverBool = b;
 	}
 	else {
-		throw UMAException("cannot find any matching test case", UMAException::ERROR_LEVEL::ERROR, UMAException::CLIENT_DATA);
+		throw UMAInvalidArgsException("cannot find any matching test case");
 	}
 }
 void UMARestTestHandler::handleUpdate(UMARestRequest &request) {}

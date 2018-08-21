@@ -9,13 +9,15 @@
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
+
 AttrSensorHandler::AttrSensorHandler(const string &handler_name) : UMARestHandler(handler_name) {
 }
 
 void AttrSensorHandler::handleCreate(UMARestRequest &request) {
 	//no post call available for attr_sensor or attr_sensor pair, as they are created by sensor
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void AttrSensorHandler::handleUpdate(UMARestRequest &request) {
@@ -29,7 +31,7 @@ void AttrSensorHandler::handleUpdate(UMARestRequest &request) {
 		updateAttrSensorPair(request);
 		return;
 	}
-	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + requestUrl, false, &serverLogger);
 }
 
 void AttrSensorHandler::handleRead(UMARestRequest &request) {
@@ -43,13 +45,13 @@ void AttrSensorHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + requestUrl, false, &serverLogger);
 }
 
 void AttrSensorHandler::handleDelete(UMARestRequest &request) {
 	//no delete call for attrSensor attrSensorPair, they are handled in sensor
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + requestUrl, false, &serverLogger);
 }
 
 void AttrSensorHandler::getAttrSensor(UMARestRequest &request) {
@@ -100,7 +102,7 @@ void AttrSensorHandler::updateAttrSensor(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("The coming put request has nothing to update", false, &serverLogger);
 }
 
 void AttrSensorHandler::getAttrSensorPair(UMARestRequest &request) {
@@ -149,7 +151,7 @@ void AttrSensorHandler::updateAttrSensorPair(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("The coming put request has nothing to update", false, &serverLogger);
 }
 
 AttrSensorHandler::~AttrSensorHandler() {}

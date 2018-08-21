@@ -88,16 +88,17 @@ void UMARestListener::handle(http_request &request, string request_type) {
 		uma_request.reply();
 	}
 	catch (UMAException &e) {
-		const int error_type = e.getErrorType();
-		const status_code code = RestUtil::error_type_to_status_code(error_type);
+		const status_code code = RestUtil::UMAExceptionToStatusCode(&e);
 		uma_request.set_status_code(code);
 		uma_request.set_message(e.getErrorMessage());
-		serverLogger.error(e.getErrorMessage());
+		if (!e.isErrorLogged()) {
+			serverLogger.error(e.getErrorMessage());
+		}
 		accessLogger.error(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(code));
 
 		uma_request.reply();
 
-		if (e.getErrorLevel() == UMAException::ERROR_LEVEL::FATAL) {
+		if (e.isFatal()) {
 			serverLogger.error("Shutting down server due to error: " + e.getErrorMessage());
 			exit(0);
 		}

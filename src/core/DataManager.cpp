@@ -597,7 +597,7 @@ Input: current signal
 void DataManager::setCurrent(const vector<bool> &current) {//this is where data comes in in every frame
 	if (current.size() != _attrSensorSize) {
 		string s = "Input current size not matching attr_sensor size!";
-		throw UMAException("Input current size not matching attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("Input current size not matching attr_sensor size!", false, &dataManagerLogger);
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current[i] = current[i];

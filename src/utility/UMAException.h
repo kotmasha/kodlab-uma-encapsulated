@@ -11,18 +11,24 @@ using namespace std;
 UMA Exception class
 */
 class UMAException: public std::runtime_error {
+public:
+	enum UMAExceptionType { UMA_UNKNOWN, UMA_INTERNAL, UMA_INVALID_ARGS, UMA_NO_RESOURCE, UMA_BAD_OPERATION, UMA_DUPLICATION };
+
 protected:
 	string _errorMessage;
 	bool _isFatal;
 	Logger *_log;
+	const UMAExceptionType _type;
 
 public:
 	UMAException();
-	UMAException(string message);
-	UMAException(string message, bool isFatal);
-	UMAException(string message, bool isFatal, Logger *log);
+	UMAException(string message, UMAExceptionType type);
+	UMAException(string message, bool isFatal, UMAExceptionType type);
+	UMAException(string message, bool isFatal, Logger *log, UMAExceptionType type);
 	virtual string getErrorMessage() const;
+	const UMAExceptionType getType() const;
 	const bool isFatal() const;
+	bool isErrorLogged();
 	~UMAException();
 };
 

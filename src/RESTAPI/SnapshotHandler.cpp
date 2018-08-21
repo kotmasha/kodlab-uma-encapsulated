@@ -6,6 +6,7 @@
 #include "Snapshot.h"
 #include "UMAutil.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
 SnapshotHandler::SnapshotHandler(const string &handler_name) : UMARestHandler(handler_name) {
 }
 
@@ -32,8 +33,7 @@ void SnapshotHandler::handleCreate(UMARestRequest &request) {
 		return;
 	}
 
-
-	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void SnapshotHandler::handleUpdate(UMARestRequest &request) {
@@ -43,7 +43,7 @@ void SnapshotHandler::handleUpdate(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + requestUrl, false, &serverLogger);
 }
 
 void SnapshotHandler::handleRead(UMARestRequest &request) {
@@ -53,7 +53,7 @@ void SnapshotHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + requestUrl, false, &serverLogger);
 }
 
 void SnapshotHandler::handleDelete(UMARestRequest &request) {
@@ -63,7 +63,7 @@ void SnapshotHandler::handleDelete(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + requestUrl, false, &serverLogger);
 }
 
 void SnapshotHandler::createSnapshot(UMARestRequest &request) {
@@ -219,7 +219,7 @@ void SnapshotHandler::updateSnapshot(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("The coming put request has nothing to update", false, &serverLogger);
 }
 
 SnapshotHandler::~SnapshotHandler() {}

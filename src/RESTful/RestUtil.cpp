@@ -31,18 +31,17 @@ bool RestUtil::string_t_to_bool(const string_t &s) {
 }
 
 
-status_code RestUtil::error_type_to_status_code(const int error_type) {
-	switch (error_type) {
-	case UMAException::ERROR_TYPE::BAD_OPERATION:
-	case UMAException::ERROR_TYPE::CLIENT_DATA:
-	case UMAException::ERROR_TYPE::UNKNOWN:
+status_code RestUtil::UMAExceptionToStatusCode(UMAException *ex){
+	const UMAException::UMAExceptionType type = ex->getType();
+	switch (type) {
+	case UMAException::UMAExceptionType::UMA_BAD_OPERATION:
+	case UMAException::UMAExceptionType::UMA_INVALID_ARGS:
 		return status_codes::BadRequest;
-	case UMAException::ERROR_TYPE::CONF_ERROR:
-	case UMAException::ERROR_TYPE::SERVER:
+	case UMAException::UMAExceptionType::UMA_INTERNAL:
 		return status_codes::InternalError;
-	case UMAException::ERROR_TYPE::DUPLICATE: 
+	case UMAException::UMAExceptionType::UMA_DUPLICATION:
 		return status_codes::Conflict;
-	case UMAException::ERROR_TYPE::NO_RECORD: 
+	case UMAException::UMAExceptionType::UMA_NO_RESOURCE:
 	default:
 		return status_codes::NotFound;
 	}
@@ -61,7 +60,7 @@ Output: whether the field exist
 bool RestUtil::check_field(const json::value &data, const string_t &s, bool hard_check) {
 	if (!data.has_field(s)) {
 		if (hard_check) {
-			throw UMAException("Coming request is missing necessary fields", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+			throw UMAInvalidArgsException("Coming request is missing necessary fields");
 		}
 		return false;
 	}
@@ -76,7 +75,7 @@ Output: whether the field exist
 bool RestUtil::check_field(const map<string_t, string_t> &query, const string_t &s, bool hard_check) {
 	if (query.find(s) == query.end()) {
 		if (hard_check) {
-			throw UMAException("Coming request is missing necessary fields", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+			throw UMAInvalidArgsException("Coming request is missing necessary fields");
 		}
 		return false;
 	}

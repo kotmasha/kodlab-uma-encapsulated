@@ -12,7 +12,7 @@ Experiment::Experiment(const string &uuid) : UMACoreObject(uuid, UMA_OBJECT::EXP
 
 Agent *Experiment::createAgent(const string &agentId, UMA_AGENT type) {
 	if (_agents.find(agentId) != _agents.end()) {
-		throw UMAException("Cannot create a duplicate agent, agentId=" + agentId, &experimentLogger);
+		throw UMADuplicationException("Cannot create a duplicate agent, agentId=" + agentId, false, &experimentLogger);
 	}
 	switch (type) {
 	case UMA_AGENT::AGENT_STATIONARY:
@@ -30,12 +30,12 @@ Agent *Experiment::getAgent(const string &agentId) {
 	if (_agents.find(agentId) != _agents.end()) {
 		return _agents[agentId];
 	}
-	throw UMANoResourceException("Cannot find object, agentId=" + agentId, &experimentLogger);
+	throw UMANoResourceException("Cannot find object, agentId=" + agentId, false, &experimentLogger);
 }
 
 void Experiment::deleteAgent(const string &agentId) {
 	if (_agents.find(agentId) == _agents.end()) {
-		throw UMAException("Cannot find object, agentId=" + agentId, &experimentLogger);
+		throw UMANoResourceException("Cannot find object, agentId=" + agentId, false, &experimentLogger);
 	}
 	delete _agents[agentId];
 	_agents[agentId] = nullptr;
@@ -65,6 +65,6 @@ Experiment::~Experiment() {
 		experimentLogger.info("Experiment is deleted, experimentId=" + _uuid);
 	}
 	catch (exception &ex) {
-		throw UMAInternalException("Fatal error deleting experiment, experimentId=" + _uuid, &experimentLogger);
+		throw UMAInternalException("Fatal error deleting experiment, experimentId=" + _uuid, true, &experimentLogger);
 	}
 }

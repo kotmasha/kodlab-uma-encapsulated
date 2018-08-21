@@ -12,7 +12,7 @@ This is the base class of all UMACore objects, the class itself cannot be instan
 class UMACoreObject {
 protected:
 	// the unique id of the object
-	const string &_uuid;
+	const string _uuid;
 	// the UMA Object type
 	const int _objType;
 	// the parent of the current object

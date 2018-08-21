@@ -42,7 +42,7 @@ string UMARestRequest::get_string_data(const string &name) {
 		return RestUtil::string_t_to_string(value);
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 	//convent from string_t to string
 }
@@ -57,7 +57,7 @@ string UMARestRequest::get_string_query(const string &name) {
 		return RestUtil::string_t_to_string(value);
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 	//convent from string_t to string
 }
@@ -71,7 +71,7 @@ int UMARestRequest::get_int_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " +name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -83,7 +83,7 @@ int UMARestRequest::get_int_query(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -95,7 +95,7 @@ double UMARestRequest::get_double_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -107,7 +107,7 @@ double UMARestRequest::get_double_query(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -119,7 +119,7 @@ bool UMARestRequest::get_bool_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -131,7 +131,7 @@ bool UMARestRequest::get_bool_query(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -147,7 +147,7 @@ vector<int> UMARestRequest::get_int1d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -163,7 +163,7 @@ vector<bool> UMARestRequest::get_bool1d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -179,7 +179,7 @@ vector<double> UMARestRequest::get_double1d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -196,7 +196,7 @@ vector<string> UMARestRequest::get_string1d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -217,7 +217,7 @@ vector<vector<int> > UMARestRequest::get_int2d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -238,7 +238,7 @@ vector<vector<bool> > UMARestRequest::get_bool2d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -259,7 +259,7 @@ vector<vector<double> > UMARestRequest::get_double2d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
@@ -280,7 +280,7 @@ vector<vector<string> > UMARestRequest::get_string2d_data(const string &name) {
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 

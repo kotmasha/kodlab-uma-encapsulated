@@ -7,6 +7,7 @@
 #include "Simulation.h"
 #include "UMAException.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
 SimulationHandler::SimulationHandler(const string &handler_name): UMARestHandler(handler_name) {
 }
 
@@ -49,19 +50,19 @@ void SimulationHandler::handleCreate(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle POST " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + request.get_request_url(), false, &serverLogger);
 }
 
 void SimulationHandler::handleUpdate(UMARestRequest &request) {
-	throw UMAException("Cannot handle PUT " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + request.get_request_url(), false, &serverLogger);
 }
 
 void SimulationHandler::handleRead(UMARestRequest &request) {
-	throw UMAException("Cannot handle GET " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + request.get_request_url(), false, &serverLogger);
 }
 
 void SimulationHandler::handleDelete(UMARestRequest &request) {
-	throw UMAException("Cannot handle DELETE " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + request.get_request_url(), false, &serverLogger);
 }
 
 void SimulationHandler::createDecision(UMARestRequest &request) {

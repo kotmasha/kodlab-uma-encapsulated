@@ -33,8 +33,6 @@ protected:
 	double _q;
 	//the initial sensor size, initial sensor is the basic sensor without amper/delay, the value is initiated
 	int _initialSize;
-	//the snapshot id, not changable
-	const string _uuid;
 	//the sensor pointer vector
 	vector<Sensor*> _sensors;
 	//the sensor pair pointer vector
@@ -66,7 +64,7 @@ protected:
 
 public:
 	//Snapshot(ifstream &file, string &log_dir);
-	Snapshot(const string &uuid, UMACoreObject *parent, const UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
+	Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
 	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void deleteSensor(const string &sensorId);
 	vector<vector<string> > getSensorInfo() const;

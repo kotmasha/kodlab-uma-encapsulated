@@ -7,6 +7,7 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
 SensorHandler::SensorHandler(const string &handler_name) :UMARestHandler(handler_name) {
 }
 
@@ -17,12 +18,12 @@ void SensorHandler::handleCreate(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void SensorHandler::handleUpdate(UMARestRequest &request) {
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + requestUrl, false, &serverLogger);
 }
 
 void SensorHandler::handleRead(UMARestRequest &request) {
@@ -36,7 +37,7 @@ void SensorHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + requestUrl, false, &serverLogger);
 }
 
 void SensorHandler::handleDelete(UMARestRequest &request) {
@@ -46,7 +47,7 @@ void SensorHandler::handleDelete(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + requestUrl, false, &serverLogger);
 }
 
 void SensorHandler::getSensor(UMARestRequest &request) {

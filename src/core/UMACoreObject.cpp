@@ -5,5 +5,6 @@ UMACoreObject::UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT obj
 }
 
 
-
-UMACoreObject::~UMACoreObject() {}
+UMACoreObject::~UMACoreObject() {
+	_parent = nullptr;
+}

@@ -4,6 +4,8 @@
 #include "Agent.h"
 #include "UMAException.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
+
 AgentHandler::AgentHandler(const string &handler_name): UMARestHandler(handler_name) {}
 
 void AgentHandler::handleCreate(UMARestRequest &request) {
@@ -13,12 +15,12 @@ void AgentHandler::handleCreate(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void AgentHandler::handleUpdate(UMARestRequest &request) {
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle PUT " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + requestUrl, false, &serverLogger);
 }
 
 void AgentHandler::handleRead(UMARestRequest &request) {
@@ -28,7 +30,7 @@ void AgentHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + requestUrl, false, &serverLogger);
 }
 
 void AgentHandler::handleDelete(UMARestRequest &request) {
@@ -38,16 +40,16 @@ void AgentHandler::handleDelete(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle DELETE" + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE" + requestUrl, false, &serverLogger);
 }
 
 void AgentHandler::createAgent(UMARestRequest &request) {
 	const string experimentId = request.get_string_data("experiment_id");
 	const string agentId = request.get_string_data("agent_id");
 	const string agentType = request.get_string_data("type");
-	int type = 0;
-	if (agentType == "default") type = AGENT_TYPE::STATIONARY;
-	else type = AGENT_TYPE::QUALITATIVE;
+	UMA_AGENT type;
+	if (agentType == "default") type = UMA_AGENT::AGENT_STATIONARY;
+	else type = UMA_AGENT::AGENT_QUALITATIVE;
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	experiment->createAgent(agentId, type);
 

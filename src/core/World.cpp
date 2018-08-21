@@ -31,7 +31,7 @@ Experiment *World::createExperiment(const string &experimentId) {
 
 Experiment *World::getExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
-		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, &worldLogger);
+		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);
 	}
 
 	return _experiments[experimentId];
@@ -39,7 +39,7 @@ Experiment *World::getExperiment(const string &experimentId) {
 
 void World::deleteExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
-		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, &worldLogger);
+		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);
 	}
 
 	delete _experiments[experimentId];

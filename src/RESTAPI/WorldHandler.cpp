@@ -3,14 +3,15 @@
 #include "Agent.h"
 #include "UMAException.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
 WorldHandler::WorldHandler(const string &handler_name): UMARestHandler(handler_name) {}
 
 void WorldHandler::handleCreate(UMARestRequest &request) {
-	throw UMAException("Cannot handle POST " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + request.get_request_url(), false, &serverLogger);
 }
 
 void WorldHandler::handleUpdate(UMARestRequest &request) {
-	throw UMAException("Cannot handle PUT " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle PUT " + request.get_request_url(), false, &serverLogger);
 }
 
 void WorldHandler::handleRead(UMARestRequest &request) {
@@ -20,11 +21,11 @@ void WorldHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("Cannot handle GET " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle GET " + requestUrl, false, &serverLogger);
 }
 
 void WorldHandler::handleDelete(UMARestRequest &request) {
-	throw UMAException("Cannot handle DELETE " + request.get_request_url(), UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + request.get_request_url(), false, &serverLogger);
 }
 
 void WorldHandler::getWorld(UMARestRequest &request) {

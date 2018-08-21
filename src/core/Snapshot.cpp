@@ -18,11 +18,10 @@ extern bool qless(double d1, double d2);
 //extern std::map<string, std::map<string, string>> server_cfg;
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
-Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, const UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
+Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
 	_total = stod(World::coreInfo["Snapshot"]["total"]);
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total));
-
 	_delayCount = 0;
 	
 	_q = stod(World::coreInfo["Snapshot"]["q"]);

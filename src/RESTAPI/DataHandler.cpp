@@ -6,12 +6,13 @@
 #include "DataManager.h"
 #include "UMAException.h"
 
+static Logger serverLogger("Server", "log/UMA_server.log");
 DataHandler::DataHandler(const string &handler_name): UMARestHandler(handler_name) {
 }
 
 void DataHandler::handleCreate(UMARestRequest &request) {
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle POST " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void DataHandler::handleUpdate(UMARestRequest &request) {
@@ -48,7 +49,7 @@ void DataHandler::handleUpdate(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("The coming put request has nothing to update", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("The coming put request has nothing to update", false, &serverLogger);
 }
 
 void DataHandler::handleRead(UMARestRequest &request) {
@@ -113,12 +114,12 @@ void DataHandler::handleRead(UMARestRequest &request) {
 		return;
 	}
 
-	throw UMAException("The coming put request has nothing to get", UMAException::ERROR_LEVEL::WARN, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("The coming put request has nothing to get", false, &serverLogger);
 }
 
 void DataHandler::handleDelete(UMARestRequest &request) {
 	const string requestUrl = request.get_request_url();
-	throw UMAException("Cannot handle DELETE " + requestUrl, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+	throw UMABadOperationException("Cannot handle DELETE " + requestUrl, false, &serverLogger);
 }
 
 DataHandler::~DataHandler() {}

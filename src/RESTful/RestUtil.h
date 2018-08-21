@@ -3,14 +3,15 @@
 
 #include "Global.h"
 #include "UMARest.h"
+#include "UMAException.h"
 
-enum REQUEST_TYPE {GET, POST, PUT, DELETE};
+enum REQUEST_TYPE {GET, POST, PUT, DEL};
 
 namespace RestUtil {
 	DLL_PUBLIC string_t string_to_string_t(const string &s);
 	DLL_PUBLIC string string_t_to_string(const string_t &s);
 	DLL_PUBLIC bool string_t_to_bool(const string_t &s);
-	DLL_PUBLIC status_code error_type_to_status_code(const int error_type);
+	DLL_PUBLIC status_code UMAExceptionToStatusCode(UMAException *ex);
 	DLL_PUBLIC string status_code_to_string(const status_code s);
 
 	DLL_PUBLIC bool check_field(const json::value &data, const string_t &s, bool hard_check=true);
