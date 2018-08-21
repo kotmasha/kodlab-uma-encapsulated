@@ -163,7 +163,7 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 
 	snapshot->updateTotal(phi, active);
 	
-	if (UMA_AGENT::AGENT_STATIONARY == snapshot->getType())
+	if (UMA_SNAPSHOT::SNAPSHOT_STATIONARY == snapshot->getType())
 		simulation::updateState(dm, q, phi, total, total_, active);
 	else
 		simulation::updateStateQualitative(dm, q, phi, total, total_, active);

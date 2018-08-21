@@ -86,7 +86,7 @@ Sensor *Snapshot::createSensor(const std::pair<string, string> &id_pair, const v
 	//creating sensor pairs
 	for (int i = 0; i < _sensors.size(); ++i) {
 		SensorPair *sensor_pair = NULL;
-		if (UMA_AGENT::AGENT_QUALITATIVE == _type) {
+		if (UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE == _type) {
 			sensor_pair = new SensorPair(sensor, _sensors[i], _threshold);
 		}
 		else {
