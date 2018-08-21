@@ -9,7 +9,8 @@
 Logger::Logger(const string component, const string output) : _component(component) {
 	//level is changable in runtime
 	static std::map < string, std::map<string, string>> _logLevel = ConfReader::readConf("log.ini");
-	SysUtil::UMAMkdir(string("log"));
+	string logFolder = "log";
+	SysUtil::UMAMkdir(logFolder);
 
 	try {
 		_level = StrUtil::stringToLogLevel(_logLevel[component]["level"]);
