@@ -3,26 +3,27 @@
 
 #include "Global.h"
 #include "UMARest.h"
+#include "UMAException.h"
 
-enum REQUEST_TYPE {GET, POST, PUT, DELETE};
+enum REQUEST_TYPE {GET, POST, PUT, DEL};
 
 namespace RestUtil {
-	DLL_PUBLIC string_t string_to_string_t(const string &s);
-	DLL_PUBLIC string string_t_to_string(const string_t &s);
-	DLL_PUBLIC bool string_t_to_bool(const string_t &s);
-	DLL_PUBLIC status_code error_type_to_status_code(const int error_type);
-	DLL_PUBLIC string status_code_to_string(const status_code s);
+	DLL_PUBLIC string_t string2string_t(const string &s);
+	DLL_PUBLIC string string_t2string(const string_t &s);
+	DLL_PUBLIC bool string_t2bool(const string_t &s);
+	DLL_PUBLIC status_code UMAExceptionToStatusCode(UMAException *ex);
+	DLL_PUBLIC string status_code2string(const status_code s);
 
-	DLL_PUBLIC bool check_field(const json::value &data, const string_t &s, bool hard_check=true);
-	DLL_PUBLIC bool check_field(const map<string_t, string_t> &query, const string_t &s, bool hard_check=true);
-	DLL_PUBLIC json::value vector_int_to_json(const std::vector<int> &list);
-	DLL_PUBLIC json::value vector_double_to_json(const std::vector<double> &list);
-	DLL_PUBLIC json::value vector_bool_to_json(const std::vector<bool> &list);
-	DLL_PUBLIC json::value vector_string_to_json(const std::vector<string> &list);
-	DLL_PUBLIC json::value vector_bool2d_to_json(const std::vector<vector<bool> > &lists);
-	DLL_PUBLIC json::value vector_int2d_to_json(const std::vector<vector<int> > &lists);
-	DLL_PUBLIC json::value vector_double2d_to_json(const std::vector<vector<double> > &lists);
-	DLL_PUBLIC json::value vector_string2d_to_json(const std::vector<vector<string> > &lists);
+	DLL_PUBLIC bool checkField(const json::value &data, const string_t &s, bool hardCheck=true);
+	DLL_PUBLIC bool checkField(const map<string_t, string_t> &query, const string_t &s, bool hardCheck=true);
+	DLL_PUBLIC json::value vectorInt2Json(const std::vector<int> &list);
+	DLL_PUBLIC json::value vectorDouble2Json(const std::vector<double> &list);
+	DLL_PUBLIC json::value vectorBool2Json(const std::vector<bool> &list);
+	DLL_PUBLIC json::value vectorString2Json(const std::vector<string> &list);
+	DLL_PUBLIC json::value vectorBool2d2Json(const std::vector<vector<bool> > &lists);
+	DLL_PUBLIC json::value vectorInt2d2Json(const std::vector<vector<int> > &lists);
+	DLL_PUBLIC json::value vectorDouble2d2Json(const std::vector<vector<double> > &lists);
+	DLL_PUBLIC json::value vectorString2d2Json(const std::vector<vector<string> > &lists);
 }
 
 #endif

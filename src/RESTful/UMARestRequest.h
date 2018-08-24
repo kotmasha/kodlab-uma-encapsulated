@@ -24,51 +24,51 @@ public:
 	UMARestRequest(const web::uri &u, const http::method m);
 	~UMARestRequest();
 
-	string get_string_data(const string &name);
-	string get_string_query(const string &name);
-	int get_int_data(const string &name);
-	int get_int_query(const string &name);
-	double get_double_data(const string &name);
-	double get_double_query(const string &name);
-	bool get_bool_data(const string &name);
-	bool get_bool_query(const string &name);
-	vector<int> get_int1d_data(const string &name);
-	vector<bool> get_bool1d_data(const string &name);
-	vector<double> get_double1d_data(const string &name);
-	vector<string> get_string1d_data(const string &name);
-	vector<vector<int> > get_int2d_data(const string &name);
-	vector<vector<bool> > get_bool2d_data(const string &name);
-	vector<vector<double> > get_double2d_data(const string &name);
-	vector<vector<string> > get_string2d_data(const string &name);
+	string getStringData(const string &name);
+	string getStringQuery(const string &name);
+	int getIntData(const string &name);
+	int getIntQuery(const string &name);
+	double getDoubleData(const string &name);
+	double getDoubleQuery(const string &name);
+	bool getBoolData(const string &name);
+	bool getBoolQuery(const string &name);
+	vector<int> getInt1dData(const string &name);
+	vector<bool> getBool1dData(const string &name);
+	vector<double> getDouble1dData(const string &name);
+	vector<string> getString1dData(const string &name);
+	vector<vector<int> > getInt2dData(const string &name);
+	vector<vector<bool> > getBool2dData(const string &name);
+	vector<vector<double> > getDouble2dData(const string &name);
+	vector<vector<string> > getString2dData(const string &name);
 
-	const string get_request_url() const;
-	const string get_absolute_url() const;
-	void set_message(const string message);
+	const string getRequestUrl() const;
+	const string getAbsoluteUrl() const;
+	void setMessage(const string message);
 
-	void set_data(const string &name, int value);
-	void set_data(const string &name, double value);
-	void set_data(const string &name, bool value);
-	void set_data(const string &name, string value);
-	void set_data(const string &name, const std::vector<int> &list);
-	void set_data(const string &name, const std::vector<double> &list);
-	void set_data(const string &name, const std::vector<bool> &list);
-	void set_data(const string &name, const std::vector<string> &list);
-	void set_data(const string &name, const std::vector<vector<int>> &lists);
-	void set_data(const string &name, const std::vector<vector<double>> &lists);
-	void set_data(const string &name, const std::vector<vector<bool>> &lists);
-	void set_data(const string &name, const std::vector<vector<string>> &lists);
-	void set_data(const string &name, const std::map<string, string> &map);
-	void set_data(const string &name, const std::map<string, int> &map);
-	void set_data(const string &name, const std::map<string, double> &map);
-	void set_data(const string &name, const std::map<string, bool> &map);
+	void setData(const string &name, int value);
+	void setData(const string &name, double value);
+	void setData(const string &name, bool value);
+	void setData(const string &name, string value);
+	void setData(const string &name, const std::vector<int> &list);
+	void setData(const string &name, const std::vector<double> &list);
+	void setData(const string &name, const std::vector<bool> &list);
+	void setData(const string &name, const std::vector<string> &list);
+	void setData(const string &name, const std::vector<vector<int>> &lists);
+	void setData(const string &name, const std::vector<vector<double>> &lists);
+	void setData(const string &name, const std::vector<vector<bool>> &lists);
+	void setData(const string &name, const std::vector<vector<string>> &lists);
+	void setData(const string &name, const std::map<string, string> &map);
+	void setData(const string &name, const std::map<string, int> &map);
+	void setData(const string &name, const std::map<string, double> &map);
+	void setData(const string &name, const std::map<string, bool> &map);
 
-	bool check_data_field(const string &name);
-	bool check_query_field(const string &name);
+	bool checkDataField(const string &name);
+	bool checkQueryField(const string &name);
 
 	void reply();
 
 private:
-	void set_status_code(const status_code code);
+	void setStatusCode(const status_code code);
 };
 
 #endif

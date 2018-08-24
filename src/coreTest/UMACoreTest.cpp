@@ -11,6 +11,7 @@
 #include "SensorPair.h"
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
+#include "UMACoreConstant.h"
 
 TEST(world_test, world_experiment_test) {
 	Experiment *ex1 = World::instance()->createExperiment("ex1");
@@ -37,22 +38,22 @@ TEST(world_test, world_experiment_test) {
 
 TEST(experiment_test, experiment_agent_test) {
 	Experiment *experiment = World::instance()->createExperiment("testExperiment");
-	experiment->createAgent("testAgent1");
-	experiment->createAgent("testAgent2");
-	experiment->createAgent("testAgent3");
-	experiment->createAgent("testAgent4");
+	experiment->createAgent("testAgent1", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent2", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent3", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent4", UMA_AGENT::AGENT_STATIONARY);
 
 	EXPECT_NO_THROW(experiment->getAgent("testAgent1"));
 	EXPECT_THROW(experiment->getAgent("testAgent0"), UMAException);
-	vector<vector<string>> s = { { "testAgent1", "default" },{ "testAgent2", "default" },{ "testAgent3", "default" },{ "testAgent4", "default" } };
+	vector<vector<string>> s = { { "testAgent1", "Stationary" },{ "testAgent2", "Stationary" },{ "testAgent3", "Stationary" },{ "testAgent4", "Stationary" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
 	experiment->deleteAgent("testAgent1");
-	s = { { "testAgent2", "default" },{ "testAgent3", "default" },{ "testAgent4", "default" } };
+	s = { { "testAgent2", "Stationary" },{ "testAgent3", "Stationary" },{ "testAgent4", "Stationary" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
 	experiment->deleteAgent("testAgent3");
-	s = { { "testAgent2", "default" },{ "testAgent4", "default" } };
+	s = { { "testAgent2", "Stationary" },{ "testAgent4", "Stationary" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
 	EXPECT_THROW(experiment->getAgent("testAgent3"), UMAException);
@@ -63,7 +64,7 @@ TEST(experiment_test, experiment_agent_test) {
 }
 
 TEST(agent_test, agent_snapshot_test) {
-	Agent *agent = new Agent("agent", "");
+	Agent *agent = new Agent("agent", nullptr);
 
 	agent->createSnapshot("snapshot1");
 	agent->createSnapshot("snapshot2");
@@ -72,15 +73,15 @@ TEST(agent_test, agent_snapshot_test) {
 
 	EXPECT_NO_THROW(agent->getSnapshot("snapshot2"));
 	EXPECT_THROW(agent->getSnapshot("snapshot0"), UMAException);
-	vector<vector<string>> s = { { "snapshot1", "default" },{ "snapshot2", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
+	vector<vector<string>> s = { { "snapshot1", "Stationary" },{ "snapshot2", "Stationary" },{ "snapshot3", "Stationary" },{ "snapshot4", "Stationary" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	agent->deleteSnapshot("snapshot2");
-	s = { { "snapshot1", "default" },{ "snapshot3", "default" },{ "snapshot4", "default" } };
+	s = { { "snapshot1", "Stationary" },{ "snapshot3", "Stationary" },{ "snapshot4", "Stationary" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	agent->deleteSnapshot("snapshot4");
-	s = { { "snapshot1", "default" },{ "snapshot3", "default" } };
+	s = { { "snapshot1", "Stationary" },{ "snapshot3", "Stationary" } };
 	EXPECT_EQ(agent->getSnapshotInfo(), s);
 
 	EXPECT_THROW(agent->getSnapshot("snapshot2"), UMAException);
@@ -90,7 +91,7 @@ TEST(agent_test, agent_snapshot_test) {
 }
 
 TEST(agent_test, get_set_test) {
-	Agent *agent = new Agent("agent", "");
+	Agent *agent = new Agent("agent", nullptr);
 
 	EXPECT_EQ(agent->getT(), 0);
 	agent->setT(100);
@@ -112,7 +113,7 @@ TEST(agent_test, get_set_test) {
 }
 
 TEST(agent_test, do_pruning_test) {
-	Agent *agent = new Agent("agent", "");
+	Agent *agent = new Agent("agent", nullptr);
 
 	agent->setPruningInterval(3);
 
@@ -129,7 +130,7 @@ TEST(agent_test, do_pruning_test) {
 }
 
 TEST(snapshot_test, snapshot_create_sensor_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -171,7 +172,7 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 }
 
 TEST(snapshot_test, snapshot_create_sensor_pair_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -235,7 +236,7 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 }
 
 TEST(snapshot_test, snapshot_get_set_attribute_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 	
 	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.125);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
@@ -270,7 +271,7 @@ TEST(snapshot_test, snapshot_get_set_attribute_test) {
 }
 
 TEST(snapshot_qualitative_test, updateTotal) {
-	Snapshot *snapshot = new SnapshotQualitative("snapshot", "");
+	Snapshot *snapshot = new SnapshotQualitative("snapshot", nullptr);
 
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
@@ -297,7 +298,7 @@ TEST(snapshot_qualitative_test, updateTotal) {
 }
 
 TEST(snapshot_test, snapshot_get_entity) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 	
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -328,7 +329,7 @@ TEST(snapshot_test, snapshot_get_entity) {
 }
 
 TEST(snapshot_test, generateDelayedObservations) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -367,7 +368,7 @@ TEST(snapshot_test, generateDelayedObservations) {
 }
 
 TEST(snapshot_test, generateSignal) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -510,7 +511,7 @@ TEST_F(AmperTestFixture, amper_test) {
 }
 
 TEST(dataManager_test, get_set_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -723,7 +724,7 @@ TEST(sensor_test, set_amper_list) {
 }
 
 TEST(sensor_test, generateDelayedSensor) {
-	Snapshot *snapshot = new Snapshot("snapshot", "");
+	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
 	std::pair<string, string> p0 = { "s0", "cs0" };

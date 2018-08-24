@@ -2,6 +2,7 @@
 #define _SNAPSHOT_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 using namespace std;
 
 class AttrSensor;
@@ -20,7 +21,7 @@ Snapshot is a base class, based on needs, virtual function can have different im
 The majority of GPU operation start on the Snapshot object, but this object SHOULD NOT be accessed directly by python code directly
 All means of operation on Snapshot should go through Agent class
 */
-class DLL_PUBLIC Snapshot{
+class DLL_PUBLIC Snapshot: public UMACoreObject{
 public:
 	//the total sum(a square block sum, wij+wi_j+w_ij+w_i_j), and the value in last iteration
 	double _total, _total_;
@@ -32,8 +33,6 @@ protected:
 	double _q;
 	//the initial sensor size, initial sensor is the basic sensor without amper/delay, the value is initiated
 	int _initialSize;
-	//the snapshot id, not changable
-	const string _uuid;
 	//the sensor pointer vector
 	vector<Sensor*> _sensors;
 	//the sensor pair pointer vector
@@ -50,12 +49,10 @@ protected:
 	bool _propagateMask;
 	//the dataManager of the snapshot
 	DataManager *_dm;
-	//the snapshot's dependency chain
-	const string _dependency;
 	//the delay hash
 	hash<vector<bool>> delayHash;
 	//snapshot type
-	const int _type;
+	UMA_SNAPSHOT _type;
 	//delay count
 	int _delayCount;
 	friend class Agent;
@@ -67,7 +64,7 @@ protected:
 
 public:
 	//Snapshot(ifstream &file, string &log_dir);
-	Snapshot(const string &uuid, const string &dependency, const int type = AGENT_TYPE::STATIONARY);
+	Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
 	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void deleteSensor(const string &sensorId);
 	vector<vector<string> > getSensorInfo() const;
@@ -104,7 +101,7 @@ public:
 	const bool &getAutoTarget() const;
 	const bool &getPropagateMask() const;
 	const int &getInitialSize() const;
-	const int &getType() const;
+	const UMA_SNAPSHOT &getType() const;
 	const int getDealyCount();
 	/*
 	---------------------GET FUNCTION----------------------
@@ -147,7 +144,7 @@ Qualitative Snapshot
 */
 class DLL_PUBLIC SnapshotQualitative : public Snapshot {
 public:
-	SnapshotQualitative(string uuid, string dependency);
+	SnapshotQualitative(const string &uuid, UMACoreObject *parent);
 	virtual ~SnapshotQualitative();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);

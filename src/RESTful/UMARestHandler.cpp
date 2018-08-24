@@ -6,12 +6,12 @@
 static Logger accessLogger("Access", "log/UMAC_access.log");
 static Logger serverLogger("Server", "log/UMA_server.log");
 
-UMARestHandler::UMARestHandler(const string &handler_name) : _handler_name(handler_name) {
+UMARestHandler::UMARestHandler(const string &handlerName) : _handlerName(handlerName) {
 
 }
 
 const string &UMARestHandler::getHandlerName() const {
-	return _handler_name;
+	return _handlerName;
 }
 
 UMARestHandler::~UMARestHandler() {}

@@ -6,7 +6,7 @@
 
 class SensorHandler : public UMARestHandler {
 public:
-	SensorHandler(const string &handler_name);
+	SensorHandler(const string &handlerName);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);

@@ -17,7 +17,7 @@ public:
 	UMARestClient(const string &uri);
 	~UMARestClient();
 
-	void send_request(UMARestRequest &request);
+	void sendRequest(UMARestRequest &request);
 };
 
 #endif

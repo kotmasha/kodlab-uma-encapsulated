@@ -10,26 +10,26 @@ class DLL_PUBLIC UMARestListener
 {
 private:
 	http_listener _listener;
-	std::map<string, UMARestHandler*> _registered_handlers;
+	std::map<string, UMARestHandler*> _registeredHandlers;
 
 public:
 	UMARestListener(const string &url);
 	~UMARestListener();
 
-	void register_handler(UMARestHandler *handler);
-	void add_path_to_handler(const string &path, const string &handler_name);
+	void registerHandler(UMARestHandler *handler);
+	void addPathToHandler(const string &path, const string &handlerName);
 	void listen();
 
 protected:
-	std::map<string, UMARestHandler*> _path_to_handler;
+	std::map<string, UMARestHandler*> _pathToHandler;
 
 private:
-	void handle_get(http_request request);
-	void handle_put(http_request request);
-	void handle_post(http_request request);
-	void handle_delete(http_request request);
-	void handle(http_request &request, string request_type);
-	UMARestHandler *find_handler(const string &path);
+	void handleGet(http_request request);
+	void handlePut(http_request request);
+	void handlePost(http_request request);
+	void handleDelete(http_request request);
+	void handle(http_request &request, string requestType);
+	UMARestHandler *findHandler(const string &path);
 };
 
 #endif

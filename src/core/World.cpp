@@ -17,37 +17,35 @@ World *World::instance() {
 	return _world;
 }
 
+World::World(): UMACoreObject("World", UMA_OBJECT::WORLD, nullptr) {}
+
 Experiment *World::createExperiment(const string &experimentId) {
 	if (_experiments.end() != _experiments.find(experimentId)) {
-		worldLogger.error("The experiment=" + experimentId + " already exist!");
-		throw UMAException("The experiment=" + experimentId + " already exist!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+		throw UMADuplicationException("Object already exist, experimentId=" + experimentId, false, &worldLogger);
 	}
 
-	_experiments[experimentId] = new Experiment(experimentId, "world");
+	_experiments[experimentId] = new Experiment(experimentId);
 	worldLogger.info("A new experiment=" + experimentId + " is created!");
 	return _experiments[experimentId];
 }
 
 Experiment *World::getExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
-		worldLogger.error("Cannot find experiment=" + experimentId);
-		throw UMAException("Cannot find experiment=" + experimentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);
 	}
 
-	worldLogger.verbose("Experiment=" + experimentId + " is accessed");
 	return _experiments[experimentId];
 }
 
 void World::deleteExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
-		worldLogger.error("Cannot find experiment=" + experimentId);
-		throw UMAException("Cannot find experiment=" + experimentId, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);
 	}
 
 	delete _experiments[experimentId];
 	_experiments[experimentId] = nullptr;
 	_experiments.erase(experimentId);
-	worldLogger.info("Experiment=" + experimentId + " is deleted");
+	worldLogger.info("Experiment is deleted, experimentId=" + experimentId);
 }
 
 vector<string> World::getExperimentInfo() {

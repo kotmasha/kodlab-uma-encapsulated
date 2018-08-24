@@ -228,9 +228,7 @@ void Sensor::copy_data(Sensor *s) {
 
 bool Sensor::generateDelayedSignal() {
 	if (!_observe_) {
-		string s = "the old observe signal is NULL, be sure to init the sensor first!";
-		sensorLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::SERVER);
+		throw UMABadOperationException("the old observe signal is NULL, be sure to init the sensor first!", false, &sensorLogger);
 	}
 	for (int i = 0; i < _amper.size(); ++i) {
 		int j = _amper[i];

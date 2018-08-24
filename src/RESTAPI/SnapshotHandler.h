@@ -9,7 +9,7 @@ class SnapshotHandler : public UMARestHandler {
 protected:
 
 public:
-	SnapshotHandler(const string &handler_name);
+	SnapshotHandler(const string &handlerName);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);

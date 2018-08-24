@@ -2,21 +2,21 @@
 #define _EXPERIMENT_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 
 class Agent;
 
-class DLL_PUBLIC Experiment {
+class DLL_PUBLIC Experiment: public UMACoreObject{
 public:
-	Experiment(const string &name, const string &dependency="");
+	Experiment(const string &uuid);
 	~Experiment();
-	Agent *createAgent(const string &agentId, int type = AGENT_TYPE::STATIONARY);
+	Agent *createAgent(const string &agentId, UMA_AGENT type);
 	Agent *getAgent(const string &agentId);
 	void deleteAgent(const string &agentId);
 	const vector<vector<string>> getAgentInfo();
 
 protected:
-	const string _name;
-	const string _dependency;
+	//the experiment's agents
 	std::map<string, Agent*> _agents;
 };
 

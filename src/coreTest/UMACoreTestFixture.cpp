@@ -8,7 +8,7 @@ WorldTestFixture::WorldTestFixture() {}
 WorldTestFixture::~WorldTestFixture() {}
 
 AmperAndTestFixture::AmperAndTestFixture(){
-	snapshot = new Snapshot("snapshot", "");
+	snapshot = new Snapshot("snapshot", nullptr);
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -49,7 +49,7 @@ vector<vector<double>> AmperAndTestFixture::test_amper_and(int mid1, int mid2, b
 }
 
 GenerateDelayedWeightsTestFixture::GenerateDelayedWeightsTestFixture() {
-	snapshot = new Snapshot("snapshot", "");
+	snapshot = new Snapshot("snapshot", nullptr);
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -103,7 +103,7 @@ vector<vector<double>> GenerateDelayedWeightsTestFixture::test_generate_delayed_
 }
 
 AmperTestFixture::AmperTestFixture() {
-	snapshot = new Snapshot("snapshot", "");
+	snapshot = new Snapshot("snapshot", nullptr);
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -144,7 +144,7 @@ vector<vector<double>> AmperTestFixture::test_amper(const vector<int> &list, con
 }
 
 UMACoreDataFlowTestFixture::UMACoreDataFlowTestFixture() {
-	dm = new DataManager("");
+	dm = new DataManager(nullptr);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };

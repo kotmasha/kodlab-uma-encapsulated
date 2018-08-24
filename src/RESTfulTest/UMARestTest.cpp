@@ -6,75 +6,75 @@
 #include "UMARestTestFixture.h"
 #include <thread>
 
-TEST(RestUtil_test, string_to_string_t) {
+TEST(RestUtil_test, string2string_t) {
 	string_t x = U("This is a simple test");
-	string_t y = RestUtil::string_to_string_t("This is a simple test");
+	string_t y = RestUtil::string2string_t("This is a simple test");
 	EXPECT_EQ(x, y);
 }
 
-TEST(RestUtil_test, string_t_to_string) {
+TEST(RestUtil_test, string_t2string) {
 	string x = "This is a simple test";
-	string y = RestUtil::string_t_to_string(U("This is a simple test"));
+	string y = RestUtil::string_t2string(U("This is a simple test"));
 	EXPECT_EQ(x, y);
 }
 
-TEST(RestUtil_test, string_t_to_bool) {
+TEST(RestUtil_test, string_t2bool) {
 	string_t t1 = U("True");
 	string_t t2 = U("true");
 	string_t t3 = U("test");
 	string_t t4 = U("1");
 	string_t t5 = U("0");
 
-	EXPECT_EQ(true, RestUtil::string_t_to_bool(t1));
-	EXPECT_EQ(true, RestUtil::string_t_to_bool(t2));
-	EXPECT_EQ(true, RestUtil::string_t_to_bool(t3));
-	EXPECT_EQ(true, RestUtil::string_t_to_bool(t4));
-	EXPECT_EQ(false , RestUtil::string_t_to_bool(t5));
+	EXPECT_EQ(true, RestUtil::string_t2bool(t1));
+	EXPECT_EQ(true, RestUtil::string_t2bool(t2));
+	EXPECT_EQ(true, RestUtil::string_t2bool(t3));
+	EXPECT_EQ(true, RestUtil::string_t2bool(t4));
+	EXPECT_EQ(false , RestUtil::string_t2bool(t5));
 }
 
 TEST(RestUtil_test, error_type_to_status_code) {
 	//No test now
 }
 
-TEST(RestUtil_test, status_code_to_string) {
-	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::Created), "201");
-	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::OK), "200");
-	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::BadRequest), "400");
-	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::NotFound), "404");
-	EXPECT_EQ(RestUtil::status_code_to_string(status_codes::Conflict), "409");
+TEST(RestUtil_test, status_code2string) {
+	EXPECT_EQ(RestUtil::status_code2string(status_codes::Created), "201");
+	EXPECT_EQ(RestUtil::status_code2string(status_codes::OK), "200");
+	EXPECT_EQ(RestUtil::status_code2string(status_codes::BadRequest), "400");
+	EXPECT_EQ(RestUtil::status_code2string(status_codes::NotFound), "404");
+	EXPECT_EQ(RestUtil::status_code2string(status_codes::Conflict), "409");
 }
 
-TEST(RestUtil_test, check_field_data) {
+TEST(RestUtil_test, checkField_data) {
 	json::value d;
 	d[U("a")] = json::value(1);
 	d[U("b")] = json::value("test");
 	string_t A = U("a");
 	string_t B = U("b");
 
-	EXPECT_EQ(RestUtil::check_field(d, U("a"), false), true);
-	EXPECT_EQ(RestUtil::check_field(d, U("b"), false), true);
-	EXPECT_EQ(RestUtil::check_field(d, U("a"), true), true);
-	EXPECT_EQ(RestUtil::check_field(d, U("b"), true), true);
-	EXPECT_EQ(RestUtil::check_field(d, U("c"), false), false);
-	EXPECT_THROW(RestUtil::check_field(d, U("c"), true), UMAException);
+	EXPECT_EQ(RestUtil::checkField(d, U("a"), false), true);
+	EXPECT_EQ(RestUtil::checkField(d, U("b"), false), true);
+	EXPECT_EQ(RestUtil::checkField(d, U("a"), true), true);
+	EXPECT_EQ(RestUtil::checkField(d, U("b"), true), true);
+	EXPECT_EQ(RestUtil::checkField(d, U("c"), false), false);
+	EXPECT_THROW(RestUtil::checkField(d, U("c"), true), UMAException);
 }
 
-TEST(RestUtil_test, check_field_query) {
+TEST(RestUtil_test, checkField_query) {
 	map<string_t, string_t> m;
 	m[U("a")] = U("1");
 	m[U("b")] = U("test");
 	string_t A = U("a");
 	string_t B = U("b");
 
-	EXPECT_EQ(RestUtil::check_field(m, U("a"), false), true);
-	EXPECT_EQ(RestUtil::check_field(m, U("b"), false), true);
-	EXPECT_EQ(RestUtil::check_field(m, U("a"), true), true);
-	EXPECT_EQ(RestUtil::check_field(m, U("b"), true), true);
-	EXPECT_EQ(RestUtil::check_field(m, U("c"), false), false);
-	EXPECT_THROW(RestUtil::check_field(m, U("c"), true), UMAException);
+	EXPECT_EQ(RestUtil::checkField(m, U("a"), false), true);
+	EXPECT_EQ(RestUtil::checkField(m, U("b"), false), true);
+	EXPECT_EQ(RestUtil::checkField(m, U("a"), true), true);
+	EXPECT_EQ(RestUtil::checkField(m, U("b"), true), true);
+	EXPECT_EQ(RestUtil::checkField(m, U("c"), false), false);
+	EXPECT_THROW(RestUtil::checkField(m, U("c"), true), UMAException);
 }
 
-TEST(RestUtil_test, vector_int_to_json) {
+TEST(RestUtil_test, vectorInt2Json) {
 	vector<int> input = { 0, 1, 2, 3, 4, 5 };
 	json::value output = json::value::array();
 	output[0] = json::value::number(0);
@@ -83,10 +83,10 @@ TEST(RestUtil_test, vector_int_to_json) {
 	output[3] = json::value::number(3);
 	output[4] = json::value::number(4);
 	output[5] = json::value::number(5);
-	EXPECT_EQ(output, RestUtil::vector_int_to_json(input));
+	EXPECT_EQ(output, RestUtil::vectorInt2Json(input));
 }
 
-TEST(RestUtil_test, vector_double_to_json) {
+TEST(RestUtil_test, vectorDouble2Json) {
 	vector<double> input = { .0, .1, .2, .3, .4, .5 };
 	json::value output = json::value::array();
 	output[0] = json::value::number(.0);
@@ -95,10 +95,10 @@ TEST(RestUtil_test, vector_double_to_json) {
 	output[3] = json::value::number(.3);
 	output[4] = json::value::number(.4);
 	output[5] = json::value::number(.5);
-	EXPECT_EQ(output, RestUtil::vector_double_to_json(input));
+	EXPECT_EQ(output, RestUtil::vectorDouble2Json(input));
 }
 
-TEST(RestUtil_test, vector_bool_to_json) {
+TEST(RestUtil_test, vectorBool2Json) {
 	vector<bool> input = { 0, 1, 0, 1, 0, 1 };
 	json::value output = json::value::array();
 	//!!!!! DO NOT EVER ASSIGN BASIC TYPE TO json::value, IT WILL PRODUCE UNPREDICTIBLE VALUE, USE json::value::type(basic_type_value) FOR INITIALIZATION
@@ -108,20 +108,20 @@ TEST(RestUtil_test, vector_bool_to_json) {
 	output[3] = json::value::boolean(1);
 	output[4] = json::value::boolean(0);
 	output[5] = json::value::boolean(1);
-	EXPECT_EQ(RestUtil::vector_bool_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorBool2Json(input), output);
 }
 
-TEST(RestUtil_test, vector_string_to_json) {
+TEST(RestUtil_test, vectorString2Json) {
 	vector<string> input = { "This", "is", "a", "test" };
 	json::value output = json::value::array();
 	output[0] = json::value::string(U("This"));
 	output[1] = json::value::string(U("is"));
 	output[2] = json::value::string(U("a"));
 	output[3] = json::value::string(U("test"));
-	EXPECT_EQ(RestUtil::vector_string_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorString2Json(input), output);
 }
 
-TEST(RestUtil_test, vector_bool2d_to_json) {
+TEST(RestUtil_test, vectorBool2d2Json) {
 	vector<vector<bool>> input = { { 0, 1, 0, 1, 0, 1 }, {1, 0, 1, 0}, {0, 1, 0, 1, 0} };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -137,10 +137,10 @@ TEST(RestUtil_test, vector_bool2d_to_json) {
 	output[1] = v2;
 	output[2] = v3;
 
-	EXPECT_EQ(RestUtil::vector_bool2d_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorBool2d2Json(input), output);
 }
 
-TEST(RestUtil_test, vector_string2d_to_json) {
+TEST(RestUtil_test, vectorString2d2Json) {
 	vector<vector<string>> input = { { "This", "is", "a", "test" },{ "This", "is", "test", "for", "UMA" },{ "UMA", "test", "is", "here" } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -157,10 +157,10 @@ TEST(RestUtil_test, vector_string2d_to_json) {
 	output[1] = v2;
 	output[2] = v3;
 
-	EXPECT_EQ(RestUtil::vector_string2d_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorString2d2Json(input), output);
 }
 
-TEST(RestUtil_test, vector_int2d_to_json) {
+TEST(RestUtil_test, vectorInt2d2Json) {
 	vector<vector<int>> input = { { 0, 1, 2, 3, 4, 5 },{ 7, 6, 5, 4 },{ 0, 10, 20, 100, 30 } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -176,10 +176,10 @@ TEST(RestUtil_test, vector_int2d_to_json) {
 	output[1] = v2;
 	output[2] = v3;
 
-	EXPECT_EQ(RestUtil::vector_int2d_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorInt2d2Json(input), output);
 }
 
-TEST(RestUtil_test, vector_double2d_to_json) {
+TEST(RestUtil_test, vectorDouble2d2Json) {
 	vector<vector<double>> input = { { .0, .1, .8, 2.3, 0.4, 3.1 },{ 1.1, 3.0, 11.1, 0.32 },{ 0.34, 10.02, 0.3, 1.1, 0.005 } };
 	json::value output = json::value::array();
 	json::value v1 = json::value::array();
@@ -195,7 +195,7 @@ TEST(RestUtil_test, vector_double2d_to_json) {
 	output[1] = v2;
 	output[2] = v3;
 
-	EXPECT_EQ(RestUtil::vector_double2d_to_json(input), output);
+	EXPECT_EQ(RestUtil::vectorDouble2d2Json(input), output);
 }
 
 
@@ -205,14 +205,14 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("this is"));
 	clientString = "a test";
-	clientData[U("this is")] = json::value::string(RestUtil::string_to_string_t(clientString));
+	clientData[U("this is")] = json::value::string(RestUtil::string2string_t(clientString));
 	testAction("Post");
 	clientData.erase(U("this is"));
 	EXPECT_EQ(serverString, clientString);
 	//2nd
 	clientData[U("p_name")] = json::value::string(U("UMA"));
 	clientString = "is an machine-learning architecture";
-	clientData[U("UMA")] = json::value::string(RestUtil::string_to_string_t(clientString));
+	clientData[U("UMA")] = json::value::string(RestUtil::string2string_t(clientString));
 	testAction("Post");
 	clientData.erase(U("UMA"));
 	EXPECT_EQ(serverString, clientString);
@@ -266,7 +266,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("dists"));
 	clientInt1d = {1, 2, 3, 4, 5, 6, 7};
-	clientData[U("dists")] = RestUtil::vector_int_to_json(clientInt1d);
+	clientData[U("dists")] = RestUtil::vectorInt2Json(clientInt1d);
 	testAction("Post");
 	clientData.erase(U("dists"));
 	EXPECT_EQ(serverInt1d, clientInt1d);
@@ -276,7 +276,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("signals"));
 	clientBool1d = { false, true, false, true, true, false, false, false, true, true };
-	clientData[U("signals")] = RestUtil::vector_bool_to_json(clientBool1d);
+	clientData[U("signals")] = RestUtil::vectorBool2Json(clientBool1d);
 	testAction("Post");
 	clientData.erase(U("signals"));
 	EXPECT_EQ(serverBool1d, clientBool1d);
@@ -286,7 +286,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("s_ids"));
 	clientString1d = { "sensor0", "sensor1", "sensor2", "sensor3", "sensor4", "sensor5"};
-	clientData[U("s_ids")] = RestUtil::vector_string_to_json(clientString1d);
+	clientData[U("s_ids")] = RestUtil::vectorString2Json(clientString1d);
 	testAction("Post");
 	clientData.erase(U("s_ids"));
 	EXPECT_EQ(serverString1d, clientString1d);
@@ -296,7 +296,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("diags"));
 	clientDouble1d = { 0.2, 0.4, 0.1, 0.6, 0.02, 0.09, 0, 1.02, 10.33, 9.46, 1000.0001 };
-	clientData[U("diags")] = RestUtil::vector_double_to_json(clientDouble1d);
+	clientData[U("diags")] = RestUtil::vectorDouble2Json(clientDouble1d);
 	testAction("Post");
 	clientData.erase(U("diags"));
 	EXPECT_EQ(serverDouble1d, clientDouble1d);
@@ -306,7 +306,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("dists"));
 	clientInt2d = { {}, {1, 2, 3}, {100, 200}, {5, 9, 10, 20,}, {8} };
-	clientData[U("dists")] = RestUtil::vector_int2d_to_json(clientInt2d);
+	clientData[U("dists")] = RestUtil::vectorInt2d2Json(clientInt2d);
 	testAction("Post");
 	clientData.erase(U("dists"));
 	EXPECT_EQ(serverInt2d, clientInt2d);
@@ -316,7 +316,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("signals"));
 	clientBool2d = { {true, false, true, false}, {}, {false, false, false}, {true, true, true, true} };
-	clientData[U("signals")] = RestUtil::vector_bool2d_to_json(clientBool2d);
+	clientData[U("signals")] = RestUtil::vectorBool2d2Json(clientBool2d);
 	testAction("Post");
 	clientData.erase(U("signals"));
 	EXPECT_EQ(serverBool2d, clientBool2d);
@@ -326,7 +326,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("sids"));
 	clientString2d = { {},{"sid00", "sid01", "sid02"}, {"sid10"}, {"sid20"}, {"sid30", "sid31", "sid32", "sid33", "sid34"} };
-	clientData[U("sids")] = RestUtil::vector_string2d_to_json(clientString2d);
+	clientData[U("sids")] = RestUtil::vectorString2d2Json(clientString2d);
 	testAction("Post");
 	clientData.erase(U("sids"));
 	EXPECT_EQ(serverString2d, clientString2d);
@@ -336,7 +336,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getData) {
 	//1st
 	clientData[U("p_name")] = json::value::string(U("weights"));
 	clientDouble2d = { {},{ .1, .2, .3 },{ 10.0, 20.0 },{ 5.2, 9.4, 1.0, .20, },{ 80.9 } };
-	clientData[U("weights")] = RestUtil::vector_double2d_to_json(clientDouble2d);
+	clientData[U("weights")] = RestUtil::vectorDouble2d2Json(clientDouble2d);
 	testAction("Post");
 	clientData.erase(U("weights"));
 	EXPECT_EQ(serverDouble2d, clientDouble2d);
@@ -351,7 +351,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getQuery) {
 	clientQuery.append_query<string_t>(U("type"), U("get_string_query"));
 	clientQuery.append_query<string_t>(U("p_name"), U("this is"));
 	clientString = "a test";
-	clientQuery.append_query<string_t>(U("this is"), RestUtil::string_to_string_t(clientString));
+	clientQuery.append_query<string_t>(U("this is"), RestUtil::string2string_t(clientString));
 	testAction("Get");
 	clientQuery.clear();
 	EXPECT_EQ(serverString, clientString);
@@ -359,7 +359,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_getQuery) {
 	clientQuery.append_query<string_t>(U("type"), U("get_string_query"));
 	clientQuery.append_query<string_t>(U("p_name"), U("UMA"));
 	clientString = "is an machine-learning architecture";
-	clientQuery.append_query<string_t>(U("UMA"), RestUtil::string_to_string_t(clientString));
+	clientQuery.append_query<string_t>(U("UMA"), RestUtil::string2string_t(clientString));
 	testAction("Get");
 	clientQuery.clear();
 	EXPECT_EQ(serverString, clientString);
@@ -411,7 +411,7 @@ TEST_F(UMARestTestFixture, UMARestRequest_setMessage) {
 	EXPECT_EQ(serverString, clientString);
 }
 
-TEST_F(UMARestTestFixture, UMARestRequest_set_data) {
+TEST_F(UMARestTestFixture, UMARestRequest_setData) {
 	//int
 	clientData[U("type")] = json::value::string(U("set_data_int"));
 	clientData[U("p_name")] = json::value::string(U("set_data_int"));

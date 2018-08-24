@@ -18,10 +18,9 @@
 
 using namespace std;
 
-enum AGENT_TYPE { STATIONARY, QUALITATIVE };
-
 #if defined(_WIN64)
 	#include<direct.h>
+	#include<Windows.h>
 #else
 	#include <sys/types.h>
 	#include <sys/stat.h>

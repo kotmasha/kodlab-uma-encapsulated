@@ -10,130 +10,132 @@ using namespace std;
 static Logger accessLogger("Access", "log/UMAC_access.log");
 static Logger serverLogger("Server", "log/UMA_server.log");
 
-UMARestListener::UMARestListener(const string &url) : _listener(uri(RestUtil::string_to_string_t(url))) {
+UMARestListener::UMARestListener(const string &url) : _listener(uri(RestUtil::string2string_t(url))) {
 	serverLogger.info("Listening on the url " + url);
-	_listener.support(methods::GET, std::bind(&UMARestListener::handle_get, this, std::placeholders::_1));
+	_listener.support(methods::GET, std::bind(&UMARestListener::handleGet, this, std::placeholders::_1));
 	serverLogger.info("Init Get request success");
 
-	_listener.support(methods::POST, std::bind(&UMARestListener::handle_post, this, std::placeholders::_1));
+	_listener.support(methods::POST, std::bind(&UMARestListener::handlePost, this, std::placeholders::_1));
 	serverLogger.info("Init Post request success");
 
-	_listener.support(methods::PUT, std::bind(&UMARestListener::handle_put, this, std::placeholders::_1));
+	_listener.support(methods::PUT, std::bind(&UMARestListener::handlePut, this, std::placeholders::_1));
 	serverLogger.info("Init Put request success");
 
-	_listener.support(methods::DEL, std::bind(&UMARestListener::handle_delete, this, std::placeholders::_1));
+	_listener.support(methods::DEL, std::bind(&UMARestListener::handleDelete, this, std::placeholders::_1));
 	serverLogger.info("Init Delete request success");
 }
 
 UMARestListener::~UMARestListener() {}
 
-void UMARestListener::register_handler(UMARestHandler *handler) {
-	if (_registered_handlers.find(handler->getHandlerName()) != _registered_handlers.end()) {
+void UMARestListener::registerHandler(UMARestHandler *handler) {
+	if (_registeredHandlers.find(handler->getHandlerName()) != _registeredHandlers.end()) {
 		serverLogger.error("Handler with the name " + handler->getHandlerName() + " already exist!");
 		exit(0);
 	}
-	_registered_handlers[handler->getHandlerName()] = handler;
+	_registeredHandlers[handler->getHandlerName()] = handler;
 	serverLogger.info("Registered handler with the name " + handler->getHandlerName());
 }
 
-void UMARestListener::add_path_to_handler(const string &path, const string &handler_name) {
-	if (_registered_handlers.find(handler_name) == _registered_handlers.end()) {
-		serverLogger.warn("Cannot find the handler by the handler name " + handler_name);
+void UMARestListener::addPathToHandler(const string &path, const string &handlerName) {
+	if (_registeredHandlers.find(handlerName) == _registeredHandlers.end()) {
+		serverLogger.warn("Cannot find the handler by the handler name " + handlerName);
 		return;
 	}
-	_path_to_handler[path] = _registered_handlers[handler_name];
-	serverLogger.info("add mapping from " + path + " to \"" + handler_name + "\"");
+	_pathToHandler[path] = _registeredHandlers[handlerName];
+	serverLogger.info("add mapping from " + path + " to \"" + handlerName + "\"");
 }
 
 void UMARestListener::listen() {
 	_listener.open().then([](pplx::task<void> t) {});
 }
 
-void UMARestListener::handle(http_request &request, string request_type) {
-	UMARestRequest uma_request = UMARestRequest(request);
-	string url_path = uma_request.get_request_url();
-	UMARestHandler *handler = find_handler(url_path);
+void UMARestListener::handle(http_request &request, string requestType) {
+	UMARestRequest umaRequest = UMARestRequest(request);
+	string urlPath = umaRequest.getRequestUrl();
+	UMARestHandler *handler = findHandler(urlPath);
 
 	// if no handlers can be found
 	if (handler == NULL) {
-		accessLogger.error(request_type + " " + uma_request.get_absolute_url() + " 400");
-		uma_request.set_status_code(status_codes::BadRequest);
-		uma_request.set_message("cannot find coresponding handler!");
+		accessLogger.error(requestType + " " + umaRequest.getAbsoluteUrl() + " 400");
+		umaRequest.setStatusCode(status_codes::BadRequest);
+		umaRequest.setMessage("cannot find coresponding handler!");
 
-		uma_request.reply();
+		umaRequest.reply();
 		return;
 	}
 
 	try {
-		if (request_type == "POST") {
-			handler->handleCreate(uma_request);
-			uma_request.set_status_code(status_codes::Created);
-			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::Created));
+		if (requestType == "POST") {
+			handler->handleCreate(umaRequest);
+			umaRequest.setStatusCode(status_codes::Created);
+			accessLogger.info(requestType + " " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(status_codes::Created));
 		}
-		else if (request_type == "PUT") {
-			handler->handleUpdate(uma_request);
-			uma_request.set_status_code(status_codes::OK);
-			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
+		else if (requestType == "PUT") {
+			handler->handleUpdate(umaRequest);
+			umaRequest.setStatusCode(status_codes::OK);
+			accessLogger.info(requestType + " " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(status_codes::OK));
 		}
-		else if (request_type == "GET") {
-			handler->handleRead(uma_request);
-			uma_request.set_status_code(status_codes::OK);
-			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
+		else if (requestType == "GET") {
+			handler->handleRead(umaRequest);
+			umaRequest.setStatusCode(status_codes::OK);
+			accessLogger.info(requestType + " " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(status_codes::OK));
 		}
 		else {
-			handler->handleDelete(uma_request);
-			uma_request.set_status_code(status_codes::OK);
-			accessLogger.info(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(status_codes::OK));
+			handler->handleDelete(umaRequest);
+			umaRequest.setStatusCode(status_codes::OK);
+			accessLogger.info(requestType + " " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(status_codes::OK));
 		}
-		uma_request.reply();
+		umaRequest.reply();
 	}
 	catch (UMAException &e) {
-		const int error_type = e.getErrorType();
-		const status_code code = RestUtil::error_type_to_status_code(error_type);
-		uma_request.set_status_code(code);
-		uma_request.set_message(e.getErrorMessage());
-		serverLogger.error(e.getErrorMessage());
-		accessLogger.error(request_type + " " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(code));
+		const status_code code = RestUtil::UMAExceptionToStatusCode(&e);
+		umaRequest.setStatusCode(code);
+		umaRequest.setMessage(e.getErrorMessage());
+		if (!e.isErrorLogged()) {
+			serverLogger.error(e.getErrorMessage());
+		}
+		accessLogger.error(requestType + " " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(code));
 
-		uma_request.reply();
+		umaRequest.reply();
 
-		if (e.getErrorLevel() == UMAException::ERROR_LEVEL::FATAL) {
+		if (e.isFatal()) {
 			serverLogger.error("Shutting down server due to error: " + e.getErrorMessage());
 			exit(0);
 		}
 	}
 	catch (exception &e) {
 		status_code code = status_codes::InternalError;
-		accessLogger.error("POST " + uma_request.get_absolute_url() + " " + RestUtil::status_code_to_string(code));
-		uma_request.set_status_code(code);
-		uma_request.set_message(string(e.what()));
+		serverLogger.error(e.what());
+		accessLogger.error("POST " + umaRequest.getAbsoluteUrl() + " " + RestUtil::status_code2string(code));
+		umaRequest.setStatusCode(code);
+		umaRequest.setMessage(string(e.what()));
 
-		uma_request.reply();
+		umaRequest.reply();
 
 		serverLogger.error("Shutting down server due to RUNTIME error: " + string(e.what()));
 		exit(0);
 	}
 }
 
-void UMARestListener::handle_get(http_request request) {
+void UMARestListener::handleGet(http_request request) {
 	handle(request, "GET");
 }
 
-void UMARestListener::handle_put(http_request request) {
+void UMARestListener::handlePut(http_request request) {
 	handle(request, "PUT");
 }
 
-void UMARestListener::handle_post(http_request request) {
+void UMARestListener::handlePost(http_request request) {
 	handle(request, "POST");
 }
 
-void UMARestListener::handle_delete(http_request request) {
+void UMARestListener::handleDelete(http_request request) {
 	handle(request, "DELETE");
 }
 
-UMARestHandler *UMARestListener::find_handler(const string &path) {
-	if (_path_to_handler.find(path) == _path_to_handler.end()) {
+UMARestHandler *UMARestListener::findHandler(const string &path) {
+	if (_pathToHandler.find(path) == _pathToHandler.end()) {
 		return NULL;
 	}
-	return _path_to_handler[path];
+	return _pathToHandler[path];
 }
