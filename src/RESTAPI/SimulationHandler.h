@@ -8,7 +8,7 @@ using namespace std;
 
 class SimulationHandler: public UMARestHandler {
 public:
-	SimulationHandler(const string &handler_name);
+	SimulationHandler(const string &handlerName);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);

@@ -11,7 +11,9 @@ This is the UMA utility class, please add all utility functions inside
 
 namespace SysUtil {
 	//mkdir under different platform
-	string UMAMkdir(std::string path);
+	string UMAMkdir(std::string &path);
+	bool UMAFileExist(std::string &path);
+	bool UMAFolderExist(std::string &path);
 }
 
 namespace StrUtil {

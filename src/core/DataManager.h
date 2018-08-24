@@ -2,13 +2,14 @@
 #define _DATAMANAGER_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 
 class Sensor;
 class SensorPair;
 
 using namespace std;
 
-class DLL_PUBLIC DataManager {
+class DLL_PUBLIC DataManager: public UMACoreObject {
 public:
 	enum { WEIGHTS, DIRS, NPDIRS, THRESHOLDS, DISTS, NPDIR_MASK, MASK_AMPER, MASK,
 		CURRENT, OLD_CURRENT, OBSERVE, PREDICTION, TARGET, NEGLIGIBLE,
@@ -104,12 +105,9 @@ protected:
 	int _npdirSizeMax;
 	//memory expansion rate, define how large the memory should grow each time when the old memory is not enough to hold all sensors
 	double _memoryExpansion;
-	//the dataManager's dependency chain
-	const string _dependency;
-	//the cublas handle
 
 public:
-	DataManager(const string &dependency);
+	DataManager(UMACoreObject *parent);
 
 	int *_dvar_i(int name);
 	double *_dvar_d(int name);

@@ -7,7 +7,7 @@
 /*
 input: string path
 */
-string SysUtil::UMAMkdir(string path) {
+string SysUtil::UMAMkdir(string &path) {
 #if defined(_WIN64)
 	_mkdir(path.c_str());
 #else 
@@ -15,6 +15,29 @@ string SysUtil::UMAMkdir(string path) {
 #endif
 	return path;
 }
+
+/*
+input: string path
+*/
+bool SysUtil::UMAFileExist(string &path) {
+	try {
+		ifstream f(path.c_str());
+		bool b = f.good();
+		f.close();
+		return b;
+	}
+	catch (exception &ex) {
+		throw UMAInternalException(ex.what());
+	}
+}
+
+/*
+input: string path
+*/
+bool SysUtil::UMAFolderExist(string &path) {
+	return true;
+}
+
 /*
 ##################SysUtil####################
 */
@@ -40,7 +63,7 @@ vector<std::pair<string, string>> StrUtil::string2dToString1dPair(const vector<v
 	for (int i = 0; i < pairs.size(); ++i) {
 		const vector<string> p = pairs[i];
 		if (p.size() != 2) {
-			throw UMAException("The " + to_string(i) + "th vector is not a size 2 vector, cannot convert to pairs!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+			throw UMAInternalException("The " + to_string(i) + "th vector is not a size 2 vector, cannot convert to pairs!");
 		}
 		results.push_back(pair<string, string>(p[0], p[1]));
 	}

@@ -10,6 +10,12 @@ endif(MSVC)
 
 add_definitions(-DBUILDING_DLL)
 
+set(COREOBJ
+    "UMACoreConstant.cpp"
+    "UMACoreConstant.h"
+    "UMACoreObject.cpp"
+    "UMACoreObject.h"
+)
 set(WORLD
     "World.h"
     "World.cpp"
@@ -51,6 +57,7 @@ file(GLOB_RECURSE SOURCE
     "*.cpp"
 )
 
+source_group("coreObject" FILES ${COREOBJ})
 source_group("world" FILES ${WORLD})
 source_group("expriment" FILES ${EXPERIMENT})
 source_group("agent" FILES ${AGENT})

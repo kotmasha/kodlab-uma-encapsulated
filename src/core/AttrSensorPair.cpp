@@ -54,9 +54,7 @@ This function is copying pointer values to value
 */
 void AttrSensorPair::pointersToValues(){
 	if (!_w || !_d) {
-		string s = "The weights or dirs pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	_vw = *_w;
 	_vd = *_d;
@@ -69,9 +67,7 @@ This function is copying value to pointer value
 */
 void AttrSensorPair::valuesToPointers(){
 	if (!_w || !_d) {
-		string s = "The weights or dirs pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	*_w = _vw;
 	*_d = _vd;
@@ -101,36 +97,28 @@ void AttrSensorPair::copy_data(AttrSensorPair *mp) {
 
 const double &AttrSensorPair::getW() const{
 	if (!_w) {
-		string s = "The weights pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	return *_w;
 }
 
 const bool &AttrSensorPair::getD() const{
 	if (!_d) {
-		string s = "The dirs pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	return *_d;
 }
 
 void AttrSensorPair::setW(const double w) {
 	if (!_w) {
-		string s = "The weights pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	*_w = w;
 }
 
 void AttrSensorPair::setD(const bool d) {
 	if (!_d) {
-		string s = "The dirs pointer is not initiated!";
-		attrSensorPairLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::BAD_OPERATION);
+		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger);
 	}
 	*_d = d;
 }

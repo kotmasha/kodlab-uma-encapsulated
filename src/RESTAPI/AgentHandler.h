@@ -10,7 +10,7 @@ class Agent;
 
 class AgentHandler: public UMARestHandler {
 public:
-	AgentHandler(const string &handler_name);
+	AgentHandler(const string &handlerName);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);

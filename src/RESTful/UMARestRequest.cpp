@@ -19,8 +19,8 @@ UMARestRequest::UMARestRequest(const http_request &request): _request(request) {
 	}).wait();
 
 	//get the query
-	string_t decoded_uri = uri::decode(request.request_uri().query());
-	_query = uri::split_query(decoded_uri);
+	string_t decodedUri = uri::decode(request.request_uri().query());
+	_query = uri::split_query(decodedUri);
 }
 
 UMARestRequest::UMARestRequest(const web::uri &u, const http::method m) {
@@ -34,407 +34,407 @@ UMARestRequest::UMARestRequest(const web::uri &u, const http::method m) {
 UMARestRequest::~UMARestRequest() {}
 
 
-string UMARestRequest::get_string_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+string UMARestRequest::getStringData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
-		string_t value = _data[name_t].as_string();
-		return RestUtil::string_t_to_string(value);
+		string_t value = _data[nameT].as_string();
+		return RestUtil::string_t2string(value);
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 	//convent from string_t to string
 }
 
 
-string UMARestRequest::get_string_query(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_query, name_t);
+string UMARestRequest::getStringQuery(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_query, nameT);
 
 	try {
-		string_t value = web::uri::decode(_query[name_t]);
-		return RestUtil::string_t_to_string(value);
+		string_t value = web::uri::decode(_query[nameT]);
+		return RestUtil::string_t2string(value);
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 	//convent from string_t to string
 }
 
 
-int UMARestRequest::get_int_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+int UMARestRequest::getIntData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
-		int value = _data[name_t].as_integer();
+		int value = _data[nameT].as_integer();
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " +name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-int UMARestRequest::get_int_query(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_query, name_t);
+int UMARestRequest::getIntQuery(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_query, nameT);
 	try {
-		int value = stoi(_query[name_t]);
+		int value = stoi(_query[nameT]);
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-double UMARestRequest::get_double_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+double UMARestRequest::getDoubleData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
-		double value = _data[name_t].as_double();
+		double value = _data[nameT].as_double();
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-double UMARestRequest::get_double_query(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_query, name_t);
+double UMARestRequest::getDoubleQuery(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_query, nameT);
 	try {
-		double value = stod(_query[name_t]);
+		double value = stod(_query[nameT]);
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-bool UMARestRequest::get_bool_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+bool UMARestRequest::getBoolData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
-		bool value = _data[name_t].as_bool();
+		bool value = _data[nameT].as_bool();
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-bool UMARestRequest::get_bool_query(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_query, name_t);
+bool UMARestRequest::getBoolQuery(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_query, nameT);
 	try {
-		bool value = RestUtil::string_t_to_bool(_query[name_t]);
+		bool value = RestUtil::string_t2bool(_query[nameT]);
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<int> UMARestRequest::get_int1d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<int> UMARestRequest::getInt1dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<int> value;
-		json::array &list = _data[name_t].as_array();
+		json::array &list = _data[nameT].as_array();
 		for (int i = 0; i < list.size(); ++i) {
 			value.push_back(list[i].as_integer());
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<bool> UMARestRequest::get_bool1d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<bool> UMARestRequest::getBool1dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<bool> value;
-		json::array &list = _data[name_t].as_array();
+		json::array &list = _data[nameT].as_array();
 		for (int i = 0; i < list.size(); ++i) {
 			value.push_back(list[i].as_bool());
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<double> UMARestRequest::get_double1d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<double> UMARestRequest::getDouble1dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<double> value;
-		json::array &list = _data[name_t].as_array();
+		json::array &list = _data[nameT].as_array();
 		for (int i = 0; i < list.size(); ++i) {
 			value.push_back(list[i].as_double());
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<string> UMARestRequest::get_string1d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<string> UMARestRequest::getString1dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<string> value;
-		json::array &list = _data[name_t].as_array();
+		json::array &list = _data[nameT].as_array();
 		for (int i = 0; i < list.size(); ++i) {
-			string s = RestUtil::string_t_to_string(list[i].as_string());
+			string s = RestUtil::string_t2string(list[i].as_string());
 			value.push_back(s);
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<vector<int> > UMARestRequest::get_int2d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<vector<int> > UMARestRequest::getInt2dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<vector<int> > value;
-		auto &lists = _data[name_t].as_array();
+		auto &lists = _data[nameT].as_array();
 		for (int i = 0; i < lists.size(); ++i) {
 			auto &list = lists[i].as_array();
-			vector<int> tmp_value;
+			vector<int> tmpValue;
 			for (int j = 0; j < list.size(); ++j) {
-				tmp_value.push_back(list[j].as_integer());
+				tmpValue.push_back(list[j].as_integer());
 			}
-			value.push_back(tmp_value);
+			value.push_back(tmpValue);
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<vector<bool> > UMARestRequest::get_bool2d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<vector<bool> > UMARestRequest::getBool2dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<vector<bool> > value;
-		auto &lists = _data[name_t].as_array();
+		auto &lists = _data[nameT].as_array();
 		for (int i = 0; i < lists.size(); ++i) {
 			auto &list = lists[i].as_array();
-			vector<bool> tmp_value;
+			vector<bool> tmpValue;
 			for (int j = 0; j < list.size(); ++j) {
-				tmp_value.push_back(list[j].as_bool());
+				tmpValue.push_back(list[j].as_bool());
 			}
-			value.push_back(tmp_value);
+			value.push_back(tmpValue);
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<vector<double> > UMARestRequest::get_double2d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<vector<double> > UMARestRequest::getDouble2dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<vector<double> > value;
-		auto &lists = _data[name_t].as_array();
+		auto &lists = _data[nameT].as_array();
 		for (int i = 0; i < lists.size(); ++i) {
 			auto &list = lists[i].as_array();
-			vector<double> tmp_value;
+			vector<double> tmpValue;
 			for (int j = 0; j < list.size(); ++j) {
-				tmp_value.push_back(list[j].as_double());
+				tmpValue.push_back(list[j].as_double());
 			}
-			value.push_back(tmp_value);
+			value.push_back(tmpValue);
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-vector<vector<string> > UMARestRequest::get_string2d_data(const string &name) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	RestUtil::check_field(_data, name_t);
+vector<vector<string> > UMARestRequest::getString2dData(const string &name) {
+	string_t nameT = RestUtil::string2string_t(name);
+	RestUtil::checkField(_data, nameT);
 	try {
 		vector<vector<string> > value;
-		auto &lists = _data[name_t].as_array();
+		auto &lists = _data[nameT].as_array();
 		for (int i = 0; i < lists.size(); ++i) {
 			auto &list = lists[i].as_array();
-			vector<string> tmp_value;
+			vector<string> tmpValue;
 			for (int j = 0; j < list.size(); ++j) {
-				tmp_value.push_back(RestUtil::string_t_to_string(list[j].as_string()));
+				tmpValue.push_back(RestUtil::string_t2string(list[j].as_string()));
 			}
-			value.push_back(tmp_value);
+			value.push_back(tmpValue);
 		}
 		return value;
 	}
 	catch (exception &e) {
-		throw UMAException("Cannot parsing the field " + name, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::CLIENT_DATA);
+		throw UMAInvalidArgsException("Cannot parsing the field " + name, false, &serverLogger);
 	}
 }
 
-const string UMARestRequest::get_request_url() const{
+const string UMARestRequest::getRequestUrl() const{
 	string_t url = _request.request_uri().path();
-	return RestUtil::string_t_to_string(url);
+	return RestUtil::string_t2string(url);
 }
 
-const string UMARestRequest::get_absolute_url() const{
+const string UMARestRequest::getAbsoluteUrl() const{
 	string_t url = _request.absolute_uri().path();
-	return RestUtil::string_t_to_string(url);
+	return RestUtil::string_t2string(url);
 }
 
-void UMARestRequest::set_message(const string message) {
-	string_t s = RestUtil::string_to_string_t(message);
+void UMARestRequest::setMessage(const string message) {
+	string_t s = RestUtil::string2string_t(message);
 	_body[U("message")] = json::value::string(s);
 }
 
-void UMARestRequest::set_status_code(const status_code status_code) {
-	_response.set_status_code(status_code);
+void UMARestRequest::setStatusCode(const status_code statusCode) {
+	_response.set_status_code(statusCode);
 }
 
-void UMARestRequest::set_data(const string &name, int value) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = json::value::number(value);
+void UMARestRequest::setData(const string &name, int value) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = json::value::number(value);
 }
 
-void UMARestRequest::set_data(const string &name, double value) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = json::value::number(value);
+void UMARestRequest::setData(const string &name, double value) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = json::value::number(value);
 }
 
-void UMARestRequest::set_data(const string &name, bool value) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = json::value::boolean(value);
+void UMARestRequest::setData(const string &name, bool value) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = json::value::boolean(value);
 }
 
-void UMARestRequest::set_data(const string &name, string value) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = json::value::string(RestUtil::string_to_string_t(value));
+void UMARestRequest::setData(const string &name, string value) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = json::value::string(RestUtil::string2string_t(value));
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<int> &list) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = RestUtil::vector_int_to_json(list);
+void UMARestRequest::setData(const string &name, const std::vector<int> &list) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = RestUtil::vectorInt2Json(list);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<bool> &list) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = RestUtil::vector_bool_to_json(list);
+void UMARestRequest::setData(const string &name, const std::vector<bool> &list) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = RestUtil::vectorBool2Json(list);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<double> &list) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = RestUtil::vector_double_to_json(list);
+void UMARestRequest::setData(const string &name, const std::vector<double> &list) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = RestUtil::vectorDouble2Json(list);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<string> &list) {
-	string_t name_t = RestUtil::string_to_string_t(name);
-	_body[U("data")][name_t] = RestUtil::vector_string_to_json(list);
+void UMARestRequest::setData(const string &name, const std::vector<string> &list) {
+	string_t nameT = RestUtil::string2string_t(name);
+	_body[U("data")][nameT] = RestUtil::vectorString2Json(list);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<vector<int>> &lists) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::vector<vector<int>> &lists) {
+	string_t nameT = RestUtil::string2string_t(name);
 	vector<json::value> results;
 	for (int i = 0; i < lists.size(); ++i) {
-		results.push_back(RestUtil::vector_int_to_json(lists[i]));
+		results.push_back(RestUtil::vectorInt2Json(lists[i]));
 	}
-	_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][nameT] = json::value::array(results);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<vector<double>> &lists) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::vector<vector<double>> &lists) {
+	string_t nameT = RestUtil::string2string_t(name);
 	vector<json::value> results;
 	for (int i = 0; i < lists.size(); ++i) {
-		results.push_back(RestUtil::vector_double_to_json(lists[i]));
+		results.push_back(RestUtil::vectorDouble2Json(lists[i]));
 	}
-	_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][nameT] = json::value::array(results);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<vector<bool>> &lists) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::vector<vector<bool>> &lists) {
+	string_t nameT = RestUtil::string2string_t(name);
 	vector<json::value> results;
 	for (int i = 0; i < lists.size(); ++i) {
-		results.push_back(RestUtil::vector_bool_to_json(lists[i]));
+		results.push_back(RestUtil::vectorBool2Json(lists[i]));
 	}
-	_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][nameT] = json::value::array(results);
 }
 
-void UMARestRequest::set_data(const string &name, const std::vector<vector<string>> &lists) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::vector<vector<string>> &lists) {
+	string_t nameT = RestUtil::string2string_t(name);
 	vector<json::value> results;
 	for (int i = 0; i < lists.size(); ++i) {
-		results.push_back(RestUtil::vector_string_to_json(lists[i]));
+		results.push_back(RestUtil::vectorString2Json(lists[i]));
 	}
-	_body[U("data")][name_t] = json::value::array(results);
+	_body[U("data")][nameT] = json::value::array(results);
 }
 
-void UMARestRequest::set_data(const string &name, const std::map<string, string> &map) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::map<string, string> &map) {
+	string_t nameT = RestUtil::string2string_t(name);
 	json::value result;
 	for (auto it = map.begin(); it != map.end(); ++it) {
-		string_t key_t = RestUtil::string_to_string_t(it->first);
-		string_t value_t = RestUtil::string_to_string_t(it->second);
-		result[key_t] = json::value::string(value_t);
+		string_t keyT = RestUtil::string2string_t(it->first);
+		string_t valueT = RestUtil::string2string_t(it->second);
+		result[keyT] = json::value::string(valueT);
 	}
-	_body[U("data")][name_t] = result;
+	_body[U("data")][nameT] = result;
 }
 
-void UMARestRequest::set_data(const string &name, const std::map<string, int> &map) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::map<string, int> &map) {
+	string_t nameT = RestUtil::string2string_t(name);
 	json::value result;
 	for (auto it = map.begin(); it != map.end(); ++it) {
-		string_t key_t = RestUtil::string_to_string_t(it->first);
-		result[key_t] = json::value::number(it->second);
+		string_t keyT = RestUtil::string2string_t(it->first);
+		result[keyT] = json::value::number(it->second);
 	}
-	_body[U("data")][name_t] = result;
+	_body[U("data")][nameT] = result;
 }
 
-void UMARestRequest::set_data(const string &name, const std::map<string, double> &map) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::map<string, double> &map) {
+	string_t nameT = RestUtil::string2string_t(name);
 	json::value result;
 	for (auto it = map.begin(); it != map.end(); ++it) {
-		string_t key_t = RestUtil::string_to_string_t(it->first);
-		result[key_t] = json::value::number(it->second);
+		string_t keyT = RestUtil::string2string_t(it->first);
+		result[keyT] = json::value::number(it->second);
 	}
-	_body[U("data")][name_t] = result;
+	_body[U("data")][nameT] = result;
 }
 
-void UMARestRequest::set_data(const string &name, const std::map<string, bool> &map) {
-	string_t name_t = RestUtil::string_to_string_t(name);
+void UMARestRequest::setData(const string &name, const std::map<string, bool> &map) {
+	string_t nameT = RestUtil::string2string_t(name);
 	json::value result;
 	for (auto it = map.begin(); it != map.end(); ++it) {
-		string_t key_t = RestUtil::string_to_string_t(it->first);
-		string_t value_t = RestUtil::string_to_string_t(to_string(it->second));
-		result[key_t] = json::value::boolean(it->second);
+		string_t keyT = RestUtil::string2string_t(it->first);
+		string_t valueT = RestUtil::string2string_t(to_string(it->second));
+		result[keyT] = json::value::boolean(it->second);
 	}
-	_body[U("data")][name_t] = result;
+	_body[U("data")][nameT] = result;
 }
 
-bool UMARestRequest::check_data_field(const string &name) {
-	const string_t name_t = RestUtil::string_to_string_t(name);
-	return RestUtil::check_field(_data, name_t, false);
+bool UMARestRequest::checkDataField(const string &name) {
+	const string_t nameT = RestUtil::string2string_t(name);
+	return RestUtil::checkField(_data, nameT, false);
 }
 
-bool UMARestRequest::check_query_field(const string &name) {
-	const string_t name_t = RestUtil::string_to_string_t(name);
-	return RestUtil::check_field(_query, name_t, false);
+bool UMARestRequest::checkQueryField(const string &name) {
+	const string_t nameT = RestUtil::string2string_t(name);
+	return RestUtil::checkField(_query, nameT, false);
 }
 
 void UMARestRequest::reply() {
 	_response.set_body(_body);
-	pplx::task<void> reply_task = _request.reply(_response);
-	reply_task.then([&]() {
+	pplx::task<void> replyTask = _request.reply(_response);
+	replyTask.then([&]() {
 		//do something after reply is succeed
 	});
 }

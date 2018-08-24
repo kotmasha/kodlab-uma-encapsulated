@@ -29,21 +29,20 @@ Agent::Agent(ifstream &file) {
 }
 */
 
-Agent::Agent(const string &uuid, const string &dependency, const int type) : _uuid(uuid), _dependency(dependency + ":" + _uuid), _type(type) {
+Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type) : UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
 	_pruningInterval = stoi(World::coreInfo["Agent"]["pruning_interval"]);
 	_enableEnrichment = stoi(World::coreInfo["Agent"]["enable_enrichment"]);
 
-	agentLogger.info("An agent " + uuid + " is created, agent type is " + to_string(_type), _dependency);
+	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type));
 }
 
 Snapshot *Agent::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
-		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger);
 	}
-	_snapshots[uuid] = new Snapshot(uuid, _dependency);
-	agentLogger.info("A Snapshot Stationary " + uuid + " is created", _dependency);
+	_snapshots[uuid] = new Snapshot(uuid, this, getUMASnapshotTypeByAgent(_type));
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid);
 	return _snapshots[uuid];
 }
 
@@ -51,8 +50,7 @@ Snapshot *Agent::getSnapshot(const string &snapshot_id){
 	if (_snapshots.find(snapshot_id) != _snapshots.end()) {
 		return _snapshots[snapshot_id];
 	}
-	agentLogger.warn("No snapshot " + snapshot_id + " is found", _dependency);
-	throw UMAException("Cannot find the snapshot id!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+	throw UMANoResourceException("Cannot find the snapshot id!", false, &agentLogger);
 }
 
 /*
@@ -91,12 +89,8 @@ const vector<vector<string>> Agent::getSnapshotInfo() const {
 		vector<string> tmp;
 		tmp.push_back(it->first);
 
-		const int type = it->second->getType();
-		string sType = "";
-		if (AGENT_TYPE::STATIONARY == type) sType = "default";
-		else if (AGENT_TYPE::QUALITATIVE == type) sType = "qualitative";
-
-		tmp.push_back(sType);
+		UMA_SNAPSHOT type = it->second->getType();
+		tmp.push_back(getUMASnapshotName(type));
 
 		results.push_back(tmp);
 	}
@@ -105,14 +99,12 @@ const vector<vector<string>> Agent::getSnapshotInfo() const {
 
 void Agent::deleteSnapshot(const string &snapshotId) {
 	if (_snapshots.find(snapshotId) == _snapshots.end()) {
-		string s = "Cannot find the snapshot to delete " + snapshotId;
-		agentLogger.error(s);
-		throw UMAException(s, UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::NO_RECORD);
+		throw UMANoResourceException("Cannot find the snapshot, snapshotId=" + snapshotId, false, &agentLogger);
 	}
 	delete _snapshots[snapshotId];
 	_snapshots[snapshotId] = NULL;
 	_snapshots.erase(snapshotId);
-	agentLogger.info("Snapshot deleted", _dependency);
+	agentLogger.info("Snapshot is deleted, snapshotId=" + snapshotId);
 }
 
 void Agent::setT(int t) {
@@ -131,7 +123,7 @@ const int &Agent::getT() const {
 	return _t;
 }
 
-const int &Agent::getType() const {
+const UMA_AGENT &Agent::getType() const {
 	return _type;
 }
 
@@ -155,22 +147,20 @@ Agent::~Agent(){
 		}
 	}
 	catch (exception &e) {
-		agentLogger.error("Fatal error while trying to delete agent: " + _uuid, _dependency);
-		throw UMAException("Fatal error in Agent destruction function", UMAException::ERROR_LEVEL::FATAL, UMAException::SERVER);
+		throw UMAInternalException("Fatal error in Agent destruction function, agentId=" + _uuid, true, &agentLogger);
 	}
-	agentLogger.info("Deleted the agent " + _uuid);
+	agentLogger.info("Agent is deleted, agentId=" + _uuid);
 }
 
-AgentQualitative::AgentQualitative(const string &uuid, const string &dependency) : Agent(uuid, dependency, AGENT_TYPE::QUALITATIVE) {}
+AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
 
 AgentQualitative::~AgentQualitative() {}
 
 Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		agentLogger.error("Cannot create a duplicate snapshot!", _dependency);
-		throw UMAException("Cannot create a duplicate snapshot!", UMAException::ERROR_LEVEL::ERROR, UMAException::ERROR_TYPE::DUPLICATE);
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger);
 	}
-	_snapshots[uuid] = new SnapshotQualitative(uuid, _dependency);
-	agentLogger.info("A Snapshot Qualitative " + uuid + " is created", _dependency);
+	_snapshots[uuid] = new SnapshotQualitative(uuid, this);
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Qualitative");
 	return _snapshots[uuid];
 }
