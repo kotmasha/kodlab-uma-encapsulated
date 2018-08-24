@@ -6,7 +6,7 @@
 
 class AttrSensorHandler: public UMARestHandler {
 public:
-	AttrSensorHandler(const string &handler_name);
+	AttrSensorHandler(const string &handlerName);
 
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);

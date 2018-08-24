@@ -7,45 +7,45 @@
 #include "UMAException.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
-DataHandler::DataHandler(const string &handler_name): UMARestHandler(handler_name) {
+DataHandler::DataHandler(const string &handlerName): UMARestHandler(handlerName) {
 }
 
 void DataHandler::handleCreate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void DataHandler::handleUpdate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 
-	const string experimentId = request.get_string_query("experiment_id");
-	const string agentId = request.get_string_query("agent_id");
-	const string snapshotId = request.get_string_query("snapshot_id");
+	const string experimentId = request.getStringQuery("experiment_id");
+	const string agentId = request.getStringQuery("agent_id");
+	const string snapshotId = request.getStringQuery("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 
-	if (requestUrl == "/UMA/data/observe" && request.check_data_field("observe")) {
-		vector<bool> observe = request.get_bool1d_data("observe");
+	if (requestUrl == "/UMA/data/observe" && request.checkDataField("observe")) {
+		vector<bool> observe = request.getBool1dData("observe");
 		dm->setObserve(observe);
 
-		request.set_message("observe value set");
+		request.setMessage("observe value set");
 		return;
 	}
-	else if (requestUrl == "/UMA/data/current" && request.check_data_field("current")) {
-		vector<bool> current = request.get_bool1d_data("current");
+	else if (requestUrl == "/UMA/data/current" && request.checkDataField("current")) {
+		vector<bool> current = request.getBool1dData("current");
 		dm->setCurrent(current);
 
-		request.set_message("Customized current value set");
+		request.setMessage("Customized current value set");
 		return;
 	}
-	else if (requestUrl == "/UMA/data/target" && request.check_data_field("target")) {
-		vector<bool> target = request.get_bool1d_data("target");
+	else if (requestUrl == "/UMA/data/target" && request.checkDataField("target")) {
+		vector<bool> target = request.getBool1dData("target");
 		dm->setTarget(target);
 
-		request.set_message("Customized target value set");
+		request.setMessage("Customized target value set");
 		return;
 	}
 
@@ -53,11 +53,11 @@ void DataHandler::handleUpdate(UMARestRequest &request) {
 }
 
 void DataHandler::handleRead(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 
-	const string experimentId = request.get_string_query("experiment_id");
-	const string agentId = request.get_string_query("agent_id");
-	const string snapshotId = request.get_string_query("snapshot_id");
+	const string experimentId = request.getStringQuery("experiment_id");
+	const string agentId = request.getStringQuery("agent_id");
+	const string snapshotId = request.getStringQuery("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
@@ -66,51 +66,75 @@ void DataHandler::handleRead(UMARestRequest &request) {
 
 	if (requestUrl == "/UMA/data/current") {
 		vector<bool> current = dm->getCurrent();
-		request.set_message("get current value");
-		request.set_data("current", current);
+		request.setMessage("get current value");
+		request.setData("current", current);
 		return;
 	}
 	else if(requestUrl == "/UMA/data/prediction"){
 		vector<bool> prediction = dm->getPrediction();
-		request.set_message("get prediction value");
-		request.set_data("prediction", prediction);
+		request.setMessage("get prediction value");
+		request.setData("prediction", prediction);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/target") {
 		vector<bool> target = dm->getTarget();
-		request.set_message("get target value");
-		request.set_data("target", target);
+		request.setMessage("get target value");
+		request.setData("target", target);
+		return;
+	}
+	else if (requestUrl == "/UMA/data/observe") {
+		vector<bool> observe = dm->getObserve();
+		request.setMessage("get observe value");
+		request.setData("observe", observe);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/weights") {
 		vector<vector<double> > weights = dm->getWeight2D();
-		request.set_message("get weights value");
-		request.set_data("weights", weights);
+		request.setMessage("get weights value");
+		request.setData("weights", weights);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/dirs") {
 		vector<vector<bool> > dirs = dm->getDir2D();
-		request.set_message("get dirs value");
-		request.set_data("dirs", dirs);
+		request.setMessage("get dirs value");
+		request.setData("dirs", dirs);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/thresholds") {
 		vector<vector<double> > thresholds = dm->getThreshold2D();
-		request.set_message("get thresholds value");
-		request.set_data("thresholds", thresholds);
+		request.setMessage("get thresholds value");
+		request.setData("thresholds", thresholds);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/negligible") {
 		vector<bool> negligible = dm->getNegligible();
-		request.set_message("get negligible value");
-		request.set_data("negligible", negligible);
+		request.setMessage("get negligible value");
+		request.setData("negligible", negligible);
 		return;
 	}
 	else if (requestUrl == "/UMA/data/dataSize") {
 		std::map<string, int> sizeInfo = dm->getSizeInfo();
 		std::map<string, int> convertedSizeInfo = dm->convertSizeInfo(sizeInfo);
-		request.set_message("get size info");
-		request.set_data("sizes", convertedSizeInfo);
+		request.setMessage("get size info");
+		request.setData("sizes", convertedSizeInfo);
+		return;
+	}
+	else if (requestUrl == "/UMA/data/npdirs") {
+		vector<vector<bool>> npdirs = dm->getNPDir2D();
+		request.setMessage("get npdirs info");
+		request.setData("npdirs", npdirs);
+		return;
+	}
+	else if (requestUrl == "/UMA/data/propagateMasks") {
+		vector<vector<bool>> propagateMasks= dm->getNpdirMasks();
+		request.setMessage("get propagate masks info");
+		request.setData("propagate_masks", propagateMasks);
+		return;
+	}
+	else if (requestUrl == "/UMA/data/maskAmper") {
+		vector<vector<bool>> maskAmper = dm->getMaskAmper2D();
+		request.setMessage("get mask amper info");
+		request.setData("mask_amper", maskAmper);
 		return;
 	}
 
@@ -118,7 +142,7 @@ void DataHandler::handleRead(UMARestRequest &request) {
 }
 
 void DataHandler::handleDelete(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	throw UMABadOperationException("Cannot handle DELETE " + requestUrl, false, &serverLogger);
 }
 

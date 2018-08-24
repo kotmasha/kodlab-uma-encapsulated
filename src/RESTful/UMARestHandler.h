@@ -6,10 +6,10 @@
 
 class DLL_PUBLIC UMARestHandler {
 protected:
-	const string _handler_name;
+	const string _handlerName;
 
 public:
-	UMARestHandler(const string &handler_name);
+	UMARestHandler(const string &handlerName);
 
 	virtual void handleCreate(UMARestRequest &request) = 0;
 	virtual void handleUpdate(UMARestRequest &request) = 0;

@@ -62,8 +62,8 @@ UMARestTestFixture::UMARestTestFixture() {
 		const string url = "http://" + host + ":" + port + "/UMA/test";
 		client = new UMARestClient(url);
 	}
-	listener->register_handler(handler);
-	listener->add_path_to_handler("/UMA/test", "test_handler");
+	listener->registerHandler(handler);
+	listener->addPathToHandler("/UMA/test", "test_handler");
 }
 
 UMARestTestFixture::~UMARestTestFixture() {
@@ -107,10 +107,10 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 		return response.extract_json();
 	})
 	.then([&](json::value d) {
-		string type = RestUtil::string_t_to_string(clientData[U("type")].as_string());
+		string type = RestUtil::string_t2string(clientData[U("type")].as_string());
 		json::value data = d[U("data")];
 		if (type == "set_message") {
-			clientString = RestUtil::string_t_to_string(d[U("message")].as_string());
+			clientString = RestUtil::string_t2string(d[U("message")].as_string());
 		}
 		else if (type == "set_data_int") {
 			clientInt = data[U("int")].as_integer();
@@ -122,7 +122,7 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 			clientBool = data[U("bool")].as_bool();
 		}
 		else if (type == "set_data_string") {
-			clientString = RestUtil::string_t_to_string(data[U("string")].as_string());
+			clientString = RestUtil::string_t2string(data[U("string")].as_string());
 		}
 		else if (type == "set_data_int1d") {
 			vector<int> value;
@@ -136,7 +136,7 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 			vector<string> value;
 			json::array &list = data[U("string1d")].as_array();
 			for (int i = 0; i < list.size(); ++i) {
-				value.push_back(RestUtil::string_t_to_string(list[i].as_string()));
+				value.push_back(RestUtil::string_t2string(list[i].as_string()));
 			}
 			clientString1d = value;
 		}
@@ -189,7 +189,7 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 				auto &list = lists[i].as_array();
 				vector<string> tmp_value;
 				for (int j = 0; j < list.size(); ++j) {
-					tmp_value.push_back(RestUtil::string_t_to_string(list[j].as_string()));
+					tmp_value.push_back(RestUtil::string_t2string(list[j].as_string()));
 				}
 				value.push_back(tmp_value);
 			}
@@ -211,25 +211,25 @@ void UMARestTestFixture::clientReceivingAction(string actionName) {
 		else if (type == "set_data_map_string_string") {
 			json::object clientMapStringStringObj = data[U("map_string_string")].as_object();
 			for (auto it = clientMapStringStringObj.begin(); it != clientMapStringStringObj.end(); ++it) {
-				clientMapStringString[RestUtil::string_t_to_string(it->first)] = RestUtil::string_t_to_string(it->second.as_string());
+				clientMapStringString[RestUtil::string_t2string(it->first)] = RestUtil::string_t2string(it->second.as_string());
 			}
 		}
 		else if (type == "set_data_map_string_int") {
 			json::object clientMapStringIntObj = data[U("map_string_int")].as_object();
 			for (auto it = clientMapStringIntObj.begin(); it != clientMapStringIntObj.end(); ++it) {
-				clientMapStringInt[RestUtil::string_t_to_string(it->first)] = it->second.as_integer();
+				clientMapStringInt[RestUtil::string_t2string(it->first)] = it->second.as_integer();
 			}
 		}
 		else if (type == "set_data_map_string_double") {
 			json::object clientMapStringDoubleObj = data[U("map_string_double")].as_object();
 			for (auto it = clientMapStringDoubleObj.begin(); it != clientMapStringDoubleObj.end(); ++it) {
-				clientMapStringDouble[RestUtil::string_t_to_string(it->first)] = it->second.as_double();
+				clientMapStringDouble[RestUtil::string_t2string(it->first)] = it->second.as_double();
 			}
 		}
 		else if (type == "set_data_map_string_bool") {
 			json::object clientMapStringBoolObj = data[U("map_string_bool")].as_object();
 			for (auto it = clientMapStringBoolObj.begin(); it != clientMapStringBoolObj.end(); ++it) {
-				clientMapStringBool[RestUtil::string_t_to_string(it->first)] = it->second.as_bool();
+				clientMapStringBool[RestUtil::string_t2string(it->first)] = it->second.as_bool();
 			}
 		}
 	}).wait();
@@ -253,107 +253,107 @@ UMARestTestHandler::UMARestTestHandler(): UMARestHandler("test_handler") {}
 UMARestTestHandler::~UMARestTestHandler() {}
 
 void UMARestTestHandler::handleCreate(UMARestRequest &request) {
-	const string type = request.get_string_data("type");
-	const string p_name = request.get_string_data("p_name");
+	const string type = request.getStringData("type");
+	const string p_name = request.getStringData("p_name");
 
 	if (type == "get_string_data") {
-		string s = request.get_string_data(p_name);
+		string s = request.getStringData(p_name);
 		UMARestTestFixture::serverString = s;
 	}
 	else if (type == "get_int_data") {
-		int i = request.get_int_data(p_name);
+		int i = request.getIntData(p_name);
 		UMARestTestFixture::serverInt = i;
 	}
 	else if (type == "get_double_data") {
-		double d = request.get_double_data(p_name);
+		double d = request.getDoubleData(p_name);
 		UMARestTestFixture::serverDouble = d;
 	}
 	else if (type == "get_bool_data") {
-		bool b = request.get_bool_data(p_name);
+		bool b = request.getBoolData(p_name);
 		UMARestTestFixture::serverBool = b;
 	}
 	else if (type == "get_int1d_data") {
-		vector<int> i1d = request.get_int1d_data(p_name);
+		vector<int> i1d = request.getInt1dData(p_name);
 		UMARestTestFixture::serverInt1d = i1d;
 	}
 	else if (type == "get_bool1d_data") {
-		vector<bool> b1d = request.get_bool1d_data(p_name);
+		vector<bool> b1d = request.getBool1dData(p_name);
 		UMARestTestFixture::serverBool1d = b1d;
 	}
 	else if (type == "get_string1d_data") {
-		vector<string> s1d = request.get_string1d_data(p_name);
+		vector<string> s1d = request.getString1dData(p_name);
 		UMARestTestFixture::serverString1d = s1d;
 	}
 	else if (type == "get_double1d_data") {
-		vector<double> d1d = request.get_double1d_data(p_name);
+		vector<double> d1d = request.getDouble1dData(p_name);
 		UMARestTestFixture::serverDouble1d = d1d;
 	}
 	else if (type == "get_int2d_data") {
-		vector<vector<int>> i2d = request.get_int2d_data(p_name);
+		vector<vector<int>> i2d = request.getInt2dData(p_name);
 		UMARestTestFixture::serverInt2d = i2d;
 	}
 	else if (type == "get_bool2d_data") {
-		vector<vector<bool>> b2d = request.get_bool2d_data(p_name);
+		vector<vector<bool>> b2d = request.getBool2dData(p_name);
 		UMARestTestFixture::serverBool2d = b2d;
 	}
 	else if (type == "get_string2d_data") {
-		vector<vector<string>> s2d = request.get_string2d_data(p_name);
+		vector<vector<string>> s2d = request.getString2dData(p_name);
 		UMARestTestFixture::serverString2d = s2d;
 	}
 	else if (type == "get_double2d_data") {
-		vector<vector<double>> d2d = request.get_double2d_data(p_name);
+		vector<vector<double>> d2d = request.getDouble2dData(p_name);
 		UMARestTestFixture::serverDouble2d = d2d;
 	}
 	else if (type == "set_message") {
-		request.set_message(UMARestTestFixture::serverString);
+		request.setMessage(UMARestTestFixture::serverString);
 	}
 	else if (type == "set_data_int") {
-		request.set_data("int", UMARestTestFixture::serverInt);
+		request.setData("int", UMARestTestFixture::serverInt);
 	}
 	else if (type == "set_data_double") {
-		request.set_data("double", UMARestTestFixture::serverDouble);
+		request.setData("double", UMARestTestFixture::serverDouble);
 	}
 	else if (type == "set_data_bool") {
-		request.set_data("bool", UMARestTestFixture::serverBool);
+		request.setData("bool", UMARestTestFixture::serverBool);
 	}
 	else if (type == "set_data_string") {
-		request.set_data("string", UMARestTestFixture::serverString);
+		request.setData("string", UMARestTestFixture::serverString);
 	}
 	else if (type == "set_data_int1d") {
-		request.set_data("int1d", UMARestTestFixture::serverInt1d);
+		request.setData("int1d", UMARestTestFixture::serverInt1d);
 	}
 	else if (type == "set_data_double1d") {
-		request.set_data("double1d", UMARestTestFixture::serverDouble1d);
+		request.setData("double1d", UMARestTestFixture::serverDouble1d);
 	}
 	else if (type == "set_data_string1d") {
-		request.set_data("string1d", UMARestTestFixture::serverString1d);
+		request.setData("string1d", UMARestTestFixture::serverString1d);
 	}
 	else if (type == "set_data_bool1d") {
-		request.set_data("bool1d", UMARestTestFixture::serverBool1d);
+		request.setData("bool1d", UMARestTestFixture::serverBool1d);
 	}
 	else if (type == "set_data_int2d") {
-		request.set_data("int2d", UMARestTestFixture::serverInt2d);
+		request.setData("int2d", UMARestTestFixture::serverInt2d);
 	}
 	else if (type == "set_data_double2d") {
-		request.set_data("double2d", UMARestTestFixture::serverDouble2d);
+		request.setData("double2d", UMARestTestFixture::serverDouble2d);
 	}
 	else if (type == "set_data_string2d") {
-		request.set_data("string2d", UMARestTestFixture::serverString2d);
+		request.setData("string2d", UMARestTestFixture::serverString2d);
 	}
 	else if (type == "set_data_bool2d") {
-		request.set_data("bool2d", UMARestTestFixture::serverBool2d);
+		request.setData("bool2d", UMARestTestFixture::serverBool2d);
 	}
 	else if (type == "set_data_map_string_string") {
-		request.set_data("map_string_string", UMARestTestFixture::serverMapStringString);
+		request.setData("map_string_string", UMARestTestFixture::serverMapStringString);
 	}
 	else if (type == "set_data_map_string_int") {
-		request.set_data("map_string_int", UMARestTestFixture::serverMapStringInt);
+		request.setData("map_string_int", UMARestTestFixture::serverMapStringInt);
 	}
 	else if (type == "set_data_map_string_double") {
-		request.set_data("map_string_double", UMARestTestFixture::serverMapStringDouble);
+		request.setData("map_string_double", UMARestTestFixture::serverMapStringDouble);
 	}
 	else if (type == "set_data_map_string_bool") {
-		request.set_data("map_string_bool", UMARestTestFixture::serverMapStringBool);
+		request.setData("map_string_bool", UMARestTestFixture::serverMapStringBool);
 	}
 	else {
 		throw UMAInvalidArgsException("cannot find any matching test case");
@@ -361,23 +361,23 @@ void UMARestTestHandler::handleCreate(UMARestRequest &request) {
 }
 
 void UMARestTestHandler::handleRead(UMARestRequest &request) {
-	const string type = request.get_string_query("type");
-	const string p_name = request.get_string_query("p_name");
+	const string type = request.getStringQuery("type");
+	const string p_name = request.getStringQuery("p_name");
 
 	if (type == "get_string_query") {
-		string s = request.get_string_query(p_name);
+		string s = request.getStringQuery(p_name);
 		UMARestTestFixture::serverString = s;
 	}
 	else if (type == "get_int_query") {
-		int i = request.get_int_query(p_name);
+		int i = request.getIntQuery(p_name);
 		UMARestTestFixture::serverInt = i;
 	}
 	else if (type == "get_double_query") {
-		double d = request.get_double_query(p_name);
+		double d = request.getDoubleQuery(p_name);
 		UMARestTestFixture::serverDouble = d;
 	}
 	else if (type == "get_bool_query") {
-		bool b = request.get_bool_query(p_name);
+		bool b = request.getBoolQuery(p_name);
 		UMARestTestFixture::serverBool = b;
 	}
 	else {

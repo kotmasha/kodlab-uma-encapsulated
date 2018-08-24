@@ -5,10 +5,10 @@
 #include "UMAException.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
-ExperimentHandler::ExperimentHandler(const string &handler_name) : UMARestHandler(handler_name) {}
+ExperimentHandler::ExperimentHandler(const string &handlerName) : UMARestHandler(handlerName) {}
 
 void ExperimentHandler::handleCreate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/experiment") {
 		createExperiment(request);
 		return;
@@ -18,12 +18,12 @@ void ExperimentHandler::handleCreate(UMARestRequest &request) {
 }
 
 void ExperimentHandler::handleUpdate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	throw UMABadOperationException("Cannot handle PUT " + requestUrl, false, &serverLogger);
 }
 
 void ExperimentHandler::handleRead(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/experiment") {
 		getExperiment(request);
 		return;
@@ -33,7 +33,7 @@ void ExperimentHandler::handleRead(UMARestRequest &request) {
 }
 
 void ExperimentHandler::handleDelete(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/experiment") {
 		deleteExperiment(request);
 		return;
@@ -43,26 +43,26 @@ void ExperimentHandler::handleDelete(UMARestRequest &request) {
 }
 
 void ExperimentHandler::createExperiment(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
+	const string experimentId = request.getStringData("experiment_id");
 	World::instance()->createExperiment(experimentId);
 
-	request.set_message("Experiment=" + experimentId + " is created");
+	request.setMessage("Experiment=" + experimentId + " is created");
 }
 
 void ExperimentHandler::getExperiment(UMARestRequest &request) {
-	const string experimentId = request.get_string_query("experiment_id");
+	const string experimentId = request.getStringQuery("experiment_id");
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	vector<vector<string>> agentIds = experiment->getAgentInfo();
 
-	request.set_message("Get experiment info");
-	request.set_data("agent_ids", agentIds);
+	request.setMessage("Get experiment info");
+	request.setData("agent_ids", agentIds);
 }
 
 void ExperimentHandler::deleteExperiment(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
+	const string experimentId = request.getStringData("experiment_id");
 	World::instance()->deleteExperiment(experimentId);
 
-	request.set_message("Experiment=" + experimentId + " is deleted");
+	request.setMessage("Experiment=" + experimentId + " is deleted");
 }
 
 ExperimentHandler::~ExperimentHandler() {}

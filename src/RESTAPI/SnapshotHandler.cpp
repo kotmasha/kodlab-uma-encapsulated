@@ -7,11 +7,11 @@
 #include "UMAutil.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
-SnapshotHandler::SnapshotHandler(const string &handler_name) : UMARestHandler(handler_name) {
+SnapshotHandler::SnapshotHandler(const string &handlerName) : UMARestHandler(handlerName) {
 }
 
 void SnapshotHandler::handleCreate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/snapshot") {
 		createSnapshot(request);
 		return;
@@ -37,7 +37,7 @@ void SnapshotHandler::handleCreate(UMARestRequest &request) {
 }
 
 void SnapshotHandler::handleUpdate(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/snapshot") {
 		updateSnapshot(request);
 		return;
@@ -47,7 +47,7 @@ void SnapshotHandler::handleUpdate(UMARestRequest &request) {
 }
 
 void SnapshotHandler::handleRead(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/snapshot") {
 		getSnapshot(request);
 		return;
@@ -57,7 +57,7 @@ void SnapshotHandler::handleRead(UMARestRequest &request) {
 }
 
 void SnapshotHandler::handleDelete(UMARestRequest &request) {
-	const string requestUrl = request.get_request_url();
+	const string requestUrl = request.getRequestUrl();
 	if (requestUrl == "/UMA/object/snapshot") {
 		deleteSnapshot(request);
 		return;
@@ -67,36 +67,36 @@ void SnapshotHandler::handleDelete(UMARestRequest &request) {
 }
 
 void SnapshotHandler::createSnapshot(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	agent->createSnapshot(snapshotId);
 
-	request.set_message("Snapshot=" + snapshotId + " is created");
+	request.setMessage("Snapshot=" + snapshotId + " is created");
 }
 
 void SnapshotHandler::createInit(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	snapshot->setInitialSize();
 
-	request.set_message("Initial size set to sensor size");
+	request.setMessage("Initial size set to sensor size");
 }
 
 void SnapshotHandler::createAmper(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
-	const vector<vector<bool> > amperLists = request.get_bool2d_data("amper_lists");
-	const vector<vector<string> > uuidLists = request.get_string2d_data("uuid_lists");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
+	const vector<vector<bool> > amperLists = request.getBool2dData("amper_lists");
+	const vector<vector<string> > uuidLists = request.getString2dData("uuid_lists");
 	const vector<pair<string, string>> uuidPairs = StrUtil::string2dToString1dPair(uuidLists);
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
@@ -104,15 +104,15 @@ void SnapshotHandler::createAmper(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	snapshot->ampers(amperLists, uuidPairs);
 
-	request.set_message("Amper made succeed");
+	request.setMessage("Amper made succeed");
 }
 
 void SnapshotHandler::createDelay(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
-	const vector<vector<bool> > amperLists = request.get_bool2d_data("delay_lists");
-	const vector<vector<string> > uuidLists = request.get_string2d_data("uuid_lists");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
+	const vector<vector<bool> > amperLists = request.getBool2dData("delay_lists");
+	const vector<vector<string> > uuidLists = request.getString2dData("uuid_lists");
 	const vector<pair<string, string>> uuidPairs = StrUtil::string2dToString1dPair(uuidLists);
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
@@ -120,26 +120,26 @@ void SnapshotHandler::createDelay(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	snapshot->delays(amperLists, uuidPairs);
 
-	request.set_message("Delay made succeed");
+	request.setMessage("Delay made succeed");
 }
 
 void SnapshotHandler::createPruning(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
-	const vector<bool> signals = request.get_bool1d_data("signals");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
+	const vector<bool> signals = request.getBool1dData("signals");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	snapshot->pruning(signals);
-	request.set_message("Pruning made succeed");
+	request.setMessage("Pruning made succeed");
 }
 
 void SnapshotHandler::getSnapshot(UMARestRequest &request) {
-	const string experimentId = request.get_string_query("experiment_id");
-	const string agentId = request.get_string_query("agent_id");
-	const string snapshotId = request.get_string_query("snapshot_id");
+	const string experimentId = request.getStringQuery("experiment_id");
+	const string agentId = request.getStringQuery("agent_id");
+	const string snapshotId = request.getStringQuery("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
@@ -153,69 +153,69 @@ void SnapshotHandler::getSnapshot(UMARestRequest &request) {
 	bool propagateMask = snapshot->getPropagateMask();
 	int initialSize = snapshot->getInitialSize();
 
-	request.set_message("Get snapshot info");
-	request.set_data("sensors", sensorInfo);
-	request.set_data("total", total);
-	request.set_data("q", q);
-	request.set_data("threshold", threshold);
-	request.set_data("auto_target", autoTarget);
-	request.set_data("propagate_mask", propagateMask);
-	request.set_data("initial_size", initialSize);
+	request.setMessage("Get snapshot info");
+	request.setData("sensors", sensorInfo);
+	request.setData("total", total);
+	request.setData("q", q);
+	request.setData("threshold", threshold);
+	request.setData("auto_target", autoTarget);
+	request.setData("propagate_mask", propagateMask);
+	request.setData("initial_size", initialSize);
 }
 
 void SnapshotHandler::deleteSnapshot(UMARestRequest &request) {
-	const string experimentId = request.get_string_data("experiment_id");
-	const string agentId = request.get_string_data("agent_id");
-	const string snapshotId = request.get_string_data("snapshot_id");
+	const string experimentId = request.getStringData("experiment_id");
+	const string agentId = request.getStringData("agent_id");
+	const string snapshotId = request.getStringData("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	agent->deleteSnapshot(snapshotId);
-	request.set_message("Snapshot=" + snapshotId + " is deleted");
+	request.setMessage("Snapshot=" + snapshotId + " is deleted");
 }
 
 void SnapshotHandler::updateSnapshot(UMARestRequest &request) {
-	const string experimentId = request.get_string_query("experiment_id");
-	const string agentId = request.get_string_query("agent_id");
-	const string snapshotId = request.get_string_query("snapshot_id");
+	const string experimentId = request.getStringQuery("experiment_id");
+	const string agentId = request.getStringQuery("agent_id");
+	const string snapshotId = request.getStringQuery("snapshot_id");
 
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	Agent *agent = experiment->getAgent(agentId);
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 
-	if (request.check_data_field("q")) {
-		const double q = request.get_double_data("q");
+	if (request.checkDataField("q")) {
+		const double q = request.getDoubleData("q");
 		snapshot->setQ(q);
 
-		request.set_message("Q updated");
+		request.setMessage("Q updated");
 		return;
 	}
-	else if (request.check_data_field("threshold")) {
-		const double threshold = request.get_double_data("threshold");
+	else if (request.checkDataField("threshold")) {
+		const double threshold = request.getDoubleData("threshold");
 		snapshot->setThreshold(threshold);
 
-		request.set_message("Threshold updated");
+		request.setMessage("Threshold updated");
 		return;
 	}
-	else if (request.check_data_field("auto_target")) {
-		const bool autoTarget = request.get_bool_data("auto_target");
+	else if (request.checkDataField("auto_target")) {
+		const bool autoTarget = request.getBoolData("auto_target");
 		snapshot->setAutoTarget(autoTarget);
 
-		request.set_message("Auto target updated");
+		request.setMessage("Auto target updated");
 		return;
 	}
-	else if (request.check_data_field("propagate_mask")) {
-		const bool propagateMask = request.get_bool_data("propagate_mask");
+	else if (request.checkDataField("propagate_mask")) {
+		const bool propagateMask = request.getBoolData("propagate_mask");
 		snapshot->setPropagateMask(propagateMask);
 
-		request.set_message("Propagate mask updated");
+		request.setMessage("Propagate mask updated");
 		return;
 	}
-	else if (request.check_data_field("initial_size")) {
-		int initialSize = request.get_int_data("initial_size");
+	else if (request.checkDataField("initial_size")) {
+		int initialSize = request.getIntData("initial_size");
 		snapshot->setInitialSize(initialSize);
 
-		request.set_message("initial size updated");
+		request.setMessage("initial size updated");
 		return;
 	}
 

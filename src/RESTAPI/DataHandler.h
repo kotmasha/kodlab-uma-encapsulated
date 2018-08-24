@@ -11,7 +11,7 @@ The class will handle all incoming and outcoming request for access data unit
 */
 class DataHandler: public UMARestHandler {
 public:
-	DataHandler(const string &handler_name);
+	DataHandler(const string &handlerName);
 	virtual void handleCreate(UMARestRequest &request);
 	virtual void handleUpdate(UMARestRequest &request);
 	virtual void handleRead(UMARestRequest &request);
