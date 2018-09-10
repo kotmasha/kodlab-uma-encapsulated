@@ -1,5 +1,6 @@
 #include "Simulation.h"
 #include "UMACoreConstant.h"
+#include "UMAutil.h"
 #include "Agent.h"
 #include "Snapshot.h"
 #include "DataManager.h"
@@ -8,7 +9,6 @@
 #include "data_util.h"
 #include "kernel_util.cuh"
 #include "uma_base.cuh"
-#include "UMAutil.h"
 
 extern int ind(int row, int col);
 static Logger simulationLogger("Simulation", "log/simulation.log");

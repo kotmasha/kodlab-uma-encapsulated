@@ -3,6 +3,7 @@
 #include "Snapshot.h"
 #include "Logger.h"
 #include "UMAException.h"
+#include "UMACoreService.h"
 
 static Logger agentLogger("Agent", "log/agent.log");
 
@@ -29,20 +30,21 @@ Agent::Agent(ifstream &file) {
 }
 */
 
-Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type) : UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
+Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
-	_pruningInterval = stoi(World::coreInfo["Agent"]["pruning_interval"]);
-	_enableEnrichment = stoi(World::coreInfo["Agent"]["enable_enrichment"]);
+	std::map<string, string> agentProperty = UMACoreService::instance()->getPropertyMap("Agent");
+	_pruningInterval = stoi(agentProperty["pruning_interval"]);
+	_enableEnrichment = stoi(agentProperty["enable_enrichment"]);
 
-	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type));
+	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type), this->getParentChain());
 }
 
 Snapshot *Agent::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger);
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
 	}
 	_snapshots[uuid] = new Snapshot(uuid, this, getUMASnapshotTypeByAgent(_type));
-	agentLogger.info("A Snapshot is created, snapshotId=" + uuid);
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid, this->getParentChain());
 	return _snapshots[uuid];
 }
 
@@ -50,7 +52,7 @@ Snapshot *Agent::getSnapshot(const string &snapshot_id){
 	if (_snapshots.find(snapshot_id) != _snapshots.end()) {
 		return _snapshots[snapshot_id];
 	}
-	throw UMANoResourceException("Cannot find the snapshot id!", false, &agentLogger);
+	throw UMANoResourceException("Cannot find the snapshot id!", false, &agentLogger, this->getParentChain());
 }
 
 /*
@@ -99,12 +101,12 @@ const vector<vector<string>> Agent::getSnapshotInfo() const {
 
 void Agent::deleteSnapshot(const string &snapshotId) {
 	if (_snapshots.find(snapshotId) == _snapshots.end()) {
-		throw UMANoResourceException("Cannot find the snapshot, snapshotId=" + snapshotId, false, &agentLogger);
+		throw UMANoResourceException("Cannot find the snapshot, snapshotId=" + snapshotId, false, &agentLogger, this->getParentChain());
 	}
 	delete _snapshots[snapshotId];
 	_snapshots[snapshotId] = NULL;
 	_snapshots.erase(snapshotId);
-	agentLogger.info("Snapshot is deleted, snapshotId=" + snapshotId);
+	agentLogger.info("Snapshot is deleted, snapshotId=" + snapshotId, this->getParentChain());
 }
 
 void Agent::setT(int t) {
@@ -147,9 +149,9 @@ Agent::~Agent(){
 		}
 	}
 	catch (exception &e) {
-		throw UMAInternalException("Fatal error in Agent destruction function, agentId=" + _uuid, true, &agentLogger);
+		throw UMAInternalException("Fatal error in Agent destruction function, agentId=" + _uuid, true, &agentLogger, this->getParentChain());
 	}
-	agentLogger.info("Agent is deleted, agentId=" + _uuid);
+	agentLogger.info("Agent is deleted, agentId=" + _uuid, this->getParentChain());
 }
 
 AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
@@ -158,9 +160,9 @@ AgentQualitative::~AgentQualitative() {}
 
 Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
-		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger);
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
 	}
 	_snapshots[uuid] = new SnapshotQualitative(uuid, this);
-	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Qualitative");
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Qualitative", this->getParentChain());
 	return _snapshots[uuid];
 }

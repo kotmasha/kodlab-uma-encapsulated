@@ -1,6 +1,6 @@
 #include "UMACoreConstant.h"
 
-string UMACoreConstant::getUMAObjName(UMA_OBJECT &obj) {
+string UMACoreConstant::getUMAObjName(const UMA_OBJECT &obj) {
 	switch (obj) {
 	case UMA_OBJECT::WORLD: return "World";
 	case UMA_OBJECT::EXPERIMENT: return "Experiment";
@@ -15,7 +15,7 @@ string UMACoreConstant::getUMAObjName(UMA_OBJECT &obj) {
 	}
 }
 
-string UMACoreConstant::getUMAAgentName(UMA_AGENT &agent) {
+string UMACoreConstant::getUMAAgentName(const UMA_AGENT &agent) {
 	switch (agent) {
 	case UMA_AGENT::AGENT_STATIONARY: return "Stationary";
 	case UMA_AGENT::AGENT_QUALITATIVE: return "Qualitative";
@@ -23,7 +23,7 @@ string UMACoreConstant::getUMAAgentName(UMA_AGENT &agent) {
 	}
 }
 
-string UMACoreConstant::getUMASnapshotName(UMA_SNAPSHOT &snapshot) {
+string UMACoreConstant::getUMASnapshotName(const UMA_SNAPSHOT &snapshot) {
 	switch (snapshot) {
 	case UMA_SNAPSHOT::SNAPSHOT_STATIONARY: return "Stationary";
 	case UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE: return "Qualitative";
@@ -31,7 +31,7 @@ string UMACoreConstant::getUMASnapshotName(UMA_SNAPSHOT &snapshot) {
 	}
 }
 
-UMACoreConstant::UMA_SNAPSHOT UMACoreConstant::getUMASnapshotTypeByAgent(UMA_AGENT &agent){
+UMACoreConstant::UMA_SNAPSHOT UMACoreConstant::getUMASnapshotTypeByAgent(const UMA_AGENT &agent){
 	switch (agent) {
 	case UMA_AGENT::AGENT_STATIONARY: return UMA_SNAPSHOT::SNAPSHOT_STATIONARY;
 	case UMA_AGENT::AGENT_QUALITATIVE: return UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE;

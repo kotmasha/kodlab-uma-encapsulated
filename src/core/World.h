@@ -18,10 +18,6 @@ private:
 	std::map<string, Experiment*> _experiments;
 
 public:
-	// the map to hold all core info, need to replace with conf obj singleton
-	static std::map<string, std::map<string, string>> coreInfo;
-
-public:
 	World();
 	static World *instance();
 	Experiment *createExperiment(const string &experimentId);

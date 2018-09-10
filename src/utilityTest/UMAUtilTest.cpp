@@ -1,20 +1,21 @@
 #include <iostream>
 #include "gtest/gtest.h"
 #include "UMAutil.h"
+#include "LogService.h"
 #include "UMAException.h"
 
 //test string to log level
-TEST(StrUtil_test, stringToLogLevel) {
+TEST(LogService_test, stringToLogLevel) {
 	const string error = "ERROR";
 	const string warn = "WARN";
 	const string info = "INFO";
 	const string debug = "DEBUG";
 	const string verbose = "VERBOSE";
-	EXPECT_EQ(StrUtil::stringToLogLevel(error), 0);
-	EXPECT_EQ(StrUtil::stringToLogLevel(warn), 1);
-	EXPECT_EQ(StrUtil::stringToLogLevel(info), 2);
-	EXPECT_EQ(StrUtil::stringToLogLevel(debug), 3);
-	EXPECT_EQ(StrUtil::stringToLogLevel(verbose), 4);
+	EXPECT_EQ(LogService::instance()->stringToLogLevel(error), 0);
+	EXPECT_EQ(LogService::instance()->stringToLogLevel(warn), 1);
+	EXPECT_EQ(LogService::instance()->stringToLogLevel(info), 2);
+	EXPECT_EQ(LogService::instance()->stringToLogLevel(debug), 3);
+	EXPECT_EQ(LogService::instance()->stringToLogLevel(verbose), 4);
 }
 
 TEST(StrUtil_test, string2dToString1dPair) {

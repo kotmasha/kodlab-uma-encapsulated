@@ -15,6 +15,8 @@ set(COREOBJ
     "UMACoreConstant.h"
     "UMACoreObject.cpp"
     "UMACoreObject.h"
+    "UMACoreService.h"
+    "UMACoreService.cpp"
 )
 set(WORLD
     "World.h"
@@ -69,7 +71,7 @@ source_group("simulation" FILES ${SIMULATION})
 
 if(MSVC)
     message("building UMACore under windows using cuda_add_library")
-    cuda_add_library(UMACore SHARED ${SOURCE})
+    add_library(UMACore SHARED ${SOURCE})
     target_link_libraries(UMACore UMAKernel UMAUtil)
 else()
     message("building UMACore under Linux using add_library")

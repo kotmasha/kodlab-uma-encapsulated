@@ -5,6 +5,7 @@
 #include "Snapshot.h"
 #include "DataManager.h"
 #include "UMAException.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 DataHandler::DataHandler(const string &handlerName): UMARestHandler(handlerName) {

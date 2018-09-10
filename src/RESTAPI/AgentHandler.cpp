@@ -3,6 +3,7 @@
 #include "Experiment.h"
 #include "Agent.h"
 #include "UMAException.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 

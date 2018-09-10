@@ -18,7 +18,6 @@ namespace SysUtil {
 
 namespace StrUtil {
 	//conversion of string to log_level
-	int stringToLogLevel(const string &s);
 	vector<std::pair<string, string>> string2dToString1dPair(const vector<vector<string>> &pairs);
 }
 

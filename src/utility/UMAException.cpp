@@ -1,4 +1,5 @@
 #include "UMAException.h"
+#include "Logger.h"
 
 /*#######################UMAException#########################*/
 
@@ -30,14 +31,14 @@ UMAException::UMAException(string message, bool isFatal, UMAExceptionType type) 
 /*
 Another constructor, with error msg, isFatal bool and log pointer
 */
-UMAException::UMAException(string message, bool isFatal, Logger *log, UMAExceptionType type) :
+UMAException::UMAException(string message, bool isFatal, Logger *log, const string &ancestors, UMAExceptionType type) :
 	std::runtime_error(message), _type(type) {
 	_errorMessage = message;
 	_isFatal = isFatal;
 	_log = log;
 
 	if (log) {
-		log->error(message);
+		log->error(message, ancestors);
 	}
 }
 
@@ -76,8 +77,8 @@ UMAException::~UMAException() {}
 
 /*#######################OTHER Exception#########################*/
 
-UMAInternalException::UMAInternalException(string message, bool isFatal, Logger *log) :
-	UMAException(message, isFatal, nullptr, UMA_INTERNAL) {}
+UMAInternalException::UMAInternalException(string message, bool isFatal, Logger *log, const string &ancestors) :
+	UMAException(message, isFatal, log, ancestors, UMA_INTERNAL) {}
 
 UMAInternalException::~UMAInternalException() {}
 
@@ -86,8 +87,8 @@ string UMAInternalException::getErrorMessage() const {
 }
 
 
-UMAInvalidArgsException::UMAInvalidArgsException(string message, bool isFatal, Logger *log) :
-	UMAException(message, isFatal, nullptr, UMA_INVALID_ARGS) {}
+UMAInvalidArgsException::UMAInvalidArgsException(string message, bool isFatal, Logger *log, const string &ancestors) :
+	UMAException(message, isFatal, log, ancestors, UMA_INVALID_ARGS) {}
 
 UMAInvalidArgsException::~UMAInvalidArgsException() {}
 
@@ -96,8 +97,8 @@ string UMAInvalidArgsException::getErrorMessage() const {
 }
 
 
-UMANoResourceException::UMANoResourceException(string message, bool isFatal, Logger *log) :
-	UMAException(message, isFatal, nullptr, UMA_NO_RESOURCE) {}
+UMANoResourceException::UMANoResourceException(string message, bool isFatal, Logger *log, const string &ancestors) :
+	UMAException(message, isFatal, log, ancestors, UMA_NO_RESOURCE) {}
 
 UMANoResourceException::~UMANoResourceException() {}
 
@@ -105,8 +106,8 @@ string UMANoResourceException::getErrorMessage() const {
 	return "No Resource Error Caught: " + UMAException::getErrorMessage();
 }
 
-UMADuplicationException::UMADuplicationException(string message, bool isFatal, Logger *log) :
-	UMAException(message, isFatal, nullptr, UMA_DUPLICATION) {}
+UMADuplicationException::UMADuplicationException(string message, bool isFatal, Logger *log, const string &ancestors) :
+	UMAException(message, isFatal, log, ancestors, UMA_DUPLICATION) {}
 
 UMADuplicationException::~UMADuplicationException() {}
 
@@ -114,8 +115,8 @@ string UMADuplicationException::getErrorMessage() const {
 	return "Duplication Record Error Caught: " + UMAException::getErrorMessage();
 }
 
-UMABadOperationException::UMABadOperationException(string message, bool isFatal, Logger *log) :
-	UMAException(message, isFatal, nullptr, UMA_BAD_OPERATION) {}
+UMABadOperationException::UMABadOperationException(string message, bool isFatal, Logger *log, const string &ancestors) :
+	UMAException(message, isFatal, log, ancestors, UMA_BAD_OPERATION) {}
 
 UMABadOperationException::~UMABadOperationException() {}
 

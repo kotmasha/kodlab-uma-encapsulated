@@ -8,6 +8,8 @@ set(UTILITY
 set(LOGGING
     "Logger.h"
     "Logger.cpp"
+    "LogService.h"
+    "LogService.cpp"
 )
 set(EXCEPTION
     "UMAException.h"

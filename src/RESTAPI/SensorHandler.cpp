@@ -6,6 +6,7 @@
 #include "Sensor.h"
 #include "SensorPair.h"
 #include "UMAException.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 SensorHandler::SensorHandler(const string &handlerName) :UMARestHandler(handlerName) {

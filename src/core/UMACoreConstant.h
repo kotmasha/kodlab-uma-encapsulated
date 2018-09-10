@@ -9,9 +9,9 @@ namespace UMACoreConstant {
 	enum UMA_AGENT { AGENT_STATIONARY, AGENT_QUALITATIVE };
 	enum UMA_SNAPSHOT { SNAPSHOT_STATIONARY, SNAPSHOT_QUALITATIVE };
 
-	string getUMAObjName(UMA_OBJECT &obj);
-	string getUMAAgentName(UMA_AGENT &agent);
-	string getUMASnapshotName(UMA_SNAPSHOT &snapshot);
-	UMA_SNAPSHOT getUMASnapshotTypeByAgent(UMA_AGENT &agent);
+	string getUMAObjName(const UMA_OBJECT &obj);
+	string getUMAAgentName(const UMA_AGENT &agent);
+	string getUMASnapshotName(const UMA_SNAPSHOT &snapshot);
+	UMA_SNAPSHOT getUMASnapshotTypeByAgent(const UMA_AGENT &agent);
 }
 #endif

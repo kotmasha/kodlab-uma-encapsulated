@@ -84,14 +84,14 @@ public:
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
-	SensorPair *getSensorPair(const Sensor *sensor1, const Sensor *sensor2) const;
-	AttrSensor *getAttrSensor(int idx) const;
-	AttrSensor *getAttrSensor(const string &measurableId) const;
-	AttrSensorPair *getAttrSensorPair(int mIdx1, int mIdx2) const;
-	AttrSensorPair *getAttrSensorPair(const string &mid1, const string &mid2) const;
-	vector<bool> getAmperList(const string &sensorId) const;
-	vector<string> getAmperListID(const string &sensorId) const;
-	Sensor *getSensor(const string &sensorId) const;
+	SensorPair *getSensorPair(const Sensor *sensor1, const Sensor *sensor2);
+	AttrSensor *getAttrSensor(int idx);
+	AttrSensor *getAttrSensor(const string &measurableId);
+	AttrSensorPair *getAttrSensorPair(int mIdx1, int mIdx2);
+	AttrSensorPair *getAttrSensorPair(const string &mid1, const string &mid2);
+	vector<bool> getAmperList(const string &sensorId);
+	vector<string> getAmperListID(const string &sensorId);
+	Sensor *getSensor(const string &sensorId);
 	DataManager *getDM() const;
 
 	const double &getTotal() const;
