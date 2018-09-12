@@ -41,8 +41,6 @@ protected:
 	std::map<string, Sensor*> _sensorIdx;
 	//the set of existing delay sensor hash
 	std::set<size_t> _delaySensorHash;
-	//record current sensor num in the current Snapshot
-	int t;
 	//the bool indicating whether auto-target is on or off
 	bool _autoTarget;
 	//the bool indicating whether mask will be propagated automatically
@@ -148,8 +146,33 @@ public:
 	virtual ~SnapshotQualitative();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
+};
+
+/*
+Discounted Snapshot
+*/
+class DLL_PUBLIC SnapshotDiscounted : public Snapshot {
+public:
+	SnapshotDiscounted(const string &uuid, UMACoreObject *parent);
+	virtual ~SnapshotDiscounted();
+	virtual void updateTotal(double phi, bool active);
+	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
+};
+
+/*
+Empirical Snapshot
+*/
+class DLL_PUBLIC SnapshotEmpirical : public Snapshot {
+public:
+	SnapshotEmpirical(const string &uuid, UMACoreObject *parent);
+	virtual ~SnapshotEmpirical();
+	virtual void updateTotal(double phi, bool active);
+	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
+	void updateQ();
+	void addT();
 
 protected:
-	//double q;
+	//this value indicate how many times the snapshot is active
+	int _t;
 };
 #endif

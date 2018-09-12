@@ -19,6 +19,8 @@ string UMACoreConstant::getUMAAgentName(const UMA_AGENT &agent) {
 	switch (agent) {
 	case UMA_AGENT::AGENT_STATIONARY: return "Stationary";
 	case UMA_AGENT::AGENT_QUALITATIVE: return "Qualitative";
+	case UMA_AGENT::AGENT_DISCOUNTED: return "Discounted";
+	case UMA_AGENT::AGENT_EMPIRICAL: return "Empirical";
 	default: throw UMAInvalidArgsException("Cannot find the UMA agent type=" + to_string(agent));
 	}
 }
@@ -27,6 +29,8 @@ string UMACoreConstant::getUMASnapshotName(const UMA_SNAPSHOT &snapshot) {
 	switch (snapshot) {
 	case UMA_SNAPSHOT::SNAPSHOT_STATIONARY: return "Stationary";
 	case UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE: return "Qualitative";
+	case UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED: return "Discounted";
+	case UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL: return "Empirical";
 	default: throw UMAInvalidArgsException("Cannot find the UMA snapshot type=" + to_string(snapshot));
 	}
 }
@@ -35,6 +39,8 @@ UMACoreConstant::UMA_SNAPSHOT UMACoreConstant::getUMASnapshotTypeByAgent(const U
 	switch (agent) {
 	case UMA_AGENT::AGENT_STATIONARY: return UMA_SNAPSHOT::SNAPSHOT_STATIONARY;
 	case UMA_AGENT::AGENT_QUALITATIVE: return UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE;
+	case UMA_AGENT::AGENT_DISCOUNTED: return UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED;
+	case UMA_AGENT::AGENT_EMPIRICAL: return UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL;
 	default: throw UMAInvalidArgsException("Invalid agent type, type=" + to_string(agent));
 	}
 }

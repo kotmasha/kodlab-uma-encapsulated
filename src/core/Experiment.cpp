@@ -19,8 +19,12 @@ Agent *Experiment::createAgent(const string &agentId, UMA_AGENT type) {
 		_agents[agentId] = new Agent(agentId, this, UMA_AGENT::AGENT_STATIONARY); break;
 	case UMA_AGENT::AGENT_QUALITATIVE:
 		_agents[agentId] = new AgentQualitative(agentId, this); break;
+	case UMA_AGENT::AGENT_DISCOUNTED:
+		_agents[agentId] = new AgentDiscounted(agentId, this); break;
+	case UMA_AGENT::AGENT_EMPIRICAL:
+		_agents[agentId] = new AgentEmpirical(agentId, this); break;
 	default:
-		throw UMAInvalidArgsException("The input agent type is invalid, type=" + to_string(type));
+		throw UMAInvalidArgsException("The input agent type is invalid, type=" + getUMAAgentName(type));
 	}
 	experimentLogger.info("An agent is created, agentId=" + agentId + ", type=" + getUMAAgentName(type), this->getParentChain());
 	return _agents[agentId];

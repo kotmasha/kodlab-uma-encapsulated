@@ -862,7 +862,6 @@ void Snapshot::save_snapshot(ofstream &file) {
 /*
 ----------------SnapshotQualitative Class-------------------
 */
-//Snapshot_Stationary::Snapshot_Stationary(ifstream &file, string &log_dir):Snapshot(file, log_dir) {}
 
 SnapshotQualitative::SnapshotQualitative(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE) {
@@ -958,3 +957,68 @@ void SnapshotQualitative::generateDelayedWeights(int mid, bool merge, const std:
 ----------------SnapshotQualitative Class-------------------
 */
 
+/*
+----------------SnapshotDiscounted Class-------------------
+*/
+
+SnapshotDiscounted::SnapshotDiscounted(const string &uuid, UMACoreObject *parent)
+	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
+	std::map<string, string> snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Discounted");
+
+	_q = stod(snapshotProperty["q"]);
+	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
+
+	_threshold = stod(snapshotProperty["threshold"]);
+	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
+}
+
+SnapshotDiscounted::~SnapshotDiscounted() {}
+
+void SnapshotDiscounted::updateTotal(double phi, bool active) {
+	Snapshot::updateTotal(phi, active);
+}
+
+void SnapshotDiscounted::generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &id_pair) {
+	Snapshot::generateDelayedWeights(mid, merge, id_pair);
+}
+
+/*
+----------------SnapshotDiscounted Class-------------------
+*/
+
+/*
+----------------SnapshotEmpirical Class-------------------
+*/
+
+SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
+	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
+	std::map<string, string> snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
+
+	_q = stod(snapshotProperty["q"]);
+	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
+
+	_threshold = stod(snapshotProperty["threshold"]);
+	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
+}
+
+SnapshotEmpirical::~SnapshotEmpirical() {}
+
+void SnapshotEmpirical::updateTotal(double phi, bool active) {
+	Snapshot::updateTotal(phi, active);
+}
+
+void SnapshotEmpirical::generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &id_pair) {
+	Snapshot::generateDelayedWeights(mid, merge, id_pair);
+}
+
+void SnapshotEmpirical::updateQ() {
+	_q = 1.0 * _t / (_t + 1);
+}
+
+void SnapshotEmpirical::addT() {
+	++_t;
+}
+
+/*
+----------------SnapshotDiscounted Class-------------------
+*/

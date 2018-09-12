@@ -165,8 +165,19 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 	
 	if (UMA_SNAPSHOT::SNAPSHOT_STATIONARY == snapshot->getType())
 		simulation::updateState(dm, q, phi, total, total_, active);
-	else
+	else if(UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE == snapshot->getType())
 		simulation::updateStateQualitative(dm, q, phi, total, total_, active);
+	else if (UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED == snapshot->getType())
+		simulation::updateStateDiscounted(dm, q, phi, total, total_, active);
+	else {//type empirical
+		SnapshotEmpirical *snap = dynamic_cast<SnapshotEmpirical*>(snapshot);
+		if (!snap) {
+			throw UMAInternalException("Cannot cast the snapshot to empirical type!", true, &simulationLogger);
+		}
+		snap->updateQ();
+		simulation::updateStateEmpirical(dm, q, phi, total, total_, active);
+		snap->addT();
+	}
 	simulation::halucinate(dm, initial_size);
 
 	if (snapshot->getAutoTarget()) simulation::calculateTarget(dm, snapshot->getType());
@@ -233,6 +244,56 @@ void simulation::updateStateQualitative(DataManager *dm, const double &q, const 
 	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
 	uma_base_qualitative::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	//floyd on new dirs and get npdirs
+	floyd(dm);
+	//negligible on npdir, store the results
+	uma_base::negligible(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::NEGLIGIBLE), sensor_size);
+
+	//the propagation on 
+	data_util::boolD2D(dm->_dvar_b(DataManager::OBSERVE), dm->_dvar_b(DataManager::SIGNALS), attr_sensor_size);
+	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, attr_sensor_size);
+	data_util::boolD2H(dm->_dvar_b(DataManager::CURRENT), dm->_hvar_b(DataManager::CURRENT), attr_sensor_size);
+}
+
+void simulation::updateStateDiscounted(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active) {
+	std::map<string, int> size_info = dm->getSizeInfo();
+	int sensor_size = size_info["_sensorSize"];
+	int attr_sensor_size = size_info["_attrSensorSize"];
+
+	//update weights
+	uma_base_discounted::updateWeights(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_b(DataManager::OBSERVE), attr_sensor_size, q, phi, active);
+	//update diag from new weights
+	uma_base::getWeightsDiag(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::DIAG), dm->_dvar_d(DataManager::OLD_DIAG), attr_sensor_size);
+	//update thresholds, no operation for now
+	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
+	//update dirs
+	uma_base_discounted::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	//floyd on new dirs and get npdirs
+	floyd(dm);
+	//negligible on npdir, store the results
+	uma_base::negligible(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::NEGLIGIBLE), sensor_size);
+
+	//the propagation on 
+	data_util::boolD2D(dm->_dvar_b(DataManager::OBSERVE), dm->_dvar_b(DataManager::SIGNALS), attr_sensor_size);
+	kernel_util::allfalse(dm->_dvar_b(DataManager::LOAD), attr_sensor_size);
+	simulation::propagates(dm->_dvar_b(DataManager::NPDIRS), dm->_dvar_b(DataManager::LOAD), dm->_dvar_b(DataManager::SIGNALS), dm->_dvar_b(DataManager::LSIGNALS), dm->_dvar_b(DataManager::CURRENT), 1, attr_sensor_size);
+	data_util::boolD2H(dm->_dvar_b(DataManager::CURRENT), dm->_hvar_b(DataManager::CURRENT), attr_sensor_size);
+}
+
+void simulation::updateStateEmpirical(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active) {
+	std::map<string, int> size_info = dm->getSizeInfo();
+	int sensor_size = size_info["_sensorSize"];
+	int attr_sensor_size = size_info["_attrSensorSize"];
+
+	//update weights
+	uma_base_empirical::updateWeights(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_b(DataManager::OBSERVE), attr_sensor_size, q, phi, active);
+	//update diag from new weights
+	uma_base::getWeightsDiag(dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::DIAG), dm->_dvar_d(DataManager::OLD_DIAG), attr_sensor_size);
+	//update thresholds, no operation for now
+	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
+	//update dirs
+	uma_base_empirical::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
@@ -321,9 +382,17 @@ void simulation::calculateTarget(DataManager *dm, const int type) {
 
 	if (UMA_AGENT::AGENT_STATIONARY == type)
 		uma_base::calculateTarget(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
-	else {
+	else if(UMA_AGENT::AGENT_QUALITATIVE == type){
 		data_util::doubleD2H(dm->_dvar_d(DataManager::DIAG), dm->_hvar_d(DataManager::DIAG), attr_sensor_size);
 		uma_base_qualitative::calculateTarget(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
+	}
+	else if (UMA_AGENT::AGENT_DISCOUNTED == type) {
+		data_util::doubleD2H(dm->_dvar_d(DataManager::DIAG), dm->_hvar_d(DataManager::DIAG), attr_sensor_size);
+		uma_base_discounted::calculateTarget(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
+	}
+	else {
+		data_util::doubleD2H(dm->_dvar_d(DataManager::DIAG), dm->_hvar_d(DataManager::DIAG), attr_sensor_size);
+		uma_base_empirical::calculateTarget(dm->_dvar_d(DataManager::DIAG), dm->_dvar_b(DataManager::TARGET), sensor_size);
 	}
 	data_util::boolD2H(dm->_dvar_b(DataManager::TARGET), dm->_hvar_b(DataManager::TARGET), attr_sensor_size);
 }

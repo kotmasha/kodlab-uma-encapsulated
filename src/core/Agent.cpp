@@ -154,6 +154,9 @@ Agent::~Agent(){
 	agentLogger.info("Agent is deleted, agentId=" + _uuid, this->getParentChain());
 }
 
+/*
+-----------------------AgentQualitative class-----------------------
+*/
 AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
 
 AgentQualitative::~AgentQualitative() {}
@@ -166,3 +169,47 @@ Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Qualitative", this->getParentChain());
 	return _snapshots[uuid];
 }
+
+/*
+-----------------------AgentQualitative class-----------------------
+*/
+
+/*
+-----------------------AgentDiscounted class-----------------------
+*/
+AgentDiscounted::AgentDiscounted(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
+
+AgentDiscounted::~AgentDiscounted() {}
+
+Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
+	if (_snapshots.find(uuid) != _snapshots.end()) {
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
+	}
+	_snapshots[uuid] = new SnapshotDiscounted(uuid, this);
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Discounted", this->getParentChain());
+	return _snapshots[uuid];
+}
+
+/*
+-----------------------AgentDiscounted class-----------------------
+*/
+
+/*
+-----------------------AgentEmpirical class-----------------------
+*/
+AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
+
+AgentEmpirical::~AgentEmpirical() {}
+
+Snapshot *AgentEmpirical::createSnapshot(const string &uuid) {
+	if (_snapshots.find(uuid) != _snapshots.end()) {
+		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
+	}
+	_snapshots[uuid] = new SnapshotEmpirical(uuid, this);
+	agentLogger.info("A Snapshot is created, snapshotId=" + uuid + ", type=Empirical", this->getParentChain());
+	return _snapshots[uuid];
+}
+
+/*
+-----------------------AgentEmpirical class-----------------------
+*/

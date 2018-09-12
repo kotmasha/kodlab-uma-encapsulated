@@ -4,11 +4,11 @@
 #include "UMAutil.h"
 
 LogService *LogService::_logService = nullptr;
-static string LOG_FOLDER = "log";
 
 LogService::LogService() {
 	try {
-		SysUtil::UMAMkdir(LOG_FOLDER);
+		string logFolder = "log";
+		SysUtil::UMAMkdir(logFolder);
 	}
 	catch (exception &ex) {
 		cout << "Cannot make a log folder, error=" + string(ex.what()) << endl;
