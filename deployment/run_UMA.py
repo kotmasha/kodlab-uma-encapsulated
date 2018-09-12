@@ -31,8 +31,10 @@ if __name__ == "__main__":
         instance = info['Cluster']['instance']
         base_url = info['Cluster']['base_url']
         port = int(info['Cluster']['port'])
-
-    cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
+        if info['Cluster']['cluster_path'] is None or info['Cluster']['cluster_path'] == "None" or info['Cluster']['cluster_path'] == "":
+            cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
+        else:
+            cluster_path = info['Cluster']['cluster_path']
 
     for i in range(instance):
         path = os.path.join(cluster_path, 'UMA' + str(i))

@@ -29,4 +29,16 @@ namespace uma_base_qualitative {
 	void orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size);
 	void calculateTarget(double *diag, bool *target, int sensor_size);
 }
+
+namespace uma_base_discounted {
+	void updateWeights(double *weights, bool *observe, int attr_sensorSize, double q, double phi, bool active);
+	void orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size);
+	void calculateTarget(double *diag, bool *target, int sensor_size);
+}
+
+namespace uma_base_empirical {
+	void updateWeights(double *weights, bool *observe, int attr_sensorSize, double q, double phi, bool active);
+	void orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size);
+	void calculateTarget(double *diag, bool *target, int sensor_size);
+}
 #endif

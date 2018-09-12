@@ -11,6 +11,8 @@ class Snapshot;
 namespace simulation {
 	void DLL_PUBLIC updateState(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active);
 	void DLL_PUBLIC updateStateQualitative(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active);
+	void DLL_PUBLIC updateStateDiscounted(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active);
+	void DLL_PUBLIC updateStateEmpirical(DataManager *dm, const double &q, const double &phi, const double &total, const double &total_, const bool &active);
 	void DLL_PUBLIC propagates(bool *npdirs, bool *load, bool *signals, bool *lsignals, bool *dst, int sig_count, int attr_sensorSize);
 	void DLL_PUBLIC floyd(DataManager *dm);
 	void DLL_PUBLIC genMask(DataManager *dm, int &initial_size);

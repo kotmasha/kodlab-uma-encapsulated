@@ -818,3 +818,35 @@ void uma_base_qualitative::calculateTarget(double *diag, bool *target, int senso
 	calculateTargetQualitative_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
 	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
 }
+
+//for now reuse the stationary kernel, as there is nothing different
+void uma_base_discounted::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
+	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
+	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+}
+
+void uma_base_discounted::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
+	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
+	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+}
+
+void uma_base_discounted::calculateTarget(double *diag, bool *target, int sensor_size) {
+	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
+	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+}
+
+//for now reuse the stationary kernel, as there is nothing different
+void uma_base_empirical::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
+	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
+	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+}
+
+void uma_base_empirical::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
+	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
+	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+}
+
+void uma_base_empirical::calculateTarget(double *diag, bool *target, int sensor_size) {
+	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
+	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+}

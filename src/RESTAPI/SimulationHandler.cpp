@@ -6,6 +6,7 @@
 #include "DataManager.h"
 #include "Simulation.h"
 #include "UMAException.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 SimulationHandler::SimulationHandler(const string &handlerName): UMARestHandler(handlerName) {
@@ -308,7 +309,7 @@ void SimulationHandler::createNpdirs(UMARestRequest &request) {
 	Snapshot *snapshot = agent->getSnapshot(snapshotId);
 	DataManager *dm = snapshot->getDM();
 	simulation::floyd(dm);
-	vector<bool> npdirs = dm->getNPDir();
+	vector<vector<bool>> npdirs = dm->getNPDir2D();
 
 	request.setMessage("N power dir created");
 	request.setData("npdirs", npdirs);

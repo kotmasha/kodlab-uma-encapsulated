@@ -2,6 +2,7 @@
 #define _MEASURABLE_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 class Snapshot;
 class Sensor;
 class AttrSensorPair;
@@ -10,10 +11,8 @@ using namespace std;
 /*
 This is the AttrSensor class, it is controlled by the Sensor class
 */
-class DLL_PUBLIC AttrSensor{
+class DLL_PUBLIC AttrSensor: public UMACoreObject {
 protected:
-	//measurable id
-	const string _uuid;
 	//_idx is the index of the measurable in the matrix
 	int _idx;
 	//_diag is the pointer pointing to the diagonal value of the sensor(weights[i][i])
@@ -47,7 +46,7 @@ protected:
 
 public:
 	//AttrSensor(ifstream &file);
-	AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag);
+	AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool isOriginPure, double diag);
 
 	void pointersToNull();
 	void pointersToValues();
@@ -65,14 +64,14 @@ public:
 	//void save_measurable(ofstream &file);
 	//void copy_data(AttrSensor *m);
 
-	const double &getDiag() const;
-	const double &getOldDiag() const;
-	const bool &getIsOriginPure() const;
-	const bool &getObserve() const;
-	const bool &getOldObserve() const;
-	const bool &getCurrent() const;
+	const double &getDiag();
+	const double &getOldDiag();
+	const bool &getIsOriginPure();
+	const bool &getObserve();
+	const bool &getOldObserve();
+	const bool &getCurrent();
 	const int &getIdx() const;
-	const bool &getTarget() const;
+	const bool &getTarget();
 
 	void setDiag(const double &diag);
 	void setOldDiag(const double &diag_);

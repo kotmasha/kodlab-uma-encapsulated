@@ -6,6 +6,7 @@
 */
 /*
 input: string path
+be sure to handle the exception correctly in caller
 */
 string SysUtil::UMAMkdir(string &path) {
 #if defined(_WIN64)
@@ -46,17 +47,6 @@ bool SysUtil::UMAFolderExist(string &path) {
 /*
 ##################StrUtil####################
 */
-/*
-input: string level
-output: int level
-*/
-int StrUtil::stringToLogLevel(const string &s) {
-	if (s == "ERROR") return 0;
-	if (s == "WARN") return 1;
-	if (s == "INFO") return 2;
-	if (s == "DEBUG") return 3;
-	if (s == "VERBOSE") return 4;
-}
 
 vector<std::pair<string, string>> StrUtil::string2dToString1dPair(const vector<vector<string>> &pairs) {
 	vector<std::pair<string, string> > results;

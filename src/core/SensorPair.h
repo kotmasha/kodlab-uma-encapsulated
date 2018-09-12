@@ -2,6 +2,7 @@
 #define _SENSORPAIR_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 
 class AttrSensorPair;
 class Sensor;
@@ -11,7 +12,7 @@ using namespace std;
 SensorPair is functioning as the manager for a pair of sensors
 It is distinguished by 2 sensor ids, and it will point to values like weight, dir and thresholds
 */
-class DLL_PUBLIC SensorPair{
+class DLL_PUBLIC SensorPair: public UMACoreObject{
 private:
 	//const pointer to sensor, larger idx
 	Sensor * _sensor_i;
@@ -32,9 +33,9 @@ private:
 
 public:
 	// SensorPair(ifstream &file, vector<Sensor *> &sensors);
-	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold);
-	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, double total);
-	SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, const vector<double> &w, const vector<bool> &b);
+	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold);
+	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, double total);
+	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, const vector<double> &w, const vector<bool> &b);
 	//init functions
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);
@@ -50,8 +51,11 @@ public:
 	AttrSensorPair *getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j);
 	//void save_sensor_pair(ofstream &file);
 	//void copy_data(SensorPair *sp);
-	const double &getThreshold() const;
+	const double &getThreshold();
 	~SensorPair();
+
+protected:
+	const string generateUUID(Sensor* const _sensor_i, Sensor* const _sensor_j) const;
 };
 
 #endif

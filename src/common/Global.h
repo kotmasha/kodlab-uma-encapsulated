@@ -51,5 +51,4 @@ using namespace std;
 	#endif
 #endif
 
-//the enum for the snapshot/dataManager data fields, add the enum for new data field
-#endif
+#endif //end for _GLOBAL_

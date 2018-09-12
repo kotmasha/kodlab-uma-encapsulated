@@ -36,24 +36,26 @@ Sensor::Sensor(ifstream &file) {
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
-Sensor::Sensor(const std::pair<string, string> &idPair, const double &total, int idx): _uuid(idPair.first){
+Sensor::Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const double &total, int idx)
+	:UMACoreObject(idPair.first, UMA_OBJECT::SENSOR, parent){
 	_idx = idx;
-	_m = new AttrSensor(idPair.first, 2 * idx, true, total / 2);
-	_cm = new AttrSensor(idPair.second, 2 * idx + 1, false, total / 2);
+	_m = new AttrSensor(idPair.first, this, 2 * idx, true, total / 2);
+	_cm = new AttrSensor(idPair.second, this, 2 * idx + 1, false, total / 2);
 	_observe = NULL;
 	_observe_ = NULL;
 
-	sensorLogger.info("New sensor created with total value, id=" + _uuid);
+	sensorLogger.info("New sensor created with total value, id=" + _uuid, this->getParentChain());
 }
 
-Sensor::Sensor(const std::pair<string, string> &idPair, const vector<double> &diag, int idx): _uuid(idPair.first) {
+Sensor::Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const vector<double> &diag, int idx)
+	: UMACoreObject(idPair.first, UMA_OBJECT::SENSOR, parent) {
 	_idx = idx;
-	_m = new AttrSensor(idPair.first, 2 * idx, true, diag[0]);
-	_cm = new AttrSensor(idPair.second, 2 * idx + 1, false, diag[1]);
+	_m = new AttrSensor(idPair.first, this, 2 * idx, true, diag[0]);
+	_cm = new AttrSensor(idPair.second, this, 2 * idx + 1, false, diag[1]);
 	_observe = NULL;
 	_observe_ = NULL;
 
-	sensorLogger.info("New sensor created with diag value, id=" + _uuid);
+	sensorLogger.info("New sensor created with diag value, id=" + _uuid, this->getParentChain());
 }
 
 /*
@@ -228,7 +230,7 @@ void Sensor::copy_data(Sensor *s) {
 
 bool Sensor::generateDelayedSignal() {
 	if (!_observe_) {
-		throw UMABadOperationException("the old observe signal is NULL, be sure to init the sensor first!", false, &sensorLogger);
+		throw UMABadOperationException("the old observe signal is NULL, be sure to init the sensor first!", false, &sensorLogger, this->getParentChain());
 	}
 	for (int i = 0; i < _amper.size(); ++i) {
 		int j = _amper[i];

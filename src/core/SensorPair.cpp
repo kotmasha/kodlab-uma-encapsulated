@@ -1,5 +1,6 @@
 #include "SensorPair.h"
 #include "AttrSensorPair.h"
+#include "AttrSensor.h"
 #include "Sensor.h"
 #include "UMAException.h"
 #include "Logger.h"
@@ -28,43 +29,46 @@ SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
 /*
 init function use sensor pointer, attr_sensor pointer to create measurable pairs
 */
-SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold) :
-	_sensor_i(_sensor_i), _sensor_j(_sensor_j) {
-	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, -1, _sensor_i == _sensor_j);
-	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, -1, false);
-	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, -1, false);
-	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, -1, _sensor_i == _sensor_j);
+SensorPair::SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold) :
+	UMACoreObject(generateUUID(sensor_i, sensor_j), UMA_OBJECT::SENSOR_PAIR, parent),
+	_sensor_i(sensor_i), _sensor_j(sensor_j) {
+	mij = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_m, -1, _sensor_i == _sensor_j);
+	mi_j = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_cm, -1, false);
+	m_ij = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_m, -1, false);
+	m_i_j = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_cm, -1, _sensor_i == _sensor_j);
 	pointersToNull();
 	this->_vthreshold = threshold;
 
-	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
+	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid, this->getParentChain());
 }
 
 /*
 init function use sensor pointer, attr_sensor pointer to create measurable pairs
 */
-SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, double total):
-	_sensor_i(_sensor_i),_sensor_j(_sensor_j){
-	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, total / 4.0, _sensor_i == _sensor_j);
-	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
-	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
-	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
+SensorPair::SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, double total):
+	UMACoreObject(generateUUID(sensor_i, sensor_j), UMA_OBJECT::SENSOR_PAIR, parent),
+	_sensor_i(sensor_i),_sensor_j(sensor_j){
+	mij = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_m, total / 4.0, _sensor_i == _sensor_j);
+	mi_j = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_cm, total / 4.0, false);
+	m_ij = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_m, total / 4.0, false);
+	m_i_j = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_cm, total / 4.0, _sensor_i == _sensor_j);
 	pointersToNull();
 	this->_vthreshold = threshold;
 
-	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
+	sensorPairLogger.info("Sensor pair is constructed with total, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid, this->getParentChain());
 }
 
-SensorPair::SensorPair(Sensor* const _sensor_i, Sensor* const _sensor_j, double threshold, const vector<double> &w, const vector<bool> &b):
-	_sensor_i(_sensor_i), _sensor_j(_sensor_j) {
-	mij = new AttrSensorPair(_sensor_i->_m, _sensor_j->_m, w[0], b[0]);
-	mi_j = new AttrSensorPair(_sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
-	m_ij = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
-	m_i_j = new AttrSensorPair(_sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
+SensorPair::SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, const vector<double> &w, const vector<bool> &b):
+	UMACoreObject(generateUUID(sensor_i, sensor_j), UMA_OBJECT::SENSOR_PAIR, parent),
+	_sensor_i(sensor_i), _sensor_j(sensor_j) {
+	mij = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_m, w[0], b[0]);
+	mi_j = new AttrSensorPair(this, _sensor_i->_m, _sensor_j->_cm, w[1], b[1]);
+	m_ij = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_m, w[2], b[2]);
+	m_i_j = new AttrSensorPair(this, _sensor_i->_cm, _sensor_j->_cm, w[3], b[3]);
 	pointersToNull();
 	this->_vthreshold = threshold;
 
-	sensorPairLogger.info("Sensor pair is constructed with weights and dirs, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid);
+	sensorPairLogger.info("Sensor pair is constructed with weights and dirs, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid, this->getParentChain());
 }
 
 /*
@@ -179,14 +183,14 @@ void SensorPair::copy_data(SensorPair *sp) {
 
 void SensorPair::setThreshold(const double &threshold) {
 	if (!_threshold) {
-		throw UMABadOperationException("The threshold pointer is not initiated!", false, &sensorPairLogger);
+		throw UMABadOperationException("The threshold pointer is not initiated!", false, &sensorPairLogger, this->getParentChain());
 	}
 	*_threshold = threshold;
 }
 
-const double &SensorPair::getThreshold() const{
+const double &SensorPair::getThreshold(){
 	if (!_threshold) {
-		throw UMABadOperationException("The threshold pointer is not initiated!", false, &sensorPairLogger);
+		throw UMABadOperationException("The threshold pointer is not initiated!", false, &sensorPairLogger, this->getParentChain());
 	}
 	return *_threshold;
 }
@@ -204,4 +208,8 @@ SensorPair::~SensorPair(){
 	mi_j = NULL;
 	m_ij = NULL;
 	m_i_j = NULL;
+}
+
+const string SensorPair::generateUUID(Sensor* const _sensor_i, Sensor* const _sensor_j) const {
+	return _sensor_i->_uuid + "-" + _sensor_j->_uuid;
 }

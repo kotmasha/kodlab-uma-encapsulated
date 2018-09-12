@@ -3,7 +3,8 @@
 
 #include "Global.h"
 #include "UMARest.h"
-#include "UMAException.h"
+
+class UMAException;
 
 enum REQUEST_TYPE {GET, POST, PUT, DEL};
 
