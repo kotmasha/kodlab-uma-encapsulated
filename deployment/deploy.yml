@@ -1,6 +1,7 @@
 # This is the deployment yaml file
 Cluster:
-  instance: 3
+  instance: 1
   base_url: localhost
   port: 8000
+  remove_old_path: True
   cluster_path: None
