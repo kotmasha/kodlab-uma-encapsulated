@@ -5,6 +5,7 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 #include "Logger.h"
+#include "UMACoreService.h"
 #include "data_util.h"
 #include "uma_base.cuh"
 #include "kernel_util.cuh"
@@ -17,11 +18,11 @@ init function
 Input: DataManager's log path
 */
 DataManager::DataManager(UMACoreObject *parent): UMACoreObject("dataManager", UMA_OBJECT::DATA_MANAGER, parent) {
-	_memoryExpansion = stod(World::coreInfo["DataManager"]["memory_expansion"]);
+	_memoryExpansion = stod(UMACoreService::instance()->getPropertyValue("DataManager", "memory_expansion"));
 
 	initPointers();
 	setSize(0);
-	dataManagerLogger.info("Setting the memory expansion rate to " + to_string(_memoryExpansion));
+	dataManagerLogger.info("Setting the memory expansion rate to " + to_string(_memoryExpansion), this->getParentChain());
 }
 
 DataManager::~DataManager() {
@@ -80,7 +81,7 @@ void DataManager::initPointers() {
 	dev_dec_tmp1 = NULL;
 	dev_dec_tmp2 = NULL;
 
-	dataManagerLogger.debug("Setting all pointers to NULL");
+	dataManagerLogger.debug("Setting all pointers to NULL", this->getParentChain());
 }
 
 /*
@@ -88,7 +89,7 @@ Remalloc the memory, based on the sensor size
 Input: the sensor size
 */
 void DataManager::reallocateMemory(double &total, int sensorSize) {
-	dataManagerLogger.info("Starting reallocating memory");
+	dataManagerLogger.info("Starting reallocating memory", this->getParentChain());
 	//free all memory first
 	freeAllParameters();
 	//then set the size to be new one
@@ -107,7 +108,7 @@ void DataManager::reallocateMemory(double &total, int sensorSize) {
 		genOtherParameters();
 	}
 	catch (UMAException &e) {
-		throw UMAInternalException("Fatal error in reallocate_memory when doing memory allocation", true, &dataManagerLogger);
+		throw UMAInternalException("Fatal error in reallocate_memory when doing memory allocation", true, &dataManagerLogger, this->getParentChain());
 	}
 
 	try {
@@ -115,9 +116,9 @@ void DataManager::reallocateMemory(double &total, int sensorSize) {
 		initOtherParameter(total);
 	}
 	catch (UMAException &e) {
-		throw UMAInternalException("Fatal error in reallocate_memory when doing parameters ini", true, &dataManagerLogger);
+		throw UMAInternalException("Fatal error in reallocate_memory when doing parameters ini", true, &dataManagerLogger, this->getParentChain());
 	}
-	dataManagerLogger.info("Memory reallocated!");
+	dataManagerLogger.info("Memory reallocated!", this->getParentChain());
 }
 
 /*
@@ -132,12 +133,12 @@ void DataManager::setSize(int sensorSize, bool change_max) {
 	_maskAmperSize = _sensorSize * (_sensorSize + 1);
 	_npdirSize = _attrSensor2dSize + _sensorSize;
 
-	dataManagerLogger.info("Setting sensor size to " + to_string(_sensorSize));
-	dataManagerLogger.debug("Setting attr_sensor size to " + to_string(_attrSensorSize));
-	dataManagerLogger.debug("Setting sensor size 2D to " + to_string(_sensor2dSize));
-	dataManagerLogger.debug("Setting attr_sensor size 2D to " + to_string(_attrSensor2dSize));
-	dataManagerLogger.debug("Setting mask amper size to " + to_string(_maskAmperSize));
-	dataManagerLogger.debug("Setting npdir size to " + to_string(_npdirSize));
+	dataManagerLogger.info("Setting sensor size to " + to_string(_sensorSize), this->getParentChain());
+	dataManagerLogger.debug("Setting attr_sensor size to " + to_string(_attrSensorSize), this->getParentChain());
+	dataManagerLogger.debug("Setting sensor size 2D to " + to_string(_sensor2dSize), this->getParentChain());
+	dataManagerLogger.debug("Setting attr_sensor size 2D to " + to_string(_attrSensor2dSize), this->getParentChain());
+	dataManagerLogger.debug("Setting mask amper size to " + to_string(_maskAmperSize), this->getParentChain());
+	dataManagerLogger.debug("Setting npdir size to " + to_string(_npdirSize), this->getParentChain());
 
 	if (change_max) {
 		_sensorSizeMax = (int)(_sensorSize * (1 + _memoryExpansion));
@@ -147,14 +148,14 @@ void DataManager::setSize(int sensorSize, bool change_max) {
 		_maskAmperSizeMax = _sensorSizeMax * (_sensorSizeMax + 1);
 		_npdirSizeMax = _attrSensor2dSizeMax + _sensorSizeMax;
 
-		dataManagerLogger.debug("Setting max sensor size to " + to_string(_sensorSizeMax));
-		dataManagerLogger.debug("Setting max attr_sensor size to " + to_string(_attrSensorSizeMax));
-		dataManagerLogger.debug("Setting max sensor size 2D to " + to_string(_sensor2dSizeMax));
-		dataManagerLogger.debug("Setting max attr_sensor size 2D to " + to_string(_attrSensor2dSizeMax));
-		dataManagerLogger.debug("Setting max mask amper size to " + to_string(_maskAmperSizeMax));
-		dataManagerLogger.debug("Setting max npdir size to " + to_string(_npdirSizeMax));
+		dataManagerLogger.debug("Setting max sensor size to " + to_string(_sensorSizeMax), this->getParentChain());
+		dataManagerLogger.debug("Setting max attr_sensor size to " + to_string(_attrSensorSizeMax), this->getParentChain());
+		dataManagerLogger.debug("Setting max sensor size 2D to " + to_string(_sensor2dSizeMax), this->getParentChain());
+		dataManagerLogger.debug("Setting max attr_sensor size 2D to " + to_string(_attrSensor2dSizeMax), this->getParentChain());
+		dataManagerLogger.debug("Setting max mask amper size to " + to_string(_maskAmperSizeMax), this->getParentChain());
+		dataManagerLogger.debug("Setting max npdir size to " + to_string(_npdirSizeMax), this->getParentChain());
 	}
-	else dataManagerLogger.info("All size max value remain the same");
+	else dataManagerLogger.info("All size max value remain the same", this->getParentChain());
 }
 
 /*
@@ -208,7 +209,7 @@ Input: None
 Output: None
 */
 void DataManager::freeAllParameters() {//free data in case of memory leak
-	dataManagerLogger.info("Starting releasing memory");
+	dataManagerLogger.info("Starting releasing memory", this->getParentChain());
 	try {
 		delete[] h_dirs;
 		delete[] h_weights;
@@ -234,7 +235,7 @@ void DataManager::freeAllParameters() {//free data in case of memory leak
 		delete h_res;
 	}
 	catch (UMAException &e) {
-		throw UMAInternalException("Fatal error in free_all_parameters, when doing cpu array release", true, &dataManagerLogger);
+		throw UMAInternalException("Fatal error in free_all_parameters, when doing cpu array release", true, &dataManagerLogger, this->getParentChain());
 	}
 
 	try {
@@ -270,9 +271,9 @@ void DataManager::freeAllParameters() {//free data in case of memory leak
 		data_util::dev_free(dev_dec_tmp2);
 	}
 	catch (UMAException &e) {
-		throw UMAInternalException("Fatal error in free_all_parameters, when doing gpu array release", true, &dataManagerLogger);
+		throw UMAInternalException("Fatal error in free_all_parameters, when doing gpu array release", true, &dataManagerLogger, this->getParentChain());
 	}
-	dataManagerLogger.info("All memory released");
+	dataManagerLogger.info("All memory released", this->getParentChain());
 }
 
 
@@ -288,7 +289,7 @@ void DataManager::genDirection() {
 	memset(h_dirs, 0, _attrSensor2dSizeMax * sizeof(bool));
 	data_util::dev_init(dev_dirs, _attrSensor2dSizeMax);
 
-	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_attrSensor2dSizeMax));
+	dataManagerLogger.debug("Dir matrix generated with size " + to_string(_attrSensor2dSizeMax), this->getParentChain());
 }
 
 /*
@@ -303,7 +304,7 @@ void DataManager::genWeight() {
 	memset(h_weights, 0, _attrSensor2dSizeMax * sizeof(double));
 	data_util::dev_init(dev_weights, _attrSensor2dSizeMax);
 
-	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_attrSensor2dSizeMax));
+	dataManagerLogger.debug("Weight matrix generated with size " + to_string(_attrSensor2dSizeMax), this->getParentChain());
 }
 
 /*
@@ -318,7 +319,7 @@ void DataManager::genThresholds() {
 	memset(h_thresholds, 0, _sensor2dSizeMax * sizeof(double));
 	data_util::dev_init(dev_thresholds, _sensor2dSizeMax);
 
-	dataManagerLogger.debug("Threshold matrix generated with the size " + to_string(_sensor2dSizeMax));
+	dataManagerLogger.debug("Threshold matrix generated with the size " + to_string(_sensor2dSizeMax), this->getParentChain());
 }
 
 /*
@@ -333,7 +334,7 @@ void DataManager::genMaskAmper() {
 	memset(h_mask_amper, 0, _maskAmperSizeMax * sizeof(bool));
 	data_util::dev_init(dev_mask_amper, _maskAmperSizeMax);
 
-	dataManagerLogger.debug("Mask amper matrix generated with size " + to_string(_maskAmperSizeMax));
+	dataManagerLogger.debug("Mask amper matrix generated with size " + to_string(_maskAmperSizeMax), this->getParentChain());
 }
 
 /*
@@ -348,7 +349,7 @@ void DataManager::genNpDirection() {
 	memset(h_npdirs, 0, _npdirSizeMax * sizeof(bool));
 	data_util::dev_init(dev_npdirs, _npdirSizeMax);
 
-	dataManagerLogger.debug("NPDir matrix generated with size " + to_string(_npdirSizeMax));
+	dataManagerLogger.debug("NPDir matrix generated with size " + to_string(_npdirSizeMax), this->getParentChain());
 }
 
 void DataManager::genSignals() {
@@ -364,8 +365,8 @@ void DataManager::genSignals() {
 	data_util::dev_init(dev_signals, _attrSensorSizeMax * _attrSensorSizeMax);
 	data_util::dev_init(dev_lsignals, _attrSensorSizeMax * _attrSensorSizeMax);
 
-	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + " num of signals with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_attrSensorSizeMax * _attrSensorSizeMax));
-	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + " num of loaded signals with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_attrSensorSizeMax * _attrSensorSizeMax));
+	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + " num of signals with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_attrSensorSizeMax * _attrSensorSizeMax), this->getParentChain());
+	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + " num of loaded signals with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_attrSensorSizeMax * _attrSensorSizeMax), this->getParentChain());
 }
 
 void DataManager::genNpdirMask() {
@@ -377,7 +378,7 @@ void DataManager::genNpdirMask() {
 	memset(h_npdir_mask, 0, _sensorSizeMax * _attrSensorSizeMax * sizeof(bool));
 	data_util::dev_init(dev_npdir_mask, _sensorSizeMax * _attrSensorSizeMax);
 
-	dataManagerLogger.debug(to_string(_sensorSizeMax) + " num of npdir mask with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_sensorSizeMax * _attrSensorSizeMax));
+	dataManagerLogger.debug(to_string(_sensorSizeMax) + " num of npdir mask with length " + to_string(_attrSensorSizeMax) + " are generated, total size " + to_string(_sensorSizeMax * _attrSensorSizeMax), this->getParentChain());
 }
 
 void DataManager::genDists() {
@@ -389,7 +390,7 @@ void DataManager::genDists() {
 	memset(h_dists, 0, _attrSensorSizeMax * _attrSensorSizeMax * sizeof(int));
 	data_util::dev_init(dev_dists, _attrSensorSizeMax * _attrSensorSizeMax);
 
-	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + "*" + to_string(_attrSensorSizeMax) + "=" + to_string(_attrSensorSizeMax * _attrSensorSizeMax) + " num of space allocated for dists, used for block GPU");
+	dataManagerLogger.debug(to_string(_attrSensorSizeMax) + "*" + to_string(_attrSensorSizeMax) + "=" + to_string(_attrSensorSizeMax * _attrSensorSizeMax) + " num of space allocated for dists, used for block GPU", this->getParentChain());
 }
 
 /*
@@ -430,13 +431,13 @@ void DataManager::genOtherParameters() {
 	data_util::dev_bool(dev_dec_tmp1, _attrSensorSizeMax);
 	data_util::dev_bool(dev_dec_tmp2, _attrSensorSizeMax);
 
-	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_attrSensorSizeMax));
+	dataManagerLogger.debug("Other parameter generated, with size " + to_string(_attrSensorSizeMax), this->getParentChain());
 }
 
 void DataManager::createSensorsToArraysIndex(const int startIdx, const int endIdx, const vector<Sensor*> &sensors) {
 	//create idx for diag and current
 	if (startIdx < 0 || endIdx > _sensorSize) {
-		throw UMAInvalidArgsException("The input index range of sensor is illegal!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input index range of sensor is illegal!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = startIdx; i < endIdx; ++i) {
 		try {
@@ -447,25 +448,25 @@ void DataManager::createSensorsToArraysIndex(const int startIdx, const int endId
 			sensors[i]->setAttrSensorPredictionPointers(h_prediction);
 		}
 		catch (exception &e) {
-			throw UMAInternalException("Fatal error happen in createSensorsToArraysIndex", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error happen in createSensorsToArraysIndex", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.info("Sensor from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " have created idx to arrays");
+	dataManagerLogger.info("Sensor from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " have created idx to arrays", this->getParentChain());
 }
 
 void DataManager::createSensorPairsToArraysIndex(const int startIdx, const int endIdx, const vector<SensorPair*> &sensorPairs) {
 	if (startIdx < 0 || endIdx > _sensorSize) {
-		throw UMAInvalidArgsException("The input index range of sensor is illegal!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input index range of sensor is illegal!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = ind(startIdx, 0); i < ind(endIdx, 0); ++i) {
 		try {
 			sensorPairs[i]->setAllPointers(h_weights, h_dirs, h_thresholds);
 		}
 		catch (exception &e) {
-			throw UMAInternalException("Fatal error happen in createSensorPairsToArraysIndex", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error happen in createSensorPairsToArraysIndex", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.info("Sensor pairs from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " have created idx to arrays");
+	dataManagerLogger.info("Sensor pairs from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " have created idx to arrays", this->getParentChain());
 }
 
 /*
@@ -476,18 +477,18 @@ void DataManager::copyArraysToSensors(const int startIdx, const int endIdx, cons
 	data_util::doubleD2H(dev_diag, h_diag, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
 	data_util::doubleD2H(dev_diag_, h_diag_, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
 	data_util::boolD2H(dev_target, h_target, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
-	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from GPU arrays to CPU arrays");
+	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from GPU arrays to CPU arrays", this->getParentChain());
 	for (int i = startIdx; i < endIdx; ++i) {
 		//bring all sensor and attr_sensor info into the object
 		try {
 			_sensors[i]->pointersToValues();
 		}
 		catch (UMAException &e) {
-			throw UMAInternalException("Fatal error in function copy_arrays_to_sensors", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error in function copy_arrays_to_sensors", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from cpu arrays to sensor");
-	dataManagerLogger.info("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied back from arrays");
+	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from cpu arrays to sensor", this->getParentChain());
+	dataManagerLogger.info("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied back from arrays", this->getParentChain());
 }
 
 void DataManager::copySensorsToArrays(const int startIdx, const int endIdx, const vector<Sensor*> &_sensors) {
@@ -498,17 +499,17 @@ void DataManager::copySensorsToArrays(const int startIdx, const int endIdx, cons
 			_sensors[i]->valuesToPointers();
 		}
 		catch (exception &e) {
-			throw UMAInternalException("Fatal error in function copySensorsToArrays", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error in function copySensorsToArrays", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from sensor to CPU arrays");
+	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from sensor to CPU arrays", this->getParentChain());
 	//copy data from cpu array to GPU array
 	data_util::boolH2D(h_mask_amper, dev_mask_amper, 2 * (ind(endIdx, 0) - ind(startIdx, 0)), 2 * ind(startIdx, 0), 2 * ind(startIdx, 0));
 	data_util::doubleH2D(h_diag, dev_diag, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
 	data_util::doubleH2D(h_diag_, dev_diag_, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
 	data_util::boolH2D(h_target, dev_target, 2 * (endIdx - startIdx), 2 * startIdx, 2 * startIdx);
-	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from CPU arrays to GPU arrays");
-	dataManagerLogger.info("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied to arrays");
+	dataManagerLogger.debug("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied from CPU arrays to GPU arrays", this->getParentChain());
+	dataManagerLogger.info("Sensor data from idx " + to_string(startIdx) + " to " + to_string(endIdx) + " are copied to arrays", this->getParentChain());
 }
 
 /*
@@ -525,16 +526,16 @@ void DataManager::copySensorPairsToArrays(const int startIdx, const int endIdx, 
 			_sensorPairs[i]->valuesToPointers();
 		}
 		catch (exception &e) {
-			throw UMAInternalException("Fatal error in function copySensorPairsToArrays", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error in function copySensorPairsToArrays", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from sensor pairs to CPU arrays");
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from sensor pairs to CPU arrays", this->getParentChain());
 	//copy data from CPU arrays to GPU arrays
 	data_util::doubleH2D(h_weights, dev_weights, (ind(2 * endIdx, 0) - ind(2 * startIdx, 0)), ind(2 * startIdx, 0), ind(2 * startIdx, 0));
 	data_util::boolH2D(h_dirs, dev_dirs, (ind(2 * endIdx, 0) - ind(2 * startIdx, 0)), ind(2 * startIdx, 0), ind(2 * startIdx, 0));
 	data_util::doubleH2D(h_thresholds, dev_thresholds, (ind(endIdx, 0) - ind(startIdx, 0)), ind(startIdx, 0), ind(startIdx, 0));
-	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from CPU arrays to GPU arrays");
-	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied to arrays");
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from CPU arrays to GPU arrays", this->getParentChain());
+	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied to arrays", this->getParentChain());
 }
 
 void DataManager::copyArraysToSensorPairs(const int startIdx, const int endIdx, const vector<SensorPair*> &_sensorPairs) {
@@ -542,7 +543,7 @@ void DataManager::copyArraysToSensorPairs(const int startIdx, const int endIdx, 
 	data_util::doubleD2H(dev_weights, h_weights, (ind(2 * endIdx, 0) - ind(2 * startIdx, 0)), ind(2 * startIdx, 0), ind(2 * startIdx, 0));
 	data_util::boolD2H(dev_dirs, h_dirs, (ind(2 * endIdx, 0) - ind(2 * startIdx, 0)), ind(2 * startIdx, 0), ind(2 * startIdx, 0));
 	data_util::doubleD2H(dev_thresholds, h_thresholds, (ind(endIdx, 0) - ind(startIdx, 0)), ind(startIdx, 0), ind(startIdx, 0));
-	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from GPU arrays to CPU arrays");
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from GPU arrays to CPU arrays", this->getParentChain());
 	//copy data from CPU arrays to sensor pairs
 	for (int i = ind(startIdx, 0); i < ind(endIdx, 0); ++i) {
 		//bring all sensor pair info into the object
@@ -550,11 +551,11 @@ void DataManager::copyArraysToSensorPairs(const int startIdx, const int endIdx, 
 			_sensorPairs[i]->pointersToValues();
 		}
 		catch (exception &e) {
-			throw UMAInternalException("Fatal error in function copyArraysToSensorPairs", true, &dataManagerLogger);
+			throw UMAInternalException("Fatal error in function copyArraysToSensorPairs", true, &dataManagerLogger, this->getParentChain());
 		}
 	}
-	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from CPU arrays to sensor pairs");
-	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied back from arrays");
+	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from CPU arrays to sensor pairs", this->getParentChain());
+	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied back from arrays", this->getParentChain());
 }
 
 /*
@@ -567,11 +568,11 @@ Input: mask vector, size of mask have to be the _attrSensorSize
 */
 void DataManager::setMask(const vector<bool> &mask) {
 	if (mask.size() != _attrSensorSize) {
-		throw UMAInvalidArgsException("Input mask size not matching attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("Input mask size not matching attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < mask.size(); ++i) h_mask[i] = mask[i];
 	data_util::boolH2D(h_mask, dev_mask, mask.size());
-	dataManagerLogger.debug("Mask value set");
+	dataManagerLogger.debug("Mask value set", this->getParentChain());
 }
 
 /*
@@ -580,14 +581,14 @@ Input: observe signal
 */
 void DataManager::setObserve(const vector<bool> &observe) {//this is where data comes in in every frame
 	if (observe.size() != _attrSensorSize) {
-		throw UMAInvalidArgsException("The input observe size is not the size of attr sensor size", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input observe size is not the size of attr sensor size", false, &dataManagerLogger, this->getParentChain());
 	}
 	data_util::boolH2H(h_observe, h_observe_, _attrSensorSize);
 	for (int i = 0; i < observe.size(); ++i) {
 		h_observe[i] = observe[i];
 	}
 	data_util::boolH2D(h_observe, dev_observe, _attrSensorSize);
-	dataManagerLogger.debug("observe signal set");
+	dataManagerLogger.debug("observe signal set", this->getParentChain());
 }
 
 /*
@@ -597,13 +598,13 @@ Input: current signal
 void DataManager::setCurrent(const vector<bool> &current) {//this is where data comes in in every frame
 	if (current.size() != _attrSensorSize) {
 		string s = "Input current size not matching attr_sensor size!";
-		throw UMAInvalidArgsException("Input current size not matching attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("Input current size not matching attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current[i] = current[i];
 	}
 	data_util::boolH2D(h_current, dev_current, _attrSensorSize);
-	dataManagerLogger.debug("current signal set for customized purpose");
+	dataManagerLogger.debug("current signal set for customized purpose", this->getParentChain());
 }
 
 /*
@@ -612,13 +613,13 @@ Input: current signal
 */
 void DataManager::setOldCurrent(const vector<bool> &current) {//this is where data comes in in every frame
 	if (current.size() != _attrSensorSize) {
-		throw UMAInvalidArgsException("Input old current size not matching attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("Input old current size not matching attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < current.size(); ++i) {
 		h_current_[i] = current[i];
 	}
 	data_util::boolH2D(h_current_, dev_current_, _attrSensorSize);
-	dataManagerLogger.debug("old current signal set for customized purpose");
+	dataManagerLogger.debug("old current signal set for customized purpose", this->getParentChain());
 }
 
 /*
@@ -627,13 +628,13 @@ Input: target signal
 */
 void DataManager::setTarget(const vector<bool> &target) {
 	if (target.size() != _attrSensorSize) {
-		throw UMAInvalidArgsException("Input target size not matching attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("Input target size not matching attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		h_target[i] = target[i];
 	}
 	data_util::boolH2D(h_target, dev_target, _attrSensorSize);
-	dataManagerLogger.debug("target signal set");
+	dataManagerLogger.debug("target signal set", this->getParentChain());
 }
 
 /*
@@ -643,7 +644,7 @@ Input: 2d vector of signals, first dimension should not exceed sensor size, seco
 void DataManager::setSignals(const vector<vector<bool> > &signals) {
 	int sigCount = signals.size();
 	if (sigCount > _attrSensorSizeMax) {
-		throw UMAInvalidArgsException("The input sensor size is larger than current sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input sensor size is larger than current sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < sigCount; ++i) {
 		if (signals[i].size() != _attrSensorSize) {
@@ -654,7 +655,7 @@ void DataManager::setSignals(const vector<vector<bool> > &signals) {
 		}
 	}
 	data_util::boolH2D(h_signals, dev_signals, sigCount * _attrSensorSize);
-	dataManagerLogger.debug(to_string(sigCount) + " signals set");
+	dataManagerLogger.debug(to_string(sigCount) + " signals set", this->getParentChain());
 }
 
 /*
@@ -663,27 +664,27 @@ Input: list of load in bool, list size has to be attr_sensor size
 */
 void DataManager::setLoad(const vector<bool> &load) {
 	if (load.size() != _attrSensorSize) {
-		throw UMAInvalidArgsException("The input load size is not matching the attr_sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input load size is not matching the attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		h_load[i] = load[i];
 	}
 	data_util::boolH2D(h_load, dev_load, _attrSensorSize);
-	dataManagerLogger.debug("load set");
+	dataManagerLogger.debug("load set", this->getParentChain());
 }
 
 void DataManager::setDists(const vector<vector<int> > &dists) {
 	if (dists.size() > _sensorSize) {
-		throw UMAInvalidArgsException("The input dists size is larger than the sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input dists size is larger than the sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < dists.size(); ++i) {
 		if (dists[i].size() != _sensorSize) {
-			throw UMAInvalidArgsException("The " + to_string(i) + "th input dists size is larger than sensor size!", false, &dataManagerLogger);
+			throw UMAInvalidArgsException("The " + to_string(i) + "th input dists size is larger than sensor size!", false, &dataManagerLogger, this->getParentChain());
 		}
 		for (int j = 0; j < dists[0].size(); ++j) h_dists[i * _sensorSize + j] = dists[i][j];
 	}
 	data_util::intH2D(h_dists, dev_dists, _sensorSize * _sensorSize);
-	dataManagerLogger.debug("dists set");
+	dataManagerLogger.debug("dists set", this->getParentChain());
 }
 
 /*
@@ -694,11 +695,11 @@ input: 2d signals vector
 void DataManager::setLSignals(const vector<vector<bool> > &signals) {
 	int sigCount = signals.size();
 	if (sigCount > _attrSensorSizeMax) {
-		throw UMAInvalidArgsException("The input sensor size is larger than current sensor size!", false, &dataManagerLogger);
+		throw UMAInvalidArgsException("The input sensor size is larger than current sensor size!", false, &dataManagerLogger, this->getParentChain());
 	}
 	for (int i = 0; i < sigCount; ++i) {
 		if (signals[i].size() != _attrSensorSize) {
-			throw UMAInvalidArgsException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", false, &dataManagerLogger);
+			throw UMAInvalidArgsException("The " + to_string(i) + "th input string size is not matching attr_sensor size!", false, &dataManagerLogger, this->getParentChain());
 		}
 		for (int j = 0; j < signals[i].size(); ++j) {
 			h_lsignals[i * _attrSensorSize + j] = signals[i][j];
@@ -708,7 +709,7 @@ void DataManager::setLSignals(const vector<vector<bool> > &signals) {
 	for (int i = 0; i < sigCount; ++i) {
 		kernel_util::disjunction(dev_lsignals + i * _attrSensorSize, dev_load, _attrSensorSize);
 	}
-	dataManagerLogger.debug("loaded signals set");
+	dataManagerLogger.debug("loaded signals set", this->getParentChain());
 }
 
 //------------------------------SET FUNCTIONS--------------------------------
@@ -729,7 +730,7 @@ const vector<vector<bool> > DataManager::getSignals(int sigCount) {
 		for (int j = 0; j < _attrSensorSize; ++j) tmp.push_back(h_signals[i * _attrSensorSize + j]);
 		results.push_back(tmp);
 	}
-	dataManagerLogger.debug(to_string(sigCount) + " signals get");
+	dataManagerLogger.debug(to_string(sigCount) + " signals get", this->getParentChain());
 	return results;
 }
 
@@ -745,7 +746,7 @@ const vector<vector<bool> > DataManager::getLSignals(int sigCount) {
 		for (int j = 0; j < _attrSensorSize; ++j) tmp.push_back(h_lsignals[i * _attrSensorSize + j]);
 		results.push_back(tmp);
 	}
-	dataManagerLogger.debug(to_string(sigCount) + " loaded signals get");
+	dataManagerLogger.debug(to_string(sigCount) + " loaded signals get", this->getParentChain());
 	return results;
 }
 
@@ -761,7 +762,7 @@ const vector<vector<bool> > DataManager::getNpdirMasks() {
 		for (int j = 0; j < _attrSensorSize; ++j) tmp.push_back(h_npdir_mask[i * _attrSensorSize + j]);
 		results.push_back(tmp);
 	}
-	dataManagerLogger.debug("npdir mask get");
+	dataManagerLogger.debug("npdir mask get", this->getParentChain());
 	return results;
 }
 
@@ -775,7 +776,7 @@ const vector<bool> DataManager::getCurrent() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_current[i]);
 	}
-	dataManagerLogger.debug("current signal get");
+	dataManagerLogger.debug("current signal get", this->getParentChain());
 	return result;
 }
 
@@ -785,7 +786,7 @@ const vector<bool> DataManager::getOldCurrent() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_current_[i]);
 	}
-	dataManagerLogger.debug("old current signal get");
+	dataManagerLogger.debug("old current signal get", this->getParentChain());
 	return result;
 }
 
@@ -799,7 +800,7 @@ const vector<bool> DataManager::getPrediction() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_prediction[i]);
 	}
-	dataManagerLogger.debug("prediction signal get");
+	dataManagerLogger.debug("prediction signal get", this->getParentChain());
 	return result;
 }
 
@@ -813,7 +814,7 @@ const vector<bool> DataManager::getTarget() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_target[i]);
 	}
-	dataManagerLogger.debug("target signal get");
+	dataManagerLogger.debug("target signal get", this->getParentChain());
 	return result;
 }
 
@@ -831,7 +832,7 @@ const vector<vector<double> > DataManager::getWeight2D() {
 			tmp.push_back(h_weights[n++]);
 		result.push_back(tmp);
 	}
-	dataManagerLogger.debug("weight matrix 2d get");
+	dataManagerLogger.debug("weight matrix 2d get", this->getParentChain());
 	return result;
 }
 
@@ -849,7 +850,7 @@ const vector<vector<bool> > DataManager::getDir2D() {
 			tmp.push_back(h_dirs[n++]);
 		result.push_back(tmp);
 	}
-	dataManagerLogger.debug("dir matrix 2d get");
+	dataManagerLogger.debug("dir matrix 2d get", this->getParentChain());
 	return result;
 }
 
@@ -867,7 +868,7 @@ const vector<vector<bool> > DataManager::getNPDir2D() {
 			tmp.push_back(h_npdirs[n++]);
 		result.push_back(tmp);
 	}
-	dataManagerLogger.debug("npdir matrix 2d get");
+	dataManagerLogger.debug("npdir matrix 2d get", this->getParentChain());
 	return result;
 }
 
@@ -885,7 +886,7 @@ const vector<vector<double> > DataManager::getThreshold2D() {
 			tmp.push_back(h_thresholds[n++]);
 		result.push_back(tmp);
 	}
-	dataManagerLogger.debug("threshold matrix 2d get");
+	dataManagerLogger.debug("threshold matrix 2d get", this->getParentChain());
 	return result;
 }
 
@@ -903,7 +904,7 @@ const vector<vector<bool> > DataManager::getMaskAmper2D() {
 			tmp.push_back(h_mask_amper[n++]);
 		result.push_back(tmp);
 	}
-	dataManagerLogger.debug("mask amper 2d get");
+	dataManagerLogger.debug("mask amper 2d get", this->getParentChain());
 	return result;
 }
 
@@ -917,7 +918,7 @@ const vector<bool> DataManager::getMaskAmper() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	dataManagerLogger.debug("mask amper 1d get");
+	dataManagerLogger.debug("mask amper 1d get", this->getParentChain());
 	return results;
 }
 
@@ -931,7 +932,7 @@ const vector<double> DataManager::getWeight() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	dataManagerLogger.debug("weight matrix 1d get");
+	dataManagerLogger.debug("weight matrix 1d get", this->getParentChain());
 	return results;
 }
 
@@ -945,7 +946,7 @@ const vector<bool> DataManager::getDir() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	dataManagerLogger.debug("dir matrix 1d get");
+	dataManagerLogger.debug("dir matrix 1d get", this->getParentChain());
 	return results;
 }
 
@@ -959,7 +960,7 @@ const vector<bool> DataManager::getNPDir() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	dataManagerLogger.debug("npdir matrix 1d get");
+	dataManagerLogger.debug("npdir matrix 1d get", this->getParentChain());
 	return results;
 }
 
@@ -973,7 +974,7 @@ const vector<double> DataManager::getThresholds() {
 	for (int i = 0; i < tmp.size(); ++i) {
 		for (int j = 0; j < tmp[i].size(); ++j) results.push_back(tmp[i][j]);
 	}
-	dataManagerLogger.debug("threshold matrix 1d get");
+	dataManagerLogger.debug("threshold matrix 1d get", this->getParentChain());
 	return results;
 }
 
@@ -987,7 +988,7 @@ const vector<double> DataManager::getDiag() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_diag[i]);
 	}
-	dataManagerLogger.debug("diag value get");
+	dataManagerLogger.debug("diag value get", this->getParentChain());
 	return result;
 }
 
@@ -1001,7 +1002,7 @@ const vector<double> DataManager::getDiagOld() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_diag_[i]);
 	}
-	dataManagerLogger.debug("old diag value get");
+	dataManagerLogger.debug("old diag value get", this->getParentChain());
 	return result;
 }
 
@@ -1013,7 +1014,7 @@ const vector<bool> DataManager::getMask() {
 	vector<bool> result;
 	data_util::boolD2H(dev_mask, h_mask, _attrSensorSize);
 	for (int i = 0; i < this->_attrSensorSize; ++i) result.push_back(h_mask[i]);
-	dataManagerLogger.debug("mask signal get");
+	dataManagerLogger.debug("mask signal get", this->getParentChain());
 	return result;
 }
 
@@ -1025,7 +1026,7 @@ const vector<bool> DataManager::getObserve() {
 	vector<bool> result;
 	data_util::boolD2H(dev_observe, h_observe, _attrSensorSize);
 	for (int i = 0; i < this->_attrSensorSize; ++i) result.push_back(h_observe[i]);
-	dataManagerLogger.debug("observe signal get");
+	dataManagerLogger.debug("observe signal get", this->getParentChain());
 	return result;
 }
 
@@ -1037,7 +1038,7 @@ const vector<bool> DataManager::getLoad() {
 	vector<bool> result;
 	data_util::boolD2H(dev_load, h_load, _attrSensorSize);
 	for (int i = 0; i < _attrSensorSize; ++i) result.push_back(h_load[i]);
-	dataManagerLogger.debug("load signal get");
+	dataManagerLogger.debug("load signal get", this->getParentChain());
 	return result;
 }
 
@@ -1047,6 +1048,7 @@ const vector<bool> DataManager::getNegligible() {
 	for (int i = 0; i < _attrSensorSize; ++i) {
 		result.push_back(h_negligible[i]);
 	}
+	dataManagerLogger.debug("negligible signal get", this->getParentChain());
 	return result;
 }
 
@@ -1069,6 +1071,7 @@ const vector<int> DataManager::getUnionRoot() {
 	for (int i = 0; i < _sensorSize; ++i) {
 		result.push_back(h_union_root[i]);
 	}
+	dataManagerLogger.debug("union root signal get", this->getParentChain());
 	return result;
 }
 

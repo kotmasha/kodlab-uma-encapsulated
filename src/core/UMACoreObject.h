@@ -14,11 +14,16 @@ protected:
 	// the unique id of the object
 	const string _uuid;
 	// the UMA Object type
-	const int _objType;
+	const UMACoreConstant::UMA_OBJECT _objType;
 	// the parent of the current object
 	UMACoreObject *_parent;
 	// the object's child type and count
-	std::map<string, int> _children;
+	std::map<UMACoreConstant::UMA_OBJECT, int> _children;
+	// the ancestors of the UMA object, and the variable is only created on demand
+	vector<const UMACoreObject*> _ancestors;
+
+protected:
+	const string getParentChain();
 
 public:
 	UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT ObjType, UMACoreObject *parent);

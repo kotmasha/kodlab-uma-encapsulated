@@ -3,7 +3,7 @@
 #include "device_util.h"
 #include "Logger.h"
 
-static Logger kernelUtilLogger("DataUtil", "log/device.log");
+static Logger kernelUtilLogger("KernelUtil", "log/device.log");
 
 /*
 ---------------------HELPER FUNCTION-----------------------

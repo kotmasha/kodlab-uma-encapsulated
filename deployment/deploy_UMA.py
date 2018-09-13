@@ -29,20 +29,27 @@ if __name__ == "__main__":
         instance = info['Cluster']['Ninstances']
         base_url = info['Cluster']['base_url']
         port = int(info['Cluster']['port'])
+        remove_old_path = bool(info['Cluster']['remove_old_path'])
+        if info['Cluster']['cluster_path'] is None or info['Cluster']['cluster_path'] == "None" or info['Cluster']['cluster_path'] == "":
+            cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
+        else:
+            cluster_path = info['Cluster']['cluster_path']
         print 'Will deploy %d UMA instances' % instance
         print 'base_url read from conf is: %s' % base_url
         print 'port read from conf is: %s' % port
+        print 'remove old path: %s' % remove_old_path
+        print 'Will deploy the cluster to path: %s' % cluster_path
 
-    cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
-    try:
-        shutil.rmtree(cluster_path)
-    except Exception as ex:
-        print "Error when trying to remove any existing cluster, error: %s" % str(ex)
-    print "removed old UMA cluster successfully"
+    if remove_old_path:
+        try:
+            shutil.rmtree(cluster_path)
+        except Exception as ex:
+            print "Error when trying to remove any existing cluster, error: %s" % str(ex)
+        print "removed old UMA cluster successfully"
 
     for i in range(instance):
         src = os.path.join(UMA_HOME, 'bin')
-        dst = os.path.join(UMA_HOME, 'deployment', 'cluster', 'UMA' + str(i))
+        dst = os.path.join(cluster_path, 'UMA' + str(i))
         copy_folder(src, dst)
 
         try:

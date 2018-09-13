@@ -704,8 +704,8 @@ TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test4) {
 TEST(sensor_test, set_amper_list) {
 	pair<string, string> p1 = { "s1", "cs1" };
 	pair<string, string> p2 = { "s2", "cs2" };
-	Sensor *s1 = new Sensor(p1, 1.0, 0);
-	Sensor *s2 = new Sensor(p2, 1.0, 1);
+	Sensor *s1 = new Sensor(p1, nullptr, 1.0, 0);
+	Sensor *s2 = new Sensor(p2, nullptr, 1.0, 1);
 	s1->setAmperList(0);
 	s1->setAmperList(1);
 	s2->setAmperList(2);
@@ -765,7 +765,7 @@ TEST(sensor_test, generateDelayedSensor) {
 
 TEST(sensor_test, get_set_idx) {
 	pair<string, string> p1 = { "s1", "cs1" };
-	Sensor *s1 = new Sensor(p1, 1.0, 0);
+	Sensor *s1 = new Sensor(p1, nullptr, 1.0, 0);
 	EXPECT_EQ(s1->getIdx(), 0);
 	s1->setIdx(2);
 	EXPECT_EQ(s1->getIdx(), 2);
@@ -780,11 +780,11 @@ TEST(sensor_test, copy_amper_list_test) {
 	pair<string, string> p4 = { "s4", "cs4" };
 	pair<string, string> p5 = { "s5", "cs5" };
 
-	Sensor *s1 = new Sensor(p1, 1.0, 0);
-	Sensor *s2 = new Sensor(p2, 1.0, 1);
-	Sensor *s3 = new Sensor(p3, 1.0, 2);
-	Sensor *s4 = new Sensor(p4, 1.0, 3);
-	Sensor *s5 = new Sensor(p5, 1.0, 4);
+	Sensor *s1 = new Sensor(p1, nullptr, 1.0, 0);
+	Sensor *s2 = new Sensor(p2, nullptr, 1.0, 1);
+	Sensor *s3 = new Sensor(p3, nullptr, 1.0, 2);
+	Sensor *s4 = new Sensor(p4, nullptr, 1.0, 3);
+	Sensor *s5 = new Sensor(p5, nullptr, 1.0, 4);
 
 	bool *ampers = new bool[30];
 	ampers[0] = 0; ampers[1] = 0;
@@ -819,13 +819,13 @@ TEST(sensor_test, copy_amper_list_test) {
 TEST(sensor_pair_test, sensor_pair_test) {
 	pair<string, string> p1 = { "s1", "cs1" };
 
-	Sensor *s1 = new Sensor(p1, 1.0, 0);
+	Sensor *s1 = new Sensor(p1, nullptr, 1.0, 0);
 
 	double *thresholds = new double;
 	double *weights = new double[4];
 	bool *dirs = new bool[4];
 
-	SensorPair *sp = new SensorPair(s1, s1, 0.25, 1.0);
+	SensorPair *sp = new SensorPair(nullptr, s1, s1, 0.25, 1.0);
 
 	sp->setAllPointers(weights, dirs, thresholds);
 	sp->valuesToPointers();
@@ -853,7 +853,7 @@ TEST(sensor_pair_test, sensor_pair_test) {
 }
 
 TEST(attr_sensor_test, attr_sensor_test) {
-	AttrSensor *as = new AttrSensor("attr_sensor", 0, true, 0.5);
+	AttrSensor *as = new AttrSensor("attr_sensor", nullptr, 0, true, 0.5);
 	double *diag = new double[2];
 	double *diag_ = new double[2];
 	bool *observe = new bool[2];

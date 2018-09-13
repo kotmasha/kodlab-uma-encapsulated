@@ -55,4 +55,20 @@ public:
 	virtual Snapshot *createSnapshot(const string &uuid);
 };
 
+class DLL_PUBLIC AgentDiscounted : public Agent {
+public:
+	AgentDiscounted(const string &uuid, UMACoreObject *parent);
+	~AgentDiscounted();
+
+	virtual Snapshot *createSnapshot(const string &uuid);
+};
+
+class DLL_PUBLIC AgentEmpirical : public Agent {
+public:
+	AgentEmpirical(const string &uuid, UMACoreObject *parent);
+	~AgentEmpirical();
+
+	virtual Snapshot *createSnapshot(const string &uuid);
+};
+
 #endif

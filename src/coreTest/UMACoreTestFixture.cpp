@@ -166,20 +166,20 @@ UMACoreDataFlowTestFixture::UMACoreDataFlowTestFixture() {
 	dirs = { 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 };
 	diag = { 0.5, 0.5, 0.2, 0.8, 0.5, 0.5, 0.5, 0.5 };
 
-	sensors.push_back(new Sensor(sensor1, 1.0, 0));
-	sensors.push_back(new Sensor(sensor2, d1, 1));
-	sensors.push_back(new Sensor(sensor3, 1.0, 2));
-	sensors.push_back(new Sensor(sensor4, 1.0, 3));
-	sensorPairs.push_back(new SensorPair(sensors[0], sensors[0], 0.125, w0[0], b0[0]));
-	sensorPairs.push_back(new SensorPair(sensors[1], sensors[0], 0.25, 1.0));
-	sensorPairs.push_back(new SensorPair(sensors[1], sensors[1], 0.25, 1.0));
-	sensorPairs.push_back(new SensorPair(sensors[2], sensors[0], 0.125, w2[0], b2[0]));
-	sensorPairs.push_back(new SensorPair(sensors[2], sensors[1], 0.125, w2[1], b2[1]));
-	sensorPairs.push_back(new SensorPair(sensors[2], sensors[2], 0.125, w2[2], b2[2]));
-	sensorPairs.push_back(new SensorPair(sensors[3], sensors[0], 0.5, 1.0));
-	sensorPairs.push_back(new SensorPair(sensors[3], sensors[1], 0.5, 1.0));
-	sensorPairs.push_back(new SensorPair(sensors[3], sensors[2], 0.5, 1.0));
-	sensorPairs.push_back(new SensorPair(sensors[3], sensors[3], 0.5, 1.0));
+	sensors.push_back(new Sensor(sensor1, nullptr, 1.0, 0));
+	sensors.push_back(new Sensor(sensor2, nullptr, d1, 1));
+	sensors.push_back(new Sensor(sensor3, nullptr, 1.0, 2));
+	sensors.push_back(new Sensor(sensor4, nullptr, 1.0, 3));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[0], sensors[0], 0.125, w0[0], b0[0]));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[1], sensors[0], 0.25, 1.0));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[1], sensors[1], 0.25, 1.0));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[2], sensors[0], 0.125, w2[0], b2[0]));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[2], sensors[1], 0.125, w2[1], b2[1]));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[2], sensors[2], 0.125, w2[2], b2[2]));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[3], sensors[0], 0.5, 1.0));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[3], sensors[1], 0.5, 1.0));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[3], sensors[2], 0.5, 1.0));
+	sensorPairs.push_back(new SensorPair(nullptr, sensors[3], sensors[3], 0.5, 1.0));
 
 	sensors[0]->_m->_vobserve = true; sensors[0]->_m->_vobserve_ = true;
 	sensors[0]->_cm->_vobserve = false; sensors[0]->_cm->_vobserve_ = false;

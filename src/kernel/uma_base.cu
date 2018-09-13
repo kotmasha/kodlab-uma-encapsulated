@@ -56,16 +56,17 @@ __device__ bool impliesGPU(int row, int col, double *weights, double total, doub
 /*
 This function does implies on GPU, using qualitative way
 Input: row, col info, attr_sensor size, weight matrix and threshold
-Output: bool value(mathematical info please inquiry Kotomasha)
+Output: bool value(mathematical info please inquiry Kotmasha)
 */
 __device__ bool impliesGPUQualitative(int row, int col, double *weights, double total, double threshold) {//implies
 	double rc = weights[ind(row, col)];//0.4
 	double r_c = weights[ind(compi(row), col)];//0
 	double rc_ = weights[ind(row, compi(col))];//0
 	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
-	if (rc < -0.5 || r_c_ < -0.5) return false;
-	if (rc_ < -0.5) return true;
-	return rc_ > threshold + max(rc, r_c_);
+	//if (rc < -0.5 || r_c_ < -0.5) return false;
+	//if (rc_ < -0.5) return true;
+	return qless(qmax(rc, r_c_), rc_);
+	//return qless(qadd(qmax(rc,r_c_),threshold),rc_);
 }
 
 /*
@@ -816,5 +817,37 @@ void uma_base_qualitative::orientAll(bool *dirs, double *weights, double *thresh
 
 void uma_base_qualitative::calculateTarget(double *diag, bool *target, int sensor_size) {
 	calculateTargetQualitative_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
+	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+}
+
+//for now reuse the stationary kernel, as there is nothing different
+void uma_base_discounted::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
+	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
+	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+}
+
+void uma_base_discounted::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
+	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
+	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+}
+
+void uma_base_discounted::calculateTarget(double *diag, bool *target, int sensor_size) {
+	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
+	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+}
+
+//for now reuse the stationary kernel, as there is nothing different
+void uma_base_empirical::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
+	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
+	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+}
+
+void uma_base_empirical::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
+	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
+	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+}
+
+void uma_base_empirical::calculateTarget(double *diag, bool *target, int sensor_size) {
+	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
 	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
 }

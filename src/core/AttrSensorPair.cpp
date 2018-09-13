@@ -15,12 +15,13 @@ AttrSensorPair::AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_
 }
 */
 
-AttrSensorPair::AttrSensorPair(AttrSensor * const _attrSensorI, AttrSensor * const _attrSensorJ, double w, bool d)
-	:_attrSensorI(_attrSensorI), _attrSensorJ(_attrSensorJ){
+AttrSensorPair::AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ, double w, bool d)
+	: UMACoreObject(generateUUID(attrSensorI, attrSensorJ), UMA_OBJECT::ATTR_SENSOR_PAIR, parent)
+	,_attrSensorI(attrSensorI), _attrSensorJ(attrSensorJ){
 	_vw = w;
 	_vd = d;
 	attrSensorPairLogger.debug("A new attr sensor pair is created with, attrSensor1=" + to_string(_attrSensorI->getIdx()) +
-		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()), this->getParentChain());
 }
 
 /*
@@ -54,12 +55,12 @@ This function is copying pointer values to value
 */
 void AttrSensorPair::pointersToValues(){
 	if (!_w || !_d) {
-		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	_vw = *_w;
 	_vd = *_d;
 	attrSensorPairLogger.debug("Pointer values copied to object values attrSensor1 = " + to_string(_attrSensorI->getIdx()) +
-		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()), this->getParentChain());
 }
 
 /*
@@ -67,12 +68,12 @@ This function is copying value to pointer value
 */
 void AttrSensorPair::valuesToPointers(){
 	if (!_w || !_d) {
-		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The weights or dirs pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	*_w = _vw;
 	*_d = _vd;
 	attrSensorPairLogger.debug("Pointer object values copied to sensor values attrSensor1 = " + to_string(_attrSensorI->getIdx()) +
-		", attrSensor2=" + to_string(_attrSensorJ->getIdx()));
+		", attrSensor2=" + to_string(_attrSensorJ->getIdx()), this->getParentChain());
 }
 
 /*
@@ -95,34 +96,38 @@ void AttrSensorPair::copy_data(AttrSensorPair *mp) {
 }
 */
 
-const double &AttrSensorPair::getW() const{
+const double &AttrSensorPair::getW(){
 	if (!_w) {
-		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	return *_w;
 }
 
-const bool &AttrSensorPair::getD() const{
+const bool &AttrSensorPair::getD(){
 	if (!_d) {
-		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	return *_d;
 }
 
 void AttrSensorPair::setW(const double w) {
 	if (!_w) {
-		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The weights pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	*_w = w;
 }
 
 void AttrSensorPair::setD(const bool d) {
 	if (!_d) {
-		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger);
+		throw UMABadOperationException("The dirs pointer is not initiated!", false, &attrSensorPairLogger, this->getParentChain());
 	}
 	*_d = d;
 }
 
 AttrSensorPair::~AttrSensorPair(){
 	pointersToNull();
+}
+
+const string AttrSensorPair::generateUUID(AttrSensor * const _attrSensorI, AttrSensor * const _attrSensorJ) const {
+	return _attrSensorI->_uuid + "-" + _attrSensorJ->_uuid;
 }

@@ -8,6 +8,7 @@
 #include "SensorPair.h"
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 

@@ -1,19 +1,16 @@
 #include "Logger.h"
-#include "UMAutil.h"
 #include "ConfReader.h"
+#include "LogService.h"
 #include "UMAException.h"
 #include <ctime>
-#include <time.h>
 #include <chrono>
 
 Logger::Logger(const string component, const string output) : _component(component) {
 	//level is changable in runtime
-	static std::map < string, std::map<string, string>> _logLevel = ConfReader::readConf("log.ini");
-	string logFolder = "log";
-	SysUtil::UMAMkdir(logFolder);
 
 	try {
-		_level = StrUtil::stringToLogLevel(_logLevel[component]["level"]);
+		string levelString = LogService::instance()->getLogLevelString(component);
+		_level = LogService::instance()->stringToLogLevel(levelString);
 	}
 	catch (UMAException &e) {
 		cout << "Cannot find the component " + component << endl;
@@ -35,37 +32,37 @@ string Logger::getTime() const{
 #endif
 }
 
-void Logger::verbose(string message) const{
+void Logger::verbose(string message, const string &ancestors) const{
 	if (_level < LOG_VERBOSE) return;
-	message = getTime() + " VERBOSE " + _component + " - " + message + "\n";
+	message = getTime() + " VERBOSE " + _component + " - " + ancestors + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::debug(string message) const{
+void Logger::debug(string message, const string &ancestors) const{
 	if (_level < LOG_DEBUG) return;
-	message = getTime() + " DEBUG " + _component + " - " + message + "\n";
+	message = getTime() + " DEBUG " + _component + " - " + ancestors + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::info(string message) const{
+void Logger::info(string message, const string &ancestors) const{
 	if (_level < LOG_INFO) return;
-	message = getTime() + " INFO " + _component + " - " + message + "\n";
+	message = getTime() + " INFO " + _component + " - " + ancestors + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::warn(string message) const{
+void Logger::warn(string message, const string &ancestors) const{
 	if (_level < LOG_WARN) return;
-	message = getTime() + " WARN " + _component + " - " + message + "\n";
+	message = getTime() + " WARN " + _component + " - " + ancestors + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }
 
-void Logger::error(string message) const{
+void Logger::error(string message, const string &ancestors) const{
 	if (_level < LOG_ERROR) return;
-	message = getTime() + " ERROR " + _component + " - " + message + "\n";
+	message = getTime() + " ERROR " + _component + " - " + ancestors + message + "\n";
 	_output->write(message.c_str(), message.size() * sizeof(char));
 	_output->flush();
 }

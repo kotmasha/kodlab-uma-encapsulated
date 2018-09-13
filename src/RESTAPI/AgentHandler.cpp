@@ -3,6 +3,7 @@
 #include "Experiment.h"
 #include "Agent.h"
 #include "UMAException.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 
@@ -49,7 +50,9 @@ void AgentHandler::createAgent(UMARestRequest &request) {
 	const string agentType = request.getStringData("type");
 	UMA_AGENT type;
 	if (agentType == "default") type = UMA_AGENT::AGENT_STATIONARY;
-	else type = UMA_AGENT::AGENT_QUALITATIVE;
+	else if(agentType == "qualitative") type = UMA_AGENT::AGENT_QUALITATIVE;
+	else if (agentType == "discounted") type = UMA_AGENT::AGENT_DISCOUNTED;
+	else type = UMA_AGENT::AGENT_EMPIRICAL;
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	experiment->createAgent(agentId, type);
 

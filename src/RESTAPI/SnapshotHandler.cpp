@@ -5,6 +5,7 @@
 #include "Agent.h"
 #include "Snapshot.h"
 #include "UMAutil.h"
+#include "Logger.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 SnapshotHandler::SnapshotHandler(const string &handlerName) : UMARestHandler(handlerName) {

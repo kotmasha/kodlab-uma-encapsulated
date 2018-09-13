@@ -22,7 +22,8 @@ AttrSensor::AttrSensor(ifstream &file) {
 }
 */
 
-AttrSensor::AttrSensor(const string &uuid, int idx, bool isOriginPure, double diag): _uuid(uuid){
+AttrSensor::AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool isOriginPure, double diag)
+	: UMACoreObject(uuid, UMA_OBJECT::ATTR_SENSOR, parent){
 	_idx = idx;
 	_isOriginPure = isOriginPure;
 	pointersToNull();
@@ -32,7 +33,7 @@ AttrSensor::AttrSensor(const string &uuid, int idx, bool isOriginPure, double di
 	_vobserve_ = false;
 	_vtarget = false;
 
-	//attrSensorLogger.debug("A new attr sensor is created with id=" + uuid);
+	attrSensorLogger.debug("A new attr sensor is created with id=" + uuid, this->getParentChain());
 }
 
 /*
@@ -53,7 +54,7 @@ The function is copying the pointer value to values in the object
 */
 void AttrSensor::pointersToValues(){
 	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
-		throw UMABadOperationException("The diag or observe or target pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag or observe or target pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	_vdiag = *_diag;
 	_vdiag_ = *_diag_;
@@ -61,7 +62,7 @@ void AttrSensor::pointersToValues(){
 	_vobserve_ = *_observe_;
 	_vtarget = *_target;
 
-	attrSensorLogger.debug("Pointer values copied to object values for attr sensor=" + _uuid);
+	attrSensorLogger.debug("Pointer values copied to object values for attr sensor=" + _uuid, this->getParentChain());
 }
 
 /*
@@ -69,7 +70,7 @@ The function is copying values to pointer in the object
 */
 void AttrSensor::valuesToPointers(){
 	if (!_diag || !_diag_ || !_observe || !_observe_ || !_target) {
-		throw UMABadOperationException("The diag or observe or target pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag or observe or target pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	*_diag = _vdiag;
 	*_diag_ = _vdiag_;
@@ -77,7 +78,7 @@ void AttrSensor::valuesToPointers(){
 	*_observe_ = _vobserve_;
 	*_target = _vtarget;
 
-	attrSensorLogger.debug("Object values copied to pointer values for attr sensor=" + _uuid);
+	attrSensorLogger.debug("Object values copied to pointer values for attr sensor=" + _uuid, this->getParentChain());
 }
 
 /*
@@ -127,14 +128,14 @@ void AttrSensor::setIdx(int idx){
 
 void AttrSensor::setObserve(bool observe) {
 	if (!_observe) {
-		throw UMABadOperationException("The observe pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The observe pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	*_observe = observe;
 }
 
 void AttrSensor::setOldObserve(bool observe_) {
 	if (!_observe_) {
-		throw UMABadOperationException("The observe_ pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The observe_ pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	*_observe_ = observe_;
 }
@@ -163,48 +164,48 @@ void AttrSensor::copy_data(AttrSensor *m) {
 }
 */
 
-const double &AttrSensor::getDiag() const{
+const double &AttrSensor::getDiag() {
 	if (!_diag) {
-		throw UMABadOperationException("The diag pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_diag;
 }
 
-const double &AttrSensor::getOldDiag() const{
+const double &AttrSensor::getOldDiag() {
 	if (!_diag_) {
-		throw UMABadOperationException("The diag_ pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag_ pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_diag_;
 }
 
-const bool &AttrSensor::getIsOriginPure() const{
+const bool &AttrSensor::getIsOriginPure(){
 	return _isOriginPure;
 }
 
-const bool &AttrSensor::getObserve() const{
+const bool &AttrSensor::getObserve(){
 	if (!_observe) {
-		throw UMABadOperationException("The observe pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The observe pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_observe;
 }
 
-const bool &AttrSensor::getTarget() const {
+const bool &AttrSensor::getTarget() {
 	if (!_target) {
-		throw UMABadOperationException("The target pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The target pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_target;
 }
 
-const bool &AttrSensor::getOldObserve() const{
+const bool &AttrSensor::getOldObserve() {
 	if (!_observe_) {
-		throw UMABadOperationException("The observe_ pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The observe_ pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_observe_;
 }
 
-const bool &AttrSensor::getCurrent() const{
+const bool &AttrSensor::getCurrent() {
 	if (!_current) {
-		throw UMABadOperationException("The current pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The current pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	return *_current;
 }
@@ -215,14 +216,14 @@ const int &AttrSensor::getIdx() const{
 
 void AttrSensor::setDiag(const double &diag) {
 	if (!_diag) {
-		throw UMABadOperationException("The diag pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	*_diag = diag;
 }
 
 void AttrSensor::setOldDiag(const double &diag_) {
 	if (!_diag_) {
-		throw UMABadOperationException("The diag_ pointer is not initiated!", false, &attrSensorLogger);
+		throw UMABadOperationException("The diag_ pointer is not initiated!", false, &attrSensorLogger, this->getParentChain());
 	}
 	*_diag_ = diag_;
 }

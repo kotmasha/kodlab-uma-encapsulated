@@ -2,6 +2,7 @@
 #define _SENSOR_
 
 #include "Global.h"
+#include "UMACoreObject.h"
 class Snapshot;
 class AttrSensor;
 class SensorPair;
@@ -12,12 +13,12 @@ This is the sensor class, it will contain the POINTER to all basic info like mea
 Every sensor is distinguished by the sensor id(sid)
 //TBD, in distributed environment
 */
-class DLL_PUBLIC Sensor{
+class DLL_PUBLIC Sensor: public UMACoreObject {
 public:
 	//constructors
 	//Sensor(ifstream &file);
-	Sensor(const std::pair<string, string> &idPair, const double &total, int idx);
-	Sensor(const std::pair<string, string> &idPair, const vector<double> &diag, int idx);
+	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const double &total, int idx);
+	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const vector<double> &diag, int idx);
 
 	//values and pointer operation
 	void valuesToPointers();
@@ -52,8 +53,6 @@ public:
 	~Sensor();
 
 protected:
-	//sid is the id of the sensor, get from python side, not changable
-	const string _uuid;
 	//idx is the index of sensor in the array structure, can be changed due to pruning
 	int _idx;
 	//*m is the pointer to the measurable object under this sensor, and cm is the compi
