@@ -1,10 +1,6 @@
 # This is the deployment yaml file
 Cluster:
-<<<<<<< HEAD
   Ninstances: 1
-=======
-  instance: 1
->>>>>>> master
   base_url: localhost
   port: 8000
   remove_old_path: True
