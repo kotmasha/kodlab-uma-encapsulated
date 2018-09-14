@@ -4,3 +4,4 @@ Cluster:
   base_url: localhost
   port: 8000
   cluster_path: None
+  remove_old_path: True # be extremely careful about the path to delete
