@@ -2,6 +2,7 @@
 #include "ConfReader.h"
 #include "UMAException.h"
 #include "UMAutil.h"
+#include "PropertyMap.h"
 
 LogService *LogService::_logService = nullptr;
 
@@ -30,7 +31,7 @@ LogService *LogService::instance() {
 string LogService::getLogLevelString(const string &component) {
 	string level;
 	try {
-		level = _logLevel[component]["level"];
+		level = _logLevel[component]->get("level");
 		return level;
 	}
 	catch (UMAInternalException &e) {

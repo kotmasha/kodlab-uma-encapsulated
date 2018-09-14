@@ -1,7 +1,14 @@
 #include "UMACoreObject.h"
+#include "PropertyMap.h"
 
 UMACoreObject::UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT objType, UMACoreObject *parent):
 	_uuid(uuid), _objType(objType), _parent(parent) {
+	if (_parent) {
+		this->_ppm = new PropertyMap(*(_parent->_ppm));
+	}
+	else {
+		this->_ppm = new PropertyMap();
+	}
 }
 
 UMACoreObject::~UMACoreObject() {

@@ -3,5 +3,6 @@ Cluster:
   Ninstances: 1
   base_url: localhost
   port: 8000
-  remove_old_path: True
+  cluster_path: None
+  remove_old_path: True # be extremely careful about the path to delete
   cluster_path: None

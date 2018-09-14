@@ -10,6 +10,7 @@
 #include "SimulationHandler.h"
 #include "ConfReader.h"
 #include "Logger.h"
+#include "PropertyMap.h"
 
 using namespace std;
 
@@ -64,9 +65,9 @@ void initHandlerPath(UMARestListener &listener) {
 
 
 int main() {
-	std::map<string, std::map<string, string>> serverInfo = ConfReader::readConf("server.ini");
-	string port = serverInfo["Server"]["port"];
-	string host = serverInfo["Server"]["host"];
+	std::map<string, PropertyMap*> serverInfo = ConfReader::readConf("server.ini");
+	string port = serverInfo["Server"]->get("port");
+	string host = serverInfo["Server"]->get("host");
 
 	string url = "http://" + host + ":" + port;
 	serverLogger.info("Will listen on the url " + url);

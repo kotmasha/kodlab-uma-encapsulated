@@ -7,6 +7,7 @@ using namespace std;
 class Snapshot;
 class SnapshotQualitative;
 class World;
+class PropertyMap;
 
 /*
 This is the Agent class, store several snapshot, and makes decision based on the python world observation
@@ -27,7 +28,7 @@ protected:
 
 public:
 	//Agent(ifstream &file);
-	Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY);
+	Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY, PropertyMap *ppm = nullptr);
 	virtual Snapshot *createSnapshot(const string &uuid);
 	Snapshot *getSnapshot(const string &snapshotId);
 	void deleteSnapshot(const string &snapshotId);
@@ -49,7 +50,7 @@ public:
 
 class DLL_PUBLIC AgentQualitative : public Agent {
 public:
-	AgentQualitative(const string &uuid, UMACoreObject *parent);
+	AgentQualitative(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
 	~AgentQualitative();
 
 	virtual Snapshot *createSnapshot(const string &uuid);
@@ -57,7 +58,7 @@ public:
 
 class DLL_PUBLIC AgentDiscounted : public Agent {
 public:
-	AgentDiscounted(const string &uuid, UMACoreObject *parent);
+	AgentDiscounted(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
 	~AgentDiscounted();
 
 	virtual Snapshot *createSnapshot(const string &uuid);
@@ -65,7 +66,7 @@ public:
 
 class DLL_PUBLIC AgentEmpirical : public Agent {
 public:
-	AgentEmpirical(const string &uuid, UMACoreObject *parent);
+	AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
 	~AgentEmpirical();
 
 	virtual Snapshot *createSnapshot(const string &uuid);

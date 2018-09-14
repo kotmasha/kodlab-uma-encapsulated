@@ -3,10 +3,12 @@
 
 #include "Global.h"
 
+class PropertyMap;
+
 class LogService {
 private:
 	static LogService *_logService;
-	std::map < string, std::map<string, string>> _logLevel;
+	std::map < string, PropertyMap*> _logLevel;
 
 public:
 	LogService();

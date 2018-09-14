@@ -130,7 +130,8 @@ TEST(agent_test, do_pruning_test) {
 }
 
 TEST(snapshot_test, snapshot_create_sensor_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -168,11 +169,12 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("s5")->getDiag(), 0.32);
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("cs5")->getDiag(), 0.68);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_test, snapshot_create_sensor_pair_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -232,11 +234,12 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s2"), snapshot->getSensor("s4")), UMAException);
 	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("s3")));
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_test, snapshot_get_set_attribute_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 	
 	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.125);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
@@ -267,11 +270,12 @@ TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.82);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.82);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_qualitative_test, updateTotal) {
-	Snapshot *snapshot = new SnapshotQualitative("snapshot", nullptr);
+	Agent *agent = new AgentQualitative("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
@@ -294,11 +298,12 @@ TEST(snapshot_qualitative_test, updateTotal) {
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.1);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.1);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_test, snapshot_get_entity) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 	
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -325,11 +330,12 @@ TEST(snapshot_test, snapshot_get_entity) {
 	EXPECT_EQ(snapshot->getAttrSensorPair("s1", "cs4"), snapshot->getAttrSensorPair(7, 0));
 	EXPECT_NE(snapshot->getAttrSensorPair("s4", "s3"), snapshot->getAttrSensorPair(0, 1));
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_test, generateDelayedObservations) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -364,11 +370,12 @@ TEST(snapshot_test, generateDelayedObservations) {
 	EXPECT_EQ(true, snapshot->getSensor("cs6")->getObserve());
 	EXPECT_EQ(false, snapshot->getSensor("s7")->getObserve());
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(snapshot_test, generateSignal) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -391,7 +398,7 @@ TEST(snapshot_test, generateSignal) {
 
 	EXPECT_EQ(v1, v2);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
@@ -511,7 +518,8 @@ TEST_F(AmperTestFixture, amper_test) {
 }
 
 TEST(dataManager_test, get_set_test) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -682,7 +690,7 @@ TEST(dataManager_test, get_set_test) {
 	for (int i = 0; i < t_diag.size(); ++i)
 		EXPECT_DOUBLE_EQ(t_diag[i], r_diag[i]);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test1) {
@@ -724,7 +732,8 @@ TEST(sensor_test, set_amper_list) {
 }
 
 TEST(sensor_test, generateDelayedSensor) {
-	Snapshot *snapshot = new Snapshot("snapshot", nullptr);
+	Agent *agent = new Agent("agent", nullptr);
+	Snapshot *snapshot = agent->createSnapshot("snapshot");
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
 	std::pair<string, string> p0 = { "s0", "cs0" };
@@ -760,7 +769,7 @@ TEST(sensor_test, generateDelayedSensor) {
 	EXPECT_EQ(sensor4->generateDelayedSignal(), true);
 	EXPECT_EQ(sensor5->generateDelayedSignal(), false);
 
-	delete snapshot;
+	delete agent;
 }
 
 TEST(sensor_test, get_set_idx) {

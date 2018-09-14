@@ -3,6 +3,7 @@
 #include "World.h"
 #include "Logger.h"
 #include "UMAException.h"
+#include "PropertyMap.h"
 
 static Logger experimentLogger("Experiment", "log/experiment.log");
 
@@ -10,19 +11,19 @@ Experiment::Experiment(const string &uuid) : UMACoreObject(uuid, UMA_OBJECT::EXP
 	experimentLogger.info("An experiment is created, experimentId=" + uuid, this->getParentChain());
 }
 
-Agent *Experiment::createAgent(const string &agentId, UMA_AGENT type) {
+Agent *Experiment::createAgent(const string &agentId, UMA_AGENT type, PropertyMap *ppm) {
 	if (_agents.find(agentId) != _agents.end()) {
 		throw UMADuplicationException("Cannot create a duplicate agent, agentId=" + agentId, false, &experimentLogger, this->getParentChain());
 	}
 	switch (type) {
 	case UMA_AGENT::AGENT_STATIONARY:
-		_agents[agentId] = new Agent(agentId, this, UMA_AGENT::AGENT_STATIONARY); break;
+		_agents[agentId] = new Agent(agentId, this, UMA_AGENT::AGENT_STATIONARY, ppm); break;
 	case UMA_AGENT::AGENT_QUALITATIVE:
-		_agents[agentId] = new AgentQualitative(agentId, this); break;
+		_agents[agentId] = new AgentQualitative(agentId, this, ppm); break;
 	case UMA_AGENT::AGENT_DISCOUNTED:
-		_agents[agentId] = new AgentDiscounted(agentId, this); break;
+		_agents[agentId] = new AgentDiscounted(agentId, this, ppm); break;
 	case UMA_AGENT::AGENT_EMPIRICAL:
-		_agents[agentId] = new AgentEmpirical(agentId, this); break;
+		_agents[agentId] = new AgentEmpirical(agentId, this, ppm); break;
 	default:
 		throw UMAInvalidArgsException("The input agent type is invalid, type=" + getUMAAgentName(type));
 	}
