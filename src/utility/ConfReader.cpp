@@ -1,5 +1,6 @@
 #include "ConfReader.h"
 #include "UMAException.h"
+#include "PropertyMap.h"
 
 /*
 ##################ConfReader####################
@@ -39,8 +40,8 @@ std::map<string, vector<string>> ConfReader::readRestmap() {
 Reading the log configuration file
 Output: map of string to map of string, indicating the log level and etc
 */
-std::map<string, std::map<string, string>> ConfReader::readConf(const string &confName) {
-	std::map<string, std::map<string, string>> results;
+std::map<string, PropertyMap*> ConfReader::readConf(const string &confName) {
+	std::map<string, PropertyMap*> results;
 	try {
 		ifstream iniFile("ini/" + confName);
 		if (!iniFile.good()) {
@@ -54,7 +55,7 @@ std::map<string, std::map<string, string>> ConfReader::readConf(const string &co
 			else if (s.front() == '[' && s.back() == ']') {//get a factory
 				s.erase(s.begin());
 				s.erase(s.end() - 1);
-				results[s] = std::map<string, string>();
+				results[s] = new PropertyMap();
 				currentComponent = s;
 			}
 			else {
@@ -63,7 +64,7 @@ std::map<string, std::map<string, string>> ConfReader::readConf(const string &co
 				//nasty way to trim spaces, need to improve it as common lib
 				if (key.back() == ' ') key = key.substr(0, key.size() - 1);
 				if (value.front() == ' ') value = value.substr(1, value.size());
-				results[currentComponent][key] = value;
+				results[currentComponent]->add(key, value);
 			}
 		}
 		cout << confName + " read complete" << endl;

@@ -6,6 +6,8 @@
 using namespace std;
 using namespace UMACoreConstant;
 
+class PropertyMap;
+
 /*
 This is the base class of all UMACore objects, the class itself cannot be instantiated
 */
@@ -21,6 +23,8 @@ protected:
 	std::map<UMACoreConstant::UMA_OBJECT, int> _children;
 	// the ancestors of the UMA object, and the variable is only created on demand
 	vector<const UMACoreObject*> _ancestors;
+	// the property map of an uma obj, value is inherited from parent automatically
+	PropertyMap *_ppm;
 
 protected:
 	const string getParentChain();

@@ -1,5 +1,6 @@
 #include "UMACoreService.h"
 #include "ConfReader.h"
+#include "PropertyMap.h"
 #include "UMAException.h"
 
 UMACoreService *UMACoreService::_coreService = nullptr;
@@ -18,7 +19,7 @@ UMACoreService *UMACoreService::instance() {
 	return _coreService;
 }
 
-std::map<string, string> UMACoreService::getPropertyMap(const string &objName) {
+PropertyMap *UMACoreService::getPropertyMap(const string &objName) {
 	if (_coreInfo.end() == _coreInfo.find(objName)) {
 		string err = "The property map " + objName + " does not exist";
 		throw UMAInternalException(err, false);
@@ -27,10 +28,10 @@ std::map<string, string> UMACoreService::getPropertyMap(const string &objName) {
 }
 
 string UMACoreService::getPropertyValue(const string &objName, const string &key) {
-	std::map<string, string> propertyMap = this->getPropertyMap(objName);
-	if (propertyMap.end() == propertyMap.find(key)) {
+	PropertyMap *propertyMap = this->getPropertyMap(objName);
+	if (!propertyMap->exist(key)) {
 		string err = "The property key " + key + " does not exist";
 		throw UMAInternalException(err, false);
 	}
-	return propertyMap[key];
+	return propertyMap->get(key);
 }

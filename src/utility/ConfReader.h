@@ -4,9 +4,11 @@
 #include "Global.h"
 using namespace std;
 
+class PropertyMap;
+
 namespace ConfReader {
 	std::map<string, vector<string>> readRestmap();
-	std::map<string, std::map<string, string>> readConf(const string &conf_name);
+	std::map<string, PropertyMap*> readConf(const string &conf_name);
 }
 
 #endif

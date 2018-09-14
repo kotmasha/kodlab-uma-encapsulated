@@ -9,6 +9,7 @@
 #include "UMAException.h"
 #include "UMAutil.h"
 #include "UMACoreService.h"
+#include "PropertyMap.h"
 
 /*
 ----------------Snapshot Base Class-------------------
@@ -20,22 +21,22 @@ extern bool qless(double d1, double d2);
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
 Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
-	std::map<string, string> snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot");
-	_total = stod(snapshotProperty["total"]);
+	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot");
+	_total = stod(_ppm->get("total"));
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), this->getParentChain());
 	_delayCount = 0;
 	
-	_q = stod(snapshotProperty["q"]);
+	_q = stod(_ppm->get("q"));
 	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 
-	_threshold = stod(snapshotProperty["threshold"]);
+	_threshold = stod(_ppm->get("threshold"));
 	snapshotLogger.debug("Setting threshold value to " + to_string(_threshold), this->getParentChain());
 
-	_autoTarget = stoi(snapshotProperty["auto_target"]);
+	_autoTarget = stoi(_ppm->get("auto_target"));
 	snapshotLogger.debug("Setting auto target value to " + to_string(_autoTarget), this->getParentChain());
 
-	_propagateMask = stoi(snapshotProperty["propagate_mask"]);
+	_propagateMask = stoi(_ppm->get("propagate_mask"));
 	snapshotLogger.debug("Setting propagate mask value to " + to_string(_propagateMask), this->getParentChain());
 
 	_initialSize = 0;
@@ -963,12 +964,12 @@ void SnapshotQualitative::generateDelayedWeights(int mid, bool merge, const std:
 
 SnapshotDiscounted::SnapshotDiscounted(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
-	std::map<string, string> snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Discounted");
+	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Discounted");
 
-	_q = stod(snapshotProperty["q"]);
+	_q = stod(_ppm->get("q"));
 	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 
-	_threshold = stod(snapshotProperty["threshold"]);
+	_threshold = stod(_ppm->get("threshold"));
 	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
 }
 
@@ -992,12 +993,12 @@ void SnapshotDiscounted::generateDelayedWeights(int mid, bool merge, const std::
 
 SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
-	std::map<string, string> snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
+	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
 
-	_q = stod(snapshotProperty["q"]);
+	_q = stod(_ppm->get("q"));
 	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 
-	_threshold = stod(snapshotProperty["threshold"]);
+	_threshold = stod(_ppm->get("threshold"));
 	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
 }
 

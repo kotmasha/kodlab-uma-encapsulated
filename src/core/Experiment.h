@@ -5,12 +5,13 @@
 #include "UMACoreObject.h"
 
 class Agent;
+class PropertyMap;
 
 class DLL_PUBLIC Experiment: public UMACoreObject{
 public:
 	Experiment(const string &uuid);
 	~Experiment();
-	Agent *createAgent(const string &agentId, UMA_AGENT type);
+	Agent *createAgent(const string &agentId, UMA_AGENT type, PropertyMap *ppm=nullptr);
 	Agent *getAgent(const string &agentId);
 	void deleteAgent(const string &agentId);
 	const vector<vector<string>> getAgentInfo();

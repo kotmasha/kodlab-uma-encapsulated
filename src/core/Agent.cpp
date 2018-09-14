@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "UMAException.h"
 #include "UMACoreService.h"
+#include "PropertyMap.h"
 
 static Logger agentLogger("Agent", "log/agent.log");
 
@@ -30,11 +31,14 @@ Agent::Agent(ifstream &file) {
 }
 */
 
-Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
+Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, PropertyMap *ppm): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
-	std::map<string, string> agentProperty = UMACoreService::instance()->getPropertyMap("Agent");
-	_pruningInterval = stoi(agentProperty["pruning_interval"]);
-	_enableEnrichment = stoi(agentProperty["enable_enrichment"]);
+	PropertyMap *agentProperty = UMACoreService::instance()->getPropertyMap("Agent");
+	_ppm->extend(agentProperty);
+	_ppm->extend(ppm);
+
+	_pruningInterval = stoi(_ppm->get("pruning_interval"));
+	_enableEnrichment = stoi(_ppm->get("enable_enrichment"));
 
 	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type), this->getParentChain());
 }
@@ -157,7 +161,8 @@ Agent::~Agent(){
 /*
 -----------------------AgentQualitative class-----------------------
 */
-AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
+AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
+	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
 
 AgentQualitative::~AgentQualitative() {}
 
@@ -177,7 +182,8 @@ Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 /*
 -----------------------AgentDiscounted class-----------------------
 */
-AgentDiscounted::AgentDiscounted(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
+AgentDiscounted::AgentDiscounted(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
+	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
 
 AgentDiscounted::~AgentDiscounted() {}
 
@@ -197,7 +203,8 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 /*
 -----------------------AgentEmpirical class-----------------------
 */
-AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent) : Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE) {}
+AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
+	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
 
 AgentEmpirical::~AgentEmpirical() {}
 
