@@ -19,6 +19,10 @@ set(CONF
     "ConfReader.h"
     "ConfReader.cpp"
 )
+set(PROPERTYMAP
+    "PropertyMap.h"
+    "PropertyMap.cpp"
+)
 
 source_group("utility" FILES ${UTILITY})
 source_group("logging" FILES ${LOGGING})
