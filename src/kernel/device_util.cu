@@ -51,5 +51,22 @@ __host__ __device__ bool qless(double d1, double d2) {
 }
 
 /*
+This function computes the qualitative max of d1 and d2
+*/
+__host__ __device__ double qmax(double d1, double d2) {
+	if (qless(d1, d2)) return d2;
+	return d1;
+}
+
+/*
+This function performs "qualitative addition" of d1 and d2
+*/
+__host__ __device__ double qadd(double d1, double d2) {
+	if (d1 < -0.5 || d2 < -0.5) return -1;
+	return d1 + d2;
+}
+
+
+/*
 ----------------------HOST DEVICE---------------------
 */

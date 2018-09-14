@@ -56,16 +56,17 @@ __device__ bool impliesGPU(int row, int col, double *weights, double total, doub
 /*
 This function does implies on GPU, using qualitative way
 Input: row, col info, attr_sensor size, weight matrix and threshold
-Output: bool value(mathematical info please inquiry Kotomasha)
+Output: bool value(mathematical info please inquiry Kotmasha)
 */
 __device__ bool impliesGPUQualitative(int row, int col, double *weights, double total, double threshold) {//implies
 	double rc = weights[ind(row, col)];//0.4
 	double r_c = weights[ind(compi(row), col)];//0
 	double rc_ = weights[ind(row, compi(col))];//0
 	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
-	if (rc < -0.5 || r_c_ < -0.5) return false;
-	if (rc_ < -0.5) return true;
-	return rc_ > threshold + max(rc, r_c_);
+	//if (rc < -0.5 || r_c_ < -0.5) return false;
+	//if (rc_ < -0.5) return true;
+	return qless(qmax(rc, r_c_), rc_);
+	//return qless(qadd(qmax(rc,r_c_),threshold),rc_);
 }
 
 /*

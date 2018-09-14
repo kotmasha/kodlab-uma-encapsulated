@@ -25,7 +25,7 @@ def kill_process_pid(pid_path):
 if __name__ == "__main__":
     with open(os.path.join(UMA_HOME, 'deployment', DEPLOY_YML), 'r') as f:
         info = yaml.load(f)
-        instance = info['Cluster']['instance']
+        instance = info['Cluster']['Ninstances']
         base_url = info['Cluster']['base_url']
         port = int(info['Cluster']['port'])
 
