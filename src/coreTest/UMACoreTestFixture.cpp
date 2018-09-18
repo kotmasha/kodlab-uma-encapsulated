@@ -8,7 +8,8 @@ WorldTestFixture::WorldTestFixture() {}
 WorldTestFixture::~WorldTestFixture() {}
 
 AmperAndTestFixture::AmperAndTestFixture(){
-	snapshot = new Snapshot("snapshot", nullptr);
+	agent = new Agent("agent", nullptr);
+	snapshot = agent->createSnapshot("snapshot");
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -29,7 +30,7 @@ AmperAndTestFixture::AmperAndTestFixture(){
 }
 
 AmperAndTestFixture::~AmperAndTestFixture() {
-	delete snapshot;
+	delete agent;
 }
 
 vector<vector<double>> AmperAndTestFixture::test_amper_and(int mid1, int mid2, bool merge, std::pair<string, string> &p) {
@@ -49,7 +50,8 @@ vector<vector<double>> AmperAndTestFixture::test_amper_and(int mid1, int mid2, b
 }
 
 GenerateDelayedWeightsTestFixture::GenerateDelayedWeightsTestFixture() {
-	snapshot = new Snapshot("snapshot", nullptr);
+	agent = new Agent("agent", nullptr);
+	snapshot = agent->createSnapshot("snapshot");
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -79,7 +81,7 @@ GenerateDelayedWeightsTestFixture::GenerateDelayedWeightsTestFixture() {
 }
 
 GenerateDelayedWeightsTestFixture::~GenerateDelayedWeightsTestFixture() {
-	delete snapshot;
+	delete agent;
 }
 
 vector<vector<double>> GenerateDelayedWeightsTestFixture::test_generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair, vector<bool> &observe) {
@@ -103,7 +105,8 @@ vector<vector<double>> GenerateDelayedWeightsTestFixture::test_generate_delayed_
 }
 
 AmperTestFixture::AmperTestFixture() {
-	snapshot = new Snapshot("snapshot", nullptr);
+	agent = new Agent("agent", nullptr);
+	snapshot = agent->createSnapshot("snapshot");
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -124,7 +127,7 @@ AmperTestFixture::AmperTestFixture() {
 }
 
 AmperTestFixture::~AmperTestFixture() {
-	delete snapshot;
+	delete agent;
 }
 
 vector<vector<double>> AmperTestFixture::test_amper(const vector<int> &list, const std::pair<string, string> &uuid) {

@@ -4,11 +4,12 @@
 #include "Global.h"
 
 class PropertyMap;
+class PropertyPage;
 
 class UMACoreService{
 private:
 	static UMACoreService *_coreService;
-	std::map<string, PropertyMap*> _coreInfo;
+	PropertyPage *_coreInfo;
 
 public:
 	UMACoreService();

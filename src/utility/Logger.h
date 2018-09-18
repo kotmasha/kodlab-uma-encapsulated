@@ -5,13 +5,13 @@
 using namespace std;
 
 class Logger {
+public:
+	enum LOG_LEVEL { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_VERBOSE };
+
 private:
 	ofstream *_output;
 	string const _component;
-	int _level;
-
-public:
-	enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_VERBOSE };
+	LOG_LEVEL _level;
 
 public:
 	Logger(const string component, const string output);
@@ -21,7 +21,8 @@ public:
 	void warn(string message, const string &ancestors = "") const;
 	void error(string message, const string &ancestors = "") const;
 	string getTime() const;
-	void setLogLevel(int level);
+	void setLogLevel(LOG_LEVEL level);
+	Logger::LOG_LEVEL getLogLevel();
 };
 
 #endif

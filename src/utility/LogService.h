@@ -2,20 +2,21 @@
 #define _LOGSERVICE_
 
 #include "Global.h"
+#include "Logger.h"
 
-class PropertyMap;
+class PropertyPage;
 
 class LogService {
 private:
 	static LogService *_logService;
-	std::map < string, PropertyMap*> _logLevel;
+	PropertyPage *_logLevel;
 
 public:
 	LogService();
 	~LogService();
 	static LogService *instance();
 	string getLogLevelString(const string &component);
-	int stringToLogLevel(const string &s);
+	Logger::LOG_LEVEL stringToLogLevel(const string &s);
 };
 
 #endif

@@ -17,11 +17,9 @@
 extern int ind(int row, int col);
 extern int compi(int x);
 extern bool qless(double d1, double d2);
-//extern std::map<string, std::map<string, string>> server_cfg;
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
 Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
-	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot");
 	_total = stod(_ppm->get("total"));
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), this->getParentChain());
