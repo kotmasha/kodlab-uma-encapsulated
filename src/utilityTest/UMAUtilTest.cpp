@@ -1,8 +1,11 @@
 #include <iostream>
 #include "gtest/gtest.h"
 #include "UMAutil.h"
+#include "Logger.h"
 #include "LogService.h"
 #include "UMAException.h"
+#include "PropertyMap.h"
+#include "PropertyPage.h"
 
 //test string to log level
 TEST(LogService_test, stringToLogLevel) {
@@ -16,6 +19,71 @@ TEST(LogService_test, stringToLogLevel) {
 	EXPECT_EQ(LogService::instance()->stringToLogLevel(info), 2);
 	EXPECT_EQ(LogService::instance()->stringToLogLevel(debug), 3);
 	EXPECT_EQ(LogService::instance()->stringToLogLevel(verbose), 4);
+}
+
+TEST(LogService_test, getLogLevelString) {
+	string level = LogService::instance()->getLogLevelString("Server");
+	EXPECT_EQ(level, "INFO");
+}
+
+TEST(Logger_test, logLevelGetSet) {
+	Logger log = Logger("Server", "log/UMA_server.log");
+	log.setLogLevel(Logger::LOG_VERBOSE);
+	EXPECT_EQ(Logger::LOG_VERBOSE, log.getLogLevel());
+}
+
+TEST(PropertyMap_test, PropertyMap_test) {
+	PropertyMap *ppm = new PropertyMap();
+	EXPECT_TRUE(ppm->empty());
+
+	ppm->add("key", "value");
+	EXPECT_TRUE(ppm->exist("key"));
+	EXPECT_FALSE(ppm->exist("none"));
+	EXPECT_EQ(ppm->get("key"), "value");
+	EXPECT_EQ(ppm->get("k1"), "");
+
+	PropertyMap *other = new PropertyMap();
+	other->add("k1", "v1");
+	ppm->extend(other);
+	EXPECT_TRUE(ppm->exist("k1"));
+	EXPECT_EQ(ppm->get("k1"), "v1");
+
+	EXPECT_FALSE(ppm->empty());
+	ppm->remove("k1");
+	EXPECT_NO_THROW(ppm->remove("k2"));
+	ppm->remove("key");
+	EXPECT_FALSE(ppm->exist("key"));
+	EXPECT_TRUE(ppm->empty());
+
+	delete ppm, other;
+}
+
+TEST(PropertyPage_test, PropertyPage_test) {
+	PropertyMap *ppm = new PropertyMap();
+	PropertyPage *pp = new PropertyPage();
+	EXPECT_TRUE(pp->empty());
+
+	pp->add("key", ppm);
+	EXPECT_TRUE(pp->exist("key"));
+	EXPECT_FALSE(pp->exist("none"));
+	EXPECT_EQ(pp->get("key"), ppm);
+	EXPECT_EQ(pp->get("k1"), nullptr);
+
+	PropertyMap *other = new PropertyMap();
+	PropertyPage *otherPage = new PropertyPage();
+	otherPage->add("k1", other);
+	pp->extend(otherPage);
+	EXPECT_TRUE(pp->exist("k1"));
+	EXPECT_EQ(pp->get("k1"), other);
+
+	EXPECT_FALSE(pp->empty());
+	pp->remove("k1");
+	EXPECT_NO_THROW(pp->remove("k2"));
+	pp->remove("key");
+	EXPECT_FALSE(pp->exist("key"));
+	EXPECT_TRUE(pp->empty());
+
+	delete pp, otherPage;
 }
 
 TEST(StrUtil_test, string2dToString1dPair) {
@@ -36,6 +104,13 @@ TEST(StrUtil_test, string2dToString1dPair) {
 	EXPECT_EQ(StrUtil::string2dToString1dPair(inputs1), outputs1);
 	EXPECT_THROW(StrUtil::string2dToString1dPair(inputs2), UMAException);
 	EXPECT_NE(StrUtil::string2dToString1dPair(inputs3), outputs3);
+}
+
+TEST(StrUtil_test, isEmpty) {
+	string s1 = "";
+	string s2 = "abc";
+	EXPECT_TRUE(StrUtil::isEmpty(s1));
+	EXPECT_FALSE(StrUtil::isEmpty(s2));
 }
 
 TEST(SignalUtil_test, boolSignalToIntIdx) {

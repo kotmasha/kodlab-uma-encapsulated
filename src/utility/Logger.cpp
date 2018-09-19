@@ -12,10 +12,10 @@ Logger::Logger(const string component, const string output) : _component(compone
 		string levelString = LogService::instance()->getLogLevelString(component);
 		_level = LogService::instance()->stringToLogLevel(levelString);
 	}
-	catch (UMAException &e) {
-		cout << "Cannot find the component " + component << endl;
+	catch (UMAInternalException &e) {
+		cout << e.what() << endl;
+		std::getchar();
 		exit(0);
-        std::getchar();
 	}
 	_output = new ofstream(output, std::ios_base::app);
 }
@@ -67,6 +67,10 @@ void Logger::error(string message, const string &ancestors) const{
 	_output->flush();
 }
 
-void Logger::setLogLevel(int level) {
+void Logger::setLogLevel(LOG_LEVEL level) {
 	_level = level;
+}
+
+Logger::LOG_LEVEL Logger::getLogLevel() {
+	return _level;
 }

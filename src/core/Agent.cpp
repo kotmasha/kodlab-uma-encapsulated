@@ -183,7 +183,7 @@ Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 -----------------------AgentDiscounted class-----------------------
 */
 AgentDiscounted::AgentDiscounted(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
-	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
+	: Agent(uuid, parent, UMA_AGENT::AGENT_DISCOUNTED, ppm) {}
 
 AgentDiscounted::~AgentDiscounted() {}
 
@@ -204,7 +204,7 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 -----------------------AgentEmpirical class-----------------------
 */
 AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
-	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
+	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {}
 
 AgentEmpirical::~AgentEmpirical() {}
 

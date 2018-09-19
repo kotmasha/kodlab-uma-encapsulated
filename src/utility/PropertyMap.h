@@ -1,3 +1,6 @@
+#ifndef _PROPERTYMAP_
+#define _PROPERTYMAP_
+
 #include "Global.h"
 
 using namespace std;
@@ -11,5 +14,7 @@ public:
 	void remove(const string &key);
 	string get(const string &key);
 	void extend(PropertyMap *other);
-	void copy(PropertyMap *other);
+	//void copy(PropertyMap *other);
 };
+
+#endif

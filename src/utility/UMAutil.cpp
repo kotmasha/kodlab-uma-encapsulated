@@ -36,6 +36,7 @@ bool SysUtil::UMAFileExist(string &path) {
 input: string path
 */
 bool SysUtil::UMAFolderExist(string &path) {
+	//come back later
 	return true;
 }
 
@@ -58,6 +59,11 @@ vector<std::pair<string, string>> StrUtil::string2dToString1dPair(const vector<v
 		results.push_back(pair<string, string>(p[0], p[1]));
 	}
 	return results;
+}
+
+//need to expand the case more later
+bool StrUtil::isEmpty(string &s) {
+	return "" == s;
 }
 
 /*

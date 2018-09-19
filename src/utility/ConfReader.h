@@ -2,13 +2,12 @@
 #define _CONFREADER_
 
 #include "Global.h"
+#include "PropertyPage.h"
 using namespace std;
-
-class PropertyMap;
 
 namespace ConfReader {
 	std::map<string, vector<string>> readRestmap();
-	std::map<string, PropertyMap*> readConf(const string &conf_name);
+	PropertyPage *readConf(const string &conf_name);
 }
 
 #endif

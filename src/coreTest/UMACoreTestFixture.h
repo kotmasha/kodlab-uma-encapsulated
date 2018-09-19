@@ -1,6 +1,7 @@
 #ifndef _UMACORETESTFIXTURE_
 #define _UMACORETESTFIXTURE_
 
+#include "Agent.h"
 #include "Snapshot.h"
 #include "Sensor.h"
 #include "SensorPair.h"
@@ -28,6 +29,7 @@ public:
 	vector<vector<double>> test_amper_and(int mid1, int mid2, bool merge, std::pair<string, string> &p);
 
 protected:
+	Agent *agent;
 	Snapshot *snapshot;
 };
 
@@ -39,6 +41,7 @@ public:
 	vector<vector<double>> test_generate_delayed_weights(int mid, bool merge, const std::pair<string, string> &id_pair, vector<bool> &observe);
 
 protected:
+	Agent *agent;
 	Snapshot *snapshot;
 };
 
@@ -50,6 +53,7 @@ public:
 	vector<vector<double>> test_amper(const vector<int> &list, const std::pair<string, string> &uuid);
 
 protected:
+	Agent *agent;
 	Snapshot *snapshot;
 };
 

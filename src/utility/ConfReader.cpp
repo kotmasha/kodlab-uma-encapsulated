@@ -40,8 +40,8 @@ std::map<string, vector<string>> ConfReader::readRestmap() {
 Reading the log configuration file
 Output: map of string to map of string, indicating the log level and etc
 */
-std::map<string, PropertyMap*> ConfReader::readConf(const string &confName) {
-	std::map<string, PropertyMap*> results;
+PropertyPage *ConfReader::readConf(const string &confName) {
+	PropertyPage *results = new PropertyPage();
 	try {
 		ifstream iniFile("ini/" + confName);
 		if (!iniFile.good()) {
@@ -55,7 +55,7 @@ std::map<string, PropertyMap*> ConfReader::readConf(const string &confName) {
 			else if (s.front() == '[' && s.back() == ']') {//get a factory
 				s.erase(s.begin());
 				s.erase(s.end() - 1);
-				results[s] = new PropertyMap();
+				results->add(s, new PropertyMap());
 				currentComponent = s;
 			}
 			else {
@@ -64,7 +64,7 @@ std::map<string, PropertyMap*> ConfReader::readConf(const string &confName) {
 				//nasty way to trim spaces, need to improve it as common lib
 				if (key.back() == ' ') key = key.substr(0, key.size() - 1);
 				if (value.front() == ' ') value = value.substr(1, value.size());
-				results[currentComponent]->add(key, value);
+				results->get(currentComponent)->add(key, value);
 			}
 		}
 		cout << confName + " read complete" << endl;

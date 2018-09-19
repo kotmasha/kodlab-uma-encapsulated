@@ -32,7 +32,10 @@ void PropertyMap::extend(PropertyMap *other) {
 	}
 }
 
+/*
 //come back later
-void PropertyMap::copy(PropertyMap *other) {
+template <class T>
+void PropertyMap<T>::copy(PropertyMap *other) {
 	PropertyMap tmp(*other);
 }
+*/

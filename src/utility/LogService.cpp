@@ -14,7 +14,7 @@ LogService::LogService() {
 	catch (exception &ex) {
 		cout << "Cannot make a log folder, error=" + string(ex.what()) << endl;
 	}
-
+	
 	_logLevel = ConfReader::readConf("log.ini");
 	cout << "LogService is initiated!" << endl;
 }
@@ -30,25 +30,26 @@ LogService *LogService::instance() {
 
 string LogService::getLogLevelString(const string &component) {
 	string level;
-	try {
-		level = _logLevel[component]->get("level");
-		return level;
+	PropertyMap *ppm = _logLevel->get(component);
+	if (!ppm) {
+		throw UMAInternalException("Cannot find the component=" + component, false);
 	}
-	catch (UMAInternalException &e) {
-		cout << "Cannot find the component " + component << endl;
-		exit(0);
-		std::getchar();
+
+	level = ppm->get("level");
+	if (StrUtil::isEmpty(level)) {
+		throw UMAInternalException("Cannot find the key=level", false);
 	}
+	return level;
 }
 
 /*
 input: string level
 output: int level
 */
-int LogService::stringToLogLevel(const string &s) {
-	if (s == "ERROR") return 0;
-	if (s == "WARN") return 1;
-	if (s == "INFO") return 2;
-	if (s == "DEBUG") return 3;
-	if (s == "VERBOSE") return 4;
+Logger::LOG_LEVEL LogService::stringToLogLevel(const string &s) {
+	if (s == "ERROR") return Logger::LOG_ERROR;
+	if (s == "WARN") return Logger::LOG_WARN;
+	if (s == "INFO") return Logger::LOG_INFO;
+	if (s == "DEBUG") return Logger::LOG_DEBUG;
+	if (s == "VERBOSE") return Logger::LOG_VERBOSE;
 }

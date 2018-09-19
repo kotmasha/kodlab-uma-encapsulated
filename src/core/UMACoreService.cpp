@@ -10,7 +10,9 @@ UMACoreService::UMACoreService() {
 	cout << "CoreService is initiated!" << endl;
 }
 
-UMACoreService::~UMACoreService() {}
+UMACoreService::~UMACoreService() {
+	delete _coreInfo;
+}
 
 UMACoreService *UMACoreService::instance() {
 	if (!_coreService) {
@@ -20,11 +22,11 @@ UMACoreService *UMACoreService::instance() {
 }
 
 PropertyMap *UMACoreService::getPropertyMap(const string &objName) {
-	if (_coreInfo.end() == _coreInfo.find(objName)) {
+	if (!_coreInfo->exist(objName)) {
 		string err = "The property map " + objName + " does not exist";
 		throw UMAInternalException(err, false);
 	}
-	return _coreInfo[objName];
+	return _coreInfo->get(objName);
 }
 
 string UMACoreService::getPropertyValue(const string &objName, const string &key) {
