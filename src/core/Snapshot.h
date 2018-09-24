@@ -78,6 +78,7 @@ public:
 	virtual void delays(const vector<vector<bool> > &lists, const vector<std::pair<string, string> > &idPairs);
 	virtual void pruning(const vector<bool> &signal);
 	virtual void updateTotal(double phi, bool active);
+	virtual void updateQ();
 
 	/*
 	---------------------GET FUNCTION----------------------
@@ -100,7 +101,7 @@ public:
 	const bool &getPropagateMask() const;
 	const int &getInitialSize() const;
 	const UMA_SNAPSHOT &getType() const;
-	const int getDealyCount();
+	const int getDelayCount();
 	/*
 	---------------------GET FUNCTION----------------------
 	*/
@@ -133,7 +134,7 @@ public:
 
 protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
-	void amperand(int mid1, int mid2, bool merge, const std::pair<string, string> &idPair);
+	void ampersand(int mid1, int mid2, bool merge, const std::pair<string, string> &idPair);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
 };
 
@@ -146,6 +147,7 @@ public:
 	virtual ~SnapshotQualitative();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
+	virtual void updateQ();
 };
 
 /*
@@ -157,6 +159,7 @@ public:
 	virtual ~SnapshotDiscounted();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
+	virtual void updateQ();
 };
 
 /*
@@ -168,8 +171,7 @@ public:
 	virtual ~SnapshotEmpirical();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
-	void updateQ();
-	void addT();
+	virtual void updateQ();
 
 protected:
 	//this value indicate how many times the snapshot is active

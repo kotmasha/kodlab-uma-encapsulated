@@ -165,19 +165,16 @@ float simulation::decide(Snapshot *snapshot, vector<bool> &signal, const double 
 	
 	if (UMA_SNAPSHOT::SNAPSHOT_STATIONARY == snapshot->getType())
 		simulation::updateState(dm, q, phi, total, total_, active);
-	else if(UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE == snapshot->getType())
+	else if (UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE == snapshot->getType())
 		simulation::updateStateQualitative(dm, q, phi, total, total_, active);
 	else if (UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED == snapshot->getType())
 		simulation::updateStateDiscounted(dm, q, phi, total, total_, active);
-	else {//type empirical
-		SnapshotEmpirical *snap = dynamic_cast<SnapshotEmpirical*>(snapshot);
-		if (!snap) {
-			throw UMAInternalException("Cannot cast the snapshot to empirical type!", true, &simulationLogger);
-		}
-		snap->updateQ();
+	else if (UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL == snapshot->getType())
 		simulation::updateStateEmpirical(dm, q, phi, total, total_, active);
-		snap->addT();
+	else {//type empirical
+		throw UMAInternalException("Requested snapshot type is undefined!\n", true, &simulationLogger);
 	}
+	snapshot->updateQ();
 	simulation::halucinate(dm, initial_size);
 
 	if (snapshot->getAutoTarget()) simulation::calculateTarget(dm, snapshot->getType());

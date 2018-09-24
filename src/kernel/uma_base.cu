@@ -24,7 +24,7 @@ static Logger umaBaseLogger("UMABase", "log/device.log");
 lower the threshold value
 */
 __device__ double lowerThreshold(double q, double total, double phi, double T){
-	if (total <= phi || T <= (1 - q) / total) {
+	if (total <= phi || T * total <= (1 - q) ) {
 		return T;
 	}
 	else {
@@ -175,7 +175,7 @@ __device__ void orientSquareGPUQualitative(bool *dir, double *weights, double *t
 initiate the mask kernel, filling all initial sensor to false, the other to true
 Input: mask signal, initial size and attr_sensor size
 */
-__global__ void initMask_kernal(bool *mask, int initialSize, int size){
+__global__ void initMask_kernel(bool *mask, int initialSize, int size){
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	if(index < size){
 		if(index < initialSize * 2) mask[index] = false;
@@ -205,7 +205,7 @@ __global__ void updateWeightsStationary_kernel(double *weights, bool *observe, i
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
 	if(indexX <= indexY && indexY < attrSensorSize){
 		if(activity){
-			weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
+			weights[ind(indexY, indexX)] = q * weights[ind(indexY, indexX)] + (1 - q) * observe[indexX] * observe[indexY] * phi;
 		}
 	}
 }
@@ -228,11 +228,19 @@ Input: weight, observe signal, attr_sensor size, q, phi value, and activity(indi
 __global__ void updateWeights_kernel(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool activity){
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
+	// since $activity$ is independent of position in the matrix, better to update the weight this way:
+	if (activity) {
+		if (indexX <= indexY && indexY < attrSensorSize) {
+			weights[ind(indexY, indexX)] = q * weights[ind(indexY, indexX)] + (1 - q) * observe[indexX] * observe[indexY] * phi;
+		}
+	}
+	/* OLDER UPDATE
 	if (indexX <= indexY && indexY < attrSensorSize) {
 		if (activity) {
 			weights[ind(indexY, indexX)] = weights[ind(indexY, indexX)] * q + (1 - q) * observe[indexX] * observe[indexY] * phi;
+			}
 		}
-	}
+	*/
 }
 
 /*
@@ -241,13 +249,16 @@ update the weight matrix based on observe signal, for trial purpose only
 __global__ void updateWeightsQualitative_kernel(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool activity) {
 	int indexX = blockDim.x * blockIdx.x + threadIdx.x;
 	int indexY = blockDim.y * blockIdx.y + threadIdx.y;
-	if (indexX <= indexY && indexY < attrSensorSize) {
-		if (activity && observe[indexX] && observe[indexY]) {
-			if (weights[ind(indexY, indexX)] < -0.5) {// do it in a hack way, using == may be danerious since it is double
-				weights[ind(indexY, indexX)] = phi;
-			}
-			else {
-				weights[ind(indexY, indexX)] = min(weights[ind(indexY, indexX)], phi);
+	// since $activity$ is position-independent, better put it in front of all other decisions (no activity=no weight update needed)
+	if (activity) {
+		if (indexX <= indexY && indexY < attrSensorSize) {
+			if (observe[indexX] && observe[indexY]) {
+				if (weights[ind(indexY, indexX)] < -0.5) {// do it in a hack way, using == may be dangerous since it is double
+					weights[ind(indexY, indexX)] = phi;
+				}
+				else {
+					weights[ind(indexY, indexX)] = min(weights[ind(indexY, indexX)], phi);
+				}
 			}
 		}
 	}
@@ -628,7 +639,7 @@ __global__ void deltaWeightSum_kernel(double *attr_sensor, bool *signal, float *
 }
 
 /*
-init union find, set the root of a index to be the index it self
+init union find, set the root of a index to be the index itself
 Input: root list, sensor size
 */
 __global__ void unionInit_kernel(int *root, int size) {
@@ -686,7 +697,7 @@ __global__ void negligible_kernel(bool *npdir, bool *negligible, int sensor_size
 
 
 void uma_base::initMask(bool *mask, int initialSize, int attrSensorSize) {
-	initMask_kernal << <GRID1D(attrSensorSize), BLOCK1D >> > (mask, initialSize, attrSensorSize);
+	initMask_kernel << <GRID1D(attrSensorSize), BLOCK1D >> > (mask, initialSize, attrSensorSize);
 	umaBaseLogger.debug("initMask_kernal invoked!");
 	cudaCheckErrors("check initMask error");
 }
@@ -823,31 +834,31 @@ void uma_base_qualitative::calculateTarget(double *diag, bool *target, int senso
 //for now reuse the stationary kernel, as there is nothing different
 void uma_base_discounted::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
 	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
-	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+	umaBaseLogger.debug("updateWeights_discounted invoked!");
 }
 
 void uma_base_discounted::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
 	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
-	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+	umaBaseLogger.debug("orientAllDiscounted_kernel invoked!");
 }
 
 void uma_base_discounted::calculateTarget(double *diag, bool *target, int sensor_size) {
 	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
-	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+	umaBaseLogger.debug("calculateTargetDiscounted_kernel invoked!");
 }
 
 //for now reuse the stationary kernel, as there is nothing different
 void uma_base_empirical::updateWeights(double *weights, bool *observe, int attrSensorSize, double q, double phi, bool active) {
 	updateWeights_kernel << <GRID2D(attrSensorSize, attrSensorSize), BLOCK2D >> > (weights, observe, attrSensorSize, q, phi, active);
-	umaBaseLogger.debug("updateWeights_qualitative invoked!");
+	umaBaseLogger.debug("updateWeights_empirical invoked!");
 }
 
 void uma_base_empirical::orientAll(bool *dirs, double *weights, double *thresholds, double total, int sensor_size) {
 	orientAll_kernel << <GRID2D(sensor_size, sensor_size), BLOCK2D >> >(dirs, weights, thresholds, total, sensor_size);
-	umaBaseLogger.debug("orientAllQualitative_kernel invoked!");
+	umaBaseLogger.debug("orientAllEmpirical_kernel invoked!");
 }
 
 void uma_base_empirical::calculateTarget(double *diag, bool *target, int sensor_size) {
 	calculateTarget_kernel << <GRID1D(sensor_size), BLOCK1D >> > (diag, target, sensor_size);
-	umaBaseLogger.debug("calculateTargetQualitative_kernel invoked!");
+	umaBaseLogger.debug("calculateTargetEmpirical_kernel invoked!");
 }
