@@ -3,8 +3,9 @@
 #include "Snapshot.h"
 #include "Logger.h"
 #include "UMAException.h"
-#include "UMACoreService.h"
+#include "ConfService.h"
 #include "PropertyMap.h"
+#include "PropertyPage.h"
 
 static Logger agentLogger("Agent", "log/agent.log");
 
@@ -33,7 +34,8 @@ Agent::Agent(ifstream &file) {
 
 Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, PropertyMap *ppm): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
-	PropertyMap *agentProperty = UMACoreService::instance()->getPropertyMap("Agent");
+	PropertyPage *pp = ConfService::instance()->getCorePage();
+	PropertyMap *agentProperty = pp->get("Agent");
 	_ppm->extend(agentProperty);
 	_ppm->extend(ppm);
 

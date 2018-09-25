@@ -5,6 +5,8 @@
 #include "UMAException.h"
 #include "Logger.h"
 #include "PropertyMap.h"
+#include "PropertyPage.h"
+#include "ConfService.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 
@@ -49,18 +51,10 @@ void AgentHandler::createAgent(UMARestRequest &request) {
 	const string experimentId = request.getStringData("experiment_id");
 	const string agentId = request.getStringData("agent_id");
 	const string agentType = request.getStringData("type");
-	//bad temp solution
-	double q = -1;
-	double threshold = -1;
-	if (request.checkDataField("q")) {
-		q = request.getDoubleData("q");
-	}
-	if (request.checkDataField("threshold")) {
-		threshold = request.getDoubleData("threshold");
-	}
-	PropertyMap *ppm = new PropertyMap();
-	if (q >= 0) ppm->add("q", to_string(q));
-	if (threshold >= 0) ppm->add("threshold", to_string(threshold));
+	
+	vector<string> keys = ConfService::instance()->getCorePage()->get("Agent")->getKeys();
+	PropertyMap ppm;
+	request.getValueInKeys(keys, ppm);
 
 	UMA_AGENT type;
 	if (agentType == "default") type = UMA_AGENT::AGENT_STATIONARY;
@@ -68,11 +62,9 @@ void AgentHandler::createAgent(UMARestRequest &request) {
 	else if (agentType == "discounted") type = UMA_AGENT::AGENT_DISCOUNTED;
 	else type = UMA_AGENT::AGENT_EMPIRICAL;
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
-	experiment->createAgent(agentId, type, ppm);
+	experiment->createAgent(agentId, type, &ppm);
 
 	request.setMessage("Agent=" + agentId + " is created");
-
-	delete ppm;
 }
 
 void AgentHandler::getAgent(UMARestRequest &request) {

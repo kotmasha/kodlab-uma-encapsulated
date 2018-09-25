@@ -15,8 +15,6 @@ set(COREOBJ
     "UMACoreConstant.h"
     "UMACoreObject.cpp"
     "UMACoreObject.h"
-    "UMACoreService.h"
-    "UMACoreService.cpp"
 )
 set(WORLD
     "World.h"

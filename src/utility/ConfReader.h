@@ -6,7 +6,7 @@
 using namespace std;
 
 namespace ConfReader {
-	std::map<string, vector<string>> readRestmap();
+	PropertyPage *readRestmap();
 	PropertyPage *readConf(const string &conf_name);
 }
 

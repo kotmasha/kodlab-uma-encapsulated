@@ -9,8 +9,8 @@
 Read the configuration file of restmap.ini
 output: map of string to vector<string>, stanza_name to stanza
 */
-std::map<string, vector<string>> ConfReader::readRestmap() {
-	std::map<string, vector<string>> results;
+PropertyPage *ConfReader::readRestmap() {
+	PropertyPage *results = new PropertyPage();
 	try {
 		ifstream iniFile("ini/restmap.ini");
 		string s;
@@ -21,11 +21,11 @@ std::map<string, vector<string>> ConfReader::readRestmap() {
 				s.erase(s.begin());
 				s.erase(s.end() - 1);
 				sCurrentFactory = string(s.begin(), s.end());
-				results[sCurrentFactory] = vector<string>();
+				results->add(sCurrentFactory, new PropertyMap());
 			}
 			else {
 				string sPath(s.begin(), s.end());
-				results[sCurrentFactory].push_back(sPath);
+				results->get(sCurrentFactory)->add(sPath, "");
 			}
 		}
 		cout << "restmap.ini read complete" << endl;

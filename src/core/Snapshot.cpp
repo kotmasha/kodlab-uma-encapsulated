@@ -8,7 +8,7 @@
 #include "DataManager.h"
 #include "UMAException.h"
 #include "UMAutil.h"
-#include "UMACoreService.h"
+#include "ConfService.h"
 #include "PropertyMap.h"
 
 /*
@@ -447,14 +447,17 @@ void Snapshot::setQ(const double &q) {
 
 void Snapshot::setAutoTarget(const bool &auto_target) {
 	_autoTarget = auto_target;
+	snapshotLogger.info("snapshot auto target to " + to_string(_autoTarget));
 }
 
 void Snapshot::setPropagateMask(const bool &propagateMask) {
 	_propagateMask = propagateMask;
+	snapshotLogger.info("snapshot propagate mask to " + to_string(_propagateMask));
 }
 
 void Snapshot::setInitialSize(const int &initial_size) {
 	_initialSize = initial_size;
+	snapshotLogger.info("snapshot initial size to " + to_string(_initialSize));
 }
 
 void Snapshot::setInitialSize() {
@@ -463,10 +466,12 @@ void Snapshot::setInitialSize() {
 
 void Snapshot::setTotal(const double &total){
 	_total = total;
+	snapshotLogger.info("snapshot total to " + to_string(_total));
 }
 
 void Snapshot::setOldTotal(const double &total_) {
 	_total_ = total_;
+	snapshotLogger.info("snapshot old total to " + to_string(_total_));
 }
 
 

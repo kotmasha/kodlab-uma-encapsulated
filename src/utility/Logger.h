@@ -7,6 +7,7 @@ using namespace std;
 class Logger {
 public:
 	enum LOG_LEVEL { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_VERBOSE };
+	static Logger::LOG_LEVEL stringToLogLevel(const string &s);
 
 private:
 	ofstream *_output;
