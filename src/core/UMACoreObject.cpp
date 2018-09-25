@@ -1,17 +1,34 @@
 #include "UMACoreObject.h"
 #include "PropertyMap.h"
+#include "PropertyPage.h"
+#include "ConfService.h"
+#include "UMAException.h"
 
+/*
+This is the base UMACore object, that every other UMACore object should extend
+*/
 UMACoreObject::UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT objType, UMACoreObject *parent):
 	_uuid(uuid), _objType(objType), _parent(parent) {
+	// All UMACore object should automatically inherit whatever is from its parent
 	if (_parent) {
 		this->_ppm = new PropertyMap(*(_parent->_ppm));
 	}
 	else {
+		// if the parent does not exist, then ppm is initiated to be null
 		this->_ppm = new PropertyMap();
+	}
+
+	// then based on the type of UMACore object, just read the property map and layer it in
+	string objName = UMACoreConstant::getUMAObjName(objType);
+	PropertyPage *pp = ConfService::instance()->getCorePage();
+	PropertyMap *pm = pp->get(objName);
+	if (pm) {
+		_ppm->extend(pm);
 	}
 }
 
 UMACoreObject::~UMACoreObject() {
+	delete this->_ppm;
 	_parent = nullptr;
 }
 

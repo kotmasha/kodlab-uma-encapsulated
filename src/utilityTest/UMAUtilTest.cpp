@@ -2,28 +2,23 @@
 #include "gtest/gtest.h"
 #include "UMAutil.h"
 #include "Logger.h"
-#include "LogService.h"
 #include "UMAException.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
+#include "ConfService.h"
 
 //test string to log level
-TEST(LogService_test, stringToLogLevel) {
+TEST(Logger_test, stringToLogLevel) {
 	const string error = "ERROR";
 	const string warn = "WARN";
 	const string info = "INFO";
 	const string debug = "DEBUG";
 	const string verbose = "VERBOSE";
-	EXPECT_EQ(LogService::instance()->stringToLogLevel(error), 0);
-	EXPECT_EQ(LogService::instance()->stringToLogLevel(warn), 1);
-	EXPECT_EQ(LogService::instance()->stringToLogLevel(info), 2);
-	EXPECT_EQ(LogService::instance()->stringToLogLevel(debug), 3);
-	EXPECT_EQ(LogService::instance()->stringToLogLevel(verbose), 4);
-}
-
-TEST(LogService_test, getLogLevelString) {
-	string level = LogService::instance()->getLogLevelString("Server");
-	EXPECT_EQ(level, "INFO");
+	EXPECT_EQ(Logger::stringToLogLevel(error), 0);
+	EXPECT_EQ(Logger::stringToLogLevel(warn), 1);
+	EXPECT_EQ(Logger::stringToLogLevel(info), 2);
+	EXPECT_EQ(Logger::stringToLogLevel(debug), 3);
+	EXPECT_EQ(Logger::stringToLogLevel(verbose), 4);
 }
 
 TEST(Logger_test, logLevelGetSet) {

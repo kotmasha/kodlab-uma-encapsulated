@@ -1,16 +1,15 @@
 #include "Logger.h"
-#include "ConfReader.h"
-#include "LogService.h"
 #include "UMAException.h"
+#include "ConfService.h"
+#include "PropertyPage.h"
 #include <ctime>
 #include <chrono>
 
 Logger::Logger(const string component, const string output) : _component(component) {
-	//level is changable in runtime
-
 	try {
-		string levelString = LogService::instance()->getLogLevelString(component);
-		_level = LogService::instance()->stringToLogLevel(levelString);
+		PropertyPage *logInfo = ConfService::instance()->getLogPage();
+		string levelString = logInfo->get(component)->get("level");
+		_level = Logger::stringToLogLevel(levelString);
 	}
 	catch (UMAInternalException &e) {
 		cout << e.what() << endl;
@@ -73,4 +72,16 @@ void Logger::setLogLevel(LOG_LEVEL level) {
 
 Logger::LOG_LEVEL Logger::getLogLevel() {
 	return _level;
+}
+
+/*
+input: string level
+output: int level
+*/
+Logger::LOG_LEVEL Logger::stringToLogLevel(const string &s) {
+	if (s == "ERROR") return Logger::LOG_ERROR;
+	if (s == "WARN") return Logger::LOG_WARN;
+	if (s == "INFO") return Logger::LOG_INFO;
+	if (s == "DEBUG") return Logger::LOG_DEBUG;
+	if (s == "VERBOSE") return Logger::LOG_VERBOSE;
 }

@@ -284,6 +284,28 @@ vector<vector<string> > UMARestRequest::getString2dData(const string &name) {
 	}
 }
 
+void UMARestRequest::getValueInKeys(vector<string> &keys, PropertyMap &ppm) {
+	for (int i = 0; i < keys.size(); ++i) {
+		try {
+			if (checkDataField(keys[i])) {
+				string s;
+				string_t nameT = RestUtil::string2string_t(keys[i]);
+				json::value::value_type type = _data[nameT].type();
+				switch (type) {
+				case web::json::value::Boolean: s = to_string(getBoolData(keys[i])); break;
+				case web::json::value::String: s = getStringData(keys[i]); break;
+				case web::json::value::Number: s = to_string(getDoubleData(keys[i])); break;
+				default: throw UMAInvalidArgsException("Bad input parameters");
+				}
+				ppm.add(keys[i], s);
+			}
+		}
+		catch (exception &e) {
+			throw UMAInvalidArgsException("Cannot parse the key=" + keys[i] + ", reason=" + e.what(), false, &serverLogger);
+		}
+	}
+}
+
 const string UMARestRequest::getRequestUrl() const{
 	string_t url = _request.request_uri().path();
 	return RestUtil::string_t2string(url);

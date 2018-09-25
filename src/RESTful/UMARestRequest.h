@@ -3,6 +3,7 @@
 
 #include "Global.h"
 #include "UMARest.h"
+#include "PropertyMap.h"
 
 class UMARestHandler;
 class UMARestListener;
@@ -40,6 +41,8 @@ public:
 	vector<vector<bool> > getBool2dData(const string &name);
 	vector<vector<double> > getDouble2dData(const string &name);
 	vector<vector<string> > getString2dData(const string &name);
+	void getValueInKeys(vector<string> &keys, PropertyMap &ppm);
+	
 
 	const string getRequestUrl() const;
 	const string getAbsoluteUrl() const;

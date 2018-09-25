@@ -8,8 +8,6 @@ set(UTILITY
 set(LOGGING
     "Logger.h"
     "Logger.cpp"
-    "LogService.h"
-    "LogService.cpp"
 )
 set(EXCEPTION
     "UMAException.h"
@@ -18,6 +16,8 @@ set(EXCEPTION
 set(CONF
     "ConfReader.h"
     "ConfReader.cpp"
+    "ConfService.h"
+    "ConfService.cpp"
 )
 set(PROPERTY
     "PropertyMap.h"

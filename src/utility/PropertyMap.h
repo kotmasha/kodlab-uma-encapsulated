@@ -14,6 +14,7 @@ public:
 	void remove(const string &key);
 	string get(const string &key);
 	void extend(PropertyMap *other);
+	vector<string> getKeys();
 	//void copy(PropertyMap *other);
 };
 

@@ -32,6 +32,14 @@ void PropertyMap::extend(PropertyMap *other) {
 	}
 }
 
+vector<string> PropertyMap::getKeys() {
+	vector<string> keys;
+	for (auto it = this->begin(); it != this->end(); ++it) {
+		keys.push_back(it->first);
+	}
+	return keys;
+}
+
 /*
 //come back later
 template <class T>

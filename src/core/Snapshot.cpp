@@ -8,8 +8,9 @@
 #include "DataManager.h"
 #include "UMAException.h"
 #include "UMAutil.h"
-#include "UMACoreService.h"
+#include "ConfService.h"
 #include "PropertyMap.h"
+#include "PropertyPage.h"
 
 /*
 ----------------Snapshot Base Class-------------------
@@ -20,6 +21,8 @@ extern bool qless(double d1, double d2);
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
 Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
+	layerInConf();
+	
 	_total = stod(_ppm->get("total"));
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), this->getParentChain());
@@ -432,6 +435,14 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 	}
 }
 
+void Snapshot::layerInConf() {
+	string confName = "Agent::" + UMACoreConstant::getUMASnapshotName(_type);
+	PropertyMap *pm = ConfService::instance()->getCorePage()->get(confName);
+	if (pm) {
+		_ppm->extend(pm);
+	}
+}
+
 //####################################################################################
 //------------------------------------SET FUNCTION------------------------------------
 
@@ -447,14 +458,17 @@ void Snapshot::setQ(const double &q) {
 
 void Snapshot::setAutoTarget(const bool &auto_target) {
 	_autoTarget = auto_target;
+	snapshotLogger.info("snapshot auto target to " + to_string(_autoTarget));
 }
 
 void Snapshot::setPropagateMask(const bool &propagateMask) {
 	_propagateMask = propagateMask;
+	snapshotLogger.info("snapshot propagate mask to " + to_string(_propagateMask));
 }
 
 void Snapshot::setInitialSize(const int &initial_size) {
 	_initialSize = initial_size;
+	snapshotLogger.info("snapshot initial size to " + to_string(_initialSize));
 }
 
 void Snapshot::setInitialSize() {
@@ -463,10 +477,12 @@ void Snapshot::setInitialSize() {
 
 void Snapshot::setTotal(const double &total){
 	_total = total;
+	snapshotLogger.info("snapshot total to " + to_string(_total));
 }
 
 void Snapshot::setOldTotal(const double &total_) {
 	_total_ = total_;
+	snapshotLogger.info("snapshot old total to " + to_string(_total_));
 }
 
 
