@@ -34,7 +34,7 @@ AmperAndTestFixture::~AmperAndTestFixture() {
 }
 
 vector<vector<double>> AmperAndTestFixture::test_amper_and(int mid1, int mid2, bool merge, std::pair<string, string> &p) {
-	snapshot->amperand(mid1, mid2, merge, p);
+	snapshot->ampersand(mid1, mid2, merge, p);
 
 	vector<vector<double>> w;
 	for (int i = 0; i < 2 * snapshot->_sensors.size(); ++i) {

@@ -25,7 +25,7 @@ Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type)
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), this->getParentChain());
 	_delayCount = 0;
 	
-	_q = stod(_ppm->get("q"));
+	_q = 0;
 	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 
 	_threshold = stod(_ppm->get("threshold"));
@@ -376,7 +376,7 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 			continue;
 		}
 		if(generate_default_id){
-			int delay_count = getDealyCount();
+			int delay_count = getDelayCount();
 			p = { "delay" + to_string(delay_count), "c_delay" + to_string(delay_count) };
 		}
 		else {
@@ -598,7 +598,7 @@ const UMA_SNAPSHOT &Snapshot::getType() const {
 	return _type;
 }
 
-const int Snapshot::getDealyCount() {
+const int Snapshot::getDelayCount() {
 	return _delayCount++;
 }
 
@@ -616,28 +616,28 @@ void Snapshot::amper(const vector<int> &list, const std::pair<string, string> &u
 		return;
 	}
 	try {
-		amperand(list[1], list[0], true, uuid);
+		ampersand(list[1], list[0], true, uuid);
 		for (int j = 2; j < list.size(); ++j) {
-			amperand(_sensors.back()->_m->_idx, list[j], false, uuid);
+			ampersand(_sensors.back()->_m->_idx, list[j], false, uuid);
 		}
 	}
 	catch (UMAException &e) {
-		throw UMAInternalException("Fatal error while doing amperand", true, &snapshotLogger, this->getParentChain());
+		throw UMAInternalException("Fatal error while doing ampersand", true, &snapshotLogger, this->getParentChain());
 	}
 }
 
 /*
 This is the amper and function, used in amper and delay
-Input: m_idx1, m_idx2 are the attr_sensor idx that need to be amperand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
+Input: m_idx1, m_idx2 are the attr_sensor idx that need to be ampersand, m_idx1 > m_idx2, merge is indicating whether merge or replace the last sensor/row of sensor pair
 */
-void Snapshot::amperand(int m_idx1, int m_idx2, bool merge, const std::pair<string, string> &id_pair) {
+void Snapshot::ampersand(int m_idx1, int m_idx2, bool merge, const std::pair<string, string> &id_pair) {
 	vector<SensorPair*> amper_and_sensorPairs;
 	Sensor *amper_and_sensor = new Sensor(id_pair, this, _total, _sensors.size());
 	_sensorIdx[id_pair.first] = amper_and_sensor;
 	_sensorIdx[id_pair.second] = amper_and_sensor;
 
 	double f = 1.0;
-	if(_total > 1e-5)
+	if(_total > 1e-12)
 		f = getAttrSensorPair(m_idx1, m_idx2)->_vw / _total;
 	for(int i = 0; i < _sensors.size(); ++i){
 		SensorPair *sensor_pair = NULL;
@@ -839,6 +839,10 @@ void Snapshot::updateTotal(double phi, bool active) {
 	}
 }
 
+void Snapshot::updateQ() {
+	_q=stod(_ppm->get("q"));
+}
+
 /*
 void Snapshot::save_snapshot(ofstream &file) {
 	//write uuid
@@ -957,6 +961,9 @@ void SnapshotQualitative::generateDelayedWeights(int mid, bool merge, const std:
 	_sensorPairs.insert(_sensorPairs.end(), delayedSensorPairs.begin(), delayedSensorPairs.end());
 }
 
+void SnapshotQualitative::updateQ() {
+}
+
 /*
 ----------------SnapshotQualitative Class-------------------
 */
@@ -986,6 +993,10 @@ void SnapshotDiscounted::generateDelayedWeights(int mid, bool merge, const std::
 	Snapshot::generateDelayedWeights(mid, merge, id_pair);
 }
 
+void SnapshotDiscounted::updateQ() {
+	Snapshot::updateQ();
+}
+
 /*
 ----------------SnapshotDiscounted Class-------------------
 */
@@ -995,11 +1006,9 @@ void SnapshotDiscounted::generateDelayedWeights(int mid, bool merge, const std::
 */
 
 SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
-	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
+	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
+	//:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
 	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
-
-	_q = stod(_ppm->get("q"));
-	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 
 	_threshold = stod(_ppm->get("threshold"));
 	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
@@ -1016,11 +1025,7 @@ void SnapshotEmpirical::generateDelayedWeights(int mid, bool merge, const std::p
 }
 
 void SnapshotEmpirical::updateQ() {
-	_q = 1.0 * _t / (_t + 1);
-}
-
-void SnapshotEmpirical::addT() {
-	++_t;
+	_q = 1.0 / (2.0 - _q);
 }
 
 /*
