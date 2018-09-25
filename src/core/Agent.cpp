@@ -34,15 +34,21 @@ Agent::Agent(ifstream &file) {
 
 Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, PropertyMap *ppm): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
-	PropertyPage *pp = ConfService::instance()->getCorePage();
-	PropertyMap *agentProperty = pp->get("Agent");
-	_ppm->extend(agentProperty);
+	layerInConf();
 	_ppm->extend(ppm);
 
 	_pruningInterval = stoi(_ppm->get("pruning_interval"));
 	_enableEnrichment = stoi(_ppm->get("enable_enrichment"));
 
 	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type), this->getParentChain());
+}
+
+void Agent::layerInConf() {
+	string confName = "Agent::" + UMACoreConstant::getUMAAgentName(_type);
+	PropertyMap *pm = ConfService::instance()->getCorePage()->get(confName);
+	if (pm) {
+		_ppm->extend(pm);
+	}
 }
 
 Snapshot *Agent::createSnapshot(const string &uuid) {
@@ -208,7 +214,7 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
 	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {
 	//Overwrite base ppm by empirical ppm
-	PropertyMap *agentProperty = UMACoreService::instance()->getPropertyMap("Agent::Empirical");
+	PropertyMap *agentProperty = ConfService::instance()->getCorePage()->get("Agent::Empirical");
 	_ppm->extend(agentProperty);
 	_ppm->extend(ppm);
 }

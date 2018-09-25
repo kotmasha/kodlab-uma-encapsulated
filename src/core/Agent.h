@@ -46,6 +46,9 @@ public:
 
 	const vector<vector<string>> getSnapshotInfo() const;
 	virtual ~Agent();
+
+protected:
+	void layerInConf();
 };
 
 class DLL_PUBLIC AgentQualitative : public Agent {

@@ -135,6 +135,7 @@ public:
 protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
 	void ampersand(int mid1, int mid2, bool merge, const std::pair<string, string> &idPair);
+	void layerInConf();
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
 };
 

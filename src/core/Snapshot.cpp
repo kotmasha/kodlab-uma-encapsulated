@@ -10,6 +10,7 @@
 #include "UMAutil.h"
 #include "ConfService.h"
 #include "PropertyMap.h"
+#include "PropertyPage.h"
 
 /*
 ----------------Snapshot Base Class-------------------
@@ -20,6 +21,8 @@ extern bool qless(double d1, double d2);
 static Logger snapshotLogger("Snapshot", "log/snapshot.log");
 
 Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type) : UMACoreObject(uuid, UMA_OBJECT::SNAPSHOT, parent), _type(type) {
+	layerInConf();
+	
 	_total = stod(_ppm->get("total"));
 	_total_ = _total;
 	snapshotLogger.debug("Setting init total value to " + to_string(_total), this->getParentChain());
@@ -429,6 +432,14 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 		_dm->createSensorPairsToArraysIndex(_sensors.size() - success_delay, _sensors.size(), _sensorPairs);
 		_dm->copySensorsToArrays(_sensors.size() - success_delay, _sensors.size(), _sensors);
 		_dm->copySensorPairsToArrays(_sensors.size() - success_delay, _sensors.size(), _sensorPairs);
+	}
+}
+
+void Snapshot::layerInConf() {
+	string confName = "Agent::" + UMACoreConstant::getUMASnapshotName(_type);
+	PropertyMap *pm = ConfService::instance()->getCorePage()->get(confName);
+	if (pm) {
+		_ppm->extend(pm);
 	}
 }
 

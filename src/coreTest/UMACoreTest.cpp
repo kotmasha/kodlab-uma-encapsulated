@@ -240,13 +240,6 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
-	
-	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.125);
-	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
-	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
-	EXPECT_EQ(snapshot->getAutoTarget(), false);
-	EXPECT_EQ(snapshot->getPropagateMask(), false);
-	EXPECT_DOUBLE_EQ(snapshot->getQ(), 0.9);
 
 	snapshot->setThreshold(0.501);
 	snapshot->setTotal(2.0);
