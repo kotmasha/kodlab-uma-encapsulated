@@ -14,6 +14,7 @@ public:
 	ConfService();
 	~ConfService();
 	static ConfService *instance();
+	static void reset();
 	void addPropertyPage(const string name, PropertyPage *ppm);
 	PropertyPage *getPropertyPage(const string name) const;
 	PropertyPage *getLogPage() const;

@@ -1,13 +1,21 @@
 #include "Logger.h"
 #include "UMAException.h"
-#include "ConfService.h"
+#include "ConfReader.h"
 #include "PropertyPage.h"
+#include "UMAutil.h"
 #include <ctime>
 #include <chrono>
 
 Logger::Logger(const string component, const string output) : _component(component) {
 	try {
-		PropertyPage *logInfo = ConfService::instance()->getLogPage();
+		try {
+			string logFolder = "log";
+			SysUtil::UMAMkdir(logFolder);
+		}
+		catch (exception &ex) {
+			cout << "Cannot make a log folder, error=" + string(ex.what()) << endl;
+		}
+		PropertyPage *logInfo = ConfReader::readConf("log.ini");
 		string levelString = logInfo->get(component)->get("level");
 		_level = Logger::stringToLogLevel(levelString);
 	}

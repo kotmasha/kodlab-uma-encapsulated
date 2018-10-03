@@ -3,7 +3,7 @@
 #include "Snapshot.h"
 #include "Logger.h"
 #include "UMAException.h"
-#include "ConfService.h"
+#include "CoreService.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
 
@@ -45,7 +45,7 @@ Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, Property
 
 void Agent::layerInConf() {
 	string confName = "Agent::" + UMACoreConstant::getUMAAgentName(_type);
-	PropertyMap *pm = ConfService::instance()->getCorePage()->get(confName);
+	PropertyMap *pm = CoreService::instance()->getPropertyMap(confName);
 	if (pm) {
 		_ppm->extend(pm);
 	}
@@ -213,10 +213,6 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 */
 AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
 	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {
-	//Overwrite base ppm by empirical ppm
-	PropertyMap *agentProperty = ConfService::instance()->getCorePage()->get("Agent::Empirical");
-	_ppm->extend(agentProperty);
-	_ppm->extend(ppm);
 }
 
 AgentEmpirical::~AgentEmpirical() {}

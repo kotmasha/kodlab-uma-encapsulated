@@ -1,7 +1,7 @@
 #include "ConfService.h"
 #include "ConfReader.h"
 #include "PropertyMap.h"
-#include "UMAUtil.h"
+#include "UMAutil.h"
 #include "UMAException.h"
 
 ConfService *ConfService::_confService = nullptr;
@@ -20,6 +20,7 @@ ConfService::~ConfService() {
 		delete it->second;
 		it->second = nullptr;
 	}
+	_confInfo.clear();
 }
 
 ConfService *ConfService::instance() {
@@ -27,6 +28,11 @@ ConfService *ConfService::instance() {
 		_confService = new ConfService();
 	}
 	return _confService;
+}
+
+void ConfService::reset() {
+	delete ConfService::instance();
+	ConfService::_confService = nullptr;
 }
 
 void ConfService::addPropertyPage(const string name, PropertyPage *ppm) {

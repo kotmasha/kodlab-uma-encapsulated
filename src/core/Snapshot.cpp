@@ -8,7 +8,7 @@
 #include "DataManager.h"
 #include "UMAException.h"
 #include "UMAutil.h"
-#include "ConfService.h"
+#include "CoreService.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
 
@@ -436,8 +436,8 @@ void Snapshot::delays(const vector<vector<bool> > &lists, const vector<std::pair
 }
 
 void Snapshot::layerInConf() {
-	string confName = "Agent::" + UMACoreConstant::getUMASnapshotName(_type);
-	PropertyMap *pm = ConfService::instance()->getCorePage()->get(confName);
+	string confName = "Snapshot::" + UMACoreConstant::getUMASnapshotName(_type);
+	PropertyMap *pm = CoreService::instance()->getPropertyMap(confName);
 	if (pm) {
 		_ppm->extend(pm);
 	}
@@ -1017,7 +1017,7 @@ void SnapshotDiscounted::updateQ() {
 */
 
 SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
-	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
+	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL) {
 	//:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
 	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
 

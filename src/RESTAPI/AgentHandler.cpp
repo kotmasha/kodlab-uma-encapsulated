@@ -6,7 +6,7 @@
 #include "Logger.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
-#include "ConfService.h"
+#include "CoreService.h"
 
 static Logger serverLogger("Server", "log/UMA_server.log");
 
@@ -52,7 +52,7 @@ void AgentHandler::createAgent(UMARestRequest &request) {
 	const string agentId = request.getStringData("agent_id");
 	const string agentType = request.getStringData("type");
 	
-	vector<string> keys = ConfService::instance()->getCorePage()->get("Agent")->getKeys();
+	vector<string> keys = CoreService::instance()->getPropertyMap("Agent")->getKeys();
 	PropertyMap ppm;
 	request.getValueInKeys(keys, ppm);
 

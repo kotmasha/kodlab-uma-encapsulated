@@ -11,7 +11,7 @@ class PropertyMap;
 /*
 This is the base class of all UMACore objects, the class itself cannot be instantiated
 */
-class UMACoreObject {
+class DLL_PUBLIC UMACoreObject {
 protected:
 	// the unique id of the object
 	const string _uuid;
@@ -32,6 +32,7 @@ protected:
 public:
 	UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT ObjType, UMACoreObject *parent);
 	virtual ~UMACoreObject();
+	PropertyMap *getPropertyMap() const;
 };
 
 #endif

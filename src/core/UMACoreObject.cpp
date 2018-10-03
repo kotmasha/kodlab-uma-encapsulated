@@ -1,7 +1,7 @@
 #include "UMACoreObject.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
-#include "ConfService.h"
+#include "CoreService.h"
 #include "UMAException.h"
 
 /*
@@ -20,8 +20,7 @@ UMACoreObject::UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT obj
 
 	// then based on the type of UMACore object, just read the property map and layer it in
 	string objName = UMACoreConstant::getUMAObjName(objType);
-	PropertyPage *pp = ConfService::instance()->getCorePage();
-	PropertyMap *pm = pp->get(objName);
+	PropertyMap *pm = CoreService::instance()->getPropertyMap(objName);
 	if (pm) {
 		_ppm->extend(pm);
 	}
@@ -30,6 +29,10 @@ UMACoreObject::UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT obj
 UMACoreObject::~UMACoreObject() {
 	delete this->_ppm;
 	_parent = nullptr;
+}
+
+PropertyMap *UMACoreObject::getPropertyMap() const {
+	return _ppm;
 }
 
 const string UMACoreObject::getParentChain() {
