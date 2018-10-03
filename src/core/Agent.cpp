@@ -212,12 +212,7 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 -----------------------AgentEmpirical class-----------------------
 */
 AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
-	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {
-	//Overwrite base ppm by empirical ppm
-	PropertyMap *agentProperty = ConfService::instance()->getCorePage()->get("Agent::Empirical");
-	_ppm->extend(agentProperty);
-	_ppm->extend(ppm);
-}
+	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {}
 
 AgentEmpirical::~AgentEmpirical() {}
 
