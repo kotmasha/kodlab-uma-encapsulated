@@ -50,7 +50,7 @@ __device__ bool impliesGPU(int row, int col, double *weights, double total, doub
 	double r_c = weights[ind(compi(row), col)];//0
 	double rc_ = weights[ind(row, compi(col))];//0
 	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
-	return rc_ < min(total * threshold, min(rc, min(r_c, r_c_))) || (rc_ == 0 && r_c == 0 && rc > 0 && r_c_ > 0);
+	return rc_ < min(total * threshold, min(rc, min(r_c, r_c_))) || (rc_ == 0 && r_c == 0);// && rc > 0 && r_c_ > 0);
 }
 
 /*

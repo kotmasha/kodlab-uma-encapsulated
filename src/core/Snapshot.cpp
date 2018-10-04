@@ -852,6 +852,7 @@ void Snapshot::updateTotal(double phi, bool active) {
 
 void Snapshot::updateQ() {
 	_q=stod(_ppm->get("q"));
+	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 }
 
 /*
@@ -891,7 +892,8 @@ SnapshotQualitative::~SnapshotQualitative() {}
 void SnapshotQualitative::updateTotal(double phi, bool active) {
 	_total_ = _total;
 	if (active) {
-		_total = _total > phi ? phi : _total;
+		_total = phi ? (_total < -0.5 || phi < _total) : _total;
+		//_total = _total > phi ? phi : _total;
 	}
 }
 
@@ -985,13 +987,6 @@ void SnapshotQualitative::updateQ() {
 
 SnapshotDiscounted::SnapshotDiscounted(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
-	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Discounted");
-
-	_q = stod(_ppm->get("q"));
-	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
-
-	_threshold = stod(_ppm->get("threshold"));
-	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
 }
 
 SnapshotDiscounted::~SnapshotDiscounted() {}
@@ -1018,11 +1013,6 @@ void SnapshotDiscounted::updateQ() {
 
 SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL) {
-	//:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED), _t(0) {
-	//PropertyMap *snapshotProperty = UMACoreService::instance()->getPropertyMap("Snapshot::Empirical");
-
-	_threshold = stod(_ppm->get("threshold"));
-	snapshotLogger.debug("Setting threshold value to " + to_string(_q), this->getParentChain());
 }
 
 SnapshotEmpirical::~SnapshotEmpirical() {}
