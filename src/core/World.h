@@ -16,10 +16,12 @@ private:
 	static World *_world;
 	// the map for all experiments
 	std::map<string, Experiment*> _experiments;
+	static std::mutex _lock;
 
 public:
 	World();
 	static World *instance();
+	static void reset();
 	Experiment *createExperiment(const string &experimentId);
 	Experiment *getExperiment(const string &experimentId);
 	void deleteExperiment(const string &experimentId);

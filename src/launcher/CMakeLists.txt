@@ -4,11 +4,11 @@ include_directories(../utility)
 include_directories(../core)
 include_directories(../RESTful)
 
-file(GLOB_RECURSE RESTAPI
+file(GLOB_RECURSE LAUNCHER
     "*.h"
-    "*.cpp"
+    "*.c"
 )
 
-source_group("restAPI" FILES ${RESTAPI})
-add_executable(UMAc ${RESTAPI})
-target_link_libraries(UMAc UMAUtil UMACore UMARest)
+source_group("launcher" FILES ${LAUNCHER})
+add_executable(UMA ${LAUNCHER})
+#target_link_libraries(UMA UMAUtil UMACore UMARest)

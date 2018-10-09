@@ -5,7 +5,6 @@
 #include "UMAException.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
-#include "ConfService.h"
 
 //test string to log level
 TEST(Logger_test, stringToLogLevel) {
@@ -50,6 +49,10 @@ TEST(PropertyMap_test, PropertyMap_test) {
 	EXPECT_FALSE(ppm->exist("key"));
 	EXPECT_TRUE(ppm->empty());
 
+	ppm->add("key", "value");
+	ppm->clear();
+	EXPECT_TRUE(ppm->empty());
+
 	delete ppm, other;
 }
 
@@ -59,6 +62,7 @@ TEST(PropertyPage_test, PropertyPage_test) {
 	EXPECT_TRUE(pp->empty());
 
 	pp->add("key", ppm);
+	ppm->add("a", "b");
 	EXPECT_TRUE(pp->exist("key"));
 	EXPECT_FALSE(pp->exist("none"));
 	EXPECT_EQ(pp->get("key"), ppm);

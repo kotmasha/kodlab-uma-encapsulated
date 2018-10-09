@@ -12,8 +12,16 @@
 #include "AttrSensor.h"
 #include "AttrSensorPair.h"
 #include "UMACoreConstant.h"
+#include "CoreService.h"
+#include "PropertyMap.h"
+#include "PropertyPage.h"
 
 TEST(world_test, world_experiment_test) {
+	// testing reload world first
+
+	World::instance();
+	World::reset();
+
 	Experiment *ex1 = World::instance()->createExperiment("ex1");
 	Experiment *ex2 = World::instance()->createExperiment("ex2");
 	Experiment *ex3 = World::instance()->createExperiment("ex3");
@@ -887,6 +895,90 @@ TEST(attr_sensor_test, attr_sensor_test) {
 	delete as;
 	delete[] diag, diag_;
 	delete[] observe, observe_;
+}
+
+TEST(UMACoreObject_layering_test, UMACoreObject_layering_test) {
+	PropertyPage *pp = CoreService::instance()->getPropertyPage();
+
+	PropertyMap *worldMap = pp->get("World");
+	if (!worldMap) {
+		pp->add("World", new PropertyMap());
+		worldMap = pp->get("World");
+	}
+
+	PropertyMap *experimentMap = pp->get("Experiment");
+	if (!experimentMap) {
+		pp->add("Experiment", new PropertyMap());
+		experimentMap = pp->get("Experiment");
+	}
+
+	PropertyMap *agentMap = pp->get("Agent");
+	if (!agentMap) {
+		pp->add("Agent", new PropertyMap());
+		agentMap = pp->get("Agent");
+	}
+
+	PropertyMap *agentQualitativeMap = pp->get("Agent::Qualitative");
+	if (!agentQualitativeMap) {
+		pp->add("Agent::Qualitative", new PropertyMap());
+		agentQualitativeMap = pp->get("Agent::Qualitative");
+	}
+
+	PropertyMap *snapshotMap = pp->get("Snapshot");
+	if (!snapshotMap) {
+		pp->add("Snapshot", new PropertyMap());
+		snapshotMap = pp->get("Snapshot");
+	}
+
+	PropertyMap *snapshotQualitativeMap = pp->get("Snapshot::Qualitative");
+	if (!snapshotQualitativeMap) {
+		pp->add("Snapshot::Qualitative", new PropertyMap());
+		snapshotQualitativeMap = pp->get("Snapshot::Qualitative");
+	}
+	
+	worldMap->add("a", "1");
+	worldMap->add("b", "-1");
+	worldMap->add("c", "-1");
+	worldMap->add("d", "-1");
+	experimentMap->add("b", "2");
+	experimentMap->add("c", "-1");
+	experimentMap->add("d", "-1");
+	experimentMap->add("e", "5");
+	agentMap->add("c", "3");
+	agentMap->add("d", "-1");
+	agentMap->add("f", "6");
+	agentQualitativeMap->add("d", "10");
+	agentQualitativeMap->add("g", "7");
+	snapshotMap->add("d", "4");
+	snapshotMap->add("h", "8");
+	snapshotQualitativeMap->add("h", "11");
+	snapshotQualitativeMap->add("i", "9");
+	
+	World::reset();
+	Experiment *experiment = World::instance()->createExperiment("test_experiment");
+	Agent *agent = experiment->createAgent("test_agent", UMACoreConstant::UMA_AGENT::AGENT_STATIONARY);
+	Agent *agentQualitative = experiment->createAgent("test_agent_qualitative", UMACoreConstant::UMA_AGENT::AGENT_QUALITATIVE);
+	Snapshot *snapshot = agent->createSnapshot("test_snapshot");
+	Snapshot *snapshotQualitative = agentQualitative->createSnapshot("test_snapshot_qualitative");
+	
+	EXPECT_EQ(agent->getPropertyMap()->get("a"), "1");
+	EXPECT_EQ(agent->getPropertyMap()->get("b"), "2");
+	EXPECT_EQ(agent->getPropertyMap()->get("c"), "3");
+	EXPECT_EQ(agent->getPropertyMap()->get("d"), "-1");
+	EXPECT_EQ(agent->getPropertyMap()->get("e"), "5");
+	EXPECT_EQ(agent->getPropertyMap()->get("f"), "6");
+
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("a"), "1");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("b"), "2");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("c"), "3");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("d"), "10");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("e"), "5");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("f"), "6");
+	EXPECT_EQ(agentQualitative->getPropertyMap()->get("g"), "7");
+
+	CoreService::reset();
+	World::reset();
+	
 }
 
 int main(int argc, char** argv)

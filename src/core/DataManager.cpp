@@ -5,7 +5,7 @@
 #include "SensorPair.h"
 #include "UMAException.h"
 #include "Logger.h"
-#include "ConfService.h"
+#include "CoreService.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
 #include "data_util.h"
@@ -20,7 +20,7 @@ init function
 Input: DataManager's log path
 */
 DataManager::DataManager(UMACoreObject *parent): UMACoreObject("dataManager", UMA_OBJECT::DATA_MANAGER, parent) {
-	PropertyMap *ppm = ConfService::instance()->getCorePage()->get("DataManager");
+	PropertyMap *ppm = CoreService::instance()->getPropertyMap("DataManager");
 	_memoryExpansion = stod(ppm->get("memory_expansion"));
 
 	initPointers();

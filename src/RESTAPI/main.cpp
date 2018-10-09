@@ -10,7 +10,6 @@
 #include "SimulationHandler.h"
 #include "ConfReader.h"
 #include "Logger.h"
-#include "ConfService.h"
 #include "PropertyMap.h"
 #include "PropertyPage.h"
 
@@ -49,7 +48,7 @@ static void initHandlers(UMARestListener &listener) {
 
 
 void initHandlerPath(UMARestListener &listener) {
-	PropertyPage *restmap = ConfService::instance()->getRestmapPage();
+	PropertyPage *restmap = ConfReader::readRestmap();
 	try {
 		for (auto it = restmap->begin(); it != restmap->end(); ++it) {
 			string handlerName = it->first;
@@ -68,7 +67,7 @@ void initHandlerPath(UMARestListener &listener) {
 
 
 int main() {
-	PropertyPage *serverInfo = ConfService::instance()->getServerPage();
+	PropertyPage *serverInfo = ConfReader::readConf("server.ini");
 	string port = serverInfo->get("Server")->get("port");
 	string host = serverInfo->get("Server")->get("host");
 

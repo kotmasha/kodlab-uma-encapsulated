@@ -5,14 +5,24 @@
 #include "UMAException.h"
 
 World *World::_world = NULL;
+std::mutex World::_lock;
 static Logger worldLogger("World", "log/world.log");
 
 World *World::instance() {
 	if (!_world) {
-		_world = new World();
-		worldLogger.info("A new world is created");
+		_lock.lock();
+		if (!_world) {
+			_world = new World();
+			worldLogger.info("A new world is created");
+		}
+		_lock.unlock();
 	}
 	return _world;
+}
+
+void World::reset() {
+	delete World::instance();
+	World::_world = nullptr;
 }
 
 World::World(): UMACoreObject("World", UMA_OBJECT::WORLD, nullptr) {}
@@ -23,7 +33,7 @@ Experiment *World::createExperiment(const string &experimentId) {
 	}
 
 	_experiments[experimentId] = new Experiment(experimentId);
-	worldLogger.info("A new experiment=" + experimentId + " is created!");
+	worldLogger.info("A new experimentId=" + experimentId + " is created!");
 	return _experiments[experimentId];
 }
 
@@ -102,4 +112,10 @@ void World::merge_test() {
 }
 */
 
-World::~World(){}
+World::~World(){
+	for (auto it = _experiments.begin(); it != _experiments.end(); ++it) {
+		delete it->second;
+		it->second = nullptr;
+	}
+	_experiments.clear();
+}
