@@ -138,6 +138,37 @@ void DataHandler::handleRead(UMARestRequest &request) {
 		request.setData("mask_amper", maskAmper);
 		return;
 	}
+	else if (requestUrl == "/UMA/data/all") {
+		vector<bool> current = dm->getCurrent();
+		request.setMessage("get current value");
+		request.setData("current", current);
+
+		vector<bool> prediction = dm->getPrediction();
+		request.setMessage("get prediction value");
+		request.setData("prediction", prediction);
+
+		vector<bool> target = dm->getTarget();
+		request.setMessage("get target value");
+		request.setData("target", target);
+
+		vector<vector<double> > weights = dm->getWeight2D();
+		request.setMessage("get weights value");
+		request.setData("weights", weights);
+
+		vector<vector<bool> > dirs = dm->getDir2D();
+		request.setMessage("get dirs value");
+		request.setData("dirs", dirs);
+
+		vector<vector<double> > thresholds = dm->getThreshold2D();
+		request.setMessage("get thresholds value");
+		request.setData("thresholds", thresholds);
+
+		vector<vector<bool>> npdirs = dm->getNPDir2D();
+		request.setMessage("get npdirs info");
+		request.setData("npdirs", npdirs);
+		
+		return;
+	}
 
 	throw UMABadOperationException("The coming put request has nothing to get", false, &serverLogger);
 }

@@ -11,7 +11,7 @@ def is_running_on_windows():
 # save the pid to file, just in case process cannot be stopped normally.
 def save_UMA_pid(path):
     os.chdir(path)
-    binary_name = "UMA.exe" if is_running_on_windows() else "./UMA"
+    binary_name = ["UMA.exe" if is_running_on_windows() else "./UMA", "start"]
     p = subprocess.Popen(binary_name, shell=False)
     with open('uma_pid.txt', 'w') as f:
         try:
