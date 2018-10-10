@@ -32,7 +32,7 @@ if __name__ == "__main__":
     cluster_path = os.path.join(UMA_HOME, 'deployment', 'cluster')
 
     for i in range(instance):
-        path = os.path.join(cluster_path, 'UMA' + str(i), 'uma_pid.txt')
+        path = os.path.join(cluster_path, 'UMA' + str(i), 'pid.txt')
         if not os.path.exists(path):
             raise Exception("Cannot find the UMA path=%s" %path)
 
