@@ -215,7 +215,7 @@ void simulation::updateState(DataManager *dm, const double &q, const double &phi
 	//update thresholds
 	uma_base::updateThresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
-	uma_base::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	uma_base::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::THRESHOLDS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
@@ -240,7 +240,7 @@ void simulation::updateStateQualitative(DataManager *dm, const double &q, const 
 	//update thresholds, no operation for now
 	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
-	uma_base_qualitative::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	uma_base_qualitative::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::THRESHOLDS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
@@ -265,7 +265,7 @@ void simulation::updateStateDiscounted(DataManager *dm, const double &q, const d
 	//update thresholds, no operation for now
 	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
-	uma_base_discounted::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	uma_base_discounted::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::THRESHOLDS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
@@ -290,7 +290,7 @@ void simulation::updateStateEmpirical(DataManager *dm, const double &q, const do
 	//update thresholds, no operation for now
 	//uma_base::update_thresholds(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::THRESHOLDS), total_, q, phi, sensor_size);
 	//update dirs
-	uma_base_empirical::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::WEIGHTS), total, sensor_size);
+	uma_base_empirical::orientAll(dm->_dvar_b(DataManager::DIRS), dm->_dvar_d(DataManager::WEIGHTS), dm->_dvar_d(DataManager::THRESHOLDS), total, sensor_size);
 	//floyd on new dirs and get npdirs
 	floyd(dm);
 	//negligible on npdir, store the results
