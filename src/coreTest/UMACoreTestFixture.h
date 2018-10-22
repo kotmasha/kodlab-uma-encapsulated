@@ -33,6 +33,18 @@ protected:
 	Snapshot *snapshot;
 };
 
+class SnapshotUpdateQTestFixture : public::testing::Test {
+public:
+	SnapshotUpdateQTestFixture();
+	~SnapshotUpdateQTestFixture();
+
+	void testUpdateQ();
+
+protected:
+	Agent *agentStationary, *agentQualitative, *agentDiscounted, *agentEmpirical;
+	Snapshot *snapshotStationary, *snapshotQualitative, *snapshotDiscounted, *snapshotEmpirical;
+};
+
 class GenerateDelayedWeightsTestFixture : public::testing::Test {
 public:
 	GenerateDelayedWeightsTestFixture();

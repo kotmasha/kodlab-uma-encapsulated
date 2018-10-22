@@ -23,6 +23,7 @@ World *World::instance() {
 void World::reset() {
 	delete World::instance();
 	World::_world = nullptr;
+	worldLogger.info("The world is successfully reset");
 }
 
 World::World(): UMACoreObject("World", UMA_OBJECT::WORLD, nullptr) {}

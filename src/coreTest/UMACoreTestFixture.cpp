@@ -1,4 +1,5 @@
 #include "UMACoreTestFixture.h"
+#include "PropertyMap.h"
 
 extern int ind(int row, int col);
 extern int compi(int x);
@@ -7,9 +8,51 @@ WorldTestFixture::WorldTestFixture() {}
 
 WorldTestFixture::~WorldTestFixture() {}
 
+SnapshotUpdateQTestFixture::SnapshotUpdateQTestFixture() {
+	agentStationary = new Agent("agentStationary", nullptr);
+	snapshotStationary = agentStationary->createSnapshot("snapshotStationary");
+	snapshotStationary->_ppm->add("q", "1");
+
+	agentQualitative = new AgentQualitative("agentQualitative", nullptr);
+	snapshotQualitative = agentQualitative->createSnapshot("snapshotQualitative");
+	snapshotQualitative->_ppm->add("q", "2");
+
+	agentDiscounted = new AgentDiscounted("agentDiscounted", nullptr);
+	snapshotDiscounted = agentDiscounted->createSnapshot("snapshotDiscounted");
+	snapshotDiscounted->_ppm->add("q", "3");
+
+	agentEmpirical = new AgentEmpirical("agentEmpirical", nullptr);
+	snapshotEmpirical = agentEmpirical->createSnapshot("snapshotEmpirical");
+}
+
+SnapshotUpdateQTestFixture::~SnapshotUpdateQTestFixture() {
+	delete agentStationary, agentQualitative, agentDiscounted, agentEmpirical;
+}
+
+void SnapshotUpdateQTestFixture::testUpdateQ() {
+	EXPECT_EQ(0, snapshotStationary->getQ());// value of q is hard-coded to be 0
+	snapshotStationary->updateQ();
+	EXPECT_EQ(1, snapshotStationary->getQ());
+
+	EXPECT_EQ(0, snapshotQualitative->getQ());
+	snapshotQualitative->updateQ();
+	EXPECT_EQ(0, snapshotQualitative->getQ());
+
+	EXPECT_EQ(0, snapshotDiscounted->getQ());
+	snapshotDiscounted->updateQ();
+	EXPECT_EQ(3, snapshotDiscounted->getQ());
+
+	EXPECT_EQ(0, snapshotEmpirical->getQ());
+	snapshotEmpirical->setQ(1.5);
+	snapshotEmpirical->updateQ();
+	EXPECT_EQ(2, snapshotEmpirical->getQ());
+}
+
 AmperAndTestFixture::AmperAndTestFixture(){
 	agent = new Agent("agent", nullptr);
 	snapshot = agent->createSnapshot("snapshot");
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };
@@ -107,6 +150,9 @@ vector<vector<double>> GenerateDelayedWeightsTestFixture::test_generate_delayed_
 AmperTestFixture::AmperTestFixture() {
 	agent = new Agent("agent", nullptr);
 	snapshot = agent->createSnapshot("snapshot");
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
+
 	vector<vector<double>> w0 = { { 0.2, 0.0, 0.0, 0.8 } };
 	vector<vector<double>> w1 = { { 0.2, 0.2, 0.0, 0.6 },{ 0.4, 0.0, 0.0, 0.6 } };
 	vector<vector<double>> w2 = { { 0.2, 0.4, 0.0, 0.4 },{ 0.4, 0.2, 0.0, 0.4 },{ 0.6, 0.0, 0.0, 0.4 } };

@@ -18,86 +18,110 @@
 
 TEST(world_test, world_experiment_test) {
 	// testing reload world first
-
 	World::instance();
 	World::reset();
 
+	//test experiment create
 	Experiment *ex1 = World::instance()->createExperiment("ex1");
 	Experiment *ex2 = World::instance()->createExperiment("ex2");
 	Experiment *ex3 = World::instance()->createExperiment("ex3");
 	Experiment *ex4 = World::instance()->createExperiment("ex4");
 
 	EXPECT_NO_THROW(World::instance()->getExperiment("ex2"));
-	EXPECT_THROW(World::instance()->getExperiment("ex5"), UMAException);
+	EXPECT_THROW(World::instance()->getExperiment("ex5"), UMANoResourceException);
 
+	//test experiment get
 	vector<string> s = { "ex1", "ex2", "ex3", "ex4" };
 	EXPECT_EQ(s, World::instance()->getExperimentInfo());
 
+	//test experiment delete
 	EXPECT_NO_THROW(World::instance()->deleteExperiment("ex1"));
-	EXPECT_THROW(World::instance()->deleteExperiment("ex5"), UMAException);
+	EXPECT_THROW(World::instance()->deleteExperiment("ex5"), UMANoResourceException);
 
 	s = { "ex2", "ex3", "ex4" };
 	EXPECT_EQ(s, World::instance()->getExperimentInfo());
 
+	//delete all experiments
 	World::instance()->deleteExperiment("ex2");
 	World::instance()->deleteExperiment("ex3");
 	World::instance()->deleteExperiment("ex4");
 }
 
 TEST(experiment_test, experiment_agent_test) {
+	//test agent create
 	Experiment *experiment = World::instance()->createExperiment("testExperiment");
 	experiment->createAgent("testAgent1", UMA_AGENT::AGENT_STATIONARY);
-	experiment->createAgent("testAgent2", UMA_AGENT::AGENT_STATIONARY);
-	experiment->createAgent("testAgent3", UMA_AGENT::AGENT_STATIONARY);
-	experiment->createAgent("testAgent4", UMA_AGENT::AGENT_STATIONARY);
+	experiment->createAgent("testAgent2", UMA_AGENT::AGENT_QUALITATIVE);
+	experiment->createAgent("testAgent3", UMA_AGENT::AGENT_DISCOUNTED);
+	experiment->createAgent("testAgent4", UMA_AGENT::AGENT_EMPIRICAL);
 
 	EXPECT_NO_THROW(experiment->getAgent("testAgent1"));
-	EXPECT_THROW(experiment->getAgent("testAgent0"), UMAException);
-	vector<vector<string>> s = { { "testAgent1", "Stationary" },{ "testAgent2", "Stationary" },{ "testAgent3", "Stationary" },{ "testAgent4", "Stationary" } };
+	EXPECT_THROW(experiment->getAgent("testAgent0"), UMANoResourceException);
+	//test agent get
+	vector<vector<string>> s = { { "testAgent1", "Stationary" },{ "testAgent2", "Qualitative" },{ "testAgent3", "Discounted" },{ "testAgent4", "Empirical" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
+	//test agent delete
 	experiment->deleteAgent("testAgent1");
-	s = { { "testAgent2", "Stationary" },{ "testAgent3", "Stationary" },{ "testAgent4", "Stationary" } };
+	s = { { "testAgent2", "Qualitative" },{ "testAgent3", "Discounted" },{ "testAgent4", "Empirical" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
 	experiment->deleteAgent("testAgent3");
-	s = { { "testAgent2", "Stationary" },{ "testAgent4", "Stationary" } };
+	s = { { "testAgent2", "Qualitative" },{ "testAgent4", "Empirical" } };
 	EXPECT_EQ(s, experiment->getAgentInfo());
 
-	EXPECT_THROW(experiment->getAgent("testAgent3"), UMAException);
-	EXPECT_THROW(experiment->deleteAgent("testAgent3"), UMAException);
+	EXPECT_THROW(experiment->getAgent("testAgent3"), UMANoResourceException);
+	EXPECT_THROW(experiment->deleteAgent("testAgent3"), UMANoResourceException);
 	
 	experiment->deleteAgent("testAgent2");
 	experiment->deleteAgent("testAgent4");
+	World::instance()->deleteExperiment("testExperiment");
 }
 
 TEST(agent_test, agent_snapshot_test) {
-	Agent *agent = new Agent("agent", nullptr);
+	vector<Agent*> agents;
+	Agent *agentStationary = new Agent("agent", nullptr);
+	Agent *agentQualitative = new AgentQualitative("agentQualitative", nullptr);
+	Agent *agentDiscounted = new AgentDiscounted("agentDiscounted", nullptr);
+	Agent *agentEmpirical = new AgentEmpirical("agentEmpirical", nullptr);
+	agents.push_back(agentStationary);
+	agents.push_back(agentQualitative);
+	agents.push_back(agentDiscounted);
+	agents.push_back(agentEmpirical);
+	vector<string> agentType = { "Stationary", "Qualitative", "Discounted", "Empirical" };
+	vector<string> snapshotType = agentType;
 
-	agent->createSnapshot("snapshot1");
-	agent->createSnapshot("snapshot2");
-	agent->createSnapshot("snapshot3");
-	agent->createSnapshot("snapshot4");
+	for (int i = 0; i < agentType.size(); ++i) {
+		Agent *agent = agents[i];
+		string type = agentType[i];
+		Snapshot *s1 = agent->createSnapshot("snapshot1");
+		Snapshot *s2 = agent->createSnapshot("snapshot2");
+		Snapshot *s3 = agent->createSnapshot("snapshot3");
+		Snapshot *s4 = agent->createSnapshot("snapshot4");
+		EXPECT_EQ(UMACoreConstant::getUMAAgentName(agent->getType()), agentType[i]);
+		EXPECT_EQ(UMACoreConstant::getUMASnapshotName(s1->getType()), snapshotType[i]);
 
-	EXPECT_NO_THROW(agent->getSnapshot("snapshot2"));
-	EXPECT_THROW(agent->getSnapshot("snapshot0"), UMAException);
-	vector<vector<string>> s = { { "snapshot1", "Stationary" },{ "snapshot2", "Stationary" },{ "snapshot3", "Stationary" },{ "snapshot4", "Stationary" } };
-	EXPECT_EQ(agent->getSnapshotInfo(), s);
+		EXPECT_NO_THROW(agent->getSnapshot("snapshot2"));
+		EXPECT_THROW(agent->getSnapshot("snapshot0"), UMANoResourceException);
+		vector<vector<string>> s = { { "snapshot1", type },{ "snapshot2", type },{ "snapshot3", type },{ "snapshot4", type } };
+		EXPECT_EQ(agent->getSnapshotInfo(), s);
 
-	agent->deleteSnapshot("snapshot2");
-	s = { { "snapshot1", "Stationary" },{ "snapshot3", "Stationary" },{ "snapshot4", "Stationary" } };
-	EXPECT_EQ(agent->getSnapshotInfo(), s);
+		agent->deleteSnapshot("snapshot2");
+		s = { { "snapshot1", type },{ "snapshot3", type },{ "snapshot4", type } };
+		EXPECT_EQ(agent->getSnapshotInfo(), s);
 
-	agent->deleteSnapshot("snapshot4");
-	s = { { "snapshot1", "Stationary" },{ "snapshot3", "Stationary" } };
-	EXPECT_EQ(agent->getSnapshotInfo(), s);
+		agent->deleteSnapshot("snapshot4");
+		s = { { "snapshot1", type },{ "snapshot3", type } };
+		EXPECT_EQ(agent->getSnapshotInfo(), s);
 
-	EXPECT_THROW(agent->getSnapshot("snapshot2"), UMAException);
-	EXPECT_THROW(agent->deleteSnapshot("snapshot2"), UMAException);
+		EXPECT_THROW(agent->getSnapshot("snapshot2"), UMANoResourceException);
+		EXPECT_THROW(agent->deleteSnapshot("snapshot2"), UMANoResourceException);
 
-	delete agent;
+		delete agent;
+	}
 }
 
+//TODO update with new function
 TEST(agent_test, get_set_test) {
 	Agent *agent = new Agent("agent", nullptr);
 
@@ -137,9 +161,12 @@ TEST(agent_test, do_pruning_test) {
 	delete agent;
 }
 
-TEST(snapshot_test, snapshot_create_sensor_test) {
+TEST(snapshot_test, snapshotCreateSensorTest) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
+	snapshot->setThreshold(0.125);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -148,15 +175,18 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 	vector<double> diag;
 	vector<vector<double>> w;
 	vector<vector<bool>> b;
+	//test sensor create
 	snapshot->createSensor(sensor1, diag, w, b);
 	snapshot->createSensor(sensor2, diag, w, b);
 	snapshot->createSensor(sensor3, diag, w, b);
 	snapshot->createSensor(sensor4, diag, w, b);
 
+	//test sensor get
 	EXPECT_NO_THROW(snapshot->getSensor("s1"));
 	EXPECT_NO_THROW(snapshot->getSensor("cs2"));
-	EXPECT_THROW(snapshot->getSensor("s0"), UMAException);
+	EXPECT_THROW(snapshot->getSensor("s0"), UMANoResourceException);
 
+	//test sensor delete
 	snapshot->deleteSensor("s1");
 	vector<vector<string>> s = { {"s2", "cs2"}, {"s3", "cs3"}, {"s4", "cs4"} };
 	EXPECT_EQ(s, snapshot->getSensorInfo());
@@ -164,10 +194,11 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 	s = { { "s2", "cs2" }, { "s4", "cs4" } };
 	EXPECT_EQ(s, snapshot->getSensorInfo());
 
-	EXPECT_THROW(snapshot->getSensor("s1"), UMAException);
-	EXPECT_THROW(snapshot->getSensor("cs3"), UMAException);
-	EXPECT_THROW(snapshot->deleteSensor("s1"), UMAException);
-	EXPECT_THROW(snapshot->deleteSensor("cs3"), UMAException);
+	//test sensor  get
+	EXPECT_THROW(snapshot->getSensor("s1"), UMANoResourceException);
+	EXPECT_THROW(snapshot->getSensor("cs3"), UMANoResourceException);
+	EXPECT_THROW(snapshot->deleteSensor("s1"), UMANoResourceException);
+	EXPECT_THROW(snapshot->deleteSensor("cs3"), UMANoResourceException);
 
 	EXPECT_DOUBLE_EQ(snapshot->getAttrSensor("s2")->getDiag(), 0.5);
 
@@ -180,9 +211,12 @@ TEST(snapshot_test, snapshot_create_sensor_test) {
 	delete agent;
 }
 
-TEST(snapshot_test, snapshot_create_sensor_pair_test) {
+TEST(snapshot_test, snapshotCreateSensorPairTest) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
+	snapshot->setThreshold(0.125);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -195,12 +229,14 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 	vector<vector<bool>> b1, b3;
 	vector<vector<bool>> b0 = { {true, false, true, false} };
 	vector<vector<bool>> b2 = { { true, false, false, true }, {false, false, false, false}, {true, true, true, true} };
+	// test sensor pair create
 	Sensor *s1 = snapshot->createSensor(sensor1, diag, w0, b0);
 	Sensor *s2 = snapshot->createSensor(sensor2, diag, w1, b1);
 	Sensor *s3 = snapshot->createSensor(sensor3, diag, w2, b2);
 	snapshot->setThreshold(0.501);
 	Sensor *s4 = snapshot->createSensor(sensor4, diag, w3, b3);
 
+	// test sensor pair get
 	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("cs3")));
 	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s0"), snapshot->getSensor("cs3")), UMAException);
 
@@ -238,16 +274,25 @@ TEST(snapshot_test, snapshot_create_sensor_pair_test) {
 	EXPECT_DOUBLE_EQ(snapshot->getSensorPair(s1, s1)->getThreshold(), 0.125);
 	EXPECT_DOUBLE_EQ(snapshot->getSensorPair(s4, s1)->getThreshold(), 0.501);
 
+	// test sensor pair delete
 	snapshot->deleteSensor("s2");
-	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s2"), snapshot->getSensor("s4")), UMAException);
+	EXPECT_THROW(snapshot->getSensorPair(snapshot->getSensor("s2"), snapshot->getSensor("s4")), UMANoResourceException);
 	EXPECT_NO_THROW(snapshot->getSensorPair(snapshot->getSensor("s1"), snapshot->getSensor("s3")));
 
 	delete agent;
 }
 
-TEST(snapshot_test, snapshot_get_set_attribute_test) {
+TEST(snapshot_test, snapshotGetSetAttributeTest) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
+
+	vector<double> diag;
+	vector<vector<double>> w;
+	vector<vector<bool>> b;
+	std::pair<string, string> s1 = { "s1", "cs1" };
+	std::pair<string, string> s2 = { "s2", "cs2" };
+	snapshot->createSensor(s1, diag, w, b);
+	snapshot->createSensor(s2, diag, w, b);
 
 	snapshot->setThreshold(0.501);
 	snapshot->setTotal(2.0);
@@ -255,6 +300,7 @@ TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	snapshot->setAutoTarget(true);
 	snapshot->setPropagateMask(true);
 	snapshot->setQ(0.8);
+	snapshot->setInitialSize();
 
 	EXPECT_DOUBLE_EQ(snapshot->getThreshold(), 0.501);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 2.0);
@@ -262,7 +308,12 @@ TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	EXPECT_EQ(snapshot->getAutoTarget(), true);
 	EXPECT_EQ(snapshot->getPropagateMask(), true);
 	EXPECT_DOUBLE_EQ(snapshot->getQ(), 0.8);
+	EXPECT_EQ(snapshot->getInitialSize(), 2);
+	EXPECT_EQ(snapshot->getDelayCount(), 0);
+	EXPECT_EQ(snapshot->getDelayCount(), 1);
 
+	snapshot->setInitialSize(5);
+	EXPECT_EQ(snapshot->getInitialSize(), 5);
 	snapshot->updateTotal(1.1, true);
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.82);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 2.0);
@@ -274,9 +325,13 @@ TEST(snapshot_test, snapshot_get_set_attribute_test) {
 	delete agent;
 }
 
+/*
 TEST(snapshot_qualitative_test, updateTotal) {
 	Agent *agent = new AgentQualitative("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
+	snapshot->setThreshold(0.125);
 
 	EXPECT_DOUBLE_EQ(snapshot->getTotal(), 1.0);
 	EXPECT_DOUBLE_EQ(snapshot->getOldTotal(), 1.0);
@@ -301,8 +356,13 @@ TEST(snapshot_qualitative_test, updateTotal) {
 
 	delete agent;
 }
+*/
 
-TEST(snapshot_test, snapshot_get_entity) {
+TEST_F(SnapshotUpdateQTestFixture, updateQ_test) {
+	testUpdateQ();
+}
+
+TEST(snapshot_test, snapshotGetEntity) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
 	
@@ -493,6 +553,8 @@ TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test2)
 	}
 }
 
+//TODO generate delayed weights test for Qualitative type
+
 TEST_F(AmperTestFixture, amper_test) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<int> list = { 3, 5, 7 };
@@ -518,9 +580,15 @@ TEST_F(AmperTestFixture, amper_test) {
 	}
 }
 
+//TODO 
+
 TEST(dataManager_test, get_set_test) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
+
+	snapshot->setTotal(1);
+	snapshot->setOldTotal(1);
+	snapshot->setThreshold(0.125);
 
 	std::pair<string, string> sensor1 = { "s1", "cs1" };
 	std::pair<string, string> sensor2 = { "s2", "cs2" };
@@ -732,7 +800,7 @@ TEST(sensor_test, set_amper_list) {
 	delete s2;
 }
 
-TEST(sensor_test, generateDelayedSensor) {
+TEST(sensor_test, generateDelayedSignal) {
 	Agent *agent = new Agent("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
 	vector<vector<double>> w;

@@ -260,6 +260,9 @@ TEST(data_util_test, float_cp) {
 extern int compi(int x);
 extern int ind(int row, int col);
 extern int npdirInd(int row, int col);
+extern bool qless(double d1, double d2);
+extern double qmax(double d1, double d2);
+extern double qadd(double d1, double d2);
 
 TEST(device_util_test, compi_host) {
 	vector<int> input = { 0, 3, 5, 8, 10 ,13 };
@@ -285,6 +288,29 @@ TEST(device_util_test, npdirInd_host) {
 	vector<int> output;
 	for (int i = 0; i < input_x.size(); ++i) output.push_back(npdirInd(input_y[i], input_x[i]));
 	EXPECT_EQ(output, target);
+}
+
+TEST(devict_util_test, qless) {
+	vector<double> d1 = { 0.1, 2, -1, -1, 100000 };
+	vector<double> d2 = { 0.2, 2, 10000, -1, -1 };
+	vector<bool> target = { true, false, false, false, true };
+	vector<bool> output;
+	for (int i = 0; i < d1.size(); ++i) output.push_back(qless(d1[i], d2[i]));
+	EXPECT_EQ(output, target);
+}
+
+TEST(devict_util_test, qmax) {
+	vector<double> d1 = { 0.1, 2, -1, -1, 100000 };
+	vector<double> d2 = { 0.2, 2, 10000, -1, -1 };
+	vector<double> target = { 0.2, 2, -1, -1, -1 };
+	for (int i = 0; i < d1.size(); ++i) EXPECT_DOUBLE_EQ(qmax(d1[i], d2[i]), target[i]);
+}
+
+TEST(devict_util_test, qadd) {
+	vector<double> d1 = { 0.1, 2, -1, -1, 100000 };
+	vector<double> d2 = { 0.2, 2, 10000, -1, -1 };
+	vector<double> target = { 0.3, 4, -1, -1, -1 };
+	for (int i = 0; i < d1.size(); ++i) EXPECT_DOUBLE_EQ(qadd(d1[i], d2[i]), target[i]);
 }
 
 //--------------------------device_util test----------------------------------
@@ -574,6 +600,23 @@ TEST(kernel_util_test, sum) {
 
 	delete[] h_d;
 	data_util::dev_free(dev_d);
+}
+
+TEST(kernel_util_test, initMaskSignal) {
+	bool *h_b = new bool[10];
+	for (int i = 0; i < 10; ++i) h_b[i] = false;
+	bool *dev_b = nullptr;
+	data_util::dev_bool(dev_b, 10);
+	data_util::dev_init(dev_b, 10);
+	
+	kernel_util::initMaskSignal(dev_b, 2, 10);
+	data_util::boolD2H(dev_b, h_b, 10);
+
+	for (int i = 0; i < 4; ++i) EXPECT_EQ(h_b[i], true);
+	for (int i = 4; i < 10; ++i) EXPECT_EQ(h_b[i], false);
+
+	delete[] h_b;
+	data_util::dev_free(dev_b);
 }
 
 //--------------------------kernel_util test----------------------------------
@@ -1709,26 +1752,6 @@ TEST(uma_base_test, deltaWeightSum) {
 	delete[] h_attr_sensor, h_result, h_signal;
 	data_util::dev_free(dev_attr_sensor);
 	data_util::dev_free(dev_result);
-	data_util::dev_free(dev_signal);
-}
-
-TEST(uma_base_test, initMaskSignal) {
-	bool *h_signal = new bool[10];
-	bool *dev_signal;
-
-	data_util::dev_bool(dev_signal, 10);
-
-	data_util::dev_init(dev_signal, 10);
-	kernel_util::initMaskSignal(dev_signal, 3, 10);
-	data_util::boolD2H(dev_signal, h_signal, 10);
-
-	vector<bool> b1 = { 1, 1, 1, 1, 1, 1, 0, 0, 0, 0 };
-	vector<bool> b2;
-	for (int i = 0; i < 10; ++i) b2.push_back(h_signal[i]);
-
-	EXPECT_EQ(b1, b2);
-
-	delete[] h_signal;
 	data_util::dev_free(dev_signal);
 }
 
