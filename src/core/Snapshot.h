@@ -59,6 +59,7 @@ protected:
 	friend class GenerateDelayedWeightsTestFixture;
 	friend class AmperTestFixture;
 	friend class AmperAndSignalsTestFixture;
+	friend class SnapshotUpdateQTestFixture;
 
 public:
 	//Snapshot(ifstream &file, string &log_dir);

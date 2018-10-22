@@ -67,7 +67,7 @@ PropertyPage *ConfReader::readConf(const string &confName) {
 				results->get(currentComponent)->add(key, value);
 			}
 		}
-		cout << confName + " read complete" << endl;
+		//cout << confName + " read complete" << endl;
 		return results;
 	}
 	catch (exception &e) {

@@ -8,7 +8,13 @@ static Logger serverLogger("Server", "log/UMA_server.log");
 WorldHandler::WorldHandler(const string &handlerName): UMARestHandler(handlerName) {}
 
 void WorldHandler::handleCreate(UMARestRequest &request) {
-	throw UMABadOperationException("Cannot handle POST " + request.getRequestUrl(), false, &serverLogger);
+	const string requestUrl = request.getRequestUrl();
+	if (requestUrl == "/UMA/world/reset") {
+		World::reset();
+		return;
+	}
+
+	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
 
 void WorldHandler::handleUpdate(UMARestRequest &request) {
