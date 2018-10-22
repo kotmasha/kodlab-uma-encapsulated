@@ -9,9 +9,9 @@ namespace UMACoreConstant {
 	enum UMA_AGENT { AGENT_STATIONARY, AGENT_QUALITATIVE, AGENT_DISCOUNTED, AGENT_EMPIRICAL };
 	enum UMA_SNAPSHOT { SNAPSHOT_STATIONARY, SNAPSHOT_QUALITATIVE, SNAPSHOT_DISCOUNTED, SNAPSHOT_EMPIRICAL };
 
-	string getUMAObjName(const UMA_OBJECT &obj);
-	string getUMAAgentName(const UMA_AGENT &agent);
-	string getUMASnapshotName(const UMA_SNAPSHOT &snapshot);
-	UMA_SNAPSHOT getUMASnapshotTypeByAgent(const UMA_AGENT &agent);
+	string DLL_PUBLIC getUMAObjName(const UMA_OBJECT &obj);
+	string DLL_PUBLIC getUMAAgentName(const UMA_AGENT &agent);
+	string DLL_PUBLIC getUMASnapshotName(const UMA_SNAPSHOT &snapshot);
+	UMA_SNAPSHOT DLL_PUBLIC getUMASnapshotTypeByAgent(const UMA_AGENT &agent);
 }
 #endif

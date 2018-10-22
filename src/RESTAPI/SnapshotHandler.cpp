@@ -219,6 +219,14 @@ void SnapshotHandler::updateSnapshot(UMARestRequest &request) {
 		request.setMessage("initial size updated");
 		return;
 	}
+	else if (request.checkDataField("total")) {
+		double total = request.getDoubleData("total");
+		snapshot->setOldTotal(total);
+		snapshot->setTotal(total);
+
+		request.setMessage("total value updated");
+		return;
+	}
 
 	throw UMABadOperationException("The coming put request has nothing to update", false, &serverLogger);
 }

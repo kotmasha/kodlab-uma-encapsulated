@@ -16,8 +16,6 @@ set(EXCEPTION
 set(CONF
     "ConfReader.h"
     "ConfReader.cpp"
-    "ConfService.h"
-    "ConfService.cpp"
 )
 set(PROPERTY
     "PropertyMap.h"
