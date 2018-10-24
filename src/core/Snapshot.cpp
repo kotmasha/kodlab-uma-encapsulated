@@ -892,7 +892,7 @@ SnapshotQualitative::~SnapshotQualitative() {}
 void SnapshotQualitative::updateTotal(double phi, bool active) {
 	_total_ = _total;
 	if (active) {
-		_total = phi ? (_total < -0.5 || phi < _total) : _total;
+		_total = (_total < -0.5 || phi < _total) ? phi : _total;
 		//_total = _total > phi ? phi : _total;
 	}
 }

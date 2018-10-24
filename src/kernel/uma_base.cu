@@ -46,10 +46,10 @@ Input: row, col info, attr_sensor size, weight matrix and threshold
 Output: bool value(mathematical info please inquiry Kotomasha)
 */
 __device__ bool impliesGPU(int row, int col, double *weights, double total, double threshold){//implies
-	double rc = weights[ind(row, col)];//0.4
-	double r_c = weights[ind(compi(row), col)];//0
-	double rc_ = weights[ind(row, compi(col))];//0
-	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
+	double rc = weights[ind(row, col)];
+	double r_c = weights[ind(compi(row), col)];
+	double rc_ = weights[ind(row, compi(col))];
+	double r_c_ = weights[ind(compi(row), compi(col))];
 	return rc_ < min(total * threshold, min(rc, min(r_c, r_c_))) || (rc_ == 0 && r_c == 0);// && rc > 0 && r_c_ > 0);
 }
 
@@ -59,12 +59,10 @@ Input: row, col info, attr_sensor size, weight matrix and threshold
 Output: bool value(mathematical info please inquiry Kotmasha)
 */
 __device__ bool impliesGPUQualitative(int row, int col, double *weights, double total, double threshold) {//implies
-	double rc = weights[ind(row, col)];//0.4
-	double r_c = weights[ind(compi(row), col)];//0
-	double rc_ = weights[ind(row, compi(col))];//0
-	double r_c_ = weights[ind(compi(row), compi(col))];//0.6
-	//if (rc < -0.5 || r_c_ < -0.5) return false;
-	//if (rc_ < -0.5) return true;
+	double rc = weights[ind(row, col)];
+	double r_c = weights[ind(compi(row), col)];
+	double rc_ = weights[ind(row, compi(col))];
+	double r_c_ = weights[ind(compi(row), compi(col))];
 	return qless(qmax(rc, r_c_), rc_);
 	//return qless(qadd(qmax(rc,r_c_),threshold),rc_);
 }
@@ -143,8 +141,7 @@ Input: dir matrix, weights matrix, thresholds matrix, xy location in dir matrix
 Output: None
 */
 __device__ void orientSquareGPUQualitative(bool *dir, double *weights, double *thresholds, double total, int x, int y) {//orient_square
-																														   //OBTAIN THE LOCAL THRESHOLD
-	double threshold = thresholds[ind(y / 2, x / 2)];
+	double threshold = thresholds[ind(y / 2, x / 2)];//OBTAIN THE LOCAL THRESHOLD
 	//UPDATE THE ORIENTATION MATRIX
 	if (y >= x)
 		dir[ind(y, x)] = impliesGPUQualitative(y, x, weights, total, threshold);
@@ -231,7 +228,7 @@ __global__ void updateWeights_kernel(double *weights, bool *observe, int attrSen
 	// since $activity$ is independent of position in the matrix, better to update the weight this way:
 	if (activity) {
 		if (indexX <= indexY && indexY < attrSensorSize) {
-			weights[ind(indexY, indexX)] = q * weights[ind(indexY, indexX)] + (1 - q) * observe[indexX] * observe[indexY] * phi;
+			weights[ind(indexY, indexX)] = q * weights[ind(indexY, indexX)] + (1.0 - q) * observe[indexX] * observe[indexY] * phi;
 		}
 	}
 	/* OLDER UPDATE
@@ -310,9 +307,13 @@ __global__ void calculateTargetQualitative_kernel(double *attr_sensor, bool *tar
 			target[2 * index] = true;
 			target[2 * index + 1] = false;
 		}
-		else {
+		else if (qless(attr_sensor[2 * index + 1], attr_sensor[2 * index])) {
 			target[2 * index] = false;
 			target[2 * index + 1] = true;
+		}
+		else {
+			target[2 * index] = false;
+			target[2 * index + 1] = false;
 		}
 	}
 }
