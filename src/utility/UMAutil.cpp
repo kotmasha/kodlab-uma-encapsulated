@@ -32,6 +32,10 @@ bool SysUtil::UMAFileExist(string &path) {
 	}
 }
 
+void SysUtil::UMARemove(string &path) {
+	std::remove(path.c_str());
+}
+
 /*
 input: string path
 */

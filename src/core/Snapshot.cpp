@@ -855,26 +855,60 @@ void Snapshot::updateQ() {
 	snapshotLogger.debug("Setting q value to " + to_string(_q), this->getParentChain());
 }
 
-/*
-void Snapshot::save_snapshot(ofstream &file) {
+
+void Snapshot::saveSnapshot(ofstream &file) {
 	//write uuid
-	int uuid_size = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&uuid_size), sizeof(int));
-	file.write(_uuid.c_str(), uuid_size * sizeof(char));
-	int sensor_size = _sensors.size();
-	int sensor_pair_size = _sensorPairs.size();
-	file.write(reinterpret_cast<const char *>(&sensor_size), sizeof(int));
-	file.write(reinterpret_cast<const char *>(&sensor_pair_size), sizeof(int));
-	copyArraysToSensors(0, sensor_size);
-	copyArraysToSensorPairs(0, sensor_size);
-	for (int i = 0; i < sensor_size; ++i) {
-		_sensors[i]->save_sensor(file);
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
+
+	int sensorSize = _sensors.size();
+	int sensorPairSize = _sensorPairs.size();
+	file.write(reinterpret_cast<const char *>(&sensorSize), sizeof(int));
+	file.write(reinterpret_cast<const char *>(&sensorPairSize), sizeof(int));
+
+	_dm->copyArraysToSensors(0, sensorSize, _sensors);
+	_dm->copyArraysToSensorPairs(0, sensorSize, _sensorPairs);
+	for (int i = 0; i < sensorSize; ++i) {
+		_sensors[i]->saveSensor(file);
 	}
-	for (int i = 0; i < sensor_pair_size; ++i) {
-		_sensorPairs[i]->save_sensor_pair(file);
+	for (int i = 0; i < sensorPairSize; ++i) {
+		_sensorPairs[i]->saveSensorPair(file);
 	}
 }
-*/
+
+Snapshot *Snapshot::loadSnapshot(ifstream &file, UMACoreObject *parent, UMA_SNAPSHOT type) {
+	int uuidLength = -1;
+	file.read((char *)(&uuidLength), sizeof(int));
+
+	string uuid = string(uuidLength, ' ');
+	file.read(&uuid[0], uuidLength * sizeof(char));
+	
+	Snapshot *snapshot = nullptr;
+	switch (type) {
+	case UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE: snapshot = new SnapshotQualitative(uuid, parent); break;
+	case UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED: snapshot = new SnapshotDiscounted(uuid, parent); break;
+	case UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL: snapshot = new SnapshotEmpirical(uuid, parent); break;
+	default: snapshot = new Snapshot(uuid, parent);
+	}
+
+	int sensorSize = -1;
+	int sensorPairSize = -1;
+	file.read((char *)(&sensorSize), sizeof(int));
+	file.read((char *)(&sensorPairSize), sizeof(int));
+	snapshotLogger.debug("will load " + to_string(sensorSize) + " sensors and " + to_string(sensorPairSize) + " sensor pairs", snapshot->getParentChain());
+
+	for (int i = 0; i < sensorSize; ++i) {
+		snapshot->_sensors.push_back(Sensor::loadSensor(file, snapshot));
+	}
+	for (int i = 0; i < sensorPairSize; ++i) {
+		snapshot->_sensorPairs.push_back(SensorPair::loadSensorPair(file, snapshot->_sensors, snapshot));
+	}
+
+	snapshotLogger.info("snapshot is successfully loaded!", snapshot->getParentChain());
+	return snapshot;
+}
+
 /*
 ----------------Snapshot Base Class-------------------
 */
@@ -892,8 +926,7 @@ SnapshotQualitative::~SnapshotQualitative() {}
 void SnapshotQualitative::updateTotal(double phi, bool active) {
 	_total_ = _total;
 	if (active) {
-		_total = phi ? (_total < -0.5 || phi < _total) : _total;
-		//_total = _total > phi ? phi : _total;
+		_total = (_total < -0.5 || phi < _total) ? phi : _total;
 	}
 }
 

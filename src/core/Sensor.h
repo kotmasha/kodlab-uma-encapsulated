@@ -16,7 +16,7 @@ Every sensor is distinguished by the sensor id(sid)
 class DLL_PUBLIC Sensor: public UMACoreObject {
 public:
 	//constructors
-	//Sensor(ifstream &file);
+	Sensor(const string &uuid, UMACoreObject *parent, int idx);
 	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const double &total, int idx);
 	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const vector<double> &diag, int idx);
 
@@ -43,7 +43,8 @@ public:
 	const int &getIdx() const;
 
 	void copyAmperList(bool *ampers) const;
-	//void save_sensor(ofstream &file);
+	void saveSensor(ofstream &file);
+	static Sensor *loadSensor(ifstream &file, UMACoreObject *parent);
 	//void copy_data(Sensor *s);
 
 	bool generateDelayedSignal();
@@ -67,6 +68,8 @@ protected:
 	friend class Simulation;
 
 	friend class UMACoreDataFlowTestFixture;
+	friend class SensorValuePointerConvertionTestFixture;
+	friend class SensorSavingLoading;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 };
 

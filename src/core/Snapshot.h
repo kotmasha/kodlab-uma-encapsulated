@@ -60,9 +60,9 @@ protected:
 	friend class AmperTestFixture;
 	friend class AmperAndSignalsTestFixture;
 	friend class SnapshotUpdateQTestFixture;
+	friend class SnapshotSavingLoading;
 
 public:
-	//Snapshot(ifstream &file, string &log_dir);
 	Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
 	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void deleteSensor(const string &sensorId);
@@ -130,7 +130,8 @@ public:
 	/*
 	---------------------COPY FUNCTION---------------------
 	*/
-	//void save_snapshot(ofstream &file);
+	void saveSnapshot(ofstream &file);
+	static Snapshot *loadSnapshot(ifstream &file, UMACoreObject *parent, UMA_SNAPSHOT type);
 	virtual ~Snapshot();
 
 protected:

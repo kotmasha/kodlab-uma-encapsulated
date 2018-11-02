@@ -30,9 +30,10 @@ private:
 	friend class SnapshotQualitative;
 
 	friend class UMACoreDataFlowTestFixture;
+	friend class SensorPairSavingLoading;
 
 public:
-	// SensorPair(ifstream &file, vector<Sensor *> &sensors);
+	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, double total);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, const vector<double> &w, const vector<bool> &b);
@@ -49,7 +50,8 @@ public:
 	void setThreshold(const double &threshold);
 
 	AttrSensorPair *getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j);
-	//void save_sensor_pair(ofstream &file);
+	void saveSensorPair(ofstream &file);
+	static SensorPair *loadSensorPair(ifstream &file, vector<Sensor*> sensors, UMACoreObject *parent);
 	//void copy_data(SensorPair *sp);
 	const double &getThreshold();
 	~SensorPair();

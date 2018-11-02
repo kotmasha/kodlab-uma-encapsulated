@@ -31,6 +31,10 @@ UMACoreObject::~UMACoreObject() {
 	_parent = nullptr;
 }
 
+string UMACoreObject::getUUID() const {
+	return _uuid;
+}
+
 PropertyMap *UMACoreObject::getPropertyMap() const {
 	return _ppm;
 }

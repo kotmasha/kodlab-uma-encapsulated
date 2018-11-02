@@ -14,6 +14,7 @@ namespace SysUtil {
 	string UMAMkdir(std::string &path);
 	bool UMAFileExist(std::string &path);
 	bool UMAFolderExist(std::string &path);
+	void UMARemove(std::string &path);
 }
 
 namespace StrUtil {

@@ -78,6 +78,10 @@ TEST(experiment_test, experiment_agent_test) {
 	World::instance()->deleteExperiment("testExperiment");
 }
 
+TEST_F(ExperimentSavingLoading, experiment_save_load) {
+	savingAndLoading();
+}
+
 TEST(agent_test, agent_snapshot_test) {
 	vector<Agent*> agents;
 	Agent *agentStationary = new Agent("agent", nullptr);
@@ -121,7 +125,6 @@ TEST(agent_test, agent_snapshot_test) {
 	}
 }
 
-//TODO update with new function
 TEST(agent_test, get_set_test) {
 	Agent *agent = new Agent("agent", nullptr);
 
@@ -159,6 +162,10 @@ TEST(agent_test, do_pruning_test) {
 	EXPECT_EQ(agent->doPruning(), true);
 
 	delete agent;
+}
+
+TEST_F(AgentSavingLoading, agent_save_load) {
+	savingAndLoading();
 }
 
 TEST(snapshot_test, snapshotCreateSensorTest) {
@@ -325,7 +332,6 @@ TEST(snapshot_test, snapshotGetSetAttributeTest) {
 	delete agent;
 }
 
-/*
 TEST(snapshot_qualitative_test, updateTotal) {
 	Agent *agent = new AgentQualitative("agent", nullptr);
 	Snapshot *snapshot = agent->createSnapshot("snapshot");
@@ -356,7 +362,6 @@ TEST(snapshot_qualitative_test, updateTotal) {
 
 	delete agent;
 }
-*/
 
 TEST_F(SnapshotUpdateQTestFixture, updateQ_test) {
 	testUpdateQ();
@@ -462,9 +467,13 @@ TEST(snapshot_test, generateSignal) {
 	delete agent;
 }
 
+TEST_F(SnapshotSavingLoading, snapshot_save_load) {
+	savingAndLoading();
+}
+
 TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
 	std::pair<string, string> p = {"s5", "cs5"};
-	vector<vector<double>> target = test_amper_and(0, 2, true, p);
+	vector<vector<double>> target = testAmperAnd(0, 2, true, p);
 
 	vector<vector<double>> w = {
 		{0.2},
@@ -484,7 +493,7 @@ TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
 			EXPECT_DOUBLE_EQ(w[i][j], target[i][j]);
 	}
 
-	target = test_amper_and(4, 8, false, p);
+	target = testAmperAnd(4, 8, false, p);
 	p = { "s6", "cs6" };
 
 	w = {
@@ -508,7 +517,7 @@ TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
 TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test1) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<bool> observe = { true, false, false, false, false, false, false, false };
-	vector<vector<double>> target = test_generate_delayed_weights(0, true, p, observe);
+	vector<vector<double>> target = testGenerateDelayedWeights(0, true, p, observe, UMA_AGENT::AGENT_STATIONARY);
 
 	vector<vector<double>> w = {
 		{ 0.2 },
@@ -532,7 +541,7 @@ TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test1)
 TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test2) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<bool> observe = { false, true, false, false, false, false, false, false };
-	vector<vector<double>> target = test_generate_delayed_weights(0, true, p, observe);
+	vector<vector<double>> target = testGenerateDelayedWeights(0, true, p, observe, UMA_AGENT::AGENT_STATIONARY);
 
 	vector<vector<double>> w = {
 		{ 0.2 },
@@ -553,13 +562,22 @@ TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test2)
 	}
 }
 
-//TODO generate delayed weights test for Qualitative type
+TEST_F(GenerateDelayedWeightsTestFixture, snapshot_generateDelayedWeights_test3) {
+	std::pair<string, string> p = { "s5", "cs5" };
+	vector<bool> observe = { true, false, false, false, false, false, false, false };
+	vector<vector<double>> target = testGenerateDelayedWeights(0, true, p, observe, UMA_AGENT::AGENT_QUALITATIVE);
+
+	for (int i = 0; i < target.size(); ++i) {
+		for (int j = 0; j < target[i].size(); ++j)
+			EXPECT_DOUBLE_EQ(-1, target[i][j]);
+	}
+}
 
 TEST_F(AmperTestFixture, amper_test) {
 	std::pair<string, string> p = { "s5", "cs5" };
 	vector<int> list = { 3, 5, 7 };
 
-	vector<vector<double>> target = test_amper(list, p);
+	vector<vector<double>> target = testAmper(list, p);
 
 	vector<vector<double>> w = {
 		{ 0.2 },
@@ -579,8 +597,6 @@ TEST_F(AmperTestFixture, amper_test) {
 			EXPECT_DOUBLE_EQ(w[i][j], target[i][j]);
 	}
 }
-
-//TODO 
 
 TEST(dataManager_test, get_set_test) {
 	Agent *agent = new Agent("agent", nullptr);
@@ -763,19 +779,25 @@ TEST(dataManager_test, get_set_test) {
 }
 
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test1) {
-	EXPECT_THROW(test_uma_core_dataflow(0, 5), UMAException);
+	EXPECT_THROW(testUmaCoreDataFlow(0, 5), UMAException);
 }
 
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test2) {
-	test_uma_core_dataflow(0, 3);
+	testUmaCoreDataFlow(0, 3);
 }
 
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test3) {
-	test_uma_core_dataflow(2, 4);
+	testUmaCoreDataFlow(2, 4);
 }
 
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test4) {
-	test_uma_core_dataflow(0, 4);
+	testUmaCoreDataFlow(0, 4);
+}
+
+TEST_F(SensorValuePointerConvertionTestFixture, value_pointer_convertion) {
+	testPointerToNull();
+	testPointersToValues();
+	testValuesToPointers();
 }
 
 TEST(sensor_test, set_amper_list) {
@@ -894,6 +916,10 @@ TEST(sensor_test, copy_amper_list_test) {
 	delete s5;
 }
 
+TEST_F(SensorSavingLoading, sensor_save_load) {
+	savingAndLoading();
+}
+
 TEST(sensor_pair_test, sensor_pair_test) {
 	pair<string, string> p1 = { "s1", "cs1" };
 
@@ -930,6 +956,10 @@ TEST(sensor_pair_test, sensor_pair_test) {
 	delete weights;
 }
 
+TEST_F(SensorPairSavingLoading, sensor_pair_save_load) {
+	savingAndLoading();
+}
+
 TEST(attr_sensor_test, attr_sensor_test) {
 	AttrSensor *as = new AttrSensor("attr_sensor", nullptr, 0, true, 0.5);
 	double *diag = new double[2];
@@ -963,6 +993,14 @@ TEST(attr_sensor_test, attr_sensor_test) {
 	delete as;
 	delete[] diag, diag_;
 	delete[] observe, observe_;
+}
+
+TEST_F(AttrSensorSavingLoading, attr_sensor_save_load) {
+	savingAndLoading();
+}
+
+TEST_F(AttrSensorPairSavingLoading, attr_sensor_pair_save_load) {
+	savingAndLoading();
 }
 
 TEST(UMACoreObject_layering_test, UMACoreObject_layering_test) {

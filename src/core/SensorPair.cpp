@@ -10,21 +10,11 @@ extern int compi(int x);
 
 static Logger sensorPairLogger("SensorPair", "log/sensor.log");
 
-/*
-SensorPair::SensorPair(ifstream &file, vector<Sensor *> &sensors) {
-	int idx_i = -1, idx_j = -1;
-	file.read((char *)(&idx_i), sizeof(int));
-	file.read((char *)(&idx_j), sizeof(int));
-	file.read((char *)(&vthreshold), sizeof(double));
-	_sensor_i = sensors[idx_i];
-	_sensor_j = sensors[idx_j];
-	mij = new AttrSensorPair(file, _sensor_i->_m, _sensor_j->_m);
-	mi_j = new AttrSensorPair(file, _sensor_i->_m, _sensor_j->_cm);
-	m_ij = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_m);
-	m_i_j = new AttrSensorPair(file, _sensor_i->_cm, _sensor_j->_cm);
-	pointersToNull();
+//TODO remove it and replace with addAttrSensorPair
+SensorPair::SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j) :
+	UMACoreObject(generateUUID(sensor_i, sensor_j), UMA_OBJECT::SENSOR_PAIR, parent),
+	_sensor_i(sensor_i), _sensor_j(sensor_j) {
 }
-*/
 
 /*
 init function use sensor pointer, attr_sensor pointer to create measurable pairs
@@ -161,17 +151,40 @@ Saving order MUST FOLLOW:
 6 m_ij measurable pair
 7 m_i_j measurable pair
 */
-/*
-void SensorPair::save_sensor_pair(ofstream &file){
+void SensorPair::saveSensorPair(ofstream &file){
 	file.write(reinterpret_cast<const char *>(&_sensor_i->_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&_sensor_j->_idx), sizeof(int));
-	file.write(reinterpret_cast<const char *>(&vthreshold), sizeof(double));
-	mij->save_measurable_pair(file);
-	mi_j->save_measurable_pair(file);
-	m_ij->save_measurable_pair(file);
-	m_i_j->save_measurable_pair(file);
+	file.write(reinterpret_cast<const char *>(&_vthreshold), sizeof(double));
+	mij->saveAttrSensorPair(file);
+	mi_j->saveAttrSensorPair(file);
+	m_ij->saveAttrSensorPair(file);
+	m_i_j->saveAttrSensorPair(file);
 }
 
+SensorPair *SensorPair::loadSensorPair(ifstream &file, vector<Sensor*> sensors, UMACoreObject *parent) {
+	int idxI = -1, idxJ = -1;
+	double vthreshold = 0.0;
+	file.read((char *)(&idxI), sizeof(int));
+	file.read((char *)(&idxJ), sizeof(int));
+	file.read((char *)(&vthreshold), sizeof(double));
+
+	Sensor *sensorI = sensors[idxI];
+	Sensor *sensorJ = sensors[idxJ];
+
+	SensorPair *sensorPair = new SensorPair(parent, sensorI, sensorJ);
+	sensorPair->_vthreshold = vthreshold;
+
+	sensorPair->mij = AttrSensorPair::loadAttrSensorPair(file, sensorI->_m, sensorJ->_m, true, sensorPair);
+	sensorPair->mi_j = AttrSensorPair::loadAttrSensorPair(file, sensorI->_m, sensorJ->_cm, false, sensorPair);
+	sensorPair->m_ij = AttrSensorPair::loadAttrSensorPair(file, sensorI->_cm, sensorJ->_m, false, sensorPair);
+	sensorPair->m_i_j = AttrSensorPair::loadAttrSensorPair(file, sensorI->_cm, sensorJ->_cm, true, sensorPair);
+
+	sensorPair->pointersToNull();
+
+	return sensorPair;
+}
+
+/*
 void SensorPair::copy_data(SensorPair *sp) {
 	vthreshold = sp->vthreshold;
 	mij->copy_data(sp->mij);

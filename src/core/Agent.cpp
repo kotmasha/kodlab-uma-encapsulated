@@ -9,29 +9,6 @@
 
 static Logger agentLogger("Agent", "log/agent.log");
 
-/*
-Agent::Agent(ifstream &file) {
-	int uuid_length = -1;
-	file.read((char *)(&uuid_length), sizeof(int));
-	_uuid = string(uuid_length, ' ');
-	file.read(&_uuid[0], uuid_length * sizeof(char));
-
-	_log_dir = "log/Agent_" + _uuid;
-	_log = new logManager(logging::VERBOSE, _log_dir, "agent.txt", typeid(*this).name());
-
-	int snapshot_size = -1;
-	file.read((char *)(&snapshot_size), sizeof(int));
-	
-	for (int i = 0; i < snapshot_size; ++i) {
-		string log_dir = _log_dir + "/Snapshot_";
-		Snapshot_Stationary *snapshot = new Snapshot_Stationary(file, log_dir);
-		_snapshots[snapshot->_uuid] = snapshot;
-	}
-
-	_log->info() << "An agent " + _uuid + " is loaded";
-}
-*/
-
 Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, PropertyMap *ppm): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
 	layerInConf();
@@ -51,6 +28,16 @@ void Agent::layerInConf() {
 	}
 }
 
+void Agent::addSnapshot(Snapshot * const snapshot) {
+	const string uuid = snapshot->getUUID();
+	if (_snapshots.find(uuid) != _snapshots.end()) {
+		throw UMADuplicationException("Cannot add a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
+	}
+
+	_snapshots[uuid] = snapshot;
+	agentLogger.info("A Snapshot is added, snapshotId=" + uuid, this->getParentChain());
+}
+
 Snapshot *Agent::createSnapshot(const string &uuid) {
 	if (_snapshots.find(uuid) != _snapshots.end()) {
 		throw UMADuplicationException("Cannot create a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
@@ -67,19 +54,58 @@ Snapshot *Agent::getSnapshot(const string &snapshot_id){
 	throw UMANoResourceException("Cannot find the snapshot id!", false, &agentLogger, this->getParentChain());
 }
 
-/*
-void Agent::save_agent(ofstream &file) {
+
+void Agent::saveAgent(ofstream &file) {
 	//write uuid
-	int uuid_length = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&uuid_length), sizeof(int));
-	file.write(_uuid.c_str(), uuid_length * sizeof(char));
-	int snapshot_size = _snapshots.size();
-	file.write(reinterpret_cast<const char *>(&snapshot_size), sizeof(int));
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
+	file.write(reinterpret_cast<const char *>(&_type), sizeof(int));
+	int snapshotSize = _snapshots.size();
+	file.write(reinterpret_cast<const char *>(&snapshotSize), sizeof(int));
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
-		it->second->save_snapshot(file);
+		it->second->saveSnapshot(file);
 	}
 }
 
+Agent *Agent::loadAgent(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	file.read((char *)(&uuidLength), sizeof(int));
+
+	string uuid = string(uuidLength, ' ');
+	file.read(&uuid[0], uuidLength * sizeof(char));
+
+	UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY;
+	file.read((char *)(&type), sizeof(int));
+
+	Agent *agent = nullptr;
+	switch (type) {
+	case UMA_AGENT::AGENT_QUALITATIVE:
+		agent = new AgentQualitative(uuid, parent); break;
+	case UMA_AGENT::AGENT_DISCOUNTED:
+		agent = new AgentDiscounted(uuid, parent); break;
+	case UMA_AGENT::AGENT_EMPIRICAL:
+		agent = new AgentEmpirical(uuid, parent); break;
+	default:
+		agent = new Agent(uuid, parent, type); break;
+	}
+
+	int snapshotSize = -1;
+	file.read((char *)(&snapshotSize), sizeof(int));
+	agentLogger.debug("will load " + to_string(snapshotSize) + " snapshots", agent->getParentChain());
+
+	for (int i = 0; i < snapshotSize; ++i) {
+		UMA_SNAPSHOT sType = UMACoreConstant::getUMASnapshotTypeByAgent(type);
+		Snapshot *snapshot = Snapshot::loadSnapshot(file, agent, sType);
+		agent->addSnapshot(snapshot);
+	}
+
+	agentLogger.info("agent=" + uuid + " is successfully loaded", agent->getParentChain());
+
+	return agent;
+}
+
+/*
 void Agent::copy_test_data(Agent *agent) {
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
 		string snapshot_id = it->first;

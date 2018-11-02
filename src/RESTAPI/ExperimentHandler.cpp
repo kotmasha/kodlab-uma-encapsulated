@@ -14,6 +14,14 @@ void ExperimentHandler::handleCreate(UMARestRequest &request) {
 		createExperiment(request);
 		return;
 	}
+	else if (requestUrl == "/UMA/object/experiment/save") {
+		saveExperiment(request);
+		return;
+	}
+	else if (requestUrl == "/UMA/object/experiment/load") {
+		loadExperiment(request);
+		return;
+	}
 
 	throw UMABadOperationException("Cannot handle POST " + requestUrl, false, &serverLogger);
 }
@@ -64,6 +72,19 @@ void ExperimentHandler::deleteExperiment(UMARestRequest &request) {
 	World::instance()->deleteExperiment(experimentId);
 
 	request.setMessage("Experiment=" + experimentId + " is deleted");
+}
+
+void ExperimentHandler::saveExperiment(UMARestRequest &request) {
+	const string experimentId = request.getStringData("experiment_id");
+
+	Experiment *experiment = World::instance()->getExperiment(experimentId);
+	experiment->saveExperiment();
+}
+
+void ExperimentHandler::loadExperiment(UMARestRequest &request) {
+	const string experimentId = request.getStringData("experiment_id");
+
+	Experiment::loadExperiment(experimentId);
 }
 
 ExperimentHandler::~ExperimentHandler() {}

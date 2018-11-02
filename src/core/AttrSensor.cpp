@@ -146,15 +146,35 @@ Saving order MUST FOLLOW:
 1 measurable idx
 2 whether the measurable is originally pure
 */
-/*
-void AttrSensor::save_measurable(ofstream &file){
-	int sid_length = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
-	file.write(_uuid.c_str(), sid_length * sizeof(char));
+void AttrSensor::saveAttrSensor(ofstream &file){
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&_isOriginPure), sizeof(bool));
+	file.write(reinterpret_cast<const char *>(&_vdiag), sizeof(double));
 }
-*/
+
+AttrSensor *AttrSensor::loadAttrSensor(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	string uuid;
+	int idx = -1;
+	double diag = 0.0;
+	bool isOriginPure = false;
+	file.read((char *)(&uuidLength), sizeof(int));
+	if (uuidLength > 0) {
+		uuid = string(uuidLength, ' ');
+		file.read(&uuid[0], uuidLength * sizeof(char));
+	}
+	else uuid = "";
+	file.read((char *)&idx, sizeof(int));
+	file.read((char *)&isOriginPure, sizeof(bool));
+	file.read((char *)&diag, sizeof(double));
+
+	AttrSensor *attrSensor = new AttrSensor(uuid, parent, idx, isOriginPure, diag);
+
+	return attrSensor;
+}
 
 /*
 void AttrSensor::copy_data(AttrSensor *m) {

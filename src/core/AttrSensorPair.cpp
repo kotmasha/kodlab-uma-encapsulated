@@ -8,13 +8,6 @@ extern int compi(int x);
 
 static Logger attrSensorPairLogger("AttrSensorPair", "log/attrSensor.log");
 
-/*
-AttrSensorPair::AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j)
-	:_measurable_i(_m_i), _measurable_j(_m_j) {
-	file.read((char *)(&v_w), sizeof(double));
-}
-*/
-
 AttrSensorPair::AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ, double w, bool d)
 	: UMACoreObject(generateUUID(attrSensorI, attrSensorJ), UMA_OBJECT::ATTR_SENSOR_PAIR, parent)
 	,_attrSensorI(attrSensorI), _attrSensorJ(attrSensorJ){
@@ -85,11 +78,22 @@ Saving order MUST FOLLOW:
 No dir matrix is needed as it can be concluded from weight
 Input: file ofstream
 */
-/*
-void AttrSensorPair::save_measurable_pair(ofstream &file){
-	file.write(reinterpret_cast<const char *>(&v_w), sizeof(double));
+
+void AttrSensorPair::saveAttrSensorPair(ofstream &file){
+	file.write(reinterpret_cast<const char *>(&_vw), sizeof(double));
 }
 
+AttrSensorPair *AttrSensorPair::loadAttrSensorPair(ifstream &file, AttrSensor *attrSensorI, AttrSensor *attrSensorJ,
+	bool b, UMACoreObject *parent) {
+	double vw = 0.0;
+	file.read((char *)(&vw), sizeof(double));
+
+	AttrSensorPair *attrSensorPair = new AttrSensorPair(parent, attrSensorI, attrSensorJ, vw, b);
+
+	return attrSensorPair;
+}
+
+/*
 void AttrSensorPair::copy_data(AttrSensorPair *mp) {
 	//dir value will not be copied
 	v_w = mp->v_w;
