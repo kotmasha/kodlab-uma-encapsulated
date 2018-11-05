@@ -185,14 +185,16 @@ SensorPair *SensorPair::loadSensorPair(ifstream &file, vector<Sensor*> sensors, 
 }
 
 /*
-void SensorPair::copy_data(SensorPair *sp) {
-	vthreshold = sp->vthreshold;
-	mij->copy_data(sp->mij);
-	mi_j->copy_data(sp->mi_j);
-	m_ij->copy_data(sp->m_ij);
-	m_i_j->copy_data(sp->m_i_j);
-}
+This function is copying all sensor pair data from sensorPair to current sensorPair
 */
+void SensorPair::mergeSensorPair(SensorPair * const sensorPair){
+	_vthreshold = sensorPair->_vthreshold;
+	mij->mergeAttrSensorPair(sensorPair->mij);
+	mi_j->mergeAttrSensorPair(sensorPair->mi_j);
+	m_ij->mergeAttrSensorPair(sensorPair->m_ij);
+	m_i_j->mergeAttrSensorPair(sensorPair->m_i_j);
+}
+
 
 void SensorPair::setThreshold(const double &threshold) {
 	if (!_threshold) {

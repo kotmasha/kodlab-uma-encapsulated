@@ -158,8 +158,8 @@ public:
 
 protected:
 	Agent *agent1, *agent2;
-	Snapshot *snapshot1, *snapshot2;
-	string fileName;
+	Snapshot *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8;
+	string s1FileName, s2FileName, s3FileName, s4FileName;
 };
 
 class AgentSavingLoading : public::testing::Test {
@@ -169,14 +169,24 @@ public:
 	void savingAndLoading();
 
 protected:
-	Agent *agent1, *agent2;
-	string fileName;
+	Agent *a1, *a2, *a3, *a4, *a5, *a6, *a7, *a8;
+	string a1FileName, a2FileName, a3FileName, a4FileName;
 };
 
 class ExperimentSavingLoading : public::testing::Test {
 public:
 	ExperimentSavingLoading();
 	~ExperimentSavingLoading();
+	void savingAndLoading();
+
+protected:
+	Experiment *exp1, *exp2;
+};
+
+class UMASavingLoading : public::testing::Test {
+public:
+	UMASavingLoading();
+	~UMASavingLoading();
 	void savingAndLoading();
 
 protected:

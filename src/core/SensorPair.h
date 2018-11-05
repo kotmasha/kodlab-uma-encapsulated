@@ -31,6 +31,7 @@ private:
 
 	friend class UMACoreDataFlowTestFixture;
 	friend class SensorPairSavingLoading;
+	friend class UMASavingLoading;
 
 public:
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j);
@@ -52,7 +53,7 @@ public:
 	AttrSensorPair *getAttrSensorPair(bool isOriginPure_i, bool isOriginPure_j);
 	void saveSensorPair(ofstream &file);
 	static SensorPair *loadSensorPair(ifstream &file, vector<Sensor*> sensors, UMACoreObject *parent);
-	//void copy_data(SensorPair *sp);
+	void mergeSensorPair(SensorPair * const sensorPair);
 	const double &getThreshold();
 	~SensorPair();
 

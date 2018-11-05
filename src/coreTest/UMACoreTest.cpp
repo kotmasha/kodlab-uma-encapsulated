@@ -1087,6 +1087,10 @@ TEST(UMACoreObject_layering_test, UMACoreObject_layering_test) {
 	
 }
 
+TEST_F(UMASavingLoading, uma_save_load) {
+	savingAndLoading();
+}
+
 int main(int argc, char** argv)
 {
 	testing::InitGoogleTest(&argc, argv);

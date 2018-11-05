@@ -96,6 +96,27 @@ Experiment *Experiment::loadExperiment(const string &experimentId) {
 	return experiment;
 }
 
+/*
+This function is trying to merge another experiment info with the current experiment, mainly used in test reloading
+For agent that exist in exp, but not in current experiment, it will be ignored
+For agent that exist in exp, and also in current experiment, an agent level merging is required.
+Input: Experiment * exp, the experiment to be merged, remove indicate whether remove the exp after merging, default is true
+*/
+void Experiment::mergeExperiment(Experiment * const exp) {
+	for (auto it = exp->_agents.begin(); it != exp->_agents.end(); ++it) {
+		if (_agents.end() != _agents.find(it->first)) {
+			// find the agent with the same name, will merge agent
+			_agents[it->first]->mergeAgent(it->second);
+		}
+		else {
+			experimentLogger.debug("agentId=" + it->first + " is not in the new experiment, will be ignored", this->getParentChain());
+		}
+	}
+
+	World::instance()->deleteExperiment(exp->_uuid);
+	experimentLogger.info("experimentId=" + exp->_uuid + " is successfully merged into experimentId=" + _uuid);
+}
+
 const vector<vector<string>> Experiment::getAgentInfo() {
 	vector<vector<string>> results;
 	for (auto it = _agents.begin(); it != _agents.end(); ++it) {

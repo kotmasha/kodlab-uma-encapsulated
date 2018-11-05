@@ -45,6 +45,7 @@ protected:
 	friend class UMACoreDataFlowTestFixture;
 	friend class SensorValuePointerConvertionTestFixture;
 	friend class AttrSensorSavingLoading;
+	friend class UMASavingLoading;
 
 public:
 	//AttrSensor(ifstream &file);
@@ -65,7 +66,7 @@ public:
 	
 	void saveAttrSensor(ofstream &file);
 	static AttrSensor *loadAttrSensor(ifstream &file, UMACoreObject *parent);
-	//void copy_data(AttrSensor *m);
+	void mergeAttrSensor(AttrSensor * const attrSensor);
 
 	const double &getDiag();
 	const double &getOldDiag();

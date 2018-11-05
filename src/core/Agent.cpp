@@ -76,7 +76,7 @@ Agent *Agent::loadAgent(ifstream &file, UMACoreObject *parent) {
 	file.read(&uuid[0], uuidLength * sizeof(char));
 
 	UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY;
-	file.read((char *)(&type), sizeof(int));
+	file.read((char *)(&type), sizeof(UMA_AGENT));
 
 	Agent *agent = nullptr;
 	switch (type) {
@@ -95,8 +95,7 @@ Agent *Agent::loadAgent(ifstream &file, UMACoreObject *parent) {
 	agentLogger.debug("will load " + to_string(snapshotSize) + " snapshots", agent->getParentChain());
 
 	for (int i = 0; i < snapshotSize; ++i) {
-		UMA_SNAPSHOT sType = UMACoreConstant::getUMASnapshotTypeByAgent(type);
-		Snapshot *snapshot = Snapshot::loadSnapshot(file, agent, sType);
+		Snapshot *snapshot = Snapshot::loadSnapshot(file, agent);
 		agent->addSnapshot(snapshot);
 	}
 
@@ -106,22 +105,22 @@ Agent *Agent::loadAgent(ifstream &file, UMACoreObject *parent) {
 }
 
 /*
-void Agent::copy_test_data(Agent *agent) {
-	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
-		string snapshot_id = it->first;
-		Snapshot *snapshot = it->second;
-		if (agent->_snapshots.find(snapshot_id) != agent->_snapshots.end()) {
-			//if find the 'same' snapshot
-			Snapshot *c_snapshot = agent->_snapshots[snapshot_id];
-			snapshot->copy_test_data(c_snapshot);
-			_log->info() << "Snapshot(" + snapshot_id + ") data merged";
+This function is merging the current agent with the input agent
+If the snapshot is in agent but not in current agent, it will be ignored
+If the snapshot is in agent and also in current agent, it will be merged
+Input: agent to be merged
+*/
+void Agent::mergeAgent(Agent * const agent) {
+	for (auto it = agent->_snapshots.begin(); it != agent->_snapshots.end(); ++it) {
+		if (_snapshots.end() != _snapshots.find(it->first)) {
+			// find the snapshot, do merging in snapshot
+			_snapshots[it->first]->mergeSnapshot(it->second);
 		}
 		else {
-			_log->info() << "Cannot find snapshot(" + snapshot_id + ") data in old test, this should be a new snapshot";
+			agentLogger.debug("snapshotId=" + it->first + " is not found, and will be ignored", this->getParentChain());
 		}
 	}
 }
-*/
 
 const vector<vector<string>> Agent::getSnapshotInfo() const {
 	vector<vector<string>> results;

@@ -37,6 +37,7 @@ private:
 	friend class AmperTestFixture;
 	friend class UMACoreDataFlowTestFixture;
 	friend class AttrSensorPairSavingLoading;
+	friend class UMASavingLoading;
 
 public:
 	AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ, double w, bool d);
@@ -50,7 +51,7 @@ public:
 	void saveAttrSensorPair(ofstream &file);
 	static AttrSensorPair *loadAttrSensorPair(ifstream &file, AttrSensor *attrSensorI, AttrSensor *attrSensorJ,
 		bool b, UMACoreObject *parent);
-	//void copy_data(AttrSensorPair *mp);
+	void mergeAttrSensorPair(AttrSensorPair * const attrSensorPair);
 
 	const double &getW();
 	const bool &getD();

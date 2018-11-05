@@ -45,7 +45,7 @@ public:
 	void copyAmperList(bool *ampers) const;
 	void saveSensor(ofstream &file);
 	static Sensor *loadSensor(ifstream &file, UMACoreObject *parent);
-	//void copy_data(Sensor *s);
+	void mergeSensor(Sensor * const sensor);
 
 	bool generateDelayedSignal();
 
@@ -70,6 +70,7 @@ protected:
 	friend class UMACoreDataFlowTestFixture;
 	friend class SensorValuePointerConvertionTestFixture;
 	friend class SensorSavingLoading;
+	friend class UMASavingLoading;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 };
 

@@ -26,6 +26,7 @@ protected:
 	bool _enableEnrichment;
 	friend class World;
 	friend class AgentSavingLoading;
+	friend class UMASavingLoading;
 
 public:
 	Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY, PropertyMap *ppm = nullptr);
@@ -35,7 +36,7 @@ public:
 	void deleteSnapshot(const string &snapshotId);
 	void saveAgent(ofstream &file);
 	static Agent *loadAgent(ifstream &file, UMACoreObject *parent);
-	//void copy_test_data(Agent *agent);
+	void mergeAgent(Agent * const agent);
 	const int &getT() const;
 	const int &getPruningInterval() const;
 	const bool &getEnableEnrichment() const;

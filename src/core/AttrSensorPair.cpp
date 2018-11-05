@@ -94,11 +94,12 @@ AttrSensorPair *AttrSensorPair::loadAttrSensorPair(ifstream &file, AttrSensor *a
 }
 
 /*
-void AttrSensorPair::copy_data(AttrSensorPair *mp) {
-	//dir value will not be copied
-	v_w = mp->v_w;
-}
+This function is copy data from attrSensorPair to current attrSensorPair
 */
+void AttrSensorPair::mergeAttrSensorPair(AttrSensorPair * const attrSensorPair){
+	//dir value will not be copied
+	_vw = attrSensorPair->_vw;
+}
 
 const double &AttrSensorPair::getW(){
 	if (!_w) {

@@ -61,11 +61,13 @@ protected:
 	friend class AmperAndSignalsTestFixture;
 	friend class SnapshotUpdateQTestFixture;
 	friend class SnapshotSavingLoading;
+	friend class UMASavingLoading;
 
 public:
 	Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
 	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void deleteSensor(const string &sensorId);
+	Sensor *addSensor(Sensor * const sensor);
 	vector<vector<string> > getSensorInfo() const;
 
 	void generateObserve(vector<bool> &observe);
@@ -122,16 +124,9 @@ public:
 	---------------------SET FUNCTION----------------------
 	*/
 
-	/*
-	---------------------COPY FUNCTION---------------------
-	before using the copy function, have to make sure all necessary variable are in place
-	*/
-	//void copy_test_data(Snapshot *snapshot);
-	/*
-	---------------------COPY FUNCTION---------------------
-	*/
+	void mergeSnapshot(Snapshot * const snapshot);
 	void saveSnapshot(ofstream &file);
-	static Snapshot *loadSnapshot(ifstream &file, UMACoreObject *parent, UMA_SNAPSHOT type);
+	static Snapshot *loadSnapshot(ifstream &file, UMACoreObject *parent);
 	virtual ~Snapshot();
 
 protected:
