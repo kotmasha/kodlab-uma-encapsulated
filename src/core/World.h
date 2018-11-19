@@ -23,6 +23,7 @@ public:
 	static World *instance();
 	static void reset();
 	Experiment *createExperiment(const string &experimentId);
+	void addExperiment(Experiment * const experiment);
 	Experiment *getExperiment(const string &experimentId);
 	void deleteExperiment(const string &experimentId);
 	vector<string> getExperimentInfo();

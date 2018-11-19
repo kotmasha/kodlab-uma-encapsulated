@@ -28,6 +28,103 @@ DataManager::DataManager(UMACoreObject *parent): UMACoreObject("dataManager", UM
 	dataManagerLogger.info("Setting the memory expansion rate to " + to_string(_memoryExpansion), this->getParentChain());
 }
 
+DataManager::DataManager(const DataManager &dm, UMACoreObject *parent)
+	: UMACoreObject(dm._uuid, UMA_OBJECT::DATA_MANAGER, parent) {
+	_ppm->clear();
+	_ppm->extend(dm._ppm);
+
+	_memoryExpansion = dm._memoryExpansion;
+
+	initPointers();
+	setSize(dm._sensorSize);
+
+	if (_sensorSize < 1) {
+		dataManagerLogger.warn("The new sensorSize is smaller than 1, abort", this->getParentChain());
+		dataManagerLogger.debug("DataManager is copied", this->getParentChain());
+		return;
+	}
+
+	genWeight();
+	genDirection();
+	genThresholds();
+	genMaskAmper();
+	genNpDirection();
+	genSignals();
+	genNpdirMask();
+	genDists();
+	genOtherParameters();
+
+	// dirs
+	data_util::boolH2H(dm.h_dirs, h_dirs, _attrSensor2dSize);
+	data_util::boolD2D(dm.dev_dirs, dev_dirs, _attrSensor2dSize);
+	// weights
+	data_util::doubleH2H(dm.h_weights, h_weights, _attrSensor2dSize);
+	data_util::doubleD2D(dm.dev_weights, dev_weights, _attrSensor2dSize);
+	// thresholds
+	data_util::doubleH2H(dm.h_thresholds, h_thresholds, _sensor2dSize);
+	data_util::doubleD2D(dm.dev_thresholds, dev_thresholds, _sensor2dSize);
+	// mask_amper
+	data_util::boolH2H(dm.h_mask_amper, h_mask_amper, _maskAmperSize);
+	data_util::boolD2D(dm.dev_mask_amper, dev_mask_amper, _maskAmperSize);
+	// npdirs
+	data_util::boolH2H(dm.h_npdirs, h_npdirs, _npdirSize);
+	data_util::boolD2D(dm.dev_npdirs, dev_npdirs, _npdirSize);
+	// observe
+	data_util::boolH2H(dm.h_observe, h_observe, _attrSensorSize);
+	data_util::boolH2H(dm.h_observe_, h_observe_, _attrSensorSize);
+	data_util::boolD2D(dm.dev_observe, dev_observe, _attrSensorSize);
+	// current
+	data_util::boolH2H(dm.h_current, h_current, _attrSensorSize);
+	data_util::boolD2D(dm.dev_current, dev_current, _attrSensorSize);
+	data_util::boolH2H(dm.h_current_, h_current_, _attrSensorSize);
+	data_util::boolD2D(dm.dev_current_, dev_current_, _attrSensorSize);
+	// load
+	data_util::boolH2H(dm.h_load, h_load, _attrSensorSize);
+	data_util::boolD2D(dm.dev_load, dev_load, _attrSensorSize);
+	// mask
+	data_util::boolH2H(dm.h_mask, h_mask, _attrSensorSize);
+	data_util::boolD2D(dm.dev_mask, dev_mask, _attrSensorSize);
+	// target
+	data_util::boolH2H(dm.h_target, h_target, _attrSensorSize);
+	data_util::boolD2D(dm.dev_target, dev_target, _attrSensorSize);
+	// negligible
+	data_util::boolH2H(dm.h_negligible, h_negligible, _attrSensorSize);
+	data_util::boolD2D(dm.dev_negligible, dev_negligible, _attrSensorSize);
+	// diag
+	data_util::doubleH2H(dm.h_diag, h_diag, _attrSensorSize);
+	data_util::doubleD2D(dm.dev_diag, dev_diag, _attrSensorSize);
+	data_util::doubleH2H(dm.h_diag_, h_diag_, _attrSensorSize);
+	data_util::doubleD2D(dm.dev_diag_, dev_diag_, _attrSensorSize);
+	// npdir_mask
+	data_util::boolH2H(dm.h_npdir_mask, h_npdir_mask, _sensorSize * _attrSensorSize);
+	data_util::boolD2D(dm.dev_npdir_mask, dev_npdir_mask, _sensorSize * _attrSensorSize);
+	// signals
+	data_util::boolH2H(dm.h_signals, h_signals, _attrSensorSize * _attrSensorSize);
+	data_util::boolD2D(dm.dev_signals, dev_signals, _attrSensorSize * _attrSensorSize);
+	// lsignals
+	data_util::boolH2H(dm.h_lsignals, h_lsignals, _attrSensorSize * _attrSensorSize);
+	data_util::boolD2D(dm.dev_lsignals, dev_lsignals, _attrSensorSize * _attrSensorSize);
+	// bool_tmp
+	data_util::boolH2H(dm.h_bool_tmp, h_bool_tmp, _attrSensorSize);
+	data_util::boolD2D(dm.dev_bool_tmp, dev_bool_tmp, _attrSensorSize);
+	// dists
+	data_util::intH2H(dm.h_dists, h_dists, _attrSensorSize * _attrSensorSize);
+	data_util::intD2D(dm.dev_dists, dev_dists, _attrSensorSize * _attrSensorSize);
+	// union root
+	data_util::intH2H(dm.h_union_root, h_union_root, _sensorSize);
+	data_util::intD2D(dm.dev_union_root, dev_union_root, _sensorSize);
+	// prediction
+	data_util::boolH2H(dm.h_prediction, h_prediction, _attrSensorSize);
+	data_util::boolD2D(dm.dev_prediction, dev_prediction, _attrSensorSize);
+	// res
+	data_util::floatH2H(dm.h_res, h_res, 1);
+	data_util::floatD2D(dm.dev_res, dev_res, 1);
+	// sum
+	data_util::doubleD2D(dm.dev_sum, dev_sum, _attrSensorSize);
+
+	dataManagerLogger.debug("DataManager is copied", this->getParentChain());
+}
+
 DataManager::~DataManager() {
 }
 
@@ -95,6 +192,12 @@ void DataManager::reallocateMemory(double &total, int sensorSize) {
 	dataManagerLogger.info("Starting reallocating memory", this->getParentChain());
 	//free all memory first
 	freeAllParameters();
+
+	if (sensorSize < 1) {
+		dataManagerLogger.warn("The new sensorSize is smaller than 1, abort", this->getParentChain());
+		return;
+	}
+
 	//then set the size to be new one
 	setSize(sensorSize, true);
 
@@ -559,6 +662,32 @@ void DataManager::copyArraysToSensorPairs(const int startIdx, const int endIdx, 
 	}
 	dataManagerLogger.debug("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied from CPU arrays to sensor pairs", this->getParentChain());
 	dataManagerLogger.info("Sensor pairs data from idx " + to_string(ind(startIdx, 0)) + " to " + to_string(ind(endIdx, 0)) + " are copied back from arrays", this->getParentChain());
+}
+
+void DataManager::saveDM(ofstream &file) {
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
+
+	file.write(reinterpret_cast<const char *>(&_memoryExpansion), sizeof(double));
+}
+
+DataManager *DataManager::loadDM(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	file.read((char *)(&uuidLength), sizeof(int));
+
+	string uuid = string(uuidLength, ' ');
+	file.read(&uuid[0], uuidLength * sizeof(char));
+
+	double memoryExpansion = 0.0;
+	file.read((char *)(&memoryExpansion), sizeof(double));
+
+	DataManager *dm = new DataManager(parent);
+	dm->_memoryExpansion = memoryExpansion;
+
+	dataManagerLogger.info("A data manager is loaded", dm->getParentChain());
+
+	return dm;
 }
 
 /*

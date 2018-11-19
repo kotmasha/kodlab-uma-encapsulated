@@ -25,15 +25,20 @@ protected:
 	//enable enrichment
 	bool _enableEnrichment;
 	friend class World;
+	friend class AgentSavingLoading;
+	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
-	//Agent(ifstream &file);
 	Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY, PropertyMap *ppm = nullptr);
+	Agent(const Agent &agent, UMACoreObject *parent, const string &uuid);
 	virtual Snapshot *createSnapshot(const string &uuid);
+	void addSnapshot(Snapshot * const snapshot);
 	Snapshot *getSnapshot(const string &snapshotId);
 	void deleteSnapshot(const string &snapshotId);
-	//void save_agent(ofstream &file);
-	//void copy_test_data(Agent *agent);
+	void saveAgent(ofstream &file);
+	static Agent *loadAgent(ifstream &file, UMACoreObject *parent);
+	//void mergeAgent(Agent * const agent);
 	const int &getT() const;
 	const int &getPruningInterval() const;
 	const bool &getEnableEnrichment() const;
@@ -54,6 +59,7 @@ protected:
 class DLL_PUBLIC AgentQualitative : public Agent {
 public:
 	AgentQualitative(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
+	AgentQualitative(const AgentQualitative &agent, UMACoreObject *parent, const string &uuid);
 	~AgentQualitative();
 
 	virtual Snapshot *createSnapshot(const string &uuid);
@@ -62,6 +68,7 @@ public:
 class DLL_PUBLIC AgentDiscounted : public Agent {
 public:
 	AgentDiscounted(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
+	AgentDiscounted(const AgentDiscounted &agent, UMACoreObject *parent, const string &uuid);
 	~AgentDiscounted();
 
 	virtual Snapshot *createSnapshot(const string &uuid);
@@ -70,6 +77,7 @@ public:
 class DLL_PUBLIC AgentEmpirical : public Agent {
 public:
 	AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm = nullptr);
+	AgentEmpirical(const AgentEmpirical &agent, UMACoreObject *parent, const string &uuid);
 	~AgentEmpirical();
 
 	virtual Snapshot *createSnapshot(const string &uuid);

@@ -9,29 +9,6 @@
 
 static Logger agentLogger("Agent", "log/agent.log");
 
-/*
-Agent::Agent(ifstream &file) {
-	int uuid_length = -1;
-	file.read((char *)(&uuid_length), sizeof(int));
-	_uuid = string(uuid_length, ' ');
-	file.read(&_uuid[0], uuid_length * sizeof(char));
-
-	_log_dir = "log/Agent_" + _uuid;
-	_log = new logManager(logging::VERBOSE, _log_dir, "agent.txt", typeid(*this).name());
-
-	int snapshot_size = -1;
-	file.read((char *)(&snapshot_size), sizeof(int));
-	
-	for (int i = 0; i < snapshot_size; ++i) {
-		string log_dir = _log_dir + "/Snapshot_";
-		Snapshot_Stationary *snapshot = new Snapshot_Stationary(file, log_dir);
-		_snapshots[snapshot->_uuid] = snapshot;
-	}
-
-	_log->info() << "An agent " + _uuid + " is loaded";
-}
-*/
-
 Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, PropertyMap *ppm): UMACoreObject(uuid, UMA_OBJECT::AGENT, parent), _type(type) {
 	_t = 0;
 	layerInConf();
@@ -43,12 +20,56 @@ Agent::Agent(const string &uuid, UMACoreObject *parent, UMA_AGENT type, Property
 	agentLogger.info("An agent is created, agentId=" + uuid + ", type=" + getUMAAgentName(type), this->getParentChain());
 }
 
+Agent::Agent(const Agent &agent, UMACoreObject *parent, const string &uuid)
+	: UMACoreObject(uuid, UMA_OBJECT::AGENT, parent) {
+	_t = agent._t;
+	_type = agent._type;
+
+	// clear whatever is from the parent, and replace it with whatever is in the agent
+	_ppm->clear();
+	_ppm->extend(agent._ppm);
+
+	_pruningInterval = agent._pruningInterval;
+	_enableEnrichment = agent._enableEnrichment;
+
+	// copying snapshots
+	for (auto it = agent._snapshots.begin(); it != agent._snapshots.end(); ++it) {
+		UMA_SNAPSHOT type = UMACoreConstant::getUMASnapshotTypeByAgent(_type);
+		Snapshot *snapshot = nullptr;
+		switch (type) {
+		case UMA_SNAPSHOT::SNAPSHOT_STATIONARY: snapshot = new Snapshot(*it->second, this); break;
+		case UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE: 
+			snapshot = new SnapshotQualitative(*dynamic_cast<SnapshotQualitative*>(it->second), this); break;
+		case UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL:
+			snapshot = new SnapshotEmpirical(*dynamic_cast<SnapshotEmpirical*>(it->second), this); break;
+		case UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED:
+			snapshot = new SnapshotDiscounted(*dynamic_cast<SnapshotDiscounted*>(it->second), this); break;
+		default:
+			throw UMAInternalException("The snapshot type does not map to any existing type", true, &agentLogger, this->getParentChain());
+		}
+
+		addSnapshot(snapshot);
+	}
+
+	agentLogger.debug("An agent is copied, agentId=" + _uuid + ", type=" + getUMAAgentName(_type), this->getParentChain());
+}
+
 void Agent::layerInConf() {
 	string confName = "Agent::" + UMACoreConstant::getUMAAgentName(_type);
 	PropertyMap *pm = CoreService::instance()->getPropertyMap(confName);
 	if (pm) {
 		_ppm->extend(pm);
 	}
+}
+
+void Agent::addSnapshot(Snapshot * const snapshot) {
+	const string uuid = snapshot->getUUID();
+	if (_snapshots.find(uuid) != _snapshots.end()) {
+		throw UMADuplicationException("Cannot add a duplicate snapshot, snapshotId=" + uuid, false, &agentLogger, this->getParentChain());
+	}
+
+	_snapshots[uuid] = snapshot;
+	agentLogger.info("A Snapshot is added, snapshotId=" + uuid, this->getParentChain());
 }
 
 Snapshot *Agent::createSnapshot(const string &uuid) {
@@ -67,35 +88,79 @@ Snapshot *Agent::getSnapshot(const string &snapshot_id){
 	throw UMANoResourceException("Cannot find the snapshot id!", false, &agentLogger, this->getParentChain());
 }
 
-/*
-void Agent::save_agent(ofstream &file) {
+
+void Agent::saveAgent(ofstream &file) {
 	//write uuid
-	int uuid_length = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&uuid_length), sizeof(int));
-	file.write(_uuid.c_str(), uuid_length * sizeof(char));
-	int snapshot_size = _snapshots.size();
-	file.write(reinterpret_cast<const char *>(&snapshot_size), sizeof(int));
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
+	file.write(reinterpret_cast<const char *>(&_type), sizeof(int));
+
+	_ppm->save(file);
+
+	int snapshotSize = _snapshots.size();
+	file.write(reinterpret_cast<const char *>(&snapshotSize), sizeof(int));
 	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
-		it->second->save_snapshot(file);
+		it->second->saveSnapshot(file);
 	}
 }
 
-void Agent::copy_test_data(Agent *agent) {
-	for (auto it = _snapshots.begin(); it != _snapshots.end(); ++it) {
-		string snapshot_id = it->first;
-		Snapshot *snapshot = it->second;
-		if (agent->_snapshots.find(snapshot_id) != agent->_snapshots.end()) {
-			//if find the 'same' snapshot
-			Snapshot *c_snapshot = agent->_snapshots[snapshot_id];
-			snapshot->copy_test_data(c_snapshot);
-			_log->info() << "Snapshot(" + snapshot_id + ") data merged";
+Agent *Agent::loadAgent(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	file.read((char *)(&uuidLength), sizeof(int));
+
+	string uuid = string(uuidLength, ' ');
+	file.read(&uuid[0], uuidLength * sizeof(char));
+
+	UMA_AGENT type = UMA_AGENT::AGENT_STATIONARY;
+	file.read((char *)(&type), sizeof(UMA_AGENT));
+
+	Agent *agent = nullptr;
+	switch (type) {
+	case UMA_AGENT::AGENT_QUALITATIVE:
+		agent = new AgentQualitative(uuid, parent); break;
+	case UMA_AGENT::AGENT_DISCOUNTED:
+		agent = new AgentDiscounted(uuid, parent); break;
+	case UMA_AGENT::AGENT_EMPIRICAL:
+		agent = new AgentEmpirical(uuid, parent); break;
+	default:
+		agent = new Agent(uuid, parent, type); break;
+	}
+
+	agent->_ppm->load(file);
+
+	int snapshotSize = -1;
+	file.read((char *)(&snapshotSize), sizeof(int));
+	agentLogger.debug("will load " + to_string(snapshotSize) + " snapshots", agent->getParentChain());
+
+	for (int i = 0; i < snapshotSize; ++i) {
+		Snapshot *snapshot = Snapshot::loadSnapshot(file, agent);
+		agent->addSnapshot(snapshot);
+	}
+
+	agentLogger.info("agent=" + uuid + " is successfully loaded", agent->getParentChain());
+
+	return agent;
+}
+
+/*
+This function is merging the current agent with the input agent
+If the snapshot is in agent but not in current agent, it will be ignored
+If the snapshot is in agent and also in current agent, it will be merged
+Input: agent to be merged
+*/
+/*
+void Agent::mergeAgent(Agent * const agent) {
+	for (auto it = agent->_snapshots.begin(); it != agent->_snapshots.end(); ++it) {
+		if (_snapshots.end() != _snapshots.find(it->first)) {
+			// find the snapshot, do merging in snapshot
+			_snapshots[it->first]->mergeSnapshot(it->second);
 		}
 		else {
-			_log->info() << "Cannot find snapshot(" + snapshot_id + ") data in old test, this should be a new snapshot";
+			agentLogger.debug("snapshotId=" + it->first + " is not found, and will be ignored", this->getParentChain());
 		}
 	}
-}
-*/
+}*/
 
 const vector<vector<string>> Agent::getSnapshotInfo() const {
 	vector<vector<string>> results;
@@ -172,6 +237,10 @@ Agent::~Agent(){
 AgentQualitative::AgentQualitative(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
 	: Agent(uuid, parent, UMA_AGENT::AGENT_QUALITATIVE, ppm) {}
 
+AgentQualitative::AgentQualitative(const AgentQualitative &agent, UMACoreObject *parent, const string &uuid)
+	: Agent(agent, parent, uuid) {
+}
+
 AgentQualitative::~AgentQualitative() {}
 
 Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
@@ -193,6 +262,10 @@ Snapshot *AgentQualitative::createSnapshot(const string &uuid) {
 AgentDiscounted::AgentDiscounted(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
 	: Agent(uuid, parent, UMA_AGENT::AGENT_DISCOUNTED, ppm) {}
 
+AgentDiscounted::AgentDiscounted(const AgentDiscounted &agent, UMACoreObject *parent, const string &uuid)
+	: Agent(agent, parent, uuid) {
+}
+
 AgentDiscounted::~AgentDiscounted() {}
 
 Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
@@ -213,6 +286,10 @@ Snapshot *AgentDiscounted::createSnapshot(const string &uuid) {
 */
 AgentEmpirical::AgentEmpirical(const string &uuid, UMACoreObject *parent, PropertyMap *ppm)
 	: Agent(uuid, parent, UMA_AGENT::AGENT_EMPIRICAL, ppm) {}
+
+AgentEmpirical::AgentEmpirical(const AgentEmpirical &agent, UMACoreObject *parent, const string &uuid)
+	: Agent(agent, parent, uuid) {
+}
 
 AgentEmpirical::~AgentEmpirical() {}
 

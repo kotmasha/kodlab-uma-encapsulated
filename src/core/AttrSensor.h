@@ -43,10 +43,15 @@ protected:
 	friend class GenerateDelayedWeightsTestFixture;
 	friend class AmperAndSignalsTestFixture;
 	friend class UMACoreDataFlowTestFixture;
+	friend class SensorValuePointerConvertionTestFixture;
+	friend class AttrSensorSavingLoading;
+	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
 	//AttrSensor(ifstream &file);
 	AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool isOriginPure, double diag);
+	AttrSensor(const AttrSensor &as, UMACoreObject *parent);
 
 	void pointersToNull();
 	void pointersToValues();
@@ -61,8 +66,9 @@ public:
 	void setObserve(bool observe);
 	void setOldObserve(bool observe_);
 	
-	//void save_measurable(ofstream &file);
-	//void copy_data(AttrSensor *m);
+	void saveAttrSensor(ofstream &file);
+	static AttrSensor *loadAttrSensor(ifstream &file, UMACoreObject *parent);
+	void mergeAttrSensor(AttrSensor * const attrSensor);
 
 	const double &getDiag();
 	const double &getOldDiag();

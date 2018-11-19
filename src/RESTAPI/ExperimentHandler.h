@@ -18,6 +18,8 @@ public:
 	void createExperiment(UMARestRequest &request);
 	void getExperiment(UMARestRequest &request);
 	void deleteExperiment(UMARestRequest &request);
+	void saveExperiment(UMARestRequest &request);
+	void loadExperiment(UMARestRequest &request);
 	virtual ~ExperimentHandler();
 };
 

@@ -40,6 +40,40 @@ vector<string> PropertyMap::getKeys() {
 	return keys;
 }
 
+void PropertyMap::save(ofstream &file) {
+	size_t s = this->size();
+	file.write(reinterpret_cast<const char *>(&s), sizeof(size_t));
+	for (auto it = this->begin(); it != this->end(); ++it) {
+		const string key = it->first;
+		const string value = it->second;
+		const size_t keySize = key.size();
+		const size_t valueSize = value.size();
+		file.write(reinterpret_cast<const char *>(&keySize), sizeof(size_t));
+		file.write(reinterpret_cast<const char *>(key.c_str()), key.size() * sizeof(char));
+		
+		file.write(reinterpret_cast<const char *>(&valueSize), sizeof(size_t));
+		file.write(reinterpret_cast<const char *>(value.c_str()), value.size() * sizeof(char));
+	}
+}
+
+void PropertyMap::load(ifstream &file) {
+	size_t s = 0;
+	file.read((char *)(&s), sizeof(size_t));
+	for (int i = 0; i < s; ++i) {
+		size_t keySize = 0;
+		file.read((char *)(&keySize), sizeof(size_t));
+		string key = string(keySize, ' ');
+		file.read(&key[0], keySize * sizeof(char));
+
+		size_t valueSize = 0;
+		file.read((char *)(&valueSize), sizeof(size_t));
+		string value = string(valueSize, ' ');
+		file.read(&value[0], valueSize * sizeof(char));
+
+		this->add(key, value);
+	}
+}
+
 /*
 //come back later
 template <class T>

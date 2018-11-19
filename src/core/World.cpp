@@ -38,6 +38,16 @@ Experiment *World::createExperiment(const string &experimentId) {
 	return _experiments[experimentId];
 }
 
+void World::addExperiment(Experiment * const experiment) {
+	string uuid = experiment->getUUID();
+	if (_experiments.end() != _experiments.find(uuid)) {
+		throw UMADuplicationException("Cannot add the current experiment to world because it already exists", true, &worldLogger);
+	}
+
+	_experiments[uuid] = experiment;
+	worldLogger.info("A new experimentId=" + uuid + " is added to world");
+}
+
 Experiment *World::getExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
 		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);
@@ -64,33 +74,6 @@ vector<string> World::getExperimentInfo() {
 	}
 	return results;
 }
-
-/*
-void World::save_world(string &name) {
-	ofstream file;
-	file.open(name + ".uma", ios::out | ios::binary);
-	int agent_size = _agents.size();
-	file.write(reinterpret_cast<const char *>(&agent_size), sizeof(int));
-	for (auto it = _agents.begin(); it != _agents.end(); ++it) {
-		it->second->save_agent(file);
-	}
-	file.close();
-}
-*/
-
-/*
-void World::load_world(string &name) {
-	ifstream file;
-	file.open(name + ".uma", ios::binary | ios::in);
-	int agent_size = -1;
-	file.read((char *)(&agent_size), sizeof(int));
-	for (int i = 0; i < agent_size; ++i) {
-		//Agent *agent = new Agent(file);
-		//_load_agents[agent->_uuid] = agent;
-	}
-	file.close();
-}
-*/
 
 /*
 void World::merge_test() {

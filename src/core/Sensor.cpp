@@ -9,30 +9,6 @@ extern int compi(int x);
 static Logger sensorLogger("Sensor", "log/sensor.log");
 
 /*
-Sensor::Sensor(ifstream &file) {
-	int uuid_length = -1;
-	file.read((char *)(&uuid_length), sizeof(int));
-	if (uuid_length > 0) {
-		_uuid = string(uuid_length, ' ');
-		file.read(&_uuid[0], uuid_length * sizeof(char));
-	}
-	else _uuid = "";
-
-	file.read((char *)(&_idx), sizeof(int));
-	//write the amper list
-	int amper_size = -1;
-	file.read((char *)(&amper_size), sizeof(int));
-	for (int i = 0; i < amper_size; ++i) {
-		int tmp_value = -1;
-		file.read((char *)(&tmp_value), sizeof(int));
-		_amper.push_back(tmp_value);
-	}
-	_m = new AttrSensor(file);
-	_cm = new AttrSensor(file);
-}
-*/
-
-/*
 Init function
 Input: _sid is sensor id, const int, and _sname, sensor name
 */
@@ -41,8 +17,8 @@ Sensor::Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, c
 	_idx = idx;
 	_m = new AttrSensor(idPair.first, this, 2 * idx, true, total / 2);
 	_cm = new AttrSensor(idPair.second, this, 2 * idx + 1, false, total / 2);
-	_observe = NULL;
-	_observe_ = NULL;
+	_observe = nullptr;
+	_observe_ = nullptr;
 
 	sensorLogger.info("New sensor created with total value, id=" + _uuid, this->getParentChain());
 }
@@ -52,10 +28,30 @@ Sensor::Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, c
 	_idx = idx;
 	_m = new AttrSensor(idPair.first, this, 2 * idx, true, diag[0]);
 	_cm = new AttrSensor(idPair.second, this, 2 * idx + 1, false, diag[1]);
-	_observe = NULL;
-	_observe_ = NULL;
+	_observe = nullptr;
+	_observe_ = nullptr;
 
 	sensorLogger.info("New sensor created with diag value, id=" + _uuid, this->getParentChain());
+}
+
+Sensor::Sensor(const string &uuid, UMACoreObject *parent, int idx)
+	: UMACoreObject(uuid, UMA_OBJECT::SENSOR, parent) {
+	_idx = idx;
+	_observe = nullptr;
+	_observe_ = nullptr;
+}
+
+Sensor::Sensor(const Sensor &sensor, UMACoreObject *parent)
+	: UMACoreObject(sensor._uuid, UMA_OBJECT::SENSOR, parent) {
+	_idx = sensor._idx;
+	_amper = sensor._amper;
+
+	_m = new AttrSensor(*sensor._m, this);
+	_cm = new AttrSensor(*sensor._cm, this);
+	_observe = nullptr;
+	_observe_ = nullptr;
+
+	sensorLogger.debug("A new sensor is copied, id=" + _uuid, this->getParentChain());
 }
 
 /*
@@ -202,31 +198,57 @@ Saving order MUST FOLLOW:
 5 all measurables
 Input: ofstream file
 */
-/*
-void Sensor::save_sensor(ofstream &file){
+void Sensor::saveSensor(ofstream &file){
 	//write sid and idx
-	int sid_length = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
-	file.write(_uuid.c_str(), sid_length * sizeof(char));
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	//write the amper list
-	int amper_size = _amper.size();
-	file.write(reinterpret_cast<const char *>(&amper_size), sizeof(int));
-	for(int i = 0; i < amper_size; ++i){
+	int amperSize = _amper.size();
+	file.write(reinterpret_cast<const char *>(&amperSize), sizeof(int));
+	for(int i = 0; i < amperSize; ++i){
 		file.write(reinterpret_cast<const char *>(&_amper[i]), sizeof(int));
 	}
-	_m->save_measurable(file);
-	_cm->save_measurable(file);
+	_m->saveAttrSensor(file);
+	_cm->saveAttrSensor(file);
 }
-*/
+
+Sensor *Sensor::loadSensor(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	file.read((char *)(&uuidLength), sizeof(int));
+
+	string uuid = string(uuidLength, ' ');
+	file.read(&uuid[0], uuidLength * sizeof(char));
+
+	int idx = -1;
+	file.read((char *)(&idx), sizeof(int));
+
+	int amperSize = -1;
+	vector<int> amper;
+	file.read((char *)(&amperSize), sizeof(int));
+	for (int i = 0; i < amperSize; ++i) {
+		int tmp = -1;
+		file.read((char *)(&tmp), sizeof(int));
+		amper.push_back(tmp);
+	}
+
+	Sensor *sensor = new Sensor(uuid, parent, idx);
+	sensor->_amper = amper;
+	sensor->_m = AttrSensor::loadAttrSensor(file, sensor);
+	sensor->_cm = AttrSensor::loadAttrSensor(file, sensor);
+	
+	return sensor;
+}
 
 /*
-void Sensor::copy_data(Sensor *s) {
-	//note the amper list is not set in the copy function, as it need upper level(snapshot) info, so it is done in snapshot
-	_m->copy_data(s->_m);
-	_cm->copy_data(s->_cm);
-}
+This function is copying the data from the sensor to current sensor
+Input: sensor
 */
+void Sensor::mergeSensor(Sensor * const sensor){
+	_m->mergeAttrSensor(sensor->_m);
+	_cm->mergeAttrSensor(sensor->_cm);
+}
 
 bool Sensor::generateDelayedSignal() {
 	if (!_observe_) {

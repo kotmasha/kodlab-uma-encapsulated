@@ -15,6 +15,8 @@ public:
 	string get(const string &key);
 	void extend(PropertyMap *other);
 	vector<string> getKeys();
+	void save(ofstream &file);
+	void load(ifstream &file);
 	//void copy(PropertyMap *other);
 };
 

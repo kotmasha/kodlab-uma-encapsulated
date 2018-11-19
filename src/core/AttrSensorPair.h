@@ -36,10 +36,13 @@ private:
 	friend class GenerateDelayedWeightsTestFixture;
 	friend class AmperTestFixture;
 	friend class UMACoreDataFlowTestFixture;
+	friend class AttrSensorPairSavingLoading;
+	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
-	//AttrSensorPair(ifstream &file, AttrSensor *_m_i, AttrSensor *_m_j);
 	AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ, double w, bool d);
+	AttrSensorPair(const AttrSensorPair &asp, UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ);
 
 	void pointersToNull();
 	void pointersToValues();
@@ -47,8 +50,10 @@ public:
 
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);
-	//void save_measurable_pair(ofstream &file);
-	//void copy_data(AttrSensorPair *mp);
+	void saveAttrSensorPair(ofstream &file);
+	static AttrSensorPair *loadAttrSensorPair(ifstream &file, AttrSensor *attrSensorI, AttrSensor *attrSensorJ,
+		bool b, UMACoreObject *parent);
+	void mergeAttrSensorPair(AttrSensorPair * const attrSensorPair);
 
 	const double &getW();
 	const bool &getD();

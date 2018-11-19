@@ -7,21 +7,6 @@ extern int compi(int x);
 
 static Logger attrSensorLogger("AttrSensor", "log/attrSensor.log");
 
-/*
-AttrSensor::AttrSensor(ifstream &file) {
-	int uuid_length = -1;
-	file.read((char *)(&uuid_length), sizeof(int));
-	if (uuid_length > 0) {
-		_uuid = string(uuid_length, ' ');
-		file.read(&_uuid[0], uuid_length * sizeof(char));
-	}
-	else _uuid = "";
-	file.read((char *)&_idx, sizeof(int));
-	file.read((char *)&_isOriginPure, sizeof(bool));
-	pointersToNull();
-}
-*/
-
 AttrSensor::AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool isOriginPure, double diag)
 	: UMACoreObject(uuid, UMA_OBJECT::ATTR_SENSOR, parent){
 	_idx = idx;
@@ -34,6 +19,19 @@ AttrSensor::AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool 
 	_vtarget = false;
 
 	attrSensorLogger.debug("A new attr sensor is created with id=" + uuid, this->getParentChain());
+}
+
+AttrSensor::AttrSensor(const AttrSensor &as, UMACoreObject *parent) 
+	: UMACoreObject(as._uuid, UMA_OBJECT::ATTR_SENSOR, parent) {
+	_idx = as._idx;
+	_vdiag = as._vdiag;
+	_vdiag_ = as._vdiag_;
+	_vobserve = as._vobserve;
+	_vobserve_ = as._vobserve_;
+	_vtarget = as._vtarget;
+	_isOriginPure = as._isOriginPure;
+
+	attrSensorLogger.debug("A new attr sensor is copied with id=" + _uuid, this->getParentChain());
 }
 
 /*
@@ -146,23 +144,45 @@ Saving order MUST FOLLOW:
 1 measurable idx
 2 whether the measurable is originally pure
 */
-/*
-void AttrSensor::save_measurable(ofstream &file){
-	int sid_length = _uuid.length();
-	file.write(reinterpret_cast<const char *>(&sid_length), sizeof(int));
-	file.write(_uuid.c_str(), sid_length * sizeof(char));
+void AttrSensor::saveAttrSensor(ofstream &file){
+	int uuidLength = _uuid.length();
+	file.write(reinterpret_cast<const char *>(&uuidLength), sizeof(int));
+	file.write(_uuid.c_str(), uuidLength * sizeof(char));
 	file.write(reinterpret_cast<const char *>(&_idx), sizeof(int));
 	file.write(reinterpret_cast<const char *>(&_isOriginPure), sizeof(bool));
+	file.write(reinterpret_cast<const char *>(&_vdiag), sizeof(double));
 }
-*/
+
+AttrSensor *AttrSensor::loadAttrSensor(ifstream &file, UMACoreObject *parent) {
+	int uuidLength = -1;
+	string uuid;
+	int idx = -1;
+	double diag = 0.0;
+	bool isOriginPure = false;
+	file.read((char *)(&uuidLength), sizeof(int));
+	if (uuidLength > 0) {
+		uuid = string(uuidLength, ' ');
+		file.read(&uuid[0], uuidLength * sizeof(char));
+	}
+	else uuid = "";
+	file.read((char *)&idx, sizeof(int));
+	file.read((char *)&isOriginPure, sizeof(bool));
+	file.read((char *)&diag, sizeof(double));
+
+	AttrSensor *attrSensor = new AttrSensor(uuid, parent, idx, isOriginPure, diag);
+
+	return attrSensor;
+}
 
 /*
-void AttrSensor::copy_data(AttrSensor *m) {
-	_isOriginPure = m->_isOriginPure;
-	_vdiag = m->_vdiag;
-	_vdiag_ = m->_vdiag_;
-}
+This function is copying the attrSensor to the current sensor
+Input: attrSensor
 */
+void AttrSensor::mergeAttrSensor(AttrSensor * const attrSensor){
+	_isOriginPure = attrSensor->_isOriginPure;
+	_vdiag = attrSensor->_vdiag;
+	_vdiag_ = attrSensor->_vdiag_;
+}
 
 const double &AttrSensor::getDiag() {
 	if (!_diag) {

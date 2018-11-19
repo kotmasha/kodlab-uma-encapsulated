@@ -84,7 +84,38 @@ void AgentHandler::deleteAgent(UMARestRequest &request) {
 	Experiment *experiment = World::instance()->getExperiment(experimentId);
 	experiment->deleteAgent(agentId);
 
-	request.setMessage("Agent=" + agentId + " is deleted");
+	request.setMessage("AgentId=" + agentId + " is deleted");
+}
+
+void AgentHandler::copyAgent(UMARestRequest &request) {
+	const string experimentId1 = request.getStringData("experiment_id1");
+	const string experimentId2 = request.getStringData("experiment_id2");
+	const string agentId1 = request.getStringData("agent_id1");
+	const string agentId2 = request.getStringData("agent_id2");
+
+	Experiment *experiment1 = World::instance()->getExperiment(experimentId1);
+	Agent *agent1 = experiment1->getAgent(agentId1);
+
+	Experiment *experiment2 = World::instance()->getExperiment(experimentId2);
+	UMA_AGENT type = agent1->getType();
+
+	Agent *cAgent = nullptr;
+	switch (type) {
+	case UMA_AGENT::AGENT_STATIONARY: cAgent = new Agent(*agent1, experiment2, agentId2); break;
+	case UMA_AGENT::AGENT_QUALITATIVE:
+		cAgent = new AgentQualitative(*dynamic_cast<AgentQualitative*>(agent1), experiment2, agentId2); break;
+	case UMA_AGENT::AGENT_EMPIRICAL:
+		cAgent = new AgentEmpirical(*dynamic_cast<AgentEmpirical*>(agent1), experiment2, agentId2); break;
+	case UMA_AGENT::AGENT_DISCOUNTED:
+		cAgent = new AgentDiscounted(*dynamic_cast<AgentDiscounted*>(agent1), experiment2, agentId2); break;
+	default:
+		throw UMAInternalException("The agent type does not map to any existing type, experimentId="
+			+ experiment1->getUUID() , true, &serverLogger);
+	}
+
+	experiment2->addAgent(cAgent);
+
+	request.setMessage("AgentId=" + agentId1 + " is copied");
 }
 
 AgentHandler::~AgentHandler() {}

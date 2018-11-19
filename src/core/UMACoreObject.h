@@ -33,6 +33,7 @@ public:
 	UMACoreObject(const string &uuid, UMACoreConstant::UMA_OBJECT ObjType, UMACoreObject *parent);
 	virtual ~UMACoreObject();
 	PropertyMap *getPropertyMap() const;
+	string getUUID() const;
 };
 
 #endif

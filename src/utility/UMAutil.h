@@ -14,12 +14,14 @@ namespace SysUtil {
 	string UMAMkdir(std::string &path);
 	bool UMAFileExist(std::string &path);
 	bool UMAFolderExist(std::string &path);
+	void UMARemove(std::string &path);
 }
 
 namespace StrUtil {
 	//conversion of string to log_level
 	vector<std::pair<string, string>> string2dToString1dPair(const vector<vector<string>> &pairs);
-	bool isEmpty(string &s);
+	bool isEmpty(const string &s);
+	bool stringToBool(const string &s);
 }
 
 namespace SignalUtil {

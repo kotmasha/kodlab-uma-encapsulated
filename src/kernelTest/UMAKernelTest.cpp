@@ -915,7 +915,7 @@ TEST(uma_base_qualitative_test, calculateTarget) {
 
 	h_attr_sensor[0] = 1.02; h_attr_sensor[2] = 2.22; h_attr_sensor[4] = 10000000; h_attr_sensor[6] = 0.0003; h_attr_sensor[8] = 0.0;
 	h_attr_sensor[1] = 1.01; h_attr_sensor[3] = 2.22; h_attr_sensor[5] = 1000000; h_attr_sensor[7] = 0.0004; h_attr_sensor[9] = 0.00;
-	vector<bool> v_target = { false, true, false, true, false, true, true, false, false, true };
+	vector<bool> v_target = { false, true, false, false, false, true, true, false, false, false };
 
 	data_util::doubleH2D(h_attr_sensor, dev_attr_sensor, 10);
 	uma_base_qualitative::calculateTarget(dev_attr_sensor, dev_target, 5);

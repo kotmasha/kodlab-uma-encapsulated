@@ -108,6 +108,7 @@ protected:
 
 public:
 	DataManager(UMACoreObject *parent);
+	DataManager(const DataManager &dm, UMACoreObject *parent);
 
 	int *_dvar_i(int name);
 	double *_dvar_d(int name);
@@ -171,6 +172,9 @@ public:
 	friend class SnapshotQualitative;
 
 	friend class UMACoreDataFlowTestFixture;
+	friend class DataManagerSavingLoading;
+	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 protected:
 	void initPointers();
@@ -197,6 +201,9 @@ protected:
 	void copySensorsToArrays(const int startIdx, const int endIdx, const vector<Sensor*> &sensors);
 	void copyArraysToSensors(const int startIdx, const int endIdx, const vector<Sensor*> &sensors);
 	void copyArraysToSensorPairs(const int startIdx, const int endIdx, const vector<SensorPair*> &_sensorPairs);
+
+	void saveDM(ofstream &file);
+	static DataManager *loadDM(ifstream &file, UMACoreObject *parent);
 };
 
 #endif
