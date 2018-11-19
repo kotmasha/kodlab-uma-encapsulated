@@ -62,9 +62,11 @@ protected:
 	friend class SnapshotUpdateQTestFixture;
 	friend class SnapshotSavingLoading;
 	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
 	Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type = UMA_SNAPSHOT::SNAPSHOT_STATIONARY);
+	Snapshot(const Snapshot &snapshot, UMACoreObject *parent);
 	Sensor *createSensor(const std::pair<string, string> &idPair, const vector<double> &diag, const vector<vector<double> > &w, const vector<vector< bool> > &b);
 	void deleteSensor(const string &sensorId);
 	Sensor *addSensor(Sensor * const sensor);
@@ -124,7 +126,7 @@ public:
 	---------------------SET FUNCTION----------------------
 	*/
 
-	void mergeSnapshot(Snapshot * const snapshot);
+	//void mergeSnapshot(Snapshot * const snapshot);
 	void saveSnapshot(ofstream &file);
 	static Snapshot *loadSnapshot(ifstream &file, UMACoreObject *parent);
 	virtual ~Snapshot();
@@ -133,6 +135,8 @@ protected:
 	void amper(const vector<int> &list, const std::pair<string, string> &uuid);
 	void ampersand(int mid1, int mid2, bool merge, const std::pair<string, string> &idPair);
 	void layerInConf();
+	void savingParameters(ofstream &file);
+	void loadingParameters(ifstream &file);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
 };
 
@@ -142,6 +146,7 @@ Qualitative Snapshot
 class DLL_PUBLIC SnapshotQualitative : public Snapshot {
 public:
 	SnapshotQualitative(const string &uuid, UMACoreObject *parent);
+	SnapshotQualitative(const SnapshotQualitative &snapshot, UMACoreObject *parent);
 	virtual ~SnapshotQualitative();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
@@ -154,6 +159,7 @@ Discounted Snapshot
 class DLL_PUBLIC SnapshotDiscounted : public Snapshot {
 public:
 	SnapshotDiscounted(const string &uuid, UMACoreObject *parent);
+	SnapshotDiscounted(const SnapshotDiscounted &snapshot, UMACoreObject *parent);
 	virtual ~SnapshotDiscounted();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);
@@ -166,6 +172,7 @@ Empirical Snapshot
 class DLL_PUBLIC SnapshotEmpirical : public Snapshot {
 public:
 	SnapshotEmpirical(const string &uuid, UMACoreObject *parent);
+	SnapshotEmpirical(const SnapshotEmpirical &snapshot, UMACoreObject *parent);
 	virtual ~SnapshotEmpirical();
 	virtual void updateTotal(double phi, bool active);
 	virtual void generateDelayedWeights(int mid, bool merge, const std::pair<string, string> &idPair);

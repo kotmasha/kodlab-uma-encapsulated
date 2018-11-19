@@ -21,6 +21,19 @@ AttrSensor::AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool 
 	attrSensorLogger.debug("A new attr sensor is created with id=" + uuid, this->getParentChain());
 }
 
+AttrSensor::AttrSensor(const AttrSensor &as, UMACoreObject *parent) 
+	: UMACoreObject(as._uuid, UMA_OBJECT::ATTR_SENSOR, parent) {
+	_idx = as._idx;
+	_vdiag = as._vdiag;
+	_vdiag_ = as._vdiag_;
+	_vobserve = as._vobserve;
+	_vobserve_ = as._vobserve_;
+	_vtarget = as._vtarget;
+	_isOriginPure = as._isOriginPure;
+
+	attrSensorLogger.debug("A new attr sensor is copied with id=" + _uuid, this->getParentChain());
+}
+
 /*
 The function is setting all pointers to NULL
 */

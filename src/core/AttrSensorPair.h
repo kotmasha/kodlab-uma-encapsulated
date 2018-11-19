@@ -38,9 +38,11 @@ private:
 	friend class UMACoreDataFlowTestFixture;
 	friend class AttrSensorPairSavingLoading;
 	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
 	AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ, double w, bool d);
+	AttrSensorPair(const AttrSensorPair &asp, UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ);
 
 	void pointersToNull();
 	void pointersToValues();

@@ -46,10 +46,12 @@ protected:
 	friend class SensorValuePointerConvertionTestFixture;
 	friend class AttrSensorSavingLoading;
 	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
 	//AttrSensor(ifstream &file);
 	AttrSensor(const string &uuid, UMACoreObject *parent, int idx, bool isOriginPure, double diag);
+	AttrSensor(const AttrSensor &as, UMACoreObject *parent);
 
 	void pointersToNull();
 	void pointersToValues();

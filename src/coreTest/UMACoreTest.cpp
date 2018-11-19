@@ -166,6 +166,7 @@ TEST(agent_test, do_pruning_test) {
 
 TEST_F(AgentSavingLoading, agent_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST(snapshot_test, snapshotCreateSensorTest) {
@@ -469,6 +470,7 @@ TEST(snapshot_test, generateSignal) {
 
 TEST_F(SnapshotSavingLoading, snapshot_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST_F(AmperAndTestFixture, snapshot_amper_and_test1) {
@@ -778,6 +780,11 @@ TEST(dataManager_test, get_set_test) {
 	delete agent;
 }
 
+TEST_F(DataManagerSavingLoading, dm_save_load) {
+	savingAndLoading();
+	copying();
+}
+
 TEST_F(UMACoreDataFlowTestFixture, uma_core_dataflow_test1) {
 	EXPECT_THROW(testUmaCoreDataFlow(0, 5), UMAException);
 }
@@ -918,6 +925,7 @@ TEST(sensor_test, copy_amper_list_test) {
 
 TEST_F(SensorSavingLoading, sensor_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST(sensor_pair_test, sensor_pair_test) {
@@ -958,6 +966,7 @@ TEST(sensor_pair_test, sensor_pair_test) {
 
 TEST_F(SensorPairSavingLoading, sensor_pair_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST(attr_sensor_test, attr_sensor_test) {
@@ -997,10 +1006,12 @@ TEST(attr_sensor_test, attr_sensor_test) {
 
 TEST_F(AttrSensorSavingLoading, attr_sensor_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST_F(AttrSensorPairSavingLoading, attr_sensor_pair_save_load) {
 	savingAndLoading();
+	copying();
 }
 
 TEST(UMACoreObject_layering_test, UMACoreObject_layering_test) {
@@ -1089,6 +1100,10 @@ TEST(UMACoreObject_layering_test, UMACoreObject_layering_test) {
 
 TEST_F(UMASavingLoading, uma_save_load) {
 	savingAndLoading();
+}
+
+TEST_F(UMAAgentCopying, uma_agent_copying) {
+	copyingAgents();
 }
 
 int main(int argc, char** argv)

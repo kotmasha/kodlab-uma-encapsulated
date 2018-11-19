@@ -19,6 +19,7 @@ public:
 	Sensor(const string &uuid, UMACoreObject *parent, int idx);
 	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const double &total, int idx);
 	Sensor(const std::pair<string, string> &idPair, UMACoreObject *parent, const vector<double> &diag, int idx);
+	Sensor(const Sensor &sensor, UMACoreObject *parent);
 
 	//values and pointer operation
 	void valuesToPointers();
@@ -71,6 +72,7 @@ protected:
 	friend class SensorValuePointerConvertionTestFixture;
 	friend class SensorSavingLoading;
 	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 	//class SensorPair/Snapshot should be able to access every info of the Sensor
 };
 

@@ -32,12 +32,14 @@ private:
 	friend class UMACoreDataFlowTestFixture;
 	friend class SensorPairSavingLoading;
 	friend class UMASavingLoading;
+	friend class UMAAgentCopying;
 
 public:
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, double total);
 	SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j, double threshold, const vector<double> &w, const vector<bool> &b);
+	SensorPair(const SensorPair &sensorPair, UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j);
 	//init functions
 	void setWeightPointers(double *weights);
 	void setDirPointers(bool *dirs);

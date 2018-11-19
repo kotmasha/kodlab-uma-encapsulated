@@ -48,6 +48,44 @@ Snapshot::Snapshot(const string &uuid, UMACoreObject *parent, UMA_SNAPSHOT type)
 	snapshotLogger.info("A Snapshot " + _uuid + " is created, with type " + to_string(_type), this->getParentChain());
 }
 
+Snapshot::Snapshot(const Snapshot &snapshot, UMACoreObject *parent)
+	: UMACoreObject(snapshot._uuid, UMA_OBJECT::SNAPSHOT, parent) {
+	// clear whatever is from the parent, and replace it with whatever is in the agent
+	_ppm->clear();
+	_ppm->extend(snapshot._ppm);
+
+	_total = snapshot._total;
+	_total_ = snapshot._total_;
+	_threshold = snapshot._threshold;
+	_q = snapshot._q;
+	_initialSize = snapshot._initialSize;
+	_autoTarget = snapshot._autoTarget;
+	_propagateMask = snapshot._propagateMask;
+	_type = snapshot._type;
+	_delayCount = snapshot._delayCount;
+
+	for (int i = 0; i < snapshot._sensors.size(); ++i) {
+		Sensor *sensor = new Sensor(*snapshot._sensors[i], this);
+		addSensor(sensor);
+	}
+	_delaySensorHash = snapshot._delaySensorHash;
+
+	for (int i = 0; i < snapshot._sensorPairs.size(); ++i) {
+		Sensor * const sensorI = _sensors[snapshot._sensorPairs[i]->_sensor_i->_idx];
+		Sensor * const sensorJ = _sensors[snapshot._sensorPairs[i]->_sensor_j->_idx];
+		SensorPair *sensorPair = new SensorPair(*snapshot._sensorPairs[i], this, sensorI, sensorJ);
+		_sensorPairs.push_back(sensorPair);
+	}
+
+	_dm = new DataManager(*snapshot._dm, this);
+
+	_dm->createSensorsToArraysIndex(0, _dm->_sensorSize, _sensors);
+	_dm->createSensorPairsToArraysIndex(0, _dm->_sensorSize, _sensorPairs);
+	_dm->copySensorsToArrays(0, _dm->_sensorSize, _sensors);
+	_dm->copySensorPairsToArrays(0, _dm->_sensorSize, _sensorPairs);
+
+	snapshotLogger.debug("snapshot is is copied with id=" + _uuid, getParentChain());
+}
 
 Snapshot::~Snapshot(){
 	try {
@@ -138,18 +176,17 @@ void Snapshot::deleteSensor(const string &sensorId) {
 }
 
 /*
-This function is adding a dup sensor to the snapshot, and copy the important value to it
+This function is adding an existing sensor to the snapshot
 */
 Sensor *Snapshot::addSensor(Sensor * const sensor) {
-	std::pair<string, string> idPairs = { sensor->_m->_uuid, sensor->_cm->_uuid };
-	vector<double> diag;
-	vector<vector<double>> w;
-	vector<vector<bool>> b;
+	if (_sensorIdx.find(sensor->_m->_uuid) != _sensorIdx.end() && _sensorIdx.find(sensor->_cm->_uuid) != _sensorIdx.end()) {
+		throw UMADuplicationException("Cannot create a duplicate sensor, sensorId=[" + sensor->_m->_uuid + ", " + sensor->_cm->_uuid + "]", false, &snapshotLogger, this->getParentChain());
+	}
 
-	Sensor *newSensor = createSensor(idPairs, diag, w, b);
-	newSensor->mergeSensor(sensor);
-
-	return newSensor;
+	_sensorIdx[sensor->_m->_uuid] = sensor;
+	_sensorIdx[sensor->_cm->_uuid] = sensor;
+	_sensors.push_back(sensor);
+	snapshotLogger.debug("A sensor with sensorId=" + sensor->_uuid + " is added to the snapshot", getParentChain());
 }
 
 vector<vector<string> > Snapshot::getSensorInfo() const {
@@ -167,6 +204,7 @@ This function is merging snapshot with the current snapshot, and the merging rul
 1 only copy sensor from snapshot, that exist in current snapshot
 2 for the sensor that is copied, go through the amper list, and remove any sensor that is not in the list from current snapshot
 */
+/*
 void Snapshot::mergeSnapshot(Snapshot * const snapshot) {
 	// 1st copy all initial sensors from snapshot to current snapshot, if current snapshot has them.
 	// only copy with basic info
@@ -206,76 +244,6 @@ void Snapshot::mergeSnapshot(Snapshot * const snapshot) {
 		currentSensorPair->mergeSensorPair(sensorPair);
 	}
 	//TODO, check for _sensorIdx, hash, amper, and other stuff
-}
-
-/*
-This function is copying the snapshot data to the current one, but only copying the sensor/sensorpair that already exist in current snapshot
-*/
-/*
-void Snapshot::copy_test_data(Snapshot *snapshot) {
-	for (int i = 0; i < _sensor_num; ++i) {
-		//the current sensor to look at
-		Sensor *sensor = _sensors[i];
-		//the current sensor id
-		string sensor_id = sensor->_uuid;
-		if (snapshot->_sensorIdx.find(sensor_id) != snapshot->_sensorIdx.end()) {
-			//if the current sensor id also in the other snapshot
-
-			//copy sensors
-			//get the 'same' sensor in the other snapshot
-			Sensor *c_sensor = snapshot->_sensorIdx[sensor_id];
-			//copy the value
-			sensor->copy_data(c_sensor);
-			//reconstruct the amper list
-			vector<int> amper_list;
-			for (int i = 0; i < c_sensor->_amper.size(); ++i) {
-				int idx = c_sensor->_amper[i];
-				bool isOriginPure = (idx % 2 == 0);
-				Sensor *a_sensor = _sensors[idx / 2];
-				if (_sensorIdx.find(a_sensor->_uuid) != _sensorIdx.end()) {
-					if (isOriginPure) {
-						amper_list.push_back(_sensorIdx[a_sensor->_uuid]->_m->_idx);
-						_log->debug() << "found the amper sensor(" + a_sensor->_uuid + ") in Pure position in new test";
-					}
-					else {
-						amper_list.push_back(_sensorIdx[a_sensor->_uuid]->_cm->_idx);
-						_log->debug() << "found the amper sensor(" + a_sensor->_uuid + ") in Complementary position in new test";
-					}
-				}
-				else {
-					_log->debug() << "Cannot found the amper sensor(" + a_sensor->_uuid + ") in new test";
-				}
-			}
-			//set the amper list
-			sensor->setAmperList(amper_list);
-			_log->debug() << "Sensor(" + sensor_id + ") data are copied";
-
-			//copy sensor pairs
-			for (int j = 0; j <= i; ++j) {
-				//go through all the sensor pair list of the current sensor
-				//the current other sensor
-				Sensor *s = _sensors[j];
-				if (snapshot->_sensorIdx.find(s->_uuid) != snapshot->_sensorIdx.end()) {
-					//if the other sensor id also in the other snapshot
-					//get the current sensor pair
-					SensorPair *sensor_pair = _sensorPairs[ind(i, j)];
-					//get the other 'same' sensor
-					Sensor *c_s = snapshot->_sensorIdx[s->_uuid];
-					//get the corresponding sensorpair in the other snapshot, the idx of the sensorpair in the other one maybe different
-					SensorPair *c_sensor_pair = snapshot->getSensorPair(c_sensor, c_s);
-					//copy the data
-					sensor_pair->copy_data(c_sensor_pair);
-					_log->debug() << "Sensor Pair(sensor1=" + sensor_id + ", sensor2=" + s->_uuid + ") are copied";
-				}
-				else {
-					_log->debug() << "Cannot find the sensor(" + s->_uuid + ") while copying sensor pair, must be a new sensor";
-				}
-			}//j
-		}//if
-		else {
-			_log->debug() << "Cannot find the sensor(" + sensor_id + ") while copying sensor, must be a new sensor";
-		}
-	}//i
 }
 */
 
@@ -929,6 +897,9 @@ void Snapshot::saveSnapshot(ofstream &file) {
 	file.write(reinterpret_cast<const char *>(&_type), sizeof(UMA_SNAPSHOT));
 	file.write(reinterpret_cast<const char *>(&_initialSize), sizeof(int));
 
+	savingParameters(file);
+	_dm->saveDM(file);
+
 	int sensorSize = _sensors.size();
 	int sensorPairSize = _sensorPairs.size();
 	file.write(reinterpret_cast<const char *>(&sensorSize), sizeof(int));
@@ -965,27 +936,81 @@ Snapshot *Snapshot::loadSnapshot(ifstream &file, UMACoreObject *parent) {
 	default: snapshot = new Snapshot(uuid, parent);
 	}
 
+	snapshot->loadingParameters(file);
+
+	DataManager *dm = DataManager::loadDM(file, snapshot);
+	delete snapshot->_dm;
+	snapshot->_dm = dm;
+
 	int sensorSize = -1;
 	int sensorPairSize = -1;
 	file.read((char *)(&sensorSize), sizeof(int));
 	file.read((char *)(&sensorPairSize), sizeof(int));
 	snapshotLogger.debug("will load " + to_string(sensorSize) + " sensors and " + to_string(sensorPairSize) + " sensor pairs", snapshot->getParentChain());
-
+	
 	for (int i = 0; i < sensorSize; ++i) {
-		snapshot->_sensors.push_back(Sensor::loadSensor(file, snapshot));
+		Sensor *sensor = Sensor::loadSensor(file, snapshot);
+		snapshot->addSensor(sensor);
+		if (i >= initialSize) {
+			vector<bool> delayList = SignalUtil::intIdxToBoolSignal(sensor->_amper, sensorSize * 2);
+			size_t v = snapshot->delayHash(SignalUtil::trimSignal(delayList));
+			if (snapshot->_delaySensorHash.end() != snapshot->_delaySensorHash.find(v)) {
+				snapshotLogger.info("Find an existing delayed sensor, will skip creating current one, snapshotId=" + snapshot->_uuid, snapshot->getParentChain());
+				continue;
+			}
+			snapshot->_delaySensorHash.insert(v);
+		}
 	}
+
 	for (int i = 0; i < sensorPairSize; ++i) {
 		snapshot->_sensorPairs.push_back(SensorPair::loadSensorPair(file, snapshot->_sensors, snapshot));
 	}
 
-	if (snapshot->_sensors.size() != initialSize) {
-		snapshotLogger.error("The initialSize=" + to_string(initialSize) + 
-			" is not matching the _sensors.size=" + to_string(snapshot->_sensors.size()), snapshot->getParentChain());
-	}
-	snapshot->setInitialSize();
+	snapshot->setInitialSize(initialSize);
+	
+	dm->reallocateMemory(snapshot->_total, sensorSize);
+	dm->createSensorsToArraysIndex(0, sensorSize, snapshot->_sensors);
+	dm->createSensorPairsToArraysIndex(0, sensorSize, snapshot->_sensorPairs);
+	dm->copySensorsToArrays(0, sensorSize, snapshot->_sensors);
+	dm->copySensorPairsToArrays(0, sensorSize, snapshot->_sensorPairs);
 
 	snapshotLogger.info("snapshot is successfully loaded!", snapshot->getParentChain());
 	return snapshot;
+}
+
+void Snapshot::savingParameters(ofstream &file) {
+	//saving q
+	_ppm->add("_q", to_string(_q));
+	//saving threshold
+	_ppm->add("_threshold", to_string(_threshold));
+	//saving total
+	_ppm->add("_total", to_string(_total));
+	//saving autoTarget
+	_ppm->add("_autoTarget", to_string(_autoTarget));
+	//saving propagateMask
+	_ppm->add("_propagateMask", to_string(_propagateMask));
+	//saving delayed Count
+	_ppm->add("_delayCount", to_string(_delayCount));
+
+	_ppm->save(file);
+}
+
+void Snapshot::loadingParameters(ifstream &file) {
+	_ppm->load(file);
+	
+	//loading q
+	_q = stod(_ppm->get("_q"));
+	//loading threshold
+	_threshold = stod(_ppm->get("_threshold"));
+	//loading total
+	_total = stod(_ppm->get("_total"));
+	_total_ = _total;
+	//loading autoTarget
+	_autoTarget = StrUtil::stringToBool(_ppm->get("_autoTarget"));
+	//loading propagateMask
+	_propagateMask = StrUtil::stringToBool(_ppm->get("_propagateMask"));
+	//loading delayCount
+	_delayCount = stoi(_ppm->get("_delayCount"));
 }
 
 /*
@@ -998,6 +1023,10 @@ Snapshot *Snapshot::loadSnapshot(ifstream &file, UMACoreObject *parent) {
 
 SnapshotQualitative::SnapshotQualitative(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_QUALITATIVE) {
+}
+
+SnapshotQualitative::SnapshotQualitative(const SnapshotQualitative &snapshot, UMACoreObject *parent)
+	: Snapshot(snapshot, parent) {
 }
 
 SnapshotQualitative::~SnapshotQualitative() {}
@@ -1101,6 +1130,11 @@ SnapshotDiscounted::SnapshotDiscounted(const string &uuid, UMACoreObject *parent
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_DISCOUNTED) {
 }
 
+SnapshotDiscounted::SnapshotDiscounted(const SnapshotDiscounted &snapshot, UMACoreObject *parent)
+	: Snapshot(snapshot, parent) {
+
+}
+
 SnapshotDiscounted::~SnapshotDiscounted() {}
 
 void SnapshotDiscounted::updateTotal(double phi, bool active) {
@@ -1125,6 +1159,10 @@ void SnapshotDiscounted::updateQ() {
 
 SnapshotEmpirical::SnapshotEmpirical(const string &uuid, UMACoreObject *parent)
 	:Snapshot(uuid, parent, UMA_SNAPSHOT::SNAPSHOT_EMPIRICAL) {
+}
+
+SnapshotEmpirical::SnapshotEmpirical(const SnapshotEmpirical &snapshot, UMACoreObject *parent)
+	: Snapshot(snapshot, parent) {
 }
 
 SnapshotEmpirical::~SnapshotEmpirical() {}

@@ -18,7 +18,7 @@ public:
 	void saveExperiment();
 	static Experiment *loadExperiment(const string &experimentId);
 	const vector<vector<string>> getAgentInfo();
-	void mergeExperiment(Experiment * const exp);
+	//void mergeExperiment(Experiment * const exp);
 
 	friend class ExperimentSavingLoading;
 	friend class UMASavingLoading;

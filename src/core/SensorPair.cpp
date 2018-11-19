@@ -61,6 +61,17 @@ SensorPair::SensorPair(UMACoreObject *parent, Sensor* const sensor_i, Sensor* co
 	sensorPairLogger.info("Sensor pair is constructed with weights and dirs, sid1=" + _sensor_i->_uuid + ", sid2=" + _sensor_j->_uuid, this->getParentChain());
 }
 
+SensorPair::SensorPair(const SensorPair &sensorPair, UMACoreObject *parent, Sensor* const sensor_i, Sensor* const sensor_j)
+	: UMACoreObject(sensorPair._uuid, UMA_OBJECT::SENSOR_PAIR, parent), _sensor_i(sensor_i), _sensor_j(sensor_j) {
+	_vthreshold = sensorPair._vthreshold;
+	mij = new AttrSensorPair(*sensorPair.mij, this, _sensor_i->_m, _sensor_j->_m);
+	mi_j = new AttrSensorPair(*sensorPair.mi_j, this, _sensor_i->_m, _sensor_j->_cm);
+	m_ij = new AttrSensorPair(*sensorPair.m_ij, this, _sensor_i->_cm, _sensor_j->_m);
+	m_i_j = new AttrSensorPair(*sensorPair.m_i_j, this, _sensor_i->_cm, _sensor_j->_cm);
+
+	sensorPairLogger.debug("A sensor pair is copied with id=" + _uuid);
+}
+
 /*
 This function is setting the weight pointers
 */

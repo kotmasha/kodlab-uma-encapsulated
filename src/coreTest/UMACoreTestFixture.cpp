@@ -488,7 +488,7 @@ SensorSavingLoading::SensorSavingLoading() {
 SensorSavingLoading::~SensorSavingLoading() {
 	SysUtil::UMARemove(fileName);
 
-	delete s1, s2;
+	delete s1, s2, s3;
 }
 
 void SensorSavingLoading::savingAndLoading() {
@@ -502,9 +502,19 @@ void SensorSavingLoading::savingAndLoading() {
 	s2 = Sensor::loadSensor(input, nullptr);
 	input.close();
 
-	EXPECT_EQ(s1->_uuid, s2->_uuid);
-	EXPECT_EQ(s1->_idx, s2->_idx);
-	EXPECT_EQ(s1->_amper, s2->_amper);
+	asserting(s1, s2);
+}
+
+void SensorSavingLoading::copying() {
+	s3 = new Sensor(*s1, nullptr);
+
+	asserting(s1, s3);
+}
+
+void SensorSavingLoading::asserting(Sensor *si, Sensor *sj) {
+	EXPECT_EQ(si->_uuid, sj->_uuid);
+	EXPECT_EQ(si->_idx, sj->_idx);
+	EXPECT_EQ(si->_amper, sj->_amper);
 }
 
 AttrSensorSavingLoading::AttrSensorSavingLoading() {
@@ -516,7 +526,7 @@ AttrSensorSavingLoading::AttrSensorSavingLoading() {
 AttrSensorSavingLoading::~AttrSensorSavingLoading() {
 	SysUtil::UMARemove(fileName);
 
-	delete as1, as2;
+	delete as1, as2, as3;
 }
 
 void AttrSensorSavingLoading::savingAndLoading() {
@@ -530,11 +540,21 @@ void AttrSensorSavingLoading::savingAndLoading() {
 	as2 = AttrSensor::loadAttrSensor(input, nullptr);
 	input.close();
 
-	EXPECT_EQ(as1->_uuid, as2->_uuid);
-	EXPECT_EQ(as1->_idx, as2->_idx);
-	EXPECT_EQ(as1->_isOriginPure, as2->_isOriginPure);
-	EXPECT_EQ(as1->_vdiag, as2->_vdiag);
-	EXPECT_EQ(as1->_vdiag_, as2->_vdiag_);
+	asserting(as1, as2);
+}
+
+void AttrSensorSavingLoading::copying() {
+	as3 = new AttrSensor(*as1, nullptr);
+
+	asserting(as1, as3);
+}
+
+void AttrSensorSavingLoading::asserting(AttrSensor *asi, AttrSensor *asj) {
+	EXPECT_EQ(asi->_uuid, asj->_uuid);
+	EXPECT_EQ(asi->_idx, asj->_idx);
+	EXPECT_EQ(asi->_isOriginPure, asj->_isOriginPure);
+	EXPECT_EQ(asi->_vdiag, asj->_vdiag);
+	EXPECT_EQ(asi->_vdiag_, asj->_vdiag_);
 }
 
 SensorPairSavingLoading::SensorPairSavingLoading() {
@@ -552,7 +572,7 @@ SensorPairSavingLoading::SensorPairSavingLoading() {
 SensorPairSavingLoading::~SensorPairSavingLoading() {
 	SysUtil::UMARemove(fileName);
 
-	delete sp1, sp2;
+	delete sp1, sp2, sp3;
 	delete s1, s2;
 }
 
@@ -569,10 +589,20 @@ void SensorPairSavingLoading::savingAndLoading() {
 	sp2 = SensorPair::loadSensorPair(input, sensors, nullptr);
 	input.close();
 
-	EXPECT_EQ(sp1->_uuid, sp2->_uuid);
-	EXPECT_EQ(sp1->_vthreshold, sp2->_vthreshold);
-	EXPECT_EQ(sp1->_sensor_i, sp2->_sensor_i);
-	EXPECT_EQ(sp1->_sensor_j, sp2->_sensor_j);
+	asserting(sp1, sp2);
+}
+
+void SensorPairSavingLoading::copying() {
+	sp3 = new SensorPair(*sp1, nullptr, s1, s2);
+
+	asserting(sp1, sp3);
+}
+
+void SensorPairSavingLoading::asserting(SensorPair *spi, SensorPair *spj) {
+	EXPECT_EQ(spi->_uuid, spj->_uuid);
+	EXPECT_EQ(spi->_vthreshold, spj->_vthreshold);
+	EXPECT_EQ(spi->_sensor_i, spj->_sensor_i);
+	EXPECT_EQ(spi->_sensor_j, spj->_sensor_j);
 }
 
 AttrSensorPairSavingLoading::AttrSensorPairSavingLoading() {
@@ -591,7 +621,7 @@ AttrSensorPairSavingLoading::AttrSensorPairSavingLoading() {
 AttrSensorPairSavingLoading::~AttrSensorPairSavingLoading() {
 	SysUtil::UMARemove(fileName);
 
-	delete asp1, asp2;
+	delete asp1, asp2, asp3;
 	delete as1, as2;
 }
 
@@ -606,10 +636,55 @@ void AttrSensorPairSavingLoading::savingAndLoading() {
 	asp2 = AttrSensorPair::loadAttrSensorPair(input, as1, as2, true, nullptr);
 	input.close();
 
-	EXPECT_EQ(asp1->_uuid, asp2->_uuid);
-	EXPECT_EQ(asp1->_attrSensorI, asp2->_attrSensorI);
-	EXPECT_EQ(asp1->_attrSensorJ, asp2->_attrSensorJ);
-	EXPECT_EQ(asp1->_vw, asp2->_vw);
+	asserting(asp1, asp2);
+}
+
+void AttrSensorPairSavingLoading::copying() {
+	asp3 = new AttrSensorPair(*asp1, nullptr, as1, as2);
+
+	asserting(asp1, asp3);
+}
+
+void AttrSensorPairSavingLoading::asserting(AttrSensorPair *aspi, AttrSensorPair *aspj) {
+	EXPECT_EQ(aspi->_uuid, aspj->_uuid);
+	EXPECT_EQ(aspi->_attrSensorI, aspj->_attrSensorI);
+	EXPECT_EQ(aspi->_attrSensorJ, aspj->_attrSensorJ);
+	EXPECT_EQ(aspi->_vw, aspj->_vw);
+}
+
+DataManagerSavingLoading::DataManagerSavingLoading() {
+	fileName = "dm_test.uma";
+
+	dm1 = new DataManager(nullptr);
+	dm1->_memoryExpansion = 0.2;
+}
+
+DataManagerSavingLoading::~DataManagerSavingLoading() {
+	SysUtil::UMARemove(fileName);
+
+	delete dm1, dm2;
+}
+
+void DataManagerSavingLoading::savingAndLoading() {
+	ofstream output;
+	output.open(fileName, ios::binary | ios::out);
+	dm1->saveDM(output);
+	output.close();
+
+	ifstream input;
+	input.open(fileName, ios::binary | ios::in);
+	dm2 = DataManager::loadDM(input, nullptr);
+	input.close();
+
+	EXPECT_EQ(dm1->_uuid, dm2->_uuid);
+	EXPECT_EQ(dm1->_memoryExpansion, dm2->_memoryExpansion);
+}
+
+void DataManagerSavingLoading::copying() {
+	DataManager *dm3 = new DataManager(*dm1, nullptr);
+
+	EXPECT_EQ(dm1->_uuid, dm3->_uuid);
+	EXPECT_EQ(dm1->_memoryExpansion, dm3->_memoryExpansion);
 }
 
 SnapshotSavingLoading::SnapshotSavingLoading() {
@@ -628,6 +703,32 @@ SnapshotSavingLoading::SnapshotSavingLoading() {
 	s2->setInitialSize();
 	s3->setInitialSize();
 	s4->setInitialSize();
+
+	s1->_q = 0.12;
+	s2->_q = 0.23;
+	s3->_q = 0.34;
+	s4->_q = 0.45;
+
+	s1->_threshold = 0.001;
+	s2->_threshold = 0.002;
+	s3->_threshold = 0.003;
+	s4->_threshold = 0.004;
+
+	s1->_autoTarget = true;
+	s2->_autoTarget = false;
+	s3->_autoTarget = false;
+	s4->_autoTarget = true;
+
+	s1->_propagateMask = false;
+	s2->_propagateMask = true;
+	s3->_propagateMask = true;
+	s4->_propagateMask = false;
+
+	s1->_delayCount = 10;
+	s2->_delayCount = 100;
+	s3->_delayCount = 1000;
+	s4->_delayCount = 10000;
+	s1->_delayCount = 10;
 }
 
 SnapshotSavingLoading::~SnapshotSavingLoading() {
@@ -637,7 +738,7 @@ SnapshotSavingLoading::~SnapshotSavingLoading() {
 	SysUtil::UMARemove(s4FileName);
 
 	delete agent1, agent2;
-	delete s1, s2, s3, s4, s5, s6, s7, s8;
+	delete s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12;
 }
 
 void SnapshotSavingLoading::savingAndLoading() {
@@ -689,6 +790,88 @@ void SnapshotSavingLoading::savingAndLoading() {
 	EXPECT_EQ(s2->_initialSize, s6->_initialSize);
 	EXPECT_EQ(s3->_initialSize, s7->_initialSize);
 	EXPECT_EQ(s4->_initialSize, s8->_initialSize);
+
+	EXPECT_EQ(s1->_q, s5->_q);
+	EXPECT_EQ(s2->_q, s6->_q);
+	EXPECT_EQ(s3->_q, s7->_q);
+	EXPECT_EQ(s4->_q, s8->_q);
+
+	EXPECT_EQ(s1->_total, s5->_total);
+	EXPECT_EQ(s2->_total, s6->_total);
+	EXPECT_EQ(s3->_total, s7->_total);
+	EXPECT_EQ(s4->_total, s8->_total);
+
+	EXPECT_EQ(s1->_threshold, s5->_threshold);
+	EXPECT_EQ(s2->_threshold, s6->_threshold);
+	EXPECT_EQ(s3->_threshold, s7->_threshold);
+	EXPECT_EQ(s4->_threshold, s8->_threshold);
+
+	EXPECT_EQ(s1->_autoTarget, s5->_autoTarget);
+	EXPECT_EQ(s2->_autoTarget, s6->_autoTarget);
+	EXPECT_EQ(s3->_autoTarget, s7->_autoTarget);
+	EXPECT_EQ(s4->_autoTarget, s8->_autoTarget);
+
+	EXPECT_EQ(s1->_propagateMask, s5->_propagateMask);
+	EXPECT_EQ(s2->_propagateMask, s6->_propagateMask);
+	EXPECT_EQ(s3->_propagateMask, s7->_propagateMask);
+	EXPECT_EQ(s4->_propagateMask, s8->_propagateMask);
+
+	EXPECT_EQ(s1->_delayCount, s5->_delayCount);
+	EXPECT_EQ(s2->_delayCount, s6->_delayCount);
+	EXPECT_EQ(s3->_delayCount, s7->_delayCount);
+	EXPECT_EQ(s4->_delayCount, s8->_delayCount);
+}
+
+void SnapshotSavingLoading::copying() {
+	s9 = new Snapshot(*s1, agent2);
+	s10 = new SnapshotQualitative(*dynamic_cast<SnapshotQualitative*>(s2), agent2);
+	s11 = new SnapshotEmpirical(*dynamic_cast<SnapshotEmpirical*>(s3), agent2);
+	s12 = new SnapshotDiscounted(*dynamic_cast<SnapshotDiscounted*>(s4), agent2);
+
+	EXPECT_EQ(s1->_type, s9->_type);
+	EXPECT_EQ(s2->_type, s10->_type);
+	EXPECT_EQ(s3->_type, s11->_type);
+	EXPECT_EQ(s4->_type, s12->_type);
+
+	EXPECT_EQ(s1->_uuid, s9->_uuid);
+	EXPECT_EQ(s2->_uuid, s10->_uuid);
+	EXPECT_EQ(s3->_uuid, s11->_uuid);
+	EXPECT_EQ(s4->_uuid, s12->_uuid);
+
+	EXPECT_EQ(s1->_initialSize, s9->_initialSize);
+	EXPECT_EQ(s2->_initialSize, s10->_initialSize);
+	EXPECT_EQ(s3->_initialSize, s11->_initialSize);
+	EXPECT_EQ(s4->_initialSize, s12->_initialSize);
+
+	EXPECT_EQ(s1->_q, s9->_q);
+	EXPECT_EQ(s2->_q, s10->_q);
+	EXPECT_EQ(s3->_q, s11->_q);
+	EXPECT_EQ(s4->_q, s12->_q);
+
+	EXPECT_EQ(s1->_total, s5->_total);
+	EXPECT_EQ(s2->_total, s6->_total);
+	EXPECT_EQ(s3->_total, s7->_total);
+	EXPECT_EQ(s4->_total, s8->_total);
+
+	EXPECT_EQ(s1->_threshold, s9->_threshold);
+	EXPECT_EQ(s2->_threshold, s10->_threshold);
+	EXPECT_EQ(s3->_threshold, s11->_threshold);
+	EXPECT_EQ(s4->_threshold, s12->_threshold);
+
+	EXPECT_EQ(s1->_autoTarget, s9->_autoTarget);
+	EXPECT_EQ(s2->_autoTarget, s10->_autoTarget);
+	EXPECT_EQ(s3->_autoTarget, s11->_autoTarget);
+	EXPECT_EQ(s4->_autoTarget, s12->_autoTarget);
+
+	EXPECT_EQ(s1->_propagateMask, s9->_propagateMask);
+	EXPECT_EQ(s2->_propagateMask, s10->_propagateMask);
+	EXPECT_EQ(s3->_propagateMask, s11->_propagateMask);
+	EXPECT_EQ(s4->_propagateMask, s12->_propagateMask);
+
+	EXPECT_EQ(s1->_delayCount, s9->_delayCount);
+	EXPECT_EQ(s2->_delayCount, s10->_delayCount);
+	EXPECT_EQ(s3->_delayCount, s11->_delayCount);
+	EXPECT_EQ(s4->_delayCount, s12->_delayCount);
 }
 
 AgentSavingLoading::AgentSavingLoading() {
@@ -709,7 +892,7 @@ AgentSavingLoading::~AgentSavingLoading() {
 	SysUtil::UMARemove(a3FileName);
 	SysUtil::UMARemove(a4FileName);
 
-	delete a1, a2, a3, a4, a5, a6, a7, a8;
+	delete a1, a2, a3, a4, a5, a6, a7, a8,a9, a10, a11, a12;
 }
 
 void AgentSavingLoading::savingAndLoading() {
@@ -758,6 +941,23 @@ void AgentSavingLoading::savingAndLoading() {
 	EXPECT_EQ(a4->_uuid, a8->_uuid);
 }
 
+void AgentSavingLoading::copying() {
+	a9 = new Agent(*a1, nullptr, a1->_uuid);
+	a10 = new AgentQualitative(*dynamic_cast<AgentQualitative*>(a2), nullptr, a2->_uuid);
+	a11 = new AgentDiscounted(*dynamic_cast<AgentDiscounted*>(a3), nullptr, a3->_uuid);
+	a12 = new AgentEmpirical(*dynamic_cast<AgentEmpirical*>(a4), nullptr, a4->_uuid);
+
+	EXPECT_EQ(a1->_type, a9->_type);
+	EXPECT_EQ(a2->_type, a10->_type);
+	EXPECT_EQ(a3->_type, a11->_type);
+	EXPECT_EQ(a4->_type, a12->_type);
+
+	EXPECT_EQ(a1->_uuid, a9->_uuid);
+	EXPECT_EQ(a2->_uuid, a10->_uuid);
+	EXPECT_EQ(a3->_uuid, a11->_uuid);
+	EXPECT_EQ(a4->_uuid, a12->_uuid);
+}
+
 ExperimentSavingLoading::ExperimentSavingLoading() {
 	exp1 = new Experiment("experiment0");
 }
@@ -773,7 +973,7 @@ void ExperimentSavingLoading::savingAndLoading() {
 
 	exp2 = Experiment::loadExperiment(exp1->getUUID());
 
-	EXPECT_EQ(exp1->_uuid, exp2->_uuid);
+	EXPECT_EQ("load_" + exp1->_uuid, exp2->_uuid);
 	EXPECT_EQ(exp1->_agents.size(), exp2->_agents.size());
 }
 
@@ -786,6 +986,13 @@ UMASavingLoading::UMASavingLoading() {
 	Snapshot *s2 = a1->createSnapshot("snapshot2");
 	Snapshot *s3 = a2->createSnapshot("snapshot3");
 	Snapshot *s4 = a2->createSnapshot("snapshot4");
+
+	s1->_autoTarget = true;
+	s2->_propagateMask = false;
+	s3->_threshold = 0.02;
+	s4->_q = 0.22;
+	s1->_delayCount = 10;
+	s2->_q = 0.29;
 
 	std::pair<string, string> sList1 = { "s1", "cs1" };
 	std::pair<string, string> sList2 = { "s2", "cs2" };
@@ -808,6 +1015,10 @@ UMASavingLoading::UMASavingLoading() {
 	s2->setInitialSize();
 	s3->setInitialSize();
 	s4->setInitialSize();
+
+	vector<vector<bool>> lists = { {false, true, true, false} };
+	vector<std::pair<string, string>> pairs = { {"delay1", "delay2"} };
+	s1->delays(lists, pairs);
 }
 
 UMASavingLoading::~UMASavingLoading() {
@@ -816,12 +1027,16 @@ UMASavingLoading::~UMASavingLoading() {
 	delete exp1, exp2;
 }
 
+void assertingExperiment(Experiment *exp1, Experiment *exp2) {
+
+}
+
 void UMASavingLoading::savingAndLoading() {
 	exp1->saveExperiment();
 
 	exp2 = Experiment::loadExperiment(exp1->getUUID());
 
-	EXPECT_EQ(exp1->_uuid, exp2->_uuid);
+	EXPECT_EQ("load_" + exp1->_uuid, exp2->_uuid);
 	for (auto agentIt = exp1->_agents.begin(); agentIt != exp1->_agents.end(); ++agentIt) {
 		string agentName = agentIt->first;
 		Agent *agent1 = exp1->_agents[agentName], *agent2 = exp2->_agents[agentName];
@@ -834,6 +1049,37 @@ void UMASavingLoading::savingAndLoading() {
 			EXPECT_EQ(snapshot1->_type, snapshot2->_type);
 			EXPECT_EQ(snapshot1->_uuid, snapshot2->_uuid);
 			EXPECT_EQ(snapshot1->_initialSize, snapshot2->_initialSize);
+			
+			EXPECT_EQ(snapshot1->_q, snapshot2->_q);
+			EXPECT_EQ(snapshot1->_threshold, snapshot2->_threshold);
+			EXPECT_EQ(snapshot1->_total, snapshot2->_total);
+			EXPECT_EQ(snapshot1->_autoTarget, snapshot2->_autoTarget);
+			EXPECT_EQ(snapshot1->_propagateMask, snapshot2->_propagateMask);
+			EXPECT_EQ(snapshot1->_delayCount, snapshot2->_delayCount);
+
+			for (auto idxIt = snapshot1->_sensorIdx.begin(); idxIt != snapshot1->_sensorIdx.end(); ++idxIt) {
+				string sensorName = idxIt->first;
+				EXPECT_NO_THROW(snapshot2->_sensorIdx[sensorName]);
+			}
+
+			for (auto delayHashIt = snapshot1->_delaySensorHash.begin(); delayHashIt != snapshot1->_delaySensorHash.end(); ++delayHashIt) {
+				size_t hash = *delayHashIt;
+				EXPECT_NE(snapshot2->_delaySensorHash.find(hash), snapshot2->_delaySensorHash.end());
+			}
+
+			DataManager *dm1 = snapshot1->_dm, *dm2 = snapshot2->_dm;
+			EXPECT_EQ(dm1->_uuid, dm2->_uuid);
+			EXPECT_EQ(dm1->_memoryExpansion, dm2->_memoryExpansion);
+			EXPECT_EQ(dm1->_sensorSize, dm2->_sensorSize);
+
+			for (int i = 0; i < dm1->_attrSensor2dSize; ++i) {
+				// testing weight
+				EXPECT_EQ(dm1->h_weights[i], dm2->h_weights[i]);
+			}
+			for (int i = 0; i < dm1->_sensor2dSize; ++i) {
+				// testing threshold
+				EXPECT_EQ(dm1->h_thresholds[i], dm2->h_thresholds[i]);
+			}
 
 			for (int i = 0; i < snapshot1->_sensors.size(); ++i) {
 				Sensor *sensor1 = snapshot1->_sensors[i], *sensor2 = snapshot2->_sensors[i];
@@ -871,6 +1117,187 @@ void UMASavingLoading::savingAndLoading() {
 				EXPECT_EQ(sensorPair1->m_i_j->_uuid, sensorPair2->m_i_j->_uuid);
 				EXPECT_EQ(sensorPair1->m_i_j->_vw, sensorPair2->m_i_j->_vw);
 			}
+		}
+	}
+}
+
+UMAAgentCopying::UMAAgentCopying() {
+	exp = new Experiment("test_experiment");
+
+	Agent *a1 = exp->createAgent("agent1", UMA_AGENT::AGENT_QUALITATIVE);
+	Agent *a2 = exp->createAgent("agent2", UMA_AGENT::AGENT_DISCOUNTED);
+
+	Snapshot *s1 = a1->createSnapshot("snapshot1");
+	Snapshot *s2 = a1->createSnapshot("snapshot2");
+	Snapshot *s3 = a2->createSnapshot("snapshot3");
+	Snapshot *s4 = a2->createSnapshot("snapshot4");
+
+	s1->_autoTarget = true;
+	s2->_propagateMask = false;
+	s3->_threshold = 0.02;
+	s4->_q = 0.22;
+	s1->_delayCount = 10;
+	s2->_q = 0.29;
+
+	std::pair<string, string> sList1 = { "s1", "cs1" };
+	std::pair<string, string> sList2 = { "s2", "cs2" };
+	std::pair<string, string> sList3 = { "s3", "cs3" };
+
+	vector<double> diag1 = { 0.4, 0.6 };
+	vector<double> diag2 = { 0.3, 0.7 };
+	vector<vector<double>> w1 = { { 0.2, 0.2, 0,0, 0.6 } }, w2 = { { 0.2, 0.1, 0.3, 0.4 },{ 0.0, 0.5, 0.2, 0.3 } };
+	vector<vector<double>> w3 = { { 0,9, 0.1, 0, 0 },{ 0.2, 0.3, 0.1, 0.4 },{ 0.7, 0.2, 0.05, 0.05 } };
+	vector<vector<bool>> b1 = { { true, false, false, true } }, b2 = { { false, false, true, true },{ true, true, false, false } };
+	vector<vector<bool>> b3 = { { false, false, false, false },{ true, false, true, false },{ false, true, false, false } };
+	s1->createSensor(sList1, diag1, w1, b1);
+	s1->createSensor(sList3, diag2, w2, b2);
+	s2->createSensor(sList2, diag2, w1, b1);
+	s3->createSensor(sList1, diag1, w1, b1);
+	s3->createSensor(sList2, diag2, w2, b2);
+	s3->createSensor(sList3, diag1, w3, b3);
+
+	s1->setInitialSize();
+	s2->setInitialSize();
+	s3->setInitialSize();
+	s4->setInitialSize();
+
+	vector<vector<bool>> lists = { { false, true, true, false } };
+	vector<std::pair<string, string>> pairs = { { "delay1", "delay2" } };
+	s1->delays(lists, pairs);
+}
+
+UMAAgentCopying::~UMAAgentCopying() {
+	delete exp;
+}
+
+void UMAAgentCopying::copyingAgents() {
+	AgentQualitative *agent1 = dynamic_cast<AgentQualitative*>(exp->getAgent("agent1"));
+	AgentDiscounted *agent2 = dynamic_cast<AgentDiscounted*>(exp->getAgent("agent2"));
+
+	Agent *cAgent1 = new AgentQualitative(*agent1, nullptr, "agent1");
+	Agent *cAgent2 = new AgentDiscounted(*agent2, nullptr, "agent2");
+
+	assertingAgents(agent1, cAgent1);
+	assertingAgents(agent2, cAgent2);
+}
+
+void UMAAgentCopying::assertingAgents(Agent *agent1, Agent *agent2) {
+	EXPECT_EQ(agent1->_type, agent2->_type);
+	EXPECT_EQ(agent1->_uuid, agent2->_uuid);
+
+	for (auto snapshotIt = agent1->_snapshots.begin(); snapshotIt != agent1->_snapshots.end(); ++snapshotIt) {
+		string snapshotName = snapshotIt->first;
+		Snapshot *snapshot1 = agent1->_snapshots[snapshotName], *snapshot2 = agent2->_snapshots[snapshotName];
+		EXPECT_EQ(snapshot1->_type, snapshot2->_type);
+		EXPECT_EQ(snapshot1->_uuid, snapshot2->_uuid);
+		EXPECT_EQ(snapshot1->_initialSize, snapshot2->_initialSize);
+
+		EXPECT_EQ(snapshot1->_q, snapshot2->_q);
+		EXPECT_EQ(snapshot1->_threshold, snapshot2->_threshold);
+		EXPECT_EQ(snapshot1->_total, snapshot2->_total);
+		EXPECT_EQ(snapshot1->_autoTarget, snapshot2->_autoTarget);
+		EXPECT_EQ(snapshot1->_propagateMask, snapshot2->_propagateMask);
+		EXPECT_EQ(snapshot1->_delayCount, snapshot2->_delayCount);
+
+		for (auto idxIt = snapshot1->_sensorIdx.begin(); idxIt != snapshot1->_sensorIdx.end(); ++idxIt) {
+			string sensorName = idxIt->first;
+			EXPECT_NO_THROW(snapshot2->_sensorIdx[sensorName]);
+		}
+
+		for (auto delayHashIt = snapshot1->_delaySensorHash.begin(); delayHashIt != snapshot1->_delaySensorHash.end(); ++delayHashIt) {
+			size_t hash = *delayHashIt;
+			EXPECT_NE(snapshot2->_delaySensorHash.find(hash), snapshot2->_delaySensorHash.end());
+		}
+
+		DataManager *dm1 = snapshot1->_dm, *dm2 = snapshot2->_dm;
+		EXPECT_EQ(dm1->_uuid, dm2->_uuid);
+		EXPECT_EQ(dm1->_memoryExpansion, dm2->_memoryExpansion);
+		EXPECT_EQ(dm1->_sensorSize, dm2->_sensorSize); // all other size will not be tested, since they all come from sensorSize
+
+		for (int i = 0; i < dm1->_attrSensor2dSize; ++i) {
+			// testing weight
+			EXPECT_EQ(dm1->h_weights[i], dm2->h_weights[i]);
+			// testing dir
+			EXPECT_EQ(dm1->h_dirs[i], dm2->h_dirs[i]);
+		}
+		for (int i = 0; i < dm1->_sensor2dSize; ++i) {
+			// testing threshold
+			EXPECT_EQ(dm1->h_thresholds[i], dm2->h_thresholds[i]);
+		}
+		for (int i = 0; i < dm1->_npdirSize; ++i) {
+			// testing npdirs
+			EXPECT_EQ(dm1->h_npdirs[i], dm2->h_npdirs[i]);
+		}
+		for (int i = 0; i < dm1->_maskAmperSize; ++i) {
+			// testing mask amper
+			EXPECT_EQ(dm1->h_mask_amper[i], dm2->h_mask_amper[i]);
+		}
+		for (int i = 0; i < dm1->_sensorSize * dm1->_attrSensorSize; ++i) {
+			// testing npdir mask
+			EXPECT_EQ(dm1->h_npdir_mask[i], dm2->h_npdir_mask[i]);
+		}
+		for (int i = 0; i < dm1->_attrSensorSize * dm1->_attrSensorSize; ++i) {
+			// testing signal
+			EXPECT_EQ(dm1->h_signals[i], dm2->h_signals[i]);
+			// testing lsignal
+			EXPECT_EQ(dm1->h_lsignals[i], dm2->h_lsignals[i]);
+			// testing dists
+			EXPECT_EQ(dm1->h_dists[i], dm2->h_dists[i]);
+		}
+		for (int i = 0; i < dm1->_sensorSize; ++i) {
+			// testing union root
+			EXPECT_EQ(dm1->h_union_root[i], dm2->h_union_root[i]);
+		}
+		for (int i = 0; i < dm1->_attrSensorSize; ++i) {
+			// testing other parameters
+			EXPECT_EQ(dm1->h_observe[i], dm2->h_observe[i]);
+			EXPECT_EQ(dm1->h_observe_[i], dm2->h_observe_[i]);
+			EXPECT_EQ(dm1->h_current[i], dm2->h_current[i]);
+			EXPECT_EQ(dm1->h_current_[i], dm2->h_current_[i]);
+			EXPECT_EQ(dm1->h_load[i], dm2->h_load[i]);
+			EXPECT_EQ(dm1->h_mask[i], dm2->h_mask[i]);
+			EXPECT_EQ(dm1->h_target[i], dm2->h_target[i]);
+			EXPECT_EQ(dm1->h_negligible[i], dm2->h_negligible[i]);
+			EXPECT_EQ(dm1->h_diag[i], dm2->h_diag[i]);
+			EXPECT_EQ(dm1->h_diag_[i], dm2->h_diag_[i]);
+			EXPECT_EQ(dm1->h_prediction[i], dm2->h_prediction[i]);
+		}
+
+		for (int i = 0; i < snapshot1->_sensors.size(); ++i) {
+			Sensor *sensor1 = snapshot1->_sensors[i], *sensor2 = snapshot2->_sensors[i];
+			EXPECT_EQ(sensor1->_uuid, sensor2->_uuid);
+			EXPECT_EQ(sensor1->_idx, sensor2->_idx);
+			EXPECT_EQ(sensor1->_amper, sensor2->_amper);
+
+			EXPECT_EQ(sensor1->_m->_uuid, sensor2->_m->_uuid);
+			EXPECT_EQ(sensor1->_m->_idx, sensor2->_m->_idx);
+			EXPECT_EQ(sensor1->_m->_isOriginPure, sensor2->_m->_isOriginPure);
+			EXPECT_EQ(sensor1->_m->_vdiag, sensor2->_m->_vdiag);
+			EXPECT_EQ(sensor1->_m->_vdiag_, sensor2->_m->_vdiag_);
+
+			EXPECT_EQ(sensor1->_cm->_uuid, sensor2->_cm->_uuid);
+			EXPECT_EQ(sensor1->_cm->_idx, sensor2->_cm->_idx);
+			EXPECT_EQ(sensor1->_cm->_isOriginPure, sensor2->_cm->_isOriginPure);
+			EXPECT_EQ(sensor1->_cm->_vdiag, sensor2->_cm->_vdiag);
+			EXPECT_EQ(sensor1->_cm->_vdiag_, sensor2->_cm->_vdiag_);
+		}
+
+		for (int i = 0; i < snapshot1->_sensorPairs.size(); ++i) {
+			SensorPair *sensorPair1 = snapshot1->_sensorPairs[i], *sensorPair2 = snapshot2->_sensorPairs[i];
+			EXPECT_EQ(sensorPair1->_uuid, sensorPair2->_uuid);
+			EXPECT_EQ(sensorPair1->_vthreshold, sensorPair2->_vthreshold);
+
+			EXPECT_EQ(sensorPair1->mij->_uuid, sensorPair2->mij->_uuid);
+			EXPECT_EQ(sensorPair1->mij->_vw, sensorPair2->mij->_vw);
+
+			EXPECT_EQ(sensorPair1->mi_j->_uuid, sensorPair2->mi_j->_uuid);
+			EXPECT_EQ(sensorPair1->mi_j->_vw, sensorPair2->mi_j->_vw);
+
+			EXPECT_EQ(sensorPair1->m_ij->_uuid, sensorPair2->m_ij->_uuid);
+			EXPECT_EQ(sensorPair1->m_ij->_vw, sensorPair2->m_ij->_vw);
+
+			EXPECT_EQ(sensorPair1->m_i_j->_uuid, sensorPair2->m_i_j->_uuid);
+			EXPECT_EQ(sensorPair1->m_i_j->_vw, sensorPair2->m_i_j->_vw);
 		}
 	}
 }

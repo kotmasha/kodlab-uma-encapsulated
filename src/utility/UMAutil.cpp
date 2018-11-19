@@ -66,8 +66,12 @@ vector<std::pair<string, string>> StrUtil::string2dToString1dPair(const vector<v
 }
 
 //need to expand the case more later
-bool StrUtil::isEmpty(string &s) {
+bool StrUtil::isEmpty(const string &s) {
 	return "" == s;
+}
+
+bool StrUtil::stringToBool(const string &s) {
+	return "1" == s || "True" == s || "true" == s;
 }
 
 /*

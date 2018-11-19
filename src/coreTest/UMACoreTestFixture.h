@@ -109,9 +109,11 @@ public:
 	SensorSavingLoading();
 	~SensorSavingLoading();
 	void savingAndLoading();
+	void copying();
+	void asserting(Sensor *si, Sensor *sj);
 
 protected:
-	Sensor *s1, *s2;
+	Sensor *s1, *s2, *s3;
 	string fileName;
 };
 
@@ -120,9 +122,11 @@ public:
 	AttrSensorSavingLoading();
 	~AttrSensorSavingLoading();
 	void savingAndLoading();
+	void copying();
+	void asserting(AttrSensor *asi, AttrSensor *asj);
 
 protected:
-	AttrSensor *as1, *as2;
+	AttrSensor *as1, *as2, *as3;
 	string fileName;
 };
 
@@ -131,9 +135,11 @@ public:
 	SensorPairSavingLoading();
 	~SensorPairSavingLoading();
 	void savingAndLoading();
+	void copying();
+	void asserting(SensorPair *spi, SensorPair *spj);
 
 protected:
-	SensorPair *sp1, *sp2;
+	SensorPair *sp1, *sp2, *sp3;
 	Sensor *s1, *s2;
 	string fileName;
 };
@@ -143,10 +149,24 @@ public:
 	AttrSensorPairSavingLoading();
 	~AttrSensorPairSavingLoading();
 	void savingAndLoading();
+	void copying();
+	void asserting(AttrSensorPair *aspi, AttrSensorPair *aspj);
 
 protected:
-	AttrSensorPair *asp1, *asp2;
+	AttrSensorPair *asp1, *asp2, *asp3;
 	AttrSensor *as1, *as2;
+	string fileName;
+};
+
+class DataManagerSavingLoading : public::testing::Test {
+public:
+	DataManagerSavingLoading();
+	~DataManagerSavingLoading();
+	void savingAndLoading();
+	void copying();
+
+protected:
+	DataManager *dm1, *dm2, *dm3;
 	string fileName;
 };
 
@@ -155,10 +175,12 @@ public:
 	SnapshotSavingLoading();
 	~SnapshotSavingLoading();
 	void savingAndLoading();
+	void copying();
 
 protected:
 	Agent *agent1, *agent2;
 	Snapshot *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8;
+	Snapshot *s9, *s10, *s11, *s12; // for copying tests
 	string s1FileName, s2FileName, s3FileName, s4FileName;
 };
 
@@ -167,9 +189,11 @@ public:
 	AgentSavingLoading();
 	~AgentSavingLoading();
 	void savingAndLoading();
+	void copying();
 
 protected:
 	Agent *a1, *a2, *a3, *a4, *a5, *a6, *a7, *a8;
+	Agent *a9, *a10, *a11, *a12; // for copying tests
 	string a1FileName, a2FileName, a3FileName, a4FileName;
 };
 
@@ -191,6 +215,17 @@ public:
 
 protected:
 	Experiment *exp1, *exp2;
+};
+
+class UMAAgentCopying : public::testing::Test {
+public:
+	UMAAgentCopying();
+	~UMAAgentCopying();
+	void copyingAgents();
+	void assertingAgents(Agent *agent1, Agent *agent2);
+
+protected:
+	Experiment *exp;
 };
 
 #endif

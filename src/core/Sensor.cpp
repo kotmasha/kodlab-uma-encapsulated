@@ -41,6 +41,19 @@ Sensor::Sensor(const string &uuid, UMACoreObject *parent, int idx)
 	_observe_ = nullptr;
 }
 
+Sensor::Sensor(const Sensor &sensor, UMACoreObject *parent)
+	: UMACoreObject(sensor._uuid, UMA_OBJECT::SENSOR, parent) {
+	_idx = sensor._idx;
+	_amper = sensor._amper;
+
+	_m = new AttrSensor(*sensor._m, this);
+	_cm = new AttrSensor(*sensor._cm, this);
+	_observe = nullptr;
+	_observe_ = nullptr;
+
+	sensorLogger.debug("A new sensor is copied, id=" + _uuid, this->getParentChain());
+}
+
 /*
 This function is copying the diag value of _m and _cm to the pointer
 */

@@ -78,7 +78,7 @@ Experiment *Experiment::loadExperiment(const string &experimentId) {
 		int agentSize = -1;
 		file.read((char *)(&agentSize), sizeof(int));
 
-		experiment = new Experiment(experimentId);
+		experiment = new Experiment("load_" + experimentId);
 		experimentLogger.debug("will load " + to_string(agentSize) + " agents", experiment->getParentChain());
 
 		for (int i = 0; i < agentSize; ++i) {
@@ -93,6 +93,8 @@ Experiment *Experiment::loadExperiment(const string &experimentId) {
 	file.close();
 	experimentLogger.info("experiment=" + experimentId + " is successfully loaded!");
 
+	World::instance()->addExperiment(experiment);
+
 	return experiment;
 }
 
@@ -102,6 +104,7 @@ For agent that exist in exp, but not in current experiment, it will be ignored
 For agent that exist in exp, and also in current experiment, an agent level merging is required.
 Input: Experiment * exp, the experiment to be merged, remove indicate whether remove the exp after merging, default is true
 */
+/*
 void Experiment::mergeExperiment(Experiment * const exp) {
 	for (auto it = exp->_agents.begin(); it != exp->_agents.end(); ++it) {
 		if (_agents.end() != _agents.find(it->first)) {
@@ -116,6 +119,7 @@ void Experiment::mergeExperiment(Experiment * const exp) {
 	World::instance()->deleteExperiment(exp->_uuid);
 	experimentLogger.info("experimentId=" + exp->_uuid + " is successfully merged into experimentId=" + _uuid);
 }
+*/
 
 const vector<vector<string>> Experiment::getAgentInfo() {
 	vector<vector<string>> results;

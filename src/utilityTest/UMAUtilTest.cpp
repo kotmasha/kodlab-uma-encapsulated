@@ -56,6 +56,31 @@ TEST(PropertyMap_test, PropertyMap_test) {
 	delete ppm, other;
 }
 
+TEST(PropertyMap_test, saving_loading_test) {
+	string fileName = "ppm_test.uma";
+	PropertyMap *ppm1 = new PropertyMap();
+
+	ppm1->add("key1", "value1");
+	ppm1->add("key2", "value2");
+	ppm1->add("key3", "value3");
+
+	ofstream output;
+	output.open(fileName, ios::binary | ios::out);
+	ppm1->save(output);
+	output.close();
+	
+	PropertyMap *ppm2 = new PropertyMap();
+
+	ifstream input;
+	input.open(fileName, ios::binary | ios::in);
+	
+	ppm2->load(input);;
+	input.close();
+
+	SysUtil::UMARemove(fileName);
+	delete ppm1, ppm2;
+}
+
 TEST(PropertyPage_test, PropertyPage_test) {
 	PropertyMap *ppm = new PropertyMap();
 	PropertyPage *pp = new PropertyPage();
@@ -110,6 +135,22 @@ TEST(StrUtil_test, isEmpty) {
 	string s2 = "abc";
 	EXPECT_TRUE(StrUtil::isEmpty(s1));
 	EXPECT_FALSE(StrUtil::isEmpty(s2));
+}
+
+TEST(StrUtil_test, stringToBool) {
+	string s1 = "1";
+	string s2 = "0";
+	string s3 = "True";
+	string s4 = "False";
+	string s5 = "true";
+	string s6 = "false";
+
+	EXPECT_TRUE(StrUtil::stringToBool(s1));
+	EXPECT_TRUE(StrUtil::stringToBool(s3));
+	EXPECT_TRUE(StrUtil::stringToBool(s5));
+	EXPECT_FALSE(StrUtil::stringToBool(s2));
+	EXPECT_FALSE(StrUtil::stringToBool(s4));
+	EXPECT_FALSE(StrUtil::stringToBool(s6));
 }
 
 TEST(SignalUtil_test, boolSignalToIntIdx) {

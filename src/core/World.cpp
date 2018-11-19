@@ -38,6 +38,16 @@ Experiment *World::createExperiment(const string &experimentId) {
 	return _experiments[experimentId];
 }
 
+void World::addExperiment(Experiment * const experiment) {
+	string uuid = experiment->getUUID();
+	if (_experiments.end() != _experiments.find(uuid)) {
+		throw UMADuplicationException("Cannot add the current experiment to world because it already exists", true, &worldLogger);
+	}
+
+	_experiments[uuid] = experiment;
+	worldLogger.info("A new experimentId=" + uuid + " is added to world");
+}
+
 Experiment *World::getExperiment(const string &experimentId) {
 	if (_experiments.end() == _experiments.find(experimentId)) {
 		throw UMANoResourceException("Cannot find object, experimentId=" + experimentId, false, &worldLogger);

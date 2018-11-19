@@ -17,6 +17,14 @@ AttrSensorPair::AttrSensorPair(UMACoreObject *parent, AttrSensor * const attrSen
 		", attrSensor2=" + to_string(_attrSensorJ->getIdx()), this->getParentChain());
 }
 
+AttrSensorPair::AttrSensorPair(const AttrSensorPair &asp, UMACoreObject *parent, AttrSensor * const attrSensorI, AttrSensor * const attrSensorJ)
+	: UMACoreObject(asp._uuid, UMA_OBJECT::ATTR_SENSOR_PAIR, parent), _attrSensorI(attrSensorI), _attrSensorJ(attrSensorJ) {
+	_vw = asp._vw;
+	_vd = asp._vd;
+
+	attrSensorPairLogger.debug("A new attr sensor pair is copied with id=" + _uuid, this->getParentChain());
+}
+
 /*
 This function is setting pointers to null
 */

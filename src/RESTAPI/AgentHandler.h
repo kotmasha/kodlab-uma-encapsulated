@@ -18,6 +18,7 @@ public:
 	void createAgent(UMARestRequest &request);
 	void getAgent(UMARestRequest &request);
 	void deleteAgent(UMARestRequest &request);
+	void copyAgent(UMARestRequest &request);
 	virtual ~AgentHandler();
 };
 
