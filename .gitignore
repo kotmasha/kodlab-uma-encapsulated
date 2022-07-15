@@ -12,3 +12,4 @@ dependency/build/
 *.exp
 *vcpkg
 deployment/cluster
+*.log
